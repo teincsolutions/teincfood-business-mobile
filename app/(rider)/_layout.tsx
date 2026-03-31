@@ -244,17 +244,11 @@ export default function RiderDrawerLayout() {
             backgroundColor: theme.background.val,
             width: 280,
           },
+          sceneStyle: { backgroundColor: theme.background.val },
           drawerType: "front",
           overlayColor: "rgba(0,0,0,0.5)",
         }}
       >
-        <Drawer.Screen
-          name="index"
-          options={{
-            drawerItemStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
 
         {/* Home */}
         <Drawer.Screen

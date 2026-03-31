@@ -9,6 +9,7 @@ import {
   Card,
   Separator,
   Switch,
+  ScrollView as TamaguiScrollView,
 } from 'tamagui';
 import {
   DollarSign,
@@ -81,6 +82,7 @@ export default function RiderHome() {
       refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
+     contentContainerStyle={{ backgroundColor: '$background' }}
     >
       <YStack
         paddingHorizontal="$4"
@@ -117,7 +119,7 @@ export default function RiderHome() {
               </Text>
             </XStack>
             <Switch
-              size="$2"
+              size="$5"
               checked={isOnline}
               onCheckedChange={setIsOnline}
               backgroundColor={isOnline ? '#27ae60' : '$gray8'}

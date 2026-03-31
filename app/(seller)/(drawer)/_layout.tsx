@@ -302,11 +302,11 @@ export default function SellerDrawerLayout() {
             backgroundColor: theme.background.val,
             width: 280,
           },
+          sceneStyle: { backgroundColor: theme.background.val },
           drawerType: "front",
           overlayColor: "rgba(0,0,0,0.5)",
         }}
       >
-
         {/* Dashboard */}
         <Drawer.Screen
           name="dashboard/index"

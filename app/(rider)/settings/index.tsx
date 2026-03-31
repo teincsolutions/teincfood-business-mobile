@@ -1,9 +1,18 @@
 // @ts-nocheck
-import { YStack, Text, Card, Button, XStack, Separator, Switch } from 'tamagui';
-import { Truck, MapPin, Bell, ChevronRight, Navigation, Volume2, Clock } from '@tamagui/lucide-icons';
-import { ScrollView } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { YStack, Text, Card, Button, XStack, Separator, Switch } from "tamagui";
+import {
+  Truck,
+  MapPin,
+  Bell,
+  ChevronRight,
+  Navigation,
+  Volume2,
+  Clock,
+  Palette,
+} from "@tamagui/lucide-icons";
+import { ScrollView } from "react-native";
+import { useState } from "react";
+import { useRouter } from "expo-router";
 
 /**
  * Rider Settings Screen
@@ -16,17 +25,45 @@ export default function RiderSettings() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const settingsItems = [
-    { icon: Clock, label: 'Operating Hours', description: 'Set your availability schedule', route: '/(shared)/settings/operating-hours' },
-    { icon: Truck, label: 'Vehicle Information', description: 'Type, plate number, color', route: '/(rider)/settings/vehicle-info' },
-    { icon: MapPin, label: 'Delivery Zones', description: 'Preferred delivery areas', route: '/(rider)/settings/delivery-zones' },
-    { icon: Navigation, label: 'Navigation Settings', description: 'Preferred maps app', route: '/(rider)/settings/navigation' },
+    {
+      icon: Clock,
+      label: "Operating Hours",
+      description: "Set your availability schedule",
+      route: "/(shared)/settings/operating-hours",
+    },
+    {
+      icon: Truck,
+      label: "Vehicle Information",
+      description: "Type, plate number, color",
+      route: "/(rider)/settings/vehicle-info",
+    },
+    {
+      icon: MapPin,
+      label: "Delivery Zones",
+      description: "Preferred delivery areas",
+      route: "/(rider)/settings/delivery-zones",
+    },
+    {
+      icon: Navigation,
+      label: "Navigation Settings",
+      description: "Preferred maps app",
+      route: "/(rider)/settings/navigation",
+    },
+    {
+      label: "Theme",
+      description: "Light, dark, or system",
+      icon: Palette,
+      route: "/(shared)/profile/theme",
+    }
   ];
 
   return (
     <YStack flex={1} backgroundColor="$background">
       <ScrollView>
         <YStack padding="$4" gap="$4">
-          <Text fontSize="$6" fontWeight="bold">Settings</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            Settings
+          </Text>
 
           {/* Online Status */}
           <Card padding="$4" bordered>
@@ -34,13 +71,15 @@ export default function RiderSettings() {
               <YStack flex={1}>
                 <Text fontWeight="bold">Online Status</Text>
                 <Text color="$colorMuted" fontSize="$3">
-                  {isOnline ? 'You are online and accepting deliveries' : 'You are offline'}
+                  {isOnline
+                    ? "You are online and accepting deliveries"
+                    : "You are offline"}
                 </Text>
               </YStack>
               <Switch
                 checked={isOnline}
                 onCheckedChange={setIsOnline}
-                backgroundColor={isOnline ? '$green10' : '$gray8'}
+                backgroundColor={isOnline ? "$green10" : "$gray8"}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -57,9 +96,10 @@ export default function RiderSettings() {
                 </Text>
               </YStack>
               <Switch
+                size="$5"
                 checked={notificationsEnabled}
                 onCheckedChange={setNotificationsEnabled}
-                backgroundColor={notificationsEnabled ? '$primary' : '$gray8'}
+                backgroundColor={notificationsEnabled ? "$primary" : "$color.gray900"}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -69,16 +109,19 @@ export default function RiderSettings() {
           {/* Auto Accept */}
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center">
-              <YStack flex={1}>
-                <Text fontWeight="bold">Auto-Accept Deliveries</Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  Automatically accept nearby delivery requests
-                </Text>
-              </YStack>
+              <XStack gap="$3" alignItems="center">
+                <YStack>
+                  <Text fontWeight="bold">Auto-Accept Deliveries</Text>
+                  <Text color="$colorMuted" fontSize="$3">
+                    Automatically accept nearby delivery requests
+                  </Text>
+                </YStack>
+              </XStack>
               <Switch
+                size="$5"
                 checked={autoAccept}
                 onCheckedChange={setAutoAccept}
-                backgroundColor={autoAccept ? '$primary' : '$gray8'}
+                backgroundColor={autoAccept ? "$primary" : "$color.gray900"}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -90,7 +133,7 @@ export default function RiderSettings() {
             <XStack justifyContent="space-between" alignItems="center">
               <XStack gap="$3" alignItems="center">
                 <Volume2 size={20} color="$colorMuted" />
-                <YStack flex={1}>
+                <YStack>
                   <Text fontWeight="bold">Sound Alerts</Text>
                   <Text color="$colorMuted" fontSize="$3">
                     Play sound for new delivery requests
@@ -98,9 +141,10 @@ export default function RiderSettings() {
                 </YStack>
               </XStack>
               <Switch
+                size="$5"
                 checked={soundEnabled}
                 onCheckedChange={setSoundEnabled}
-                backgroundColor={soundEnabled ? '$primary' : '$gray8'}
+                backgroundColor={soundEnabled ? "$primary" : "$gray"}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -124,7 +168,9 @@ export default function RiderSettings() {
                     <item.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
                       <Text fontWeight="bold">{item.label}</Text>
-                      <Text color="$colorMuted" fontSize="$2">{item.description}</Text>
+                      <Text color="$colorMuted" fontSize="$2">
+                        {item.description}
+                      </Text>
                     </YStack>
                     <ChevronRight size={16} color="$colorMuted" />
                   </Button>
