@@ -23,8 +23,7 @@ import {
   ChevronDown,
 } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
-import { Input } from '@/components/ui';
+import { Button, FormInput } from '@/components/ui';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
 import { CategoryPill } from '@/components/home/CategoryPill';
 
@@ -527,24 +526,26 @@ export default function SellerMenu() {
 
                 {/* Basic info */}
                 <YStack gap="$4">
-                  <Input
+                  <FormInput
                     label="Item Name"
                     placeholder="e.g. Jollof Rice"
                     value={form.name}
                     onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+                    required
                   />
-                  <Input
+                  <FormInput
                     label="Description"
                     placeholder="Short description of the item"
                     value={form.description}
                     onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
                   />
-                  <Input
+                  <FormInput
                     label="Base Price (GHS)"
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     value={form.price}
                     onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
+                    required
                   />
                 </YStack>
 

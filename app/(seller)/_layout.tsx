@@ -261,6 +261,7 @@ export default function SellerDrawerLayout() {
           headerTintColor: theme.color.val,
           headerTitleStyle: {
             fontFamily: "Sen_600SemiBold",
+            fontSize: "$10",
           },
           drawerStyle: {
             backgroundColor: theme.background.val,
@@ -340,7 +341,7 @@ export default function SellerDrawerLayout() {
 
         {/* Settings */}
         <Drawer.Screen
-          name="settings/index"
+          name="settings"
           options={{
             title: "Settings",
             drawerIcon: ({ color, size }) => (
@@ -352,7 +353,7 @@ export default function SellerDrawerLayout() {
 
         {/* Profile */}
         <Drawer.Screen
-          name="profile/index"
+          name="profile"
           options={{
             title: "Profile",
             drawerIcon: ({ color, size }) => (

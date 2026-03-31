@@ -34,12 +34,12 @@ export default function SellerProfile() {
           {/* Profile Header */}
           <Card padding="$4" bordered backgroundColor="$background">
             <XStack gap="$4" alignItems="center">
-              <Avatar circular size="$6">
+              <Avatar circular size="$12">
                 <Avatar.Image
                   source={{ uri: user?.avatarUrl || undefined }}
                 />
                 <Avatar.Fallback backgroundColor="$primary" justifyContent="center" alignItems="center">
-                  <Text color="$background" fontWeight="bold" fontSize="$5">
+                  <Text color="$background" fontWeight="bold" fontSize="$7">
                     {user?.fullName?.charAt(0) || 'S'}
                   </Text>
                 </Avatar.Fallback>

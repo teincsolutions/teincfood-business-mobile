@@ -8,10 +8,10 @@ import {
   Text,
   Card,
   Button,
-  Input,
   Switch,
   Separator,
 } from 'tamagui';
+import { FormInput } from '@/components/ui';
 import {
   ArrowLeft,
   Shield,
@@ -142,71 +142,32 @@ export default function SecuritySettings() {
               </XStack>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Current Password
-                </Text>
-                <XStack gap="$2" alignItems="center">
-                  <Input
-                    flex={1}
-                    placeholder="Enter current password"
-                    value={currentPassword}
-                    onChangeText={setCurrentPassword}
-                    secureTextEntry={!showCurrentPassword}
-                  />
-                  <Button
-                    size="$3"
-                    circular
-                    backgroundColor="$gray3"
-                    onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-                    icon={showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  />
-                </XStack>
-              </YStack>
+              <FormInput
+                label="Current Password"
+                placeholder="Enter current password"
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                isPassword
+                required
+              />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  New Password
-                </Text>
-                <XStack gap="$2" alignItems="center">
-                  <Input
-                    flex={1}
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    secureTextEntry={!showNewPassword}
-                  />
-                  <Button
-                    size="$3"
-                    circular
-                    backgroundColor="$gray3"
-                    onPress={() => setShowNewPassword(!showNewPassword)}
-                    icon={showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  />
-                </XStack>
-              </YStack>
+              <FormInput
+                label="New Password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                isPassword
+                required
+              />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Confirm New Password
-                </Text>
-                <XStack gap="$2" alignItems="center">
-                  <Input
-                    flex={1}
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <Button
-                    size="$3"
-                    circular
-                    backgroundColor="$gray3"
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    icon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  />
-                </XStack>
-              </YStack>
+              <FormInput
+                label="Confirm New Password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                isPassword
+                required
+              />
 
               <Button
                 backgroundColor="$primary"

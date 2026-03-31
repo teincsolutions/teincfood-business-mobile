@@ -11,7 +11,7 @@ import {
   Separator,
   TextArea,
 } from 'tamagui';
-import { Input } from '@/components/ui';
+import { FormInput } from '@/components/ui';
 import {
   ArrowLeft,
   HelpCircle,
@@ -243,16 +243,13 @@ export default function HelpSupport() {
               </Text>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Subject
-                </Text>
-                <Input
-                  placeholder="What do you need help with?"
-                  value={subject}
-                  onChangeText={setSubject}
-                />
-              </YStack>
+              <FormInput
+                label="Subject"
+                placeholder="What do you need help with?"
+                value={subject}
+                onChangeText={setSubject}
+                required
+              />
 
               <YStack gap="$2">
                 <Text fontSize="$3" color="$colorMuted">

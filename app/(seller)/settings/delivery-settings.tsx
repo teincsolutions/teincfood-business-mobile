@@ -13,7 +13,7 @@ import {
   Slider,
 } from 'tamagui';
 import { ArrowLeft, Save, MapPin, Truck, DollarSign } from '@tamagui/lucide-icons';
-import { Button, Input } from '@/components/ui';
+import { Button, FormInput } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -154,7 +154,7 @@ export default function DeliverySettings() {
                   </XStack>
                   <XStack gap="$2" alignItems="center">
                     <Text>GHS</Text>
-                    <Input
+                    <FormInput
                       flex={1}
                       placeholder="0.00"
                       value={deliveryFee}
@@ -179,7 +179,7 @@ export default function DeliverySettings() {
                   </XStack>
                   <XStack gap="$2" alignItems="center">
                     <Text>GHS</Text>
-                    <Input
+                    <FormInput
                       flex={1}
                       placeholder="0.00"
                       value={minimumOrder}
@@ -204,7 +204,7 @@ export default function DeliverySettings() {
                   </XStack>
                   <XStack gap="$2" alignItems="center">
                     <Text>GHS</Text>
-                    <Input
+                    <FormInput
                       flex={1}
                       placeholder="0.00"
                       value={freeDeliveryMinimum}
@@ -222,7 +222,7 @@ export default function DeliverySettings() {
                   <Text color="$colorMuted" fontSize="$3">
                     Display time range for customers
                   </Text>
-                  <Input
+                  <FormInput
                     placeholder="30-45"
                     value={estimatedTime}
                     onChangeText={setEstimatedTime}

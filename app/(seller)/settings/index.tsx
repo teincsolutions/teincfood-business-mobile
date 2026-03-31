@@ -34,10 +34,6 @@ export default function SellerSettings() {
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >
-          <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color="$color">
-            Settings
-          </Text>
-
           {/* Store Status */}
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center" gap="$3">

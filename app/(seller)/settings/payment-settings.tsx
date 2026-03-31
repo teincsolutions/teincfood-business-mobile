@@ -12,7 +12,7 @@ import {
   Separator,
 } from 'tamagui';
 import { ArrowLeft, Save, CreditCard, Building, Clock, DollarSign } from '@tamagui/lucide-icons';
-import { Button, Input } from '@/components/ui';
+import { Button, FormInput } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -165,39 +165,27 @@ export default function PaymentSettings() {
               </XStack>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Bank Name
-                </Text>
-                <Input
-                  placeholder="Select your bank"
-                  value={bankName}
-                  onChangeText={setBankName}
-                />
-              </YStack>
+              <FormInput
+                label="Bank Name"
+                placeholder="Select your bank"
+                value={bankName}
+                onChangeText={setBankName}
+              />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Account Number
-                </Text>
-                <Input
-                  placeholder="Enter account number"
-                  value={accountNumber}
-                  onChangeText={setAccountNumber}
-                  keyboardType="numeric"
-                />
-              </YStack>
+              <FormInput
+                label="Account Number"
+                placeholder="Enter account number"
+                value={accountNumber}
+                onChangeText={setAccountNumber}
+                keyboardType="numeric"
+              />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Account Name
-                </Text>
-                <Input
-                  placeholder="Enter account holder name"
-                  value={accountName}
-                  onChangeText={setAccountName}
-                />
-              </YStack>
+              <FormInput
+                label="Account Name"
+                placeholder="Enter account holder name"
+                value={accountName}
+                onChangeText={setAccountName}
+              />
             </YStack>
           </Card>
 
@@ -213,17 +201,13 @@ export default function PaymentSettings() {
                 </XStack>
                 <Separator />
 
-                <YStack gap="$2">
-                  <Text fontSize="$3" color="$colorMuted">
-                    Mobile Money Number
-                  </Text>
-                  <Input
-                    placeholder="+233 XX XXX XXXX"
-                    value={mobileMoneyNumber}
-                    onChangeText={setMobileMoneyNumber}
-                    keyboardType="phone-pad"
-                  />
-                </YStack>
+                <FormInput
+                  label="Mobile Money Number"
+                  placeholder="+233 XX XXX XXXX"
+                  value={mobileMoneyNumber}
+                  onChangeText={setMobileMoneyNumber}
+                  keyboardType="phone-pad"
+                />
               </YStack>
             </Card>
           )}

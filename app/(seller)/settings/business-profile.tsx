@@ -138,16 +138,13 @@ export default function BusinessProfileSettings() {
               </Text>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Business Name *
-                </Text>
-                <Input
-                  placeholder="Enter your business name"
-                  value={businessName}
-                  onChangeText={setBusinessName}
-                />
-              </YStack>
+              <FormInput
+                label="Business Name"
+                placeholder="Enter your business name"
+                value={businessName}
+                onChangeText={setBusinessName}
+                required
+              />
 
               <YStack gap="$2">
                 <Text fontSize="$3" color="$colorMuted">
@@ -169,16 +166,12 @@ export default function BusinessProfileSettings() {
                 />
               </YStack>
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Business Address
-                </Text>
-                <Input
-                  placeholder="Enter your business address"
-                  value={businessAddress}
-                  onChangeText={setBusinessAddress}
-                />
-              </YStack>
+              <FormInput
+                label="Business Address"
+                placeholder="Enter your business address"
+                value={businessAddress}
+                onChangeText={setBusinessAddress}
+              />
             </YStack>
           </Card>
 
@@ -190,30 +183,22 @@ export default function BusinessProfileSettings() {
               </Text>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Phone Number
-                </Text>
-                <Input
-                  placeholder="+233 XX XXX XXXX"
-                  value={businessPhone}
-                  onChangeText={setBusinessPhone}
-                  keyboardType="phone-pad"
-                />
-              </YStack>
+              <FormInput
+                label="Phone Number"
+                placeholder="+233 XX XXX XXXX"
+                value={businessPhone}
+                onChangeText={setBusinessPhone}
+                keyboardType="phone-pad"
+              />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">
-                  Email Address
-                </Text>
-                <Input
-                  placeholder="business@example.com"
-                  value={businessEmail}
-                  onChangeText={setBusinessEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </YStack>
+              <FormInput
+                label="Email Address"
+                placeholder="business@example.com"
+                value={businessEmail}
+                onChangeText={setBusinessEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
             </YStack>
           </Card>
 
