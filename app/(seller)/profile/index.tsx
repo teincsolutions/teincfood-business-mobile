@@ -20,10 +20,10 @@ export default function SellerProfile() {
 
   const profileItems = [
     { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(seller)/profile/edit' },
-    { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/profile/security' },
-    { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/profile/theme' },
-    { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/profile/terms' },
-    { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/profile/privacy-policy' },
+    { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/(shared)/profile/security' },
+    { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
+    { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
+    { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/(shared)/profile/privacy-policy' },
     { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(seller)/profile/help' },
   ];
 

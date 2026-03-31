@@ -183,6 +183,15 @@ export default function SignupScreen() {
             <Button variant="outline" onPress={() => router.push({ pathname: '/(auth)/login', params: { role: selectedRole } })}>
               LOG IN
             </Button>
+            <Button
+              variant="ghost"
+              height={40}
+              onPress={() => router.push({ pathname: '/(auth)/role' })}
+            >
+              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+                Signing up as {selectedRole === 'seller' ? 'Seller' : 'Rider'} · Switch Role
+              </Text>
+            </Button>
           </YStack>
         </ScrollView>
       </YStack>

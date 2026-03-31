@@ -225,7 +225,7 @@ export default function LoginScreen() {
               fontFamily="$body"
               lineHeight={22}
             >
-              Use phone OTP (default) or switch to email and password.
+              Use phone OTP or switch to email and password.
             </Text>
           </YStack>
 
@@ -432,6 +432,15 @@ export default function LoginScreen() {
               onPress={() => router.push({ pathname: "/(auth)/signup", params: { role: selectedRole } })}
             >
               CREATE ACCOUNT
+            </Button>
+            <Button
+              variant="ghost"
+              height={40}
+              onPress={() => router.push({ pathname: "/(auth)/role" })}
+            >
+              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+                Logging in as {roleLabel} · Switch Role
+              </Text>
             </Button>
           </YStack>
         </ScrollView>

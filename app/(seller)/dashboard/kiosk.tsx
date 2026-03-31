@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect, useRef } from 'react';
-import { ScrollView, RefreshControl, Alert, Vibration } from 'react-native';
+import { useState, useEffect } from 'react';
+import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   YStack,
@@ -10,7 +10,7 @@ import {
   Button,
   Separator,
   Switch,
-  Avatar,
+  useTheme,
 } from 'tamagui';
 import { Badge } from '@/components/ui/Badge';
 import {
@@ -23,15 +23,16 @@ import {
   Banknote,
   Volume2,
   VolumeX,
-  Sun,
-  Moon,
   RefreshCw,
-  Plus,
-  Minus,
   Utensils,
 } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
 import * as Haptics from 'expo-haptics';
+import {
+  MOCK_PENDING_ORDERS,
+  MOCK_ACTIVE_ORDERS,
+  KioskOrder,
+} from '@/services/mock-data.service';
 
 /**
  * Kiosk Mode Screen
@@ -39,89 +40,14 @@ import * as Haptics from 'expo-haptics';
  */
 export default function KioskMode() {
   const router = useRouter();
+  const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Mock order queue data
-  const [pendingOrders, setPendingOrders] = useState([
-    {
-      id: '1',
-      orderNumber: '#ORD-001',
-      items: [
-        { name: 'Jollof Rice', quantity: 2, price: 25.00 },
-        { name: 'Grilled Chicken', quantity: 1, price: 35.00 },
-      ],
-      total: 85.00,
-      customerName: 'John Doe',
-      paymentStatus: 'paid',
-      paymentMethod: 'mobile_money',
-      createdAt: new Date(Date.now() - 300000).toISOString(),
-      estimatedTime: 15,
-    },
-    {
-      id: '2',
-      orderNumber: '#ORD-002',
-      items: [
-        { name: 'Banku & Tilapia', quantity: 1, price: 45.00 },
-        { name: 'Kelewele', quantity: 2, price: 10.00 },
-      ],
-      total: 65.00,
-      customerName: 'Jane Smith',
-      paymentStatus: 'unpaid',
-      paymentMethod: 'cash',
-      createdAt: new Date(Date.now() - 180000).toISOString(),
-      estimatedTime: 20,
-    },
-    {
-      id: '3',
-      orderNumber: '#ORD-003',
-      items: [
-        { name: 'Waakye', quantity: 3, price: 20.00 },
-        { name: 'Fried Plantain', quantity: 2, price: 8.00 },
-      ],
-      total: 76.00,
-      customerName: 'Kwame Asante',
-      paymentStatus: 'paid',
-      paymentMethod: 'card',
-      createdAt: new Date(Date.now() - 60000).toISOString(),
-      estimatedTime: 12,
-    },
-  ]);
-
-  const [activeOrders, setActiveOrders] = useState([
-    {
-      id: '4',
-      orderNumber: '#ORD-004',
-      items: [
-        { name: 'Fufu & Light Soup', quantity: 2, price: 30.00 },
-      ],
-      total: 60.00,
-      customerName: 'Abena Mensah',
-      paymentStatus: 'paid',
-      paymentMethod: 'mobile_money',
-      status: 'preparing',
-      startedAt: new Date(Date.now() - 600000).toISOString(),
-      estimatedTime: 5,
-    },
-    {
-      id: '5',
-      orderNumber: '#ORD-005',
-      items: [
-        { name: 'Rice & Stew', quantity: 1, price: 22.00 },
-        { name: 'Fried Fish', quantity: 1, price: 25.00 },
-      ],
-      total: 47.00,
-      customerName: 'Kofi Adom',
-      paymentStatus: 'paid',
-      paymentMethod: 'cash',
-      status: 'preparing',
-      startedAt: new Date(Date.now() - 480000).toISOString(),
-      estimatedTime: 8,
-    },
-  ]);
+  const [pendingOrders, setPendingOrders] = useState<KioskOrder[]>(MOCK_PENDING_ORDERS);
+  const [activeOrders, setActiveOrders] = useState<KioskOrder[]>(MOCK_ACTIVE_ORDERS);
 
   // Auto-refresh effect
   useEffect(() => {
@@ -134,7 +60,6 @@ export default function KioskMode() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate API call
     setTimeout(() => {
       setIsRefreshing(false);
     }, 500);
@@ -142,7 +67,6 @@ export default function KioskMode() {
 
   const playSound = (type: 'success' | 'alert' | 'error') => {
     if (!soundEnabled) return;
-    // Sound would be played here using expo-av
     console.log(`Playing ${type} sound`);
   };
 
@@ -222,11 +146,11 @@ export default function KioskMode() {
   };
 
   return (
-    <YStack flex={1} backgroundColor={darkMode ? '$gray1' : '$background'}>
+    <YStack flex={1} backgroundColor="$background">
       {/* Header Controls */}
       <XStack
         padding="$4"
-        backgroundColor={darkMode ? '$gray2' : '$primary'}
+        backgroundColor="$primary"
         justifyContent="space-between"
         alignItems="center"
       >
@@ -247,15 +171,6 @@ export default function KioskMode() {
             backgroundColor="$whiteAlpha"
             onPress={() => setSoundEnabled(!soundEnabled)}
             icon={soundEnabled ? <Volume2 size={18} color="$background" /> : <VolumeX size={18} color="$background" />}
-          />
-
-          {/* Dark Mode Toggle */}
-          <Button
-            size="$3"
-            circular
-            backgroundColor="$whiteAlpha"
-            onPress={() => setDarkMode(!darkMode)}
-            icon={darkMode ? <Sun size={18} color="$background" /> : <Moon size={18} color="$background" />}
           />
 
           {/* Auto Refresh Toggle */}
@@ -289,9 +204,15 @@ export default function KioskMode() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        <XStack padding="$4" gap="$4" flexWrap="wrap">
+        <XStack
+          padding="$4"
+          gap="$4"
+          flexWrap="wrap"
+          $gtSm={{ flexDirection: 'row' }}
+          $sm={{ flexDirection: 'column' }}
+        >
           {/* Pending Orders Column */}
-          <YStack flex={1} minWidth={300} gap="$3">
+          <YStack flex={1} minWidth={280} $gtSm={{ flex: 1 }} $sm={{ flex: 'none' }} gap="$3">
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
                 Pending Orders
@@ -302,8 +223,8 @@ export default function KioskMode() {
             </XStack>
 
             {pendingOrders.length === 0 ? (
-              <Card padding="$6" alignItems="center" backgroundColor={darkMode ? '$gray2' : '$gray1'}>
-                <CheckCircle size={48} color="$green10" />
+              <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                <CheckCircle size={48} color="$success" />
                 <Text marginTop="$2" color="$colorMuted">
                   No pending orders
                 </Text>
@@ -314,7 +235,7 @@ export default function KioskMode() {
                   key={order.id}
                   padding="$4"
                   bordered
-                  backgroundColor={darkMode ? '$gray2' : '$yellow2'}
+                  backgroundColor="$yellow2"
                   borderColor="$yellow8"
                 >
                   <YStack gap="$3">
@@ -398,7 +319,7 @@ export default function KioskMode() {
           </YStack>
 
           {/* Active Orders Column */}
-          <YStack flex={1} minWidth={300} gap="$3">
+          <YStack flex={1} minWidth={280} $gtSm={{ flex: 1 }} $sm={{ flex: 'none' }} gap="$3">
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
                 Preparing
@@ -409,7 +330,7 @@ export default function KioskMode() {
             </XStack>
 
             {activeOrders.length === 0 ? (
-              <Card padding="$6" alignItems="center" backgroundColor={darkMode ? '$gray2' : '$gray1'}>
+              <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
                 <Utensils size={48} color="$colorMuted" />
                 <Text marginTop="$2" color="$colorMuted">
                   No orders being prepared
@@ -421,7 +342,7 @@ export default function KioskMode() {
                   key={order.id}
                   padding="$4"
                   bordered
-                  backgroundColor={darkMode ? '$gray2' : '$blue2'}
+                  backgroundColor="$blue2"
                   borderColor="$blue8"
                 >
                   <YStack gap="$3">
@@ -489,9 +410,9 @@ export default function KioskMode() {
 
         {/* Quick Stats */}
         <XStack padding="$4" gap="$3">
-          <Card flex={1} padding="$4" backgroundColor={darkMode ? '$gray2' : '$green2'}>
+          <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$green10">
+              <Text fontSize="$7" fontWeight="bold" color="$success">
                 {pendingOrders.length + activeOrders.length}
               </Text>
               <Text fontSize="$3" color="$colorMuted">
@@ -500,9 +421,9 @@ export default function KioskMode() {
             </YStack>
           </Card>
 
-          <Card flex={1} padding="$4" backgroundColor={darkMode ? '$gray2' : '$blue2'}>
+          <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$blue10">
+              <Text fontSize="$7" fontWeight="bold" color="$info">
                 {activeOrders.reduce((sum, o) => sum + o.estimatedTime, 0)}m
               </Text>
               <Text fontSize="$3" color="$colorMuted">
@@ -511,9 +432,9 @@ export default function KioskMode() {
             </YStack>
           </Card>
 
-          <Card flex={1} padding="$4" backgroundColor={darkMode ? '$gray2' : '$yellow2'}>
+          <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$yellow10">
+              <Text fontSize="$7" fontWeight="bold" color="$star">
                 GHS {[...pendingOrders, ...activeOrders].reduce((sum, o) => sum + o.total, 0).toFixed(0)}
               </Text>
               <Text fontSize="$3" color="$colorMuted">
@@ -527,7 +448,10 @@ export default function KioskMode() {
         <YStack padding="$4" paddingBottom="$8">
           <Button
             size="$5"
-            backgroundColor="$gray8"
+            backgroundColor="$backgroundSoft"
+            color="$color"
+            borderColor="$borderColor"
+            borderWidth={1}
             onPress={() => router.back()}
           >
             Exit Kiosk Mode

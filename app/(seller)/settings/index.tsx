@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { YStack, Text, Card, Button, XStack, Separator, Switch } from 'tamagui';
-import { Building, Clock, MapPin, CreditCard, Bell, ChevronRight } from '@tamagui/lucide-icons';
+import { Building, Clock, MapPin, CreditCard, Bell, ChevronRight, Palette } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -18,6 +18,7 @@ export default function SellerSettings() {
     { icon: Clock, label: 'Operating Hours', description: 'Set your business hours', route: '/(seller)/settings/operating-hours' },
     { icon: MapPin, label: 'Delivery Settings', description: 'Delivery radius, fees, minimum order', route: '/(seller)/settings/delivery-settings' },
     { icon: CreditCard, label: 'Payment Settings', description: 'Bank account, payout schedule', route: '/(seller)/settings/payment-settings' },
+    { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
   ];
 
   return (
@@ -27,10 +28,10 @@ export default function SellerSettings() {
           <Text fontSize="$6" fontWeight="bold">Settings</Text>
 
           {/* Store Status */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <XStack justifyContent="space-between" alignItems="center">
               <YStack flex={1}>
-                <Text fontWeight="bold">Store Status</Text>
+                <Text fontWeight="bold" color="$color">Store Status</Text>
                 <Text color="$colorMuted" fontSize="$3">
                   {isOpen ? 'Your store is open' : 'Your store is closed'}
                 </Text>
@@ -38,7 +39,7 @@ export default function SellerSettings() {
               <Switch
                 checked={isOpen}
                 onCheckedChange={setIsOpen}
-                backgroundColor={isOpen ? '$green10' : '$gray8'}
+                backgroundColor={isOpen ? '$success' : '$colorDisabled'}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -46,10 +47,10 @@ export default function SellerSettings() {
           </Card>
 
           {/* Notifications */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <XStack justifyContent="space-between" alignItems="center">
               <YStack flex={1}>
-                <Text fontWeight="bold">Notifications</Text>
+                <Text fontWeight="bold" color="$color">Notifications</Text>
                 <Text color="$colorMuted" fontSize="$3">
                   Receive order alerts and updates
                 </Text>
@@ -57,7 +58,7 @@ export default function SellerSettings() {
               <Switch
                 checked={notificationsEnabled}
                 onCheckedChange={setNotificationsEnabled}
-                backgroundColor={notificationsEnabled ? '$primary' : '$gray8'}
+                backgroundColor={notificationsEnabled ? '$primary' : '$colorDisabled'}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>
@@ -65,7 +66,7 @@ export default function SellerSettings() {
           </Card>
 
           {/* Settings Menu */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <YStack gap="$1">
               {settingsItems.map((item, index) => (
                 <YStack key={index}>
@@ -75,28 +76,29 @@ export default function SellerSettings() {
                     alignItems="center"
                     gap="$3"
                     padding="$3"
-                    pressStyle={{ backgroundColor: "$gray3" }}
+                    pressStyle={{ backgroundColor: "$backgroundHover" }}
                     onPress={() => router.push(item.route)}
                   >
                     <item.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
-                      <Text fontWeight="bold">{item.label}</Text>
+                      <Text fontWeight="bold" color="$color">{item.label}</Text>
                       <Text color="$colorMuted" fontSize="$2">{item.description}</Text>
                     </YStack>
                     <ChevronRight size={16} color="$colorMuted" />
                   </Button>
-                  {index < settingsItems.length - 1 && <Separator />}
+                  {index < settingsItems.length - 1 && <Separator backgroundColor="$borderColor" />}
                 </YStack>
               ))}
             </YStack>
           </Card>
 
           {/* Danger Zone */}
-          <Card padding="$4" bordered borderColor="$red8">
+          <Card padding="$4" bordered borderColor="$error" backgroundColor="$background">
             <YStack gap="$3">
-              <Text fontWeight="bold" color="$red10">Danger Zone</Text>
+              <Text fontWeight="bold" color="$error">Danger Zone</Text>
               <Button
-                backgroundColor="$red10"
+                backgroundColor="$error"
+                color="$background"
                 onPress={() => {
                   // Handle close store temporarily
                 }}
