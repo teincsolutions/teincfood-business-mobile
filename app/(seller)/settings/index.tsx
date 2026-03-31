@@ -1,17 +1,22 @@
 // @ts-nocheck
-import { YStack, Text, Card, Button, XStack, Separator, Switch } from 'tamagui';
-import { Building, Clock, MapPin, CreditCard, Bell, ChevronRight, Palette } from '@tamagui/lucide-icons';
-import { ScrollView } from 'react-native';
+import { YStack, Text, Card, XStack, Separator, Switch } from 'tamagui';
+import { Building, Clock, MapPin, CreditCard, Palette, ChevronRight } from '@tamagui/lucide-icons';
+import { ScrollView, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '@/components/ui';
+import { AppAlertDialog } from '@/components/ui/AlertDialog';
 
 /**
  * Seller Settings Screen
  */
 export default function SellerSettings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isOpen, setIsOpen] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
 
   const settingsItems = [
     { icon: Building, label: 'Business Profile', description: 'Update business name, logo, description', route: '/(seller)/settings/business-profile' },
@@ -23,92 +28,132 @@ export default function SellerSettings() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <ScrollView>
-        <YStack padding="$4" gap="$4">
-          <Text fontSize="$6" fontWeight="bold">Settings</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <YStack
+          paddingHorizontal="$4"
+          paddingTop={Math.max(insets.top + 12, 24)}
+          paddingBottom={insets.bottom + 24}
+          gap="$4"
+        >
+          <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color="$color">
+            Settings
+          </Text>
 
           {/* Store Status */}
-          <Card padding="$4" bordered backgroundColor="$background">
-            <XStack justifyContent="space-between" alignItems="center">
+          <Card padding="$4" bordered>
+            <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontWeight="bold" color="$color">Store Status</Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  {isOpen ? 'Your store is open' : 'Your store is closed'}
+                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                  Store Status
+                </Text>
+                <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
+                  {isOpen ? 'Your store is open and accepting orders' : 'Your store is closed'}
                 </Text>
               </YStack>
               <Switch
+                size="$3"
                 checked={isOpen}
                 onCheckedChange={setIsOpen}
-                backgroundColor={isOpen ? '$success' : '$colorDisabled'}
+                backgroundColor={isOpen ? '#27ae60' : '$gray8'}
               >
-                <Switch.Thumb backgroundColor="$background" />
+                <Switch.Thumb animation="quick" backgroundColor="white" />
               </Switch>
             </XStack>
           </Card>
 
           {/* Notifications */}
-          <Card padding="$4" bordered backgroundColor="$background">
-            <XStack justifyContent="space-between" alignItems="center">
+          <Card padding="$4" bordered>
+            <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontWeight="bold" color="$color">Notifications</Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  Receive order alerts and updates
+                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                  Order Notifications
+                </Text>
+                <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
+                  Receive alerts for new orders and updates
                 </Text>
               </YStack>
               <Switch
+                size="$3"
                 checked={notificationsEnabled}
                 onCheckedChange={setNotificationsEnabled}
-                backgroundColor={notificationsEnabled ? '$primary' : '$colorDisabled'}
+                backgroundColor={notificationsEnabled ? '$primary' : '$gray8'}
               >
-                <Switch.Thumb backgroundColor="$background" />
+                <Switch.Thumb animation="quick" backgroundColor="white" />
               </Switch>
             </XStack>
           </Card>
 
           {/* Settings Menu */}
-          <Card padding="$4" bordered backgroundColor="$background">
-            <YStack gap="$1">
-              {settingsItems.map((item, index) => (
-                <YStack key={index}>
-                  <Button
-                    unstyled
-                    flexDirection="row"
-                    alignItems="center"
-                    gap="$3"
-                    padding="$3"
-                    pressStyle={{ backgroundColor: "$backgroundHover" }}
-                    onPress={() => router.push(item.route)}
-                  >
-                    <item.icon size={20} color="$colorMuted" />
-                    <YStack flex={1} alignItems="flex-start">
-                      <Text fontWeight="bold" color="$color">{item.label}</Text>
-                      <Text color="$colorMuted" fontSize="$2">{item.description}</Text>
+          <Card padding="$2" bordered>
+            {settingsItems.map((item, index) => (
+              <YStack key={item.route}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => router.push(item.route)}
+                  style={{ paddingHorizontal: 12, paddingVertical: 14 }}
+                >
+                  <XStack alignItems="center" gap="$3">
+                    <YStack
+                      width={40}
+                      height={40}
+                      borderRadius={10}
+                      backgroundColor="$backgroundSoft"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <item.icon size={20} color="$colorSecondary" />
                     </YStack>
-                    <ChevronRight size={16} color="$colorMuted" />
-                  </Button>
-                  {index < settingsItems.length - 1 && <Separator backgroundColor="$borderColor" />}
-                </YStack>
-              ))}
-            </YStack>
+                    <YStack flex={1}>
+                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                        {item.label}
+                      </Text>
+                      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                        {item.description}
+                      </Text>
+                    </YStack>
+                    <ChevronRight size={16} color="$colorSecondary" />
+                  </XStack>
+                </TouchableOpacity>
+                {index < settingsItems.length - 1 && (
+                  <Separator marginHorizontal="$3" />
+                )}
+              </YStack>
+            ))}
           </Card>
 
           {/* Danger Zone */}
-          <Card padding="$4" bordered borderColor="$error" backgroundColor="$background">
+          <Card padding="$4" bordered borderColor="#fca5a5">
             <YStack gap="$3">
-              <Text fontWeight="bold" color="$error">Danger Zone</Text>
+              <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="#ef4444"
+                textTransform="uppercase" letterSpacing={0.5}>
+                Danger Zone
+              </Text>
               <Button
-                backgroundColor="$error"
-                color="$background"
-                onPress={() => {
-                  // Handle close store temporarily
-                }}
+                variant="outline"
+                height={48}
+                onPress={() => setShowCloseDialog(true)}
               >
-                Close Store Temporarily
+                <Text fontFamily="$body" fontWeight="700" color="#ef4444">
+                  Close Store Temporarily
+                </Text>
               </Button>
             </YStack>
           </Card>
         </YStack>
       </ScrollView>
+
+      <AppAlertDialog
+        open={showCloseDialog}
+        onOpenChange={setShowCloseDialog}
+        title="Close Store"
+        description="This will temporarily close your store and stop accepting new orders. You can reopen at any time."
+        confirmText="CLOSE STORE"
+        isDestructive
+        onConfirm={() => {
+          setIsOpen(false);
+          setShowCloseDialog(false);
+        }}
+      />
     </YStack>
   );
 }

@@ -1,24 +1,22 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   YStack,
   XStack,
   Text,
   Card,
-  Button,
   Separator,
 } from 'tamagui';
 import {
-  ArrowLeft,
-  Palette,
   Sun,
   Moon,
   Monitor,
   Check,
 } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/providers/ThemeProvider';
+import { BackButton } from '@/components/ui';
 
 /**
  * Theme Settings Screen
@@ -26,7 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function ThemeSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedTheme, setSelectedTheme] = useState('system');
+  const { themeMode, resolvedTheme, setThemeMode } = useAppTheme();
 
   const themes = [
     {
@@ -34,205 +32,157 @@ export default function ThemeSettings() {
       icon: Sun,
       title: 'Light',
       description: 'Light theme for daytime use',
-      preview: { bg: '#FFFFFF', text: '#1A1A1A', accent: '#E91E63' },
+      iconBg: '#F5F5F5',
+      iconColor: '#F97316',
     },
     {
       id: 'dark',
       icon: Moon,
       title: 'Dark',
       description: 'Dark theme for nighttime use',
-      preview: { bg: '#1A1A1A', text: '#FFFFFF', accent: '#E91E63' },
+      iconBg: '#1A1A1A',
+      iconColor: '#F97316',
     },
     {
       id: 'system',
       icon: Monitor,
       title: 'System',
       description: 'Follow system settings',
-      preview: null,
+      iconBg: '#E5E7EB',
+      iconColor: '#6B7280',
     },
   ];
 
-  const handleThemeChange = (themeId: string) => {
-    setSelectedTheme(themeId);
-    // In a real app, you would apply the theme here
-    Alert.alert('Theme Changed', `Theme set to ${themeId}`);
-  };
+  const previewBg = themeMode === 'light' ? '#FFFFFF' : themeMode === 'dark' ? '#1A1A1A' : undefined;
+  const previewText = themeMode === 'light' ? '#1A1A1A' : themeMode === 'dark' ? '#FFFFFF' : undefined;
+  const previewSub = themeMode === 'light' ? '#6B7280' : themeMode === 'dark' ? '#9CA3AF' : undefined;
 
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
-        padding="$4"
+        paddingHorizontal="$4"
         paddingTop={Math.max(insets.top + 12, 24)}
-        justifyContent="space-between"
+        paddingBottom="$3"
+        gap="$3"
         alignItems="center"
         backgroundColor="$background"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
-          />
-          <Text fontSize="$6" fontWeight="bold">Theme</Text>
-        </XStack>
+        <BackButton />
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
+          Theme
+        </Text>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" gap="$4">
-          {/* Theme Info */}
-          <Card padding="$4" bordered backgroundColor="$purple2">
-            <XStack gap="$3" alignItems="center">
-              <Palette size={24} color="$purple10" />
-              <YStack flex={1}>
-                <Text fontWeight="bold" color="$purple10">
-                  Choose Your Theme
-                </Text>
-                <Text fontSize="$3" color="$colorMuted">
-                  Select a theme that suits your preference
-                </Text>
-              </YStack>
-            </XStack>
-          </Card>
+        <YStack paddingHorizontal="$4" paddingTop="$4" paddingBottom={insets.bottom + 24} gap="$4">
 
-          {/* Theme Options */}
+          {/* Appearance options */}
           <Card padding="$4" bordered>
-            <YStack gap="$4">
-              <Text fontWeight="bold" fontSize="$5">
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$color">
                 Appearance
               </Text>
               <Separator />
 
-              {themes.map((theme, index) => (
-                <YStack key={theme.id}>
-                  <Button
-                    unstyled
-                    padding="$3"
-                    backgroundColor={
-                      selectedTheme === theme.id ? '$primaryLight' : 'transparent'
-                    }
-                    borderWidth={2}
-                    borderColor={
-                      selectedTheme === theme.id ? '$primary' : '$borderColor'
-                    }
-                    borderRadius="$4"
-                    onPress={() => handleThemeChange(theme.id)}
-                  >
-                    <XStack gap="$3" alignItems="center">
-                      <YStack
-                        width={48}
-                        height={48}
-                        backgroundColor={
-                          theme.id === 'system'
-                            ? '$gray3'
-                            : theme.preview?.bg || '$gray3'
-                        }
-                        borderRadius="$3"
-                        alignItems="center"
-                        justifyContent="center"
-                        borderWidth={1}
-                        borderColor="$borderColor"
-                      >
-                        <theme.icon
-                          size={24}
-                          color={
-                            theme.id === 'light'
-                              ? '#1A1A1A'
-                              : theme.id === 'dark'
-                              ? '#FFFFFF'
-                              : '$colorMuted'
-                          }
-                        />
-                      </YStack>
-                      <YStack flex={1}>
-                        <Text fontWeight="bold">{theme.title}</Text>
-                        <Text color="$colorMuted" fontSize="$2">
-                          {theme.description}
-                        </Text>
-                      </YStack>
-                      {selectedTheme === theme.id && (
+              {themes.map((theme, index) => {
+                const active = themeMode === theme.id;
+                return (
+                  <YStack key={theme.id}>
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={() => setThemeMode(theme.id as any)}
+                      style={{
+                        padding: 12,
+                        borderRadius: 12,
+                        borderWidth: 2,
+                        borderColor: active ? '#F97316' : 'transparent',
+                        backgroundColor: active ? 'rgba(249,115,22,0.06)' : 'transparent',
+                      }}
+                    >
+                      <XStack gap="$3" alignItems="center">
                         <YStack
-                          width={24}
-                          height={24}
-                          borderRadius="$10"
-                          backgroundColor="$primary"
+                          width={48}
+                          height={48}
+                          borderRadius="$3"
+                          backgroundColor={theme.iconBg}
                           alignItems="center"
                           justifyContent="center"
                         >
-                          <Check size={16} color="$background" />
+                          <theme.icon size={24} color={theme.iconColor} />
                         </YStack>
-                      )}
-                    </XStack>
-                  </Button>
-                  {index < themes.length - 1 && <Separator marginTop="$2" />}
-                </YStack>
-              ))}
+                        <YStack flex={1}>
+                          <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                            {theme.title}
+                          </Text>
+                          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                            {theme.description}
+                          </Text>
+                        </YStack>
+                        {active && (
+                          <YStack
+                            width={26}
+                            height={26}
+                            borderRadius={13}
+                            backgroundColor="#F97316"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Check size={15} color="white" />
+                          </YStack>
+                        )}
+                      </XStack>
+                    </TouchableOpacity>
+                    {index < themes.length - 1 && <Separator marginVertical="$1" />}
+                  </YStack>
+                );
+              })}
             </YStack>
           </Card>
 
           {/* Preview */}
           <Card padding="$4" bordered>
-            <YStack gap="$4">
-              <Text fontWeight="bold" fontSize="$5">
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$color">
                 Preview
               </Text>
               <Separator />
-
               <YStack
                 padding="$4"
                 borderRadius="$4"
-                backgroundColor={
-                  selectedTheme === 'light'
-                    ? '#FFFFFF'
-                    : selectedTheme === 'dark'
-                    ? '#1A1A1A'
-                    : '$background'
-                }
+                backgroundColor={previewBg ?? '$background'}
                 borderWidth={1}
                 borderColor="$borderColor"
+                gap="$3"
               >
-                <YStack gap="$3">
-                  <Text
-                    fontWeight="bold"
-                    color={
-                      selectedTheme === 'light'
-                        ? '#1A1A1A'
-                        : selectedTheme === 'dark'
-                        ? '#FFFFFF'
-                        : '$color'
-                    }
-                  >
-                    Sample Heading
+                <Text
+                  fontSize="$5"
+                  fontWeight="800"
+                  fontFamily="$heading"
+                  color={previewText ?? '$color'}
+                >
+                  Sample Heading
+                </Text>
+                <Text
+                  fontSize="$3"
+                  fontFamily="$body"
+                  color={previewSub ?? '$colorSecondary'}
+                >
+                  This is how your app will look with the selected theme.
+                </Text>
+                <YStack
+                  height={44}
+                  width={120}
+                  borderRadius="$3"
+                  backgroundColor="#F97316"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text fontFamily="$body" fontWeight="700" color="white" fontSize="$3">
+                    Button
                   </Text>
-                  <Text
-                    color={
-                      selectedTheme === 'light'
-                        ? '#666666'
-                        : selectedTheme === 'dark'
-                        ? '#AAAAAA'
-                        : '$colorMuted'
-                    }
-                    fontSize="$3"
-                  >
-                    This is how your app will look with the selected theme.
-                  </Text>
-                  <Button
-                    size="$3"
-                    backgroundColor={
-                      selectedTheme === 'light' || selectedTheme === 'dark'
-                        ? '#E91E63'
-                        : '$primary'
-                    }
-                    width={120}
-                  >
-                    <Text color="$background" fontWeight="bold">
-                      Button
-                    </Text>
-                  </Button>
                 </YStack>
               </YStack>
             </YStack>

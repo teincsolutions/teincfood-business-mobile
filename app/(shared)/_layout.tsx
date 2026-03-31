@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 
 /**
  * Shared Screens Layout
- * Contains notifications, chat, and call screens accessible by both sellers and riders
+ * Contains notifications and profile screens accessible by both sellers and riders
  */
 export default function SharedLayout() {
   return (
@@ -14,9 +14,10 @@ export default function SharedLayout() {
       }}
     >
       <Stack.Screen name="notifications/index" />
-      <Stack.Screen name="chat/index" />
-      <Stack.Screen name="chat/[id]" />
-      <Stack.Screen name="call/[id]" />
+      <Stack.Screen name="profile/privacy-policy" />
+      <Stack.Screen name="profile/security" />
+      <Stack.Screen name="profile/terms" />
+      <Stack.Screen name="profile/theme" />
     </Stack>
   );
 }
