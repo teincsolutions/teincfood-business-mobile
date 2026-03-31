@@ -320,7 +320,7 @@ export default function RiderHome() {
               <Button
                 variant="outline"
                 height={48}
-                onPress={() => {}}
+                onPress={() => router.push('/(rider)/map')}
               >
                 Open Full Map
               </Button>

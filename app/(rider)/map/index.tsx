@@ -1,0 +1,265 @@
+// @ts-nocheck
+import { useState, useEffect } from 'react';
+import { TouchableOpacity } from 'react-native';
+import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
+import { MapPin, Navigation, Clock, Package, Phone, MessageCircle } from '@tamagui/lucide-icons';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/**
+ * Rider Map Screen - Full map view with delivery locations
+ */
+export default function RiderMap() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
+
+  // Mock delivery data
+  const mockDeliveries = [
+    {
+      id: '1',
+      orderId: '#ORD-001',
+      status: 'picked_up',
+      pickup: {
+        name: 'TeincFoods Restaurant',
+        address: '45 Liberation Road, Accra',
+        lat: 5.5600,
+        lng: -0.2050,
+      },
+      dropoff: {
+        name: 'John Doe',
+        address: '123 Main Street, Accra',
+        lat: 5.5650,
+        lng: -0.2100,
+      },
+      earnings: 12.50,
+      estimatedTime: '15 min',
+      customerPhone: '+233201234567',
+    },
+    {
+      id: '2',
+      orderId: '#ORD-002',
+      status: 'assigned',
+      pickup: {
+        name: 'TeincFoods Restaurant',
+        address: '45 Liberation Road, Accra',
+        lat: 5.5600,
+        lng: -0.2050,
+      },
+      dropoff: {
+        name: 'Jane Smith',
+        address: '456 Oak Avenue, Accra',
+        lat: 5.5550,
+        lng: -0.2000,
+      },
+      earnings: 15.00,
+      estimatedTime: '20 min',
+      customerPhone: '+233209876543',
+    },
+  ];
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'picked_up': return '#3498db';
+      case 'assigned': return '#FFA500';
+      case 'delivering': return '#f39c12';
+      default: return '#95a5a6';
+    }
+  };
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      {/* Map Placeholder */}
+      <YStack
+        flex={1}
+        backgroundColor="$gray3"
+        alignItems="center"
+        justifyContent="center"
+        position="relative"
+      >
+        <MapPin size={64} color="$colorMuted" />
+        <Text color="$colorMuted" marginTop="$4" fontSize="$5" fontWeight="bold">
+          Map View
+        </Text>
+        <Text color="$colorMuted" fontSize="$3">
+          Integration with maps API coming soon
+        </Text>
+
+        {/* Delivery Markers Simulation */}
+        {mockDeliveries.map((delivery, index) => (
+          <TouchableOpacity
+            key={delivery.id}
+            onPress={() => setSelectedDelivery(delivery)}
+            style={{
+              position: 'absolute',
+              top: 100 + (index * 80),
+              left: 50 + (index * 120),
+            }}
+          >
+            <YStack
+              backgroundColor={getStatusColor(delivery.status)}
+              padding="$2"
+              borderRadius="$10"
+              alignItems="center"
+            >
+              <MapPin size={24} color="white" />
+            </YStack>
+          </TouchableOpacity>
+        ))}
+      </YStack>
+
+      {/* Header */}
+      <XStack
+        position="absolute"
+        top={insets.top}
+        left={0}
+        right={0}
+        paddingHorizontal="$4"
+        paddingVertical="$3"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <TouchableOpacity onPress={() => router.back()}>
+          <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
+            <Text fontWeight="bold">← Back</Text>
+          </YStack>
+        </TouchableOpacity>
+        <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
+          <Text fontWeight="bold">Map View</Text>
+        </YStack>
+        <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
+          <Text fontWeight="bold" color="$primary">
+            {mockDeliveries.length} Active
+          </Text>
+        </YStack>
+      </XStack>
+
+      {/* Selected Delivery Card */}
+      {selectedDelivery && (
+        <YStack
+          position="absolute"
+          bottom={insets.bottom + 20}
+          left="$4"
+          right="$4"
+        >
+          <Card padding="$4" bordered backgroundColor="$background">
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$5" fontWeight="bold">{selectedDelivery.orderId}</Text>
+                <YStack
+                  backgroundColor={getStatusColor(selectedDelivery.status)}
+                  paddingHorizontal="$3"
+                  paddingVertical="$1"
+                  borderRadius="$10"
+                >
+                  <Text color="white" fontSize="$2" textTransform="capitalize">
+                    {selectedDelivery.status.replace('_', ' ')}
+                  </Text>
+                </YStack>
+              </XStack>
+
+              <Separator />
+
+              <YStack gap="$2">
+                <XStack gap="$2" alignItems="center">
+                  <MapPin size={16} color="$primary" />
+                  <YStack flex={1}>
+                    <Text fontSize="$2" color="$colorMuted">Pickup</Text>
+                    <Text fontSize="$3">{selectedDelivery.pickup.name}</Text>
+                    <Text fontSize="$2" color="$colorMuted">{selectedDelivery.pickup.address}</Text>
+                  </YStack>
+                </XStack>
+
+                <XStack gap="$2" alignItems="center">
+                  <Navigation size={16} color="#27ae60" />
+                  <YStack flex={1}>
+                    <Text fontSize="$2" color="$colorMuted">Dropoff</Text>
+                    <Text fontSize="$3">{selectedDelivery.dropoff.name}</Text>
+                    <Text fontSize="$2" color="$colorMuted">{selectedDelivery.dropoff.address}</Text>
+                  </YStack>
+                </XStack>
+              </YStack>
+
+              <XStack gap="$3" alignItems="center">
+                <Clock size={16} color="$colorMuted" />
+                <Text fontSize="$3">ETA: {selectedDelivery.estimatedTime}</Text>
+                <Text flex={1} textAlign="right" fontSize="$5" fontWeight="bold" color="#27ae60">
+                  +GHS {selectedDelivery.earnings.toFixed(2)}
+                </Text>
+              </XStack>
+
+              <Separator />
+
+              <XStack gap="$3">
+                <Button
+                  flex={1}
+                  variant="outline"
+                  icon={<Phone size={18} />}
+                  onPress={() => {}}
+                >
+                  Call
+                </Button>
+                <Button
+                  flex={1}
+                  variant="outline"
+                  icon={<MessageCircle size={18} />}
+                  onPress={() => {}}
+                >
+                  Message
+                </Button>
+                <Button
+                  flex={1}
+                  backgroundColor="$primary"
+                  onPress={() => router.push(`/(rider)/deliveries/${selectedDelivery.id}`)}
+                >
+                  Details
+                </Button>
+              </XStack>
+
+              <Button
+                variant="ghost"
+                size="$3"
+                onPress={() => setSelectedDelivery(null)}
+              >
+                Close
+              </Button>
+            </YStack>
+          </Card>
+        </YStack>
+      )}
+
+      {/* Quick Actions */}
+      {!selectedDelivery && (
+        <YStack
+          position="absolute"
+          bottom={insets.bottom + 20}
+          left="$4"
+          right="$4"
+          gap="$3"
+        >
+          <Card padding="$4" bordered backgroundColor="$background">
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">Quick Actions</Text>
+              <XStack gap="$3">
+                <Button
+                  flex={1}
+                  variant="outline"
+                  onPress={() => router.push('/(rider)/deliveries')}
+                >
+                  View All Deliveries
+                </Button>
+                <Button
+                  flex={1}
+                  backgroundColor="$primary"
+                  onPress={() => router.back()}
+                >
+                  Back to Home
+                </Button>
+              </XStack>
+            </YStack>
+          </Card>
+        </YStack>
+      )}
+    </YStack>
+  );
+}

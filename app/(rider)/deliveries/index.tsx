@@ -3,7 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { YStack, Text, Card, XStack, Separator } from 'tamagui';
 import { Truck, MapPin, Filter, ChevronRight } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui';
  */
 export default function RiderDeliveries() {
   const navigation = useNavigation();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const deliveries = [
@@ -54,7 +55,10 @@ export default function RiderDeliveries() {
           height={40}
           width="auto"
           paddingHorizontal="$3"
-          onPress={() => {}}
+          onPress={() => {
+            // Show filter options
+            alert('Filter options:\n• All Deliveries\n• Active Only\n• Completed Only\n• Today Only');
+          }}
         >
           <XStack gap="$1" alignItems="center">
             <Filter size={15} />
@@ -110,7 +114,7 @@ export default function RiderDeliveries() {
                     height={36}
                     width="auto"
                     paddingHorizontal="$3"
-                    onPress={() => {}}
+                    onPress={() => router.push(`/(rider)/deliveries/${delivery.id}`)}
                   >
                     <XStack gap="$1" alignItems="center">
                       <Text fontSize="$3" fontFamily="$body" fontWeight="600" color="$primary">

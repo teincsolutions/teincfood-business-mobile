@@ -1,15 +1,8 @@
 // @ts-nocheck
-import { ScrollView } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
+import { YStack, XStack, Text, Card, Separator } from 'tamagui';
+import { Shield, Eye, Lock, Database, Share2, Bell, Settings, Mail } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Button,
-  Separator,
-} from 'tamagui';
-import { ArrowLeft, Shield } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -19,161 +12,36 @@ export default function PrivacyPolicy() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const lastUpdated = 'March 1, 2026';
-
-  const sections = [
-    {
-      title: '1. Information We Collect',
-      content: `We collect information you provide directly to us, such as when you create an account, place an order, or contact us for support.
-
-Personal Information:
-• Name, email address, phone number
-• Delivery address
-• Payment information
-• Profile photo (optional)
-
-Usage Information:
-• Order history and preferences
-• Device information and identifiers
-• Log data and analytics
-• Location data (with your permission)`,
-    },
-    {
-      title: '2. How We Use Your Information',
-      content: `We use the information we collect to:
-
-• Provide, maintain, and improve our services
-• Process transactions and send related information
-• Send technical notices and support messages
-• Respond to your comments and questions
-• Personalize your experience
-• Detect, investigate, and prevent fraudulent transactions
-• Comply with legal obligations`,
-    },
-    {
-      title: '3. Information Sharing',
-      content: `We may share your information in the following circumstances:
-
-With Sellers: When you place an order, we share necessary information with the seller to fulfill your order.
-
-With Delivery Partners: To facilitate delivery, we share your delivery address and contact information.
-
-With Service Providers: We work with third-party service providers who help us operate our platform.
-
-For Legal Reasons: We may disclose information if required by law or to protect our rights.`,
-    },
-    {
-      title: '4. Data Security',
-      content: `We implement appropriate security measures to protect your personal information:
-
-• Encryption of sensitive data in transit and at rest
-• Secure payment processing
-• Regular security assessments
-• Access controls and authentication
-• Employee training on data protection
-
-However, no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute security.`,
-    },
-    {
-      title: '5. Your Privacy Rights',
-      content: `You have the right to:
-
-• Access your personal information
-• Correct inaccurate or incomplete data
-• Delete your account and data
-• Opt-out of marketing communications
-• Control location sharing
-• Request data portability
-
-To exercise these rights, contact us at privacy@teincfoods.com.`,
-    },
-    {
-      title: '6. Data Retention',
-      content: `We retain your information for as long as your account is active or as needed to provide services.
-
-We may retain certain information after account deletion for:
-• Legal compliance
-• Fraud prevention
-• Dispute resolution
-• Enforcing our agreements
-
-You can request deletion of your data at any time.`,
-    },
-    {
-      title: '7. Children\'s Privacy',
-      content: `Our services are not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
-
-If we learn we have collected personal information from a child under 13, we will delete that information immediately.`,
-    },
-    {
-      title: '8. Cookies and Tracking',
-      content: `We use cookies and similar technologies to:
-
-• Remember your preferences
-• Understand how you use our services
-• Personalize content and advertisements
-• Analyze trends and statistics
-
-You can control cookies through your device settings.`,
-    },
-    {
-      title: '9. Third-Party Services',
-      content: `Our platform may contain links to third-party services. We are not responsible for the privacy practices of these services.
-
-We encourage you to read the privacy policies of any third-party services you visit.`,
-    },
-    {
-      title: '10. Changes to This Policy',
-      content: `We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date.
-
-Your continued use of our services after any changes constitutes acceptance of the updated policy.`,
-    },
-    {
-      title: '11. Contact Us',
-      content: `If you have any questions about this Privacy Policy, please contact us:
-
-Email: privacy@teincfoods.com
-Phone: +233 XX XXX XXXX
-Address: Accra, Ghana
-
-Data Protection Officer: dpo@teincfoods.com`,
-    },
-  ];
-
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
-        padding="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
+        paddingHorizontal="$4"
+        paddingTop={insets.top + 12}
+        paddingBottom="$3"
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
       >
-        <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
-          />
-          <Text fontSize="$6" fontWeight="bold">Privacy Policy</Text>
-        </XStack>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text fontSize="$4" color="$primary">← Back</Text>
+        </TouchableOpacity>
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+          Privacy Policy
+        </Text>
+        <YStack width={50} />
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" gap="$4">
-          {/* Header Info */}
-          <Card padding="$4" bordered backgroundColor="$green2">
+        <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
+          {/* Last Updated */}
+          <Card padding="$4" bordered backgroundColor="$blue2">
             <XStack gap="$3" alignItems="center">
-              <Shield size={24} color="$green10" />
+              <Shield size={24} color="$primary" />
               <YStack flex={1}>
-                <Text fontWeight="bold" color="$green10">Privacy Policy</Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  Last Updated: {lastUpdated}
+                <Text fontSize="$5" fontWeight="bold">Privacy Policy</Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Last updated: March 31, 2026
                 </Text>
               </YStack>
             </XStack>
@@ -181,35 +49,274 @@ Data Protection Officer: dpo@teincfoods.com`,
 
           {/* Introduction */}
           <Card padding="$4" bordered>
-            <Text fontSize="$3" color="$colorMuted" lineHeight="$1">
-              At TeincFoodBusiness, we take your privacy seriously. This Privacy Policy 
-              explains how we collect, use, disclose, and safeguard your information when 
-              you use our mobile application and services.
-            </Text>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">Introduction</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                At TeincFoodBusiness, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and services.
+              </Text>
+            </YStack>
           </Card>
 
-          {/* Sections */}
-          {sections.map((section, index) => (
-            <Card key={index} padding="$4" bordered>
-              <YStack gap="$3">
-                <Text fontWeight="bold" fontSize="$5">
-                  {section.title}
+          {/* Information We Collect */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Database size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">Information We Collect</Text>
+              </XStack>
+              <Separator />
+              <YStack gap="$2">
+                <Text fontWeight="bold">Personal Information</Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Name, email address, and phone number
                 </Text>
-                <Separator />
-                <Text fontSize="$3" lineHeight="$1" color="$color">
-                  {section.content}
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Delivery address and location data
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Payment information (processed securely by third-party providers)
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Profile photo and identification documents
                 </Text>
               </YStack>
-            </Card>
-          ))}
+              <YStack gap="$2" marginTop="$2">
+                <Text fontWeight="bold">Usage Information</Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Device information (model, operating system, unique identifiers)
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Log data (IP address, access times, app features used)
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Location information (with your permission)
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
 
-          {/* Footer */}
-          <Card padding="$4" bordered backgroundColor="$gray1">
-            <YStack alignItems="center" gap="$2">
-              <Text fontWeight="bold">TeincFoodBusiness</Text>
-              <Text fontSize="$2" color="$colorMuted">
-                © 2026 TeincFoodBusiness. All rights reserved.
+          {/* How We Use Your Information */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Settings size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">How We Use Your Information</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We use the information we collect to:
               </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Process and fulfill your orders
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Provide customer support and respond to inquiries
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Send you order updates and delivery notifications
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Improve our services and develop new features
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Detect and prevent fraud or unauthorized access
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Comply with legal obligations
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
+
+          {/* Information Sharing */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Share2 size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">Information Sharing</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We may share your information with:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Restaurants and vendors to fulfill your orders
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Delivery riders to complete deliveries
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Payment processors to handle transactions
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Service providers who assist our operations
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Law enforcement when required by law
+                </Text>
+              </YStack>
+              <Text color="$colorMuted" marginTop="$2">
+                We do not sell your personal information to third parties.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Location Data */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">Location Data</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We collect location data to:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Show nearby restaurants and delivery options
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Track your order delivery in real-time
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Optimize delivery routes for riders
+                </Text>
+              </YStack>
+              <Text color="$colorMuted" marginTop="$2">
+                You can control location permissions through your device settings. Note that disabling location services may limit some features.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Data Security */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Lock size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">Data Security</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We implement appropriate security measures to protect your information, including:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Encryption of data in transit and at rest
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Secure authentication and access controls
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Regular security audits and updates
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Employee training on data protection
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
+
+          {/* Your Rights */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Eye size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">Your Rights</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                You have the right to:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Access and receive a copy of your data
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Correct inaccurate or incomplete information
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Request deletion of your personal data
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Opt-out of marketing communications
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Withdraw consent for data processing
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
+
+          {/* Notifications */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Bell size={20} color="$colorMuted" />
+                <Text fontSize="$5" fontWeight="bold">Communications</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We may send you:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Order confirmations and delivery updates
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Account-related notifications
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Promotional offers (with your consent)
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Service announcements
+                </Text>
+              </YStack>
+              <Text color="$colorMuted" marginTop="$2">
+                You can manage notification preferences in your account settings.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Children's Privacy */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">Children's Privacy</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                Our services are not intended for individuals under the age of 18. We do not knowingly collect personal information from children. If you believe we have inadvertently collected information from a child, please contact us immediately.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Changes to Policy */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">Changes to This Policy</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last updated" date. We encourage you to review this policy periodically.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Contact Information */}
+          <Card padding="$4" bordered backgroundColor="$gray2">
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Mail size={20} color="$primary" />
+                <Text fontSize="$5" fontWeight="bold">Contact Us</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                If you have questions or concerns about this Privacy Policy, please contact us:
+              </Text>
+              <YStack gap="$1">
+                <Text fontWeight="bold">Email: privacy@teincfoods.com</Text>
+                <Text fontWeight="bold">Phone: +233 XX XXX XXXX</Text>
+                <Text fontWeight="bold">Address: Accra, Ghana</Text>
+              </YStack>
             </YStack>
           </Card>
         </YStack>

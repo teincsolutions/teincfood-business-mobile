@@ -1,15 +1,8 @@
 // @ts-nocheck
-import { ScrollView } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
+import { YStack, XStack, Text, Card, Separator } from 'tamagui';
+import { FileText, Scale, Shield, AlertTriangle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Button,
-  Separator,
-} from 'tamagui';
-import { ArrowLeft, FileText } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -19,136 +12,36 @@ export default function TermsOfService() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const lastUpdated = 'March 1, 2026';
-
-  const sections = [
-    {
-      title: '1. Acceptance of Terms',
-      content: `By accessing and using TeincFoodBusiness ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.
-
-These Terms of Service ("Terms") govern your access to and use of our mobile application, website, and services. By using our Service, you agree to these Terms and our Privacy Policy.`,
-    },
-    {
-      title: '2. Description of Service',
-      content: `TeincFoodBusiness provides an online platform that connects food sellers with customers for the purpose of ordering and delivering food items. Our services include:
-
-• Order management and processing
-• Payment processing
-• Delivery coordination
-• Customer support
-• Analytics and reporting for sellers`,
-    },
-    {
-      title: '3. User Accounts',
-      content: `To use certain features of the Service, you must register for an account. You agree to:
-
-• Provide accurate, current, and complete information during registration
-• Maintain and update your information to keep it accurate and current
-• Maintain the security of your password and account
-• Accept responsibility for all activities under your account
-• Notify us immediately of any unauthorized use of your account`,
-    },
-    {
-      title: '4. Seller Obligations',
-      content: `If you are a food seller using our platform, you agree to:
-
-• Comply with all applicable food safety regulations and laws
-• Maintain necessary licenses and permits for food handling
-• Provide accurate descriptions and images of food items
-• Honor prices and availability as listed
-• Prepare food in a hygienic environment
-• Meet delivery time estimates when possible`,
-    },
-    {
-      title: '5. Customer Obligations',
-      content: `As a customer, you agree to:
-
-• Provide accurate delivery information
-• Pay for orders placed through the Service
-• Be available to receive deliveries or provide safe drop-off instructions
-• Treat delivery personnel with respect
-• Report any issues with orders in a timely manner`,
-    },
-    {
-      title: '6. Payments and Fees',
-      content: `Payment terms include:
-
-• All prices are listed in Ghana Cedis (GHS) unless otherwise stated
-• Payment is required at the time of order placement
-• We accept mobile money, card payments, and cash on delivery
-• Service fees and delivery charges are clearly displayed before order confirmation
-• Refunds are processed according to our refund policy`,
-    },
-    {
-      title: '7. Prohibited Activities',
-      content: `You agree not to:
-
-• Use the Service for any illegal purpose
-• Violate any laws in your jurisdiction
-• Infringe upon the rights of others
-• Interfere with or disrupt the Service
-• Attempt to gain unauthorized access to any part of the Service
-• Use the Service to transmit harmful content`,
-    },
-    {
-      title: '8. Limitation of Liability',
-      content: `TeincFoodBusiness shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from:
-
-• Your use or inability to use the Service
-• Any unauthorized access to or use of our servers
-• Any interruption or cessation of transmission to or from the Service
-• Any bugs, viruses, or other harmful code that may be transmitted through the Service`,
-    },
-    {
-      title: '9. Changes to Terms',
-      content: `We reserve the right to modify these Terms at any time. We will notify users of any material changes by posting the new Terms on this page and updating the "Last Updated" date.
-
-Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.`,
-    },
-    {
-      title: '10. Contact Information',
-      content: `If you have any questions about these Terms, please contact us:
-
-Email: legal@teincfoods.com
-Phone: +233 XX XXX XXXX
-Address: Accra, Ghana`,
-    },
-  ];
-
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
-        padding="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
+        paddingHorizontal="$4"
+        paddingTop={insets.top + 12}
+        paddingBottom="$3"
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
       >
-        <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
-          />
-          <Text fontSize="$6" fontWeight="bold">Terms of Service</Text>
-        </XStack>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text fontSize="$4" color="$primary">← Back</Text>
+        </TouchableOpacity>
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+          Terms of Service
+        </Text>
+        <YStack width={50} />
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" gap="$4">
-          {/* Header Info */}
-          <Card padding="$4" bordered>
+        <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
+          {/* Last Updated */}
+          <Card padding="$4" bordered backgroundColor="$blue2">
             <XStack gap="$3" alignItems="center">
               <FileText size={24} color="$primary" />
               <YStack flex={1}>
-                <Text fontWeight="bold">Terms of Service</Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  Last Updated: {lastUpdated}
+                <Text fontSize="$5" fontWeight="bold">Terms of Service</Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Last updated: March 31, 2026
                 </Text>
               </YStack>
             </XStack>
@@ -156,34 +49,178 @@ Address: Accra, Ghana`,
 
           {/* Introduction */}
           <Card padding="$4" bordered>
-            <Text fontSize="$3" color="$colorMuted" lineHeight="$1">
-              Welcome to TeincFoodBusiness. These Terms of Service govern your use of our
-              platform and services. Please read these terms carefully before using our Service.
-            </Text>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">1. Introduction</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                Welcome to TeincFoodBusiness ("we," "our," or "us"). These Terms of Service ("Terms") govern your use of our mobile application and services. By accessing or using our platform, you agree to be bound by these Terms.
+              </Text>
+            </YStack>
           </Card>
 
-          {/* Sections */}
-          {sections.map((section, index) => (
-            <Card key={index} padding="$4" bordered>
-              <YStack gap="$3">
-                <Text fontWeight="bold" fontSize="$5">
-                  {section.title}
+          {/* Definitions */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">2. Definitions</Text>
+              <Separator />
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • "Platform" refers to the TeincFoodBusiness mobile application and related services.
                 </Text>
-                <Separator />
-                <Text fontSize="$3" lineHeight="$1" color="$color">
-                  {section.content}
+                <Text color="$colorMuted" lineHeight="$1">
+                  • "User" refers to any individual who accesses or uses our Platform.
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • "Rider" refers to delivery personnel who fulfill orders through our Platform.
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • "Seller" refers to restaurants or food vendors who list their products on our Platform.
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • "Customer" refers to individuals who place orders through our Platform.
                 </Text>
               </YStack>
-            </Card>
-          ))}
+            </YStack>
+          </Card>
 
-          {/* Footer */}
-          <Card padding="$4" bordered backgroundColor="$gray1">
-            <YStack alignItems="center" gap="$2">
-              <Text fontWeight="bold">TeincFoodBusiness</Text>
-              <Text fontSize="$2" color="$colorMuted">
-                © 2026 TeincFoodBusiness. All rights reserved.
+          {/* Account Registration */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">3. Account Registration</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                To use certain features of our Platform, you must register for an account. You agree to:
               </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Provide accurate, current, and complete information
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Maintain and update your information as needed
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Keep your password secure and confidential
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Accept responsibility for all activities under your account
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
+
+          {/* User Conduct */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">4. User Conduct</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                You agree not to:
+              </Text>
+              <YStack gap="$2">
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Use the Platform for any unlawful purpose
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Harass, abuse, or harm other users
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Impersonate any person or entity
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Interfere with the proper functioning of the Platform
+                </Text>
+                <Text color="$colorMuted" lineHeight="$1">
+                  • Attempt to gain unauthorized access to any part of the Platform
+                </Text>
+              </YStack>
+            </YStack>
+          </Card>
+
+          {/* Payments */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">5. Payments and Fees</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                By making a purchase through our Platform, you agree to pay all charges associated with your order. We use secure third-party payment processors to handle transactions. All prices are displayed in Ghana Cedis (GHS) unless otherwise stated.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Delivery */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">6. Delivery Services</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                Delivery times are estimates and may vary based on various factors including weather, traffic, and restaurant preparation times. We are not liable for delays beyond our reasonable control. Risk of loss transfers to you upon delivery.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Intellectual Property */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">7. Intellectual Property</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                All content on our Platform, including text, graphics, logos, and software, is the property of TeincFoodBusiness or its licensors and is protected by intellectual property laws. You may not use, reproduce, or distribute any content without our permission.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Limitation of Liability */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <AlertTriangle size={20} color="$orange10" />
+                <Text fontSize="$5" fontWeight="bold">8. Limitation of Liability</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                TO THE MAXIMUM EXTENT PERMITTED BY LAW, TEINCFOOD BUSINESS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Termination */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">9. Termination</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We may terminate or suspend your account and access to the Platform at our sole discretion, without prior notice, for conduct that we believe violates these Terms or is harmful to us, other users, or third parties.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Changes to Terms */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <Text fontSize="$5" fontWeight="bold">10. Changes to Terms</Text>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                We reserve the right to modify these Terms at any time. We will notify you of material changes by posting the new Terms on the Platform and updating the "Last updated" date. Your continued use of the Platform after such changes constitutes your acceptance of the new Terms.
+              </Text>
+            </YStack>
+          </Card>
+
+          {/* Contact Information */}
+          <Card padding="$4" bordered backgroundColor="$gray2">
+            <YStack gap="$3">
+              <XStack gap="$2" alignItems="center">
+                <Scale size={20} color="$primary" />
+                <Text fontSize="$5" fontWeight="bold">Contact Us</Text>
+              </XStack>
+              <Separator />
+              <Text color="$colorMuted" lineHeight="$1">
+                If you have any questions about these Terms, please contact us at:
+              </Text>
+              <YStack gap="$1">
+                <Text fontWeight="bold">Email: legal@teincfoods.com</Text>
+                <Text fontWeight="bold">Phone: +233 XX XXX XXXX</Text>
+                <Text fontWeight="bold">Address: Accra, Ghana</Text>
+              </YStack>
             </YStack>
           </Card>
         </YStack>
