@@ -25,6 +25,7 @@ import {
   VolumeX,
   RefreshCw,
   Utensils,
+  LogOut,
 } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
 import * as Haptics from 'expo-haptics';
@@ -446,15 +447,13 @@ export default function KioskMode() {
 
         {/* Exit Kiosk Mode */}
         <YStack padding="$4" paddingBottom="$8">
-          <Button
-            size="$5"
-            backgroundColor="$backgroundSoft"
-            color="$color"
-            borderColor="$borderColor"
-            borderWidth={1}
-            onPress={() => router.back()}
-          >
-            Exit Kiosk Mode
+          <Button variant="outline" onPress={() => router.back()}>
+            <XStack gap="$2" alignItems="center">
+              <LogOut size={18} />
+              <Text fontFamily="$body" fontWeight="700" color="$color">
+                Exit Kiosk Mode
+              </Text>
+            </XStack>
           </Button>
         </YStack>
       </ScrollView>
