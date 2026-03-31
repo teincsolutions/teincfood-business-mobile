@@ -106,6 +106,23 @@ export const MOCK_ACTIVE_ORDERS: KioskOrder[] = [
   },
 ];
 
+// ─── Seller Orders Data ───
+export interface SellerOrder {
+  id: string;
+  orderNumber: string;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered';
+  items: number;
+  total: number;
+  customer: string;
+}
+
+export const MOCK_SELLER_ORDERS: SellerOrder[] = [
+  { id: '1', orderNumber: '#ORD-001', status: 'pending', items: 3, total: 85.00, customer: 'John Doe' },
+  { id: '2', orderNumber: '#ORD-002', status: 'preparing', items: 2, total: 65.00, customer: 'Jane Smith' },
+  { id: '3', orderNumber: '#ORD-003', status: 'ready', items: 4, total: 120.00, customer: 'Kwame Asante' },
+  { id: '4', orderNumber: '#ORD-004', status: 'delivered', items: 1, total: 35.00, customer: 'Abena Mensah' },
+];
+
 // ─── Helper Functions ───
 export function getAddonById(id: string): FoodAddon | undefined {
   return MOCK_ADDONS.find(addon => addon.id === id);

@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { Input } from '@/components/ui';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
+import { CategoryPill } from '@/components/home/CategoryPill';
 
 const CATEGORIES = ['All', 'Main', 'Snacks', 'Protein', 'Drinks', 'Desserts'];
 
@@ -287,7 +288,6 @@ export default function SellerMenu() {
       {/* Header */}
       <XStack
         paddingHorizontal="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
         paddingBottom="$3"
         justifyContent="space-between"
         alignItems="center"
@@ -319,28 +319,12 @@ export default function SellerMenu() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12, gap: 8, flexDirection: 'row' }}
       >
         {CATEGORIES.map((cat) => (
-          <TouchableOpacity
+          <CategoryPill
             key={cat}
+            label={cat}
+            isActive={activeCategory === cat}
             onPress={() => setActiveCategory(cat)}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: activeCategory === cat ? theme.primary?.val || '#F97316' : theme.borderColor?.val || '#e5e7eb',
-              backgroundColor: activeCategory === cat ? (theme.primary?.val || '#F97316') : 'transparent',
-              marginRight: 8,
-            }}
-          >
-            <Text
-              fontFamily="$body"
-              fontWeight="600"
-              fontSize="$3"
-              color={activeCategory === cat ? 'white' : '$colorSecondary'}
-            >
-              {cat}
-            </Text>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
 
