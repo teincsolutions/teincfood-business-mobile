@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { forwardRef, useState, useEffect } from 'react';
-import { Form, Input as TamaguiInput, YStack, XStack, Text, styled, GetProps, Label } from 'tamagui';
+import { Input as TamaguiInput, YStack, XStack, Text, styled, GetProps, Label } from 'tamagui';
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 import { Pressable } from 'react-native';
 
@@ -75,49 +75,47 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
     return (
       <YStack w="100%" gap="$2">
         {label && (
-          <Form.Field name={name || label.toLowerCase().replace(/\s+/g, '-')}>
-            <Label
-              fontSize="$3" 
-              fontWeight="600" 
-              color={localError ? '$error' : '$colorSecondary'} 
-              fontFamily="$body" 
-              textTransform="uppercase"
-              letterSpacing={0.5}
-            >
-              {label}
-              {required && <Text color="$error"> *</Text>}
-            </Label>
-          </Form.Field>
+          <Label
+            fontSize="$3"
+            fontWeight="600"
+            color={localError ? '$error' : '$colorSecondary'}
+            fontFamily="$body"
+            textTransform="uppercase"
+            letterSpacing={0.5}
+            htmlFor={name || label.toLowerCase().replace(/\s+/g, '-')}
+          >
+            {label}
+            {required && <Text color="$error"> *</Text>}
+          </Label>
         )}
         
         <XStack w="100%" ai="center">
-          <Form.Field name={name || label?.toLowerCase().replace(/\s+/g, '-')}>
-            <Form.Input
-              ref={ref}
-              flex={1}
-              secureTextEntry={secure}
-              paddingRight={isPassword ? '$10' : '$4'}
-              placeholder={placeholder}
-              value={value}
-              onChangeText={(text: string) => {
-                onChangeText?.(text);
-                setLocalError(undefined);
-              }}
-              keyboardType={keyboardType}
-              autoCapitalize={autoCapitalize}
-              autoCorrect={autoCorrect}
-              disabled={disabled}
-              onSubmitEditing={onSubmitEditing}
-              returnKeyType={returnKeyType}
-              blurOnSubmit={blurOnSubmit}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              borderColor={localError ? '$error' : isFocused ? '$primary' : '$borderColor'}
-              borderWidth={localError ? 1 : isFocused ? 1 : 0}
-              backgroundColor={isFocused ? '$background' : '$backgroundSoft'}
-              {...props}
-            />
-          </Form.Field>
+          <BaseInput
+            ref={ref}
+            id={name || label?.toLowerCase().replace(/\s+/g, '-')}
+            flex={1}
+            secureTextEntry={secure}
+            paddingRight={isPassword ? '$10' : '$4'}
+            placeholder={placeholder}
+            value={value}
+            onChangeText={(text: string) => {
+              onChangeText?.(text);
+              setLocalError(undefined);
+            }}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            autoCorrect={autoCorrect}
+            disabled={disabled}
+            onSubmitEditing={onSubmitEditing}
+            returnKeyType={returnKeyType}
+            blurOnSubmit={blurOnSubmit}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            borderColor={localError ? '$error' : isFocused ? '$primary' : '$borderColor'}
+            borderWidth={localError ? 1 : isFocused ? 1 : 0}
+            backgroundColor={isFocused ? '$background' : '$backgroundSoft'}
+            {...props}
+          />
 
           {isPassword && (
             <XStack
