@@ -3,6 +3,7 @@ import { Input } from './Input';
 import { BackButton } from './BackButton';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
 import { AppAlertDialog } from './AlertDialog';
+import { Badge } from './Badge';
 
 export { 
   Button, 
@@ -12,5 +13,6 @@ export {
   FoodCardSkeleton, 
   RestaurantCardSkeleton,
   OrderCardSkeleton,
-  AppAlertDialog
+  AppAlertDialog,
+  Badge
 };

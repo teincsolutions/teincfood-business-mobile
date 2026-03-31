@@ -10,9 +10,9 @@ import {
   Button,
   Separator,
   Switch,
-  Badge,
   Avatar,
 } from 'tamagui';
+import { Badge } from '@/components/ui/Badge';
 import {
   ShoppingBag,
   Clock,

@@ -152,25 +152,31 @@ export default function SellerDashboard() {
             <XStack gap="$3">
               <Button
                 flex={1}
-                icon={<Clock size={18} />}
                 onPress={() => router.push('/(seller)/orders/pending')}
               >
-                <Text>Pending ({metrics.pendingOrders})</Text>
+                <XStack gap="$2" alignItems="center">
+                  <Clock size={18} color="white" />
+                  <Text color="white" fontFamily="$body" fontWeight="bold">Pending ({metrics.pendingOrders})</Text>
+                </XStack>
               </Button>
               <Button
                 flex={1}
-                icon={<Package size={18} />}
                 onPress={() => router.push('/(seller)/orders/active')}
               >
-                <Text>Active ({metrics.activeOrders})</Text>
+                <XStack gap="$2" alignItems="center">
+                  <Package size={18} color="white" />
+                  <Text color="white" fontFamily="$body" fontWeight="bold">Active ({metrics.activeOrders})</Text>
+                </XStack>
               </Button>
             </XStack>
             <Button
-              theme="alt1"
-              icon={<TrendingUp size={18} />}
+              variant="outline"
               onPress={() => router.push('/(seller)/analytics')}
             >
-              View Analytics
+              <XStack gap="$2" alignItems="center">
+                <TrendingUp size={18} color="$color" />
+                <Text fontFamily="$body" fontWeight="bold">View Analytics</Text>
+              </XStack>
             </Button>
           </YStack>
         </Card>
@@ -181,8 +187,9 @@ export default function SellerDashboard() {
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">Recent Orders</Text>
               <Button
-                size="$3"
-                variant="outlined"
+                variant="outline"
+                height={36}
+                paddingHorizontal="$3"
                 onPress={() => router.push('/(seller)/orders')}
               >
                 View All
@@ -229,7 +236,6 @@ export default function SellerDashboard() {
                 You have {metrics.activeOrders} orders being delivered
               </Text>
               <Button
-                size="$3"
                 onPress={() => router.push('/(seller)/orders/active')}
               >
                 Track Orders
