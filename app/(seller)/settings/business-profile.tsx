@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState } from "react";
-import { ScrollView, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
@@ -11,9 +11,9 @@ import {
   TextArea,
   Separator,
   Avatar,
-   Button as TamaguiButton,
+  Form,
 } from "tamagui";
-import { ArrowLeft, Camera, Save, Building } from "@tamagui/lucide-icons";
+import { ArrowLeft, Camera, Save, Building, AlertCircle, CheckCircle } from "@tamagui/lucide-icons";
 import { Button, FormInput } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,17 +37,44 @@ export default function BusinessProfileSettings() {
   const [businessPhone, setBusinessPhone] = useState(user?.phone || "");
   const [businessEmail, setBusinessEmail] = useState(user?.email || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [logoUri, setLogoUri] = useState<string | undefined>(
     user?.businessLogoUrl,
   );
+  const [logoPermissionError, setLogoPermissionError] = useState<string | undefined>();
+  const [errors, setErrors] = useState<{
+    businessName?: string;
+    businessEmail?: string;
+    businessPhone?: string;
+  }>({});
+
+  useEffect(() => {
+    if (saveStatus === 'idle') return;
+    const timer = setTimeout(() => {
+      setSaveStatus('idle');
+      if (saveStatus === 'success') router.back();
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [saveStatus]);
+
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PHONE_REGEX = /^\+?[\d\s\-()]{7,15}$/;
+
+  const validate = () => {
+    const next: typeof errors = {};
+    if (!businessName.trim()) next.businessName = 'Business name is required';
+    if (businessEmail.trim() && !EMAIL_REGEX.test(businessEmail.trim()))
+      next.businessEmail = 'Enter a valid email address';
+    if (businessPhone.trim() && !PHONE_REGEX.test(businessPhone.trim()))
+      next.businessPhone = 'Enter a valid phone number';
+    return next;
+  };
 
   const handleChangeLogo = async () => {
+    setLogoPermissionError(undefined);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Please allow access to your photo library to change your business logo.",
-      );
+      setLogoPermissionError('Photo library access is required to change your logo');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -62,16 +89,15 @@ export default function BusinessProfileSettings() {
   };
 
   const handleSave = async () => {
-    if (!businessName.trim()) {
-      Alert.alert("Error", "Business name is required");
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
       return;
     }
-
+    setErrors({});
     setIsSaving(true);
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       updateUser({
         businessName: businessName.trim(),
         businessDescription: businessDescription.trim(),
@@ -80,12 +106,9 @@ export default function BusinessProfileSettings() {
         email: businessEmail.trim(),
         ...(logoUri ? { businessLogoUrl: logoUri } : {}),
       });
-
-      Alert.alert("Success", "Business profile updated successfully", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (error) {
-      Alert.alert("Error", "Failed to update business profile");
+      setSaveStatus('success');
+    } catch {
+      setSaveStatus('error');
     } finally {
       setIsSaving(false);
     }
@@ -94,6 +117,7 @@ export default function BusinessProfileSettings() {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}
+      <Form onSubmit={handleSave}>
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 24)}
@@ -104,31 +128,54 @@ export default function BusinessProfileSettings() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <TamaguiButton
-            width={40}
-            height={40}
+          <Button
+            variant="outline"
+            width={44}
+            height={44}
             circular
-            backgroundColor="$backgroundSoft"
             onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
+            icon={<ArrowLeft size={20} />}
           />
           <Text fontSize="$6" fontWeight="bold">
             Business Profile
           </Text>
         </XStack>
-        <Button
-          variant="primary"
-          width="auto"
-          height={40}
-          paddingHorizontal="$4"
-          loading={isSaving}
-          onPress={handleSave}
-          icon={<Save size={18} color="white" />}
-        >
-          Save
-        </Button>
+        <Form.Trigger asChild>
+          <Button
+            variant="primary"
+            width="auto"
+            height={40}
+            paddingHorizontal="$4"
+            loading={isSaving}
+            icon={<Save size={18} color="white" />}
+          >
+            Save
+          </Button>
+        </Form.Trigger>
       </XStack>
+      </Form>
 
+      {/* Status banner */}
+      {saveStatus !== 'idle' && (
+        <XStack
+          backgroundColor={saveStatus === 'success' ? '$green2' : '$red2'}
+          paddingHorizontal="$4"
+          paddingVertical="$3"
+          gap="$2"
+          alignItems="center"
+        >
+          {saveStatus === 'success'
+            ? <CheckCircle size={16} color="$green10" />
+            : <AlertCircle size={16} color="$red10" />}
+          <Text color={saveStatus === 'success' ? '$green10' : '$red10'} fontSize="$3">
+            {saveStatus === 'success'
+              ? 'Business profile updated successfully'
+              : 'Failed to update business profile. Please try again.'}
+          </Text>
+        </XStack>
+      )}
+
+      <Form onSubmit={handleSave}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4">
           {/* Business Logo */}
@@ -155,6 +202,12 @@ export default function BusinessProfileSettings() {
               >
                 Change Logo
               </Button>
+              {logoPermissionError && (
+                <XStack gap="$1" alignItems="center">
+                  <AlertCircle size={14} color="$red10" />
+                  <Text color="$red10" fontSize="$2">{logoPermissionError}</Text>
+                </XStack>
+              )}
             </YStack>
           </Card>
 
@@ -170,7 +223,8 @@ export default function BusinessProfileSettings() {
                 label="Business Name"
                 placeholder="Enter your business name"
                 value={businessName}
-                onChangeText={setBusinessName}
+                onChangeText={(t) => { setBusinessName(t); setErrors((e) => ({ ...e, businessName: undefined })); }}
+                error={errors.businessName}
                 required
               />
 
@@ -215,7 +269,8 @@ export default function BusinessProfileSettings() {
                 label="Phone Number"
                 placeholder="+233 XX XXX XXXX"
                 value={businessPhone}
-                onChangeText={setBusinessPhone}
+                onChangeText={(t) => { setBusinessPhone(t); setErrors((e) => ({ ...e, businessPhone: undefined })); }}
+                error={errors.businessPhone}
                 keyboardType="phone-pad"
               />
 
@@ -223,7 +278,8 @@ export default function BusinessProfileSettings() {
                 label="Email Address"
                 placeholder="business@example.com"
                 value={businessEmail}
-                onChangeText={setBusinessEmail}
+                onChangeText={(t) => { setBusinessEmail(t); setErrors((e) => ({ ...e, businessEmail: undefined })); }}
+                error={errors.businessEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -231,11 +287,14 @@ export default function BusinessProfileSettings() {
           </Card>
 
           {/* Save Button */}
-          <Button variant="primary" loading={isSaving} onPress={handleSave}>
-            Save Changes
-          </Button>
+          <Form.Trigger asChild>
+            <Button variant="primary" loading={isSaving}>
+              Save Changes
+            </Button>
+          </Form.Trigger>
         </YStack>
       </ScrollView>
+      </Form>
     </YStack>
   );
 }
