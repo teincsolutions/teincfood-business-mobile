@@ -8,13 +8,12 @@ import {
   Text,
   Card,
   Button as TamaguiButton,
-  Input,
   Switch,
   Separator,
   Slider,
 } from 'tamagui';
 import { ArrowLeft, Save, MapPin, Truck, DollarSign } from '@tamagui/lucide-icons';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -51,6 +50,7 @@ export default function DeliverySettings() {
       {/* Header */}
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"

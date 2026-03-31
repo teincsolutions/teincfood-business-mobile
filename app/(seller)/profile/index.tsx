@@ -115,18 +115,6 @@ export default function SellerProfile() {
             </YStack>
           </Card>
 
-          {/* Logout */}
-          <Card padding="$4" bordered backgroundColor="$background">
-            <Button
-              backgroundColor="$error"
-              color="$background"
-              onPress={handleLogout}
-              icon={<LogOut size={18} color="$background" />}
-            >
-              <Text color="$background" fontWeight="bold">Logout</Text>
-            </Button>
-          </Card>
-
           {/* App Version */}
           <YStack alignItems="center" padding="$4">
             <Text color="$colorMuted" fontSize="$2">TeincFoodBusiness v1.0.0</Text>

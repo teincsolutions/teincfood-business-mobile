@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { ScrollView, Alert, Linking } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
   YStack,
   XStack,
@@ -103,7 +103,6 @@ export default function HelpSupport() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <XStack
         padding="$4"

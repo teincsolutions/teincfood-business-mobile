@@ -88,6 +88,7 @@ export default function OperatingHoursSettings() {
       {/* Header */}
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
