@@ -1,20 +1,19 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import {
   YStack,
   XStack,
   Text,
   Card,
   Button as TamaguiButton,
-  Input,
   TextArea,
   Separator,
   Avatar,
 } from 'tamagui';
 import { ArrowLeft, Camera, Save, Building } from '@tamagui/lucide-icons';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -69,9 +68,11 @@ export default function BusinessProfileSettings() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
+      <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -147,7 +148,6 @@ export default function BusinessProfileSettings() {
                   placeholder="Enter your business name"
                   value={businessName}
                   onChangeText={setBusinessName}
-                  size="$4"
                 />
               </YStack>
 
@@ -160,7 +160,14 @@ export default function BusinessProfileSettings() {
                   value={businessDescription}
                   onChangeText={setBusinessDescription}
                   numberOfLines={4}
-                  size="$4"
+                  backgroundColor="$backgroundSoft"
+                  borderWidth={0}
+                  borderRadius="$3"
+                  fontFamily="$body"
+                  fontSize="$4"
+                  color="$color"
+                  paddingHorizontal="$4"
+                  placeholderTextColor="$colorPlaceholder"
                 />
               </YStack>
 
@@ -172,7 +179,6 @@ export default function BusinessProfileSettings() {
                   placeholder="Enter your business address"
                   value={businessAddress}
                   onChangeText={setBusinessAddress}
-                  size="$4"
                 />
               </YStack>
             </YStack>
@@ -195,7 +201,6 @@ export default function BusinessProfileSettings() {
                   value={businessPhone}
                   onChangeText={setBusinessPhone}
                   keyboardType="phone-pad"
-                  size="$4"
                 />
               </YStack>
 
@@ -209,7 +214,6 @@ export default function BusinessProfileSettings() {
                   onChangeText={setBusinessEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  size="$4"
                 />
               </YStack>
             </YStack>

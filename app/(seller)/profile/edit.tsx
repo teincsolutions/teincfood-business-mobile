@@ -1,17 +1,17 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import {
   YStack,
   XStack,
   Text,
   Card,
   Button,
-  Input,
   Avatar,
   Separator,
 } from 'tamagui';
+import { Input } from '@/components/ui';
 import { ArrowLeft, Save, Camera, User, Mail, Phone } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,6 +58,7 @@ export default function EditProfile() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
+      <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <XStack
         padding="$4"
@@ -133,7 +134,6 @@ export default function EditProfile() {
                   placeholder="Enter your full name"
                   value={fullName}
                   onChangeText={setFullName}
-                  size="$4"
                 />
               </YStack>
 
@@ -150,7 +150,6 @@ export default function EditProfile() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  size="$4"
                 />
               </YStack>
 
@@ -166,7 +165,6 @@ export default function EditProfile() {
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
-                  size="$4"
                 />
               </YStack>
             </YStack>

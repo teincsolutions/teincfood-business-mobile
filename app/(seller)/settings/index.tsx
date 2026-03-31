@@ -31,7 +31,6 @@ export default function SellerSettings() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack
           paddingHorizontal="$4"
-          paddingTop={Math.max(insets.top + 12, 24)}
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >

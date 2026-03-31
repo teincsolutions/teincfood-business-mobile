@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { ScrollView, Alert, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import {
   YStack,
   XStack,
@@ -9,9 +9,9 @@ import {
   Card,
   Button,
   Separator,
-  Input,
   TextArea,
 } from 'tamagui';
+import { Input } from '@/components/ui';
 import {
   ArrowLeft,
   HelpCircle,
@@ -103,6 +103,7 @@ export default function HelpSupport() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
+      <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <XStack
         padding="$4"
@@ -263,6 +264,14 @@ export default function HelpSupport() {
                   value={message}
                   onChangeText={setMessage}
                   numberOfLines={5}
+                  backgroundColor="$backgroundSoft"
+                  borderWidth={0}
+                  borderRadius="$3"
+                  fontFamily="$body"
+                  fontSize="$4"
+                  color="$color"
+                  paddingHorizontal="$4"
+                  placeholderTextColor="$colorPlaceholder"
                 />
               </YStack>
 
