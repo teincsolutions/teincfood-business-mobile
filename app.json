@@ -55,7 +55,11 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+        "com.google.android.gms.permission.ACTIVITY_RECOGNITION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -75,7 +79,9 @@
           "isAndroidForegroundServiceEnabled": true
         }
       ],
-      ["expo-live-activity"],
+      [
+        "expo-live-activity"
+      ],
       [
         "expo-image-picker",
         {
@@ -108,7 +114,8 @@
             "targetSdkVersion": 36,
             "minSdkVersion": 24,
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -125,7 +132,20 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "40dc757a-3e75-46b2-a94c-83f3c08bb3e3"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "LiveActivity",
+                  "bundleIdentifier": "com.teincfoods.business.LiveActivity",
+                  "entitlements": {}
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "afa9b762-7069-493e-9a0d-de02c757e3bc"
       }
     }
   }
