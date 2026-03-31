@@ -1,0 +1,203 @@
+// @ts-nocheck
+import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { YStack, Text } from 'tamagui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackButton, Button, Input } from '@/components/ui';
+import { validation } from '@/utils/validation';
+import { useSignupMutation } from '@/services/auth.service';
+import { useAuthStore } from '@/stores/auth.store';
+import { useOnboardingStore } from '@/stores/onboarding.store';
+import { useLocationStore } from '@/stores/location.store';
+
+export default function SignupScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const hasLocation = useLocationStore((state) => state.hasLocation());
+  const locationHydrated = useLocationStore((state) => state.isHydrated);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const hasSeenOnboarding = useOnboardingStore((state) => state.hasSeenOnboarding);
+  const signupMutation = useSignupMutation();
+
+  const [form, setForm] = useState({
+    fullName: '',
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!locationHydrated || hasLocation) return;
+    router.replace(hasSeenOnboarding ? '/(auth)/onboarding?requireLocation=1' : '/(auth)/onboarding');
+  }, [locationHydrated, hasLocation, hasSeenOnboarding, router]);
+
+  const updateField = (key: string, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSignup = async () => {
+    setError('');
+    if (!hasLocation || !currentLocation?.countryCode) {
+      router.replace(hasSeenOnboarding ? '/(auth)/onboarding?requireLocation=1' : '/(auth)/onboarding');
+      return;
+    }
+
+    if (!validation.isNotEmpty(form.fullName)) {
+      setError('Full name is required');
+      return;
+    }
+
+    if (!validation.isNotEmpty(form.username)) {
+      setError('Username is required');
+      return;
+    }
+
+    if (!validation.isValid(form.email, validation.email)) {
+      setError(validation.email.message);
+      return;
+    }
+
+    if (!validation.isValid(form.phone, validation.phone)) {
+      setError(validation.phone.message);
+      return;
+    }
+
+    if (!validation.isValid(form.password, validation.password)) {
+      setError(validation.password.message);
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await signupMutation.mutateAsync({
+        fullName: form.fullName.trim(),
+        username: form.username.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        password: form.password,
+      });
+
+      setAuth(
+        {
+          id: response.user.id,
+          fullName: response.user.fullName,
+          email: response.user.email,
+          phone: response.user.phone,
+          username: response.user.username,
+          role: 'buyer',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        response.accessToken,
+        response.refreshToken,
+      );
+
+      if (hasLocation) {
+        router.replace('/(buyer)/');
+      } else {
+        router.replace('/(auth)/onboarding?requireLocation=1');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create account. Please try again.');
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <YStack flex={1} bg="$background">
+        <ScrollView
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 20,
+            paddingTop: Math.max(insets.top, 24),
+            paddingBottom: Math.max(insets.bottom + 20, 24),
+          }}
+        >
+          <YStack mb="$4">
+            <BackButton />
+          </YStack>
+
+          <YStack mb="$7" gap="$2">
+            <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
+              Create Account
+            </Text>
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
+              Sign up with email and password. Your username will be your public buyer ID.
+            </Text>
+          </YStack>
+
+          <YStack gap="$4">
+            <Input
+              label="Full Name"
+              placeholder="Eric Mensah"
+              value={form.fullName}
+              onChangeText={(value) => updateField('fullName', value)}
+            />
+            <Input
+              label="Username"
+              placeholder="ericm"
+              autoCapitalize="none"
+              value={form.username}
+              onChangeText={(value) => updateField('username', value)}
+            />
+            <Input
+              label="Email"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={form.email}
+              onChangeText={(value) => updateField('email', value)}
+            />
+            <Input
+              label="Phone Number"
+              placeholder="+233 24 000 0000"
+              keyboardType="phone-pad"
+              value={form.phone}
+              onChangeText={(value) => updateField('phone', value)}
+            />
+            <Input
+              label="Password"
+              placeholder="Create password"
+              value={form.password}
+              onChangeText={(value) => updateField('password', value)}
+              isPassword
+            />
+            <Input
+              label="Confirm Password"
+              placeholder="Re-enter password"
+              value={form.confirmPassword}
+              onChangeText={(value) => updateField('confirmPassword', value)}
+              isPassword
+              error={error}
+            />
+          </YStack>
+
+          <YStack mt="$7" gap="$4">
+            <Button loading={signupMutation.isPending} onPress={handleSignup}>
+              CREATE ACCOUNT
+            </Button>
+
+            <Text ta="center" color="$colorSecondary" fontFamily="$body">
+              Already have an account?
+            </Text>
+            <Button variant="outline" onPress={() => router.replace('/(auth)/login')}>
+              LOG IN
+            </Button>
+          </YStack>
+        </ScrollView>
+      </YStack>
+    </KeyboardAvoidingView>
+  );
+}

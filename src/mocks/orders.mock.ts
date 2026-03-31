@@ -1,0 +1,123 @@
+import type { Order, OrderTrackingUpdate } from '@/models/order.model';
+import { MOCK_FOODS } from './foods.mock';
+import { MOCK_ADDRESSES } from './users.mock';
+
+export const MOCK_ORDERS: Order[] = [
+  {
+    id: 'order-1',
+    orderNumber: '#ORD-2461',
+    items: [
+      {
+        id: 'ci-1',
+        food: MOCK_FOODS[0],
+        quantity: 2,
+        selectedAddons: [],
+        specialInstructions: '',
+        totalPrice: MOCK_FOODS[0].price * 2,
+      },
+      {
+        id: 'ci-2',
+        food: MOCK_FOODS[1],
+        quantity: 1,
+        selectedAddons: [],
+        specialInstructions: 'No pickles',
+        totalPrice: MOCK_FOODS[1].price,
+      },
+    ],
+    status: 'on_the_way',
+    deliveryAddress: MOCK_ADDRESSES[0],
+    paymentMethod: {
+      id: 'pm-1',
+      type: 'visa',
+      last4: '4242',
+      cardHolderName: 'Vishal Khadok',
+      isDefault: true,
+    },
+    subtotal: MOCK_FOODS[0].price * 2 + MOCK_FOODS[1].price,
+    deliveryFee: 5.0,
+    discount: 0,
+    total: MOCK_FOODS[0].price * 2 + MOCK_FOODS[1].price + 5.0,
+    estimatedDeliveryTime: '15 min',
+    deliveryPerson: {
+      id: 'dp-1',
+      name: 'Robert Fox',
+      phone: '+1 234 567 8901',
+      avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcabd9c?w=200&h=200&fit=crop',
+      rating: 4.9,
+      currentLatitude: 40.7138,
+      currentLongitude: -74.0050,
+    },
+    placedAt: '2026-03-29T01:00:00Z',
+  },
+  {
+    id: 'order-2',
+    orderNumber: '#ORD-2460',
+    items: [
+      {
+        id: 'ci-3',
+        food: MOCK_FOODS[2],
+        quantity: 1,
+        selectedAddons: [],
+        specialInstructions: '',
+        totalPrice: MOCK_FOODS[2].price,
+      },
+    ],
+    status: 'delivered',
+    deliveryAddress: MOCK_ADDRESSES[0],
+    paymentMethod: {
+      id: 'pm-1',
+      type: 'visa',
+      last4: '4242',
+      cardHolderName: 'Vishal Khadok',
+      isDefault: true,
+    },
+    subtotal: MOCK_FOODS[2].price,
+    deliveryFee: 5.0,
+    discount: 0,
+    total: MOCK_FOODS[2].price + 5.0,
+    placedAt: '2026-03-28T18:30:00Z',
+    deliveredAt: '2026-03-28T19:15:00Z',
+  },
+  {
+    id: 'order-3',
+    orderNumber: '#ORD-2459',
+    items: [
+      {
+        id: 'ci-4',
+        food: MOCK_FOODS[4],
+        quantity: 2,
+        selectedAddons: [],
+        specialInstructions: '',
+        totalPrice: MOCK_FOODS[4].price * 2,
+      },
+      {
+        id: 'ci-5',
+        food: MOCK_FOODS[3],
+        quantity: 1,
+        selectedAddons: [],
+        specialInstructions: '',
+        totalPrice: MOCK_FOODS[3].price,
+      },
+    ],
+    status: 'delivered',
+    deliveryAddress: MOCK_ADDRESSES[1],
+    paymentMethod: {
+      id: 'pm-2',
+      type: 'cash',
+      isDefault: false,
+    },
+    subtotal: MOCK_FOODS[4].price * 2 + MOCK_FOODS[3].price,
+    deliveryFee: 5.0,
+    discount: 0,
+    total: MOCK_FOODS[4].price * 2 + MOCK_FOODS[3].price + 5.0,
+    placedAt: '2026-03-27T12:00:00Z',
+    deliveredAt: '2026-03-27T12:45:00Z',
+  },
+];
+
+export const MOCK_TRACKING_UPDATES: OrderTrackingUpdate[] = [
+  { status: 'pending', timestamp: '2026-03-29T01:00:00Z', message: 'Order placed' },
+  { status: 'confirmed', timestamp: '2026-03-29T01:02:00Z', message: 'Restaurant confirmed' },
+  { status: 'preparing', timestamp: '2026-03-29T01:05:00Z', message: 'Your food is being prepared' },
+  { status: 'on_the_way', timestamp: '2026-03-29T01:15:00Z', message: 'Rider is on the way' },
+];

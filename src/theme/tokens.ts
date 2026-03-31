@@ -1,0 +1,105 @@
+import { createTokens } from "tamagui";
+
+export const tokens = createTokens({
+  color: {
+    // ─── Brand / Primary ───
+    orange: "#FF7622",
+    orangeLight: "#FFF4ED",
+    orangeDark: "#E56A1E",
+    orangeMuted: "rgba(255, 118, 34, 0.15)",
+
+    // ─── Neutrals ───
+    navy: "#1E1E2E",
+    gray900: "#32343E",
+    gray600: "#6B6E82",
+    gray400: "#A0A5BA",
+    gray300: "#D1D3D9",
+    gray200: "#EDEDED",
+    gray100: "#F6F6F6",
+    gray50: "#F9F9F9",
+    white: "#FFFFFF",
+    black: "#000000",
+
+    // ─── Semantic ───
+    red: "#FF3B30",
+    green: "#34C759",
+    blue: "#007AFF",
+    starOrange: "#FF9633",
+
+    // ─── Transparent ───
+    transparent: "transparent",
+  },
+
+  space: {
+    0: 0,
+    0.5: 2,
+    1: 4,
+    1.5: 6,
+    2: 8,
+    2.5: 10,
+    3: 12,
+    3.5: 14,
+    4: 16,
+    5: 20,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
+    10: 40,
+    12: 48,
+    16: 64,
+    20: 80,
+    true: 16,
+  },
+
+  size: {
+    0: 0,
+    0.5: 2,
+    1: 4,
+    1.5: 6,
+    2: 8,
+    2.5: 10,
+    3: 12,
+    3.5: 14,
+    4: 16,
+    5: 20,
+    6: 24,
+    7: 28,
+    8: 32,
+    9: 36,
+    10: 40,
+    11: 44,
+    12: 48,
+    13: 52,
+    14: 56,
+    15: 60,
+    16: 64,
+    17: 68,
+    18: 72,
+    20: 80,
+    true: 48,
+  },
+
+  radius: {
+    0: 0,
+    1: 4,
+    2: 8,
+    3: 12,
+    4: 16,
+    5: 20,
+    6: 24,
+    7: 28,
+    8: 32,
+    full: 9999,
+    true: 12,
+  },
+
+  zIndex: {
+    0: 0,
+    1: 100,
+    2: 200,
+    3: 300,
+    4: 400,
+    5: 500,
+  },
+});

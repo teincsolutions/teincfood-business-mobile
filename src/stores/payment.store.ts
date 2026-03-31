@@ -1,0 +1,67 @@
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { zustandStorage } from '@/utils/storage';
+import type { PaymentMethod } from '@/models/user.model';
+
+interface PaymentState {
+  paymentMethods: PaymentMethod[];
+  
+  // Actions
+  addPaymentMethod: (pm: PaymentMethod) => void;
+  removePaymentMethod: (id: string) => void;
+  setDefaultPaymentMethod: (id: string) => void;
+  getDefaultPaymentMethod: () => PaymentMethod | undefined;
+}
+
+export const usePaymentStore = create<PaymentState>()(
+  persist(
+    (set, get) => ({
+      paymentMethods: [
+        {
+          id: 'pm-1',
+          type: 'mobile_money',
+          last4: '1234',
+          cardHolderName: 'MTN Mobile Money',
+          isDefault: true,
+        },
+        {
+          id: 'pm-2',
+          type: 'visa',
+          last4: '4242',
+          cardHolderName: 'Vishal Khadok',
+          expiryDate: '12/28',
+          isDefault: false,
+        },
+      ],
+
+      addPaymentMethod: (pm) => {
+        set((state) => ({
+          paymentMethods: [...state.paymentMethods, pm],
+        }));
+      },
+
+      removePaymentMethod: (id) => {
+        set((state) => ({
+          paymentMethods: state.paymentMethods.filter((pm) => pm.id !== id),
+        }));
+      },
+
+      setDefaultPaymentMethod: (id) => {
+        set((state) => ({
+          paymentMethods: state.paymentMethods.map((pm) => ({
+            ...pm,
+            isDefault: pm.id === id,
+          })),
+        }));
+      },
+
+      getDefaultPaymentMethod: () => {
+        return get().paymentMethods.find((pm) => pm.isDefault) || get().paymentMethods[0];
+      },
+    }),
+    {
+      name: 'teincfoods-payments',
+      storage: createJSONStorage(() => zustandStorage),
+    }
+  )
+);

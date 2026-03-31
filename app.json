@@ -1,0 +1,132 @@
+{
+  "expo": {
+    "name": "TeincFoods",
+    "slug": "teinc-foods",
+    "owner": "teincsolutions",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "teincfoods",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FF7622"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.teincfoods.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "tel"
+        ],
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera to take profile pictures.",
+        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures.",
+        "NSLocationWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to show nearby restaurants and deliver orders accurately.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to track deliveries in real-time.",
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification",
+          "location"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FF7622",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.teincfoods.app",
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDummyKeyForTestingPurposesOnly123456789"
+        }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "./plugins/withNotifeeRepo.js",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "$(PRODUCT_NAME) uses your location to show nearby restaurants and deliver orders accurately.",
+          "locationAlwaysAndWhenInUsePermission": "$(PRODUCT_NAME) uses your location to track deliveries in real-time.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      ["expo-live-activity"],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures.",
+          "cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take profile pictures."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#FF7622",
+          "sounds": [
+            "./assets/notification_sound.wav"
+          ],
+          "mode": "production"
+        }
+      ],
+      [
+        "expo-apple-authentication"
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "40dc757a-3e75-46b2-a94c-83f3c08bb3e3"
+      }
+    }
+  }
+}

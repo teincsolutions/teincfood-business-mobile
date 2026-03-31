@@ -1,0 +1,511 @@
+// @ts-nocheck
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+  YStack,
+  XStack,
+  Text,
+  Input as TamaguiInput,
+  useTheme,
+  Sheet,
+  Separator,
+} from "tamagui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Apple, Facebook, Chrome, ChevronDown, Check } from "@tamagui/lucide-icons";
+import { Button, Input, BackButton } from "@/components/ui";
+import { validation } from "@/utils/validation";
+import {
+  PHONE_COUNTRIES,
+  getCountryOption,
+  getDialCodeFromCountry,
+  isLikelyE164,
+  normalizePhoneForCountry,
+} from "@/utils/phone";
+import {
+  authService,
+  useEmailPasswordLoginMutation,
+} from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
+import { useOnboardingStore } from "@/stores/onboarding.store";
+import { useLocationStore } from "@/stores/location.store";
+
+type LoginMethod = "phone" | "email";
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const hasLocation = useLocationStore((state) => state.hasLocation());
+  const locationHydrated = useLocationStore((state) => state.isHydrated);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const hasSeenOnboarding = useOnboardingStore(
+    (state) => state.hasSeenOnboarding,
+  );
+  const loginMutation = useEmailPasswordLoginMutation();
+
+  const [method, setMethod] = useState<LoginMethod>("phone");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [countrySheetOpen, setCountrySheetOpen] = useState(false);
+  const [selectedCountryIso, setSelectedCountryIso] = useState(
+    currentLocation?.countryCode?.toUpperCase() || "GH",
+  );
+  const phoneDialCode = getDialCodeFromCountry(selectedCountryIso) || "+233";
+  const selectedCountry = getCountryOption(selectedCountryIso);
+
+  useEffect(() => {
+    if (!locationHydrated || hasLocation) return;
+    router.replace(
+      hasSeenOnboarding
+        ? "/(auth)/onboarding?requireLocation=1"
+        : "/(auth)/onboarding",
+    );
+  }, [locationHydrated, hasLocation, hasSeenOnboarding, router]);
+
+  useEffect(() => {
+    if (!currentLocation?.countryCode) return;
+    setSelectedCountryIso(currentLocation.countryCode.toUpperCase());
+  }, [currentLocation?.countryCode]);
+
+  const goPostAuth = () => {
+    if (hasLocation) {
+      router.replace("/(buyer)/");
+    } else {
+      router.replace("/(auth)/onboarding?requireLocation=1");
+    }
+  };
+
+  const handleSendCode = async () => {
+    setError("");
+
+    const countryCode = selectedCountryIso?.trim().toUpperCase();
+    if (!countryCode) {
+      setError("Please set your location country before logging in.");
+      router.replace("/(auth)/onboarding?requireLocation=1");
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneForCountry(phone, countryCode);
+    if (!normalizedPhone || !isLikelyE164(normalizedPhone)) {
+      setError("Enter a valid phone number for your selected country.");
+      return;
+    }
+
+    setIsSendingCode(true);
+    try {
+      await authService.requestOtp(normalizedPhone);
+      router.push({
+        pathname: "/(auth)/verification",
+        params: { contactInfo: normalizedPhone, type: "login" },
+      });
+    } catch (err: any) {
+      setError(err?.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    setError("");
+    if (!hasLocation || !currentLocation?.countryCode) {
+      router.replace(
+        hasSeenOnboarding
+          ? "/(auth)/onboarding?requireLocation=1"
+          : "/(auth)/onboarding",
+      );
+      return;
+    }
+
+    if (!validation.isValid(email, validation.email)) {
+      setError(validation.email.message);
+      return;
+    }
+
+    if (!validation.isValid(password, validation.password)) {
+      setError(validation.password.message);
+      return;
+    }
+
+    try {
+      const response = await loginMutation.mutateAsync({
+        email: email.trim(),
+        password,
+      });
+      setAuth(
+        {
+          id: response.user.id,
+          fullName: response.user.fullName,
+          email: response.user.email,
+          phone: response.user.phone,
+          username: response.user.username,
+          role: "buyer",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        response.accessToken,
+        response.refreshToken,
+      );
+
+      goPostAuth();
+    } catch (err: any) {
+      setError(err?.message || "Failed to log in. Please try again.");
+    }
+  };
+
+  const handleOIDCLogin = async (provider: string) => {
+    try {
+      if (!hasLocation || !currentLocation?.countryCode) {
+        router.replace(
+          hasSeenOnboarding
+            ? "/(auth)/onboarding?requireLocation=1"
+            : "/(auth)/onboarding",
+        );
+        return;
+      }
+      setError("");
+      const response = await authService.loginWithOIDC(provider);
+      setAuth(response.user, response.accessToken, response.refreshToken);
+      goPostAuth();
+    } catch {
+      setError(`Failed to sign in with ${provider}`);
+    }
+  };
+
+  const isPrimaryLoading =
+    method === "phone" ? isSendingCode : loginMutation.isPending;
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <YStack flex={1} bg="$background">
+        <ScrollView
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 20,
+            paddingTop: Math.max(insets.top, 24),
+            paddingBottom: Math.max(insets.bottom + 20, 24),
+          }}
+        >
+          {router.canDismiss() && (
+            <YStack mb="$4">
+              <BackButton />
+            </YStack>
+          )}
+
+          <YStack mb="$6" gap="$2">
+            <Text
+              fontSize={30}
+              fontWeight="800"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Log In
+            </Text>
+            <Text
+              fontSize="$4"
+              color="$colorSecondary"
+              fontFamily="$body"
+              lineHeight={22}
+            >
+              Use phone OTP (default) or switch to email and password.
+            </Text>
+          </YStack>
+
+          <XStack gap="$3" mb="$5">
+            <Button
+              flex={1}
+              width="auto"
+              variant={method === "phone" ? "primary" : "outline"}
+              height={46}
+              onPress={() => {
+                setMethod("phone");
+                setError("");
+              }}
+            >
+              PHONE OTP
+            </Button>
+            <Button
+              flex={1}
+              width="auto"
+              variant={method === "email" ? "primary" : "outline"}
+              height={46}
+              onPress={() => {
+                setMethod("email");
+                setError("");
+              }}
+            >
+              EMAIL LOGIN
+            </Button>
+          </XStack>
+
+          {method === "phone" ? (
+            <YStack gap="$4">
+              <YStack gap="$2">
+                <Text
+                  fontSize="$3"
+                  fontWeight="600"
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                  textTransform="uppercase"
+                  letterSpacing={0.5}
+                >
+                  Phone Number
+                </Text>
+                <XStack gap="$2" ai="center">
+                  <YStack
+                    width={88}
+                    height={60}
+                    borderRadius="$3"
+                    backgroundColor="$backgroundSoft"
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    justifyContent="center"
+                    alignItems="center"
+                    pressStyle={{ opacity: 0.85 }}
+                    onPress={() => setCountrySheetOpen(true)}
+                  >
+                    <XStack ai="center" gap="$1">
+                      <Text
+                        fontSize="$5"
+                        fontWeight="700"
+                        color="$color"
+                        fontFamily="$body"
+                      >
+                        {phoneDialCode}
+                      </Text>
+                      <ChevronDown size={14} color="$colorSecondary" />
+                    </XStack>
+                  </YStack>
+                  <TamaguiInput
+                    flex={1}
+                    height={60}
+                    borderWidth={0}
+                    borderRadius="$3"
+                    backgroundColor="$backgroundSoft"
+                    color="$color"
+                    fontFamily="$body"
+                    fontSize="$4"
+                    keyboardType="phone-pad"
+                    placeholder="24 000 0000"
+                    placeholderTextColor={theme.colorPlaceholder.val as string}
+                    value={phone}
+                    onChangeText={setPhone}
+                    focusStyle={{
+                      borderWidth: 1,
+                      borderColor: "$primary",
+                      backgroundColor: "$background",
+                    }}
+                  />
+                </XStack>
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  {selectedCountry?.name || "Selected country"} ({selectedCountryIso})
+                </Text>
+                {error ? (
+                  <Text fontSize="$2" color="$error" fontFamily="$body">
+                    {error}
+                  </Text>
+                ) : null}
+              </YStack>
+            </YStack>
+          ) : (
+            <YStack gap="$4">
+              <Input
+                label="Email"
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+              <Input
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                isPassword
+                error={error}
+              />
+              <XStack justifyContent="flex-end">
+                <Button
+                  variant="ghost"
+                  height="auto"
+                  paddingHorizontal="$0"
+                  paddingVertical="$2"
+                  onPress={() => router.push("/(auth)/forgot-password")}
+                >
+                  <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+                    Forgot Password?
+                  </Text>
+                </Button>
+              </XStack>
+            </YStack>
+          )}
+
+          <YStack mt="$7" mb="$4" gap="$4">
+            <Button
+              loading={isPrimaryLoading}
+              onPress={method === "phone" ? handleSendCode : handleEmailLogin}
+            >
+              {method === "phone" ? "SEND CODE" : "LOG IN"}
+            </Button>
+
+            <Text ta="center" color="$colorSecondary" fontFamily="$body">
+              Or continue with
+            </Text>
+
+            <XStack jc="center" ai="center" gap="$4">
+              <Button
+                variant="ghost"
+                width={56}
+                height={56}
+                minWidth={56}
+                maxWidth={56}
+                borderRadius="$full"
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
+                padding={0}
+                justifyContent="center"
+                alignItems="center"
+                icon={<Facebook size={20} color="#1877F2" />}
+                onPress={() => handleOIDCLogin("facebook")}
+              />
+              <Button
+                variant="ghost"
+                width={56}
+                height={56}
+                minWidth={56}
+                maxWidth={56}
+                borderRadius="$full"
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
+                padding={0}
+                justifyContent="center"
+                alignItems="center"
+                icon={<Apple size={20} color="$color" />}
+                onPress={() => handleOIDCLogin("apple")}
+              />
+              <Button
+                variant="ghost"
+                width={56}
+                height={56}
+                minWidth={56}
+                maxWidth={56}
+                borderRadius="$full"
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
+                padding={0}
+                justifyContent="center"
+                alignItems="center"
+                icon={<Chrome size={20} color="#DB4437" />}
+                onPress={() => handleOIDCLogin("google")}
+              />
+            </XStack>
+          </YStack>
+
+          <YStack mt="auto" pt="$6" gap="$3" pb="$2">
+            <Text ta="center" color="$colorSecondary" fontFamily="$body">
+              New to TeincFoods?
+            </Text>
+            <Button
+              variant="outline"
+              onPress={() => router.push("/(auth)/signup")}
+            >
+              CREATE ACCOUNT
+            </Button>
+          </YStack>
+        </ScrollView>
+      </YStack>
+
+      <Sheet
+        modal
+        open={countrySheetOpen}
+        onOpenChange={setCountrySheetOpen}
+        snapPoints={[75]}
+        dismissOnSnapToBottom
+        zIndex={100_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.6)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$8"
+          borderTopRightRadius="$8"
+        >
+          <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
+          <YStack px="$5" pt="$3" pb="$4">
+            <Text
+              fontSize="$6"
+              fontWeight="800"
+              color="$color"
+              fontFamily="$heading"
+            >
+              Select Country Code
+            </Text>
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" mt="$1">
+              Choose a country for OTP routing.
+            </Text>
+          </YStack>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <YStack px="$5" pb="$6">
+              {PHONE_COUNTRIES.map((country, index) => (
+                <YStack key={country.iso}>
+                  <XStack
+                    ai="center"
+                    jc="space-between"
+                    py="$4"
+                    onPress={() => {
+                      setSelectedCountryIso(country.iso);
+                      setCountrySheetOpen(false);
+                    }}
+                  >
+                    <YStack>
+                      <Text
+                        fontSize="$4"
+                        fontWeight="700"
+                        color="$color"
+                        fontFamily="$body"
+                      >
+                        {country.name}
+                      </Text>
+                      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                        {country.iso}
+                      </Text>
+                    </YStack>
+                    <XStack ai="center" gap="$2">
+                      <Text fontSize="$4" color="$color" fontFamily="$body">
+                        {country.dialCode}
+                      </Text>
+                      {selectedCountryIso === country.iso ? (
+                        <Check size={16} color="$primary" />
+                      ) : null}
+                    </XStack>
+                  </XStack>
+                  {index < PHONE_COUNTRIES.length - 1 ? (
+                    <Separator borderColor="$borderColor" />
+                  ) : null}
+                </YStack>
+              ))}
+            </YStack>
+          </ScrollView>
+        </Sheet.Frame>
+      </Sheet>
+    </KeyboardAvoidingView>
+  );
+}

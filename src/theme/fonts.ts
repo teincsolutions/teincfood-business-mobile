@@ -1,0 +1,115 @@
+import { createFont } from 'tamagui';
+
+/**
+ * Typography system derived from the TeincFoods mockups.
+ * Using @expo-google-fonts/sen.
+ */
+
+export const headingFont = createFont({
+  family: 'Sen',
+  size: {
+    1: 11,
+    2: 12,
+    3: 13,
+    4: 14,
+    5: 16,
+    6: 18,
+    7: 20,
+    8: 24,
+    9: 30,
+    10: 36,
+    11: 40,
+    12: 48,
+    true: 24,
+  },
+  lineHeight: {
+    1: 16,
+    2: 18,
+    3: 20,
+    4: 22,
+    5: 24,
+    6: 26,
+    7: 28,
+    8: 32,
+    9: 38,
+    10: 44,
+    11: 48,
+    12: 56,
+    true: 32,
+  },
+  weight: {
+    4: '400',
+    5: '500',
+    6: '600',
+    7: '700',
+    8: '800',
+    true: '700',
+  },
+  letterSpacing: {
+    4: 0,
+    5: 0,
+    6: -0.2,
+    7: -0.3,
+    8: -0.4,
+    9: -0.5,
+    10: -0.6,
+    true: -0.4,
+  },
+  face: {
+    400: { normal: 'Sen_400Regular' },
+    500: { normal: 'Sen_500Medium' },
+    600: { normal: 'Sen_600SemiBold' },
+    700: { normal: 'Sen_700Bold' },
+    800: { normal: 'Sen_800ExtraBold' },
+  },
+});
+
+export const bodyFont = createFont({
+  family: 'Sen',
+  size: {
+    1: 11,
+    2: 12,
+    3: 13,
+    4: 14,
+    5: 16,
+    6: 18,
+    7: 20,
+    8: 24,
+    9: 30,
+    10: 36,
+    11: 40,
+    12: 48,
+    true: 16,
+  },
+  lineHeight: {
+    1: 18,
+    2: 20,
+    3: 22,
+    4: 22,
+    5: 26,
+    6: 28,
+    7: 30,
+    8: 34,
+    true: 26,
+  },
+  weight: {
+    4: '400',
+    5: '500',
+    6: '600',
+    7: '700',
+    true: '400',
+  },
+  letterSpacing: {
+    4: 0,
+    5: 0,
+    6: 0,
+    7: -0.2,
+    true: 0,
+  },
+  face: {
+    400: { normal: 'Sen_400Regular' },
+    500: { normal: 'Sen_500Medium' },
+    600: { normal: 'Sen_600SemiBold' },
+    700: { normal: 'Sen_700Bold' },
+  },
+});
