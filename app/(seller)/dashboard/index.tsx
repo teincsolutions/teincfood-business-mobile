@@ -155,14 +155,14 @@ export default function SellerDashboard() {
                 icon={<Clock size={18} />}
                 onPress={() => router.push('/(seller)/orders/pending')}
               >
-                Pending ({metrics.pendingOrders})
+                <Text>Pending ({metrics.pendingOrders})</Text>
               </Button>
               <Button
                 flex={1}
                 icon={<Package size={18} />}
                 onPress={() => router.push('/(seller)/orders/active')}
               >
-                Active ({metrics.activeOrders})
+                <Text>Active ({metrics.activeOrders})</Text>
               </Button>
             </XStack>
             <Button

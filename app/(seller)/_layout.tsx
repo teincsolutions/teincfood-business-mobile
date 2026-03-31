@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { useState } from "react";
-import { Tabs, useRouter } from "expo-router";
+import { Drawer } from "expo-router/drawer";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
+import { useTheme, YStack, XStack, Text, Avatar, Separator, Button } from "tamagui";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -11,19 +12,226 @@ import {
   User,
   LogIn,
   Settings,
+  Bell,
+  Monitor,
+  LogOut,
+  Menu,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
 
 /**
- * Seller Tab Navigation
- * Contains Dashboard, Orders, Menu, Analytics, and Profile tabs.
+ * Custom Drawer Content
+ */
+function CustomDrawerContent(props: any) {
+  const theme = useTheme();
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    clearAuth();
+    setShowLogoutDialog(false);
+    router.replace("/(auth)/login");
+  };
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      {/* User Profile Section */}
+      <YStack padding="$4" paddingTop="$6" backgroundColor="$primary">
+        <XStack gap="$3" alignItems="center">
+          <Avatar circular size="$5">
+            <Avatar.Image
+              source={{ uri: user?.avatarUrl || undefined }}
+            />
+            <Avatar.Fallback backgroundColor="$gray8">
+              <Text color="white" fontWeight="bold">
+                {user?.fullName?.charAt(0) || "S"}
+              </Text>
+            </Avatar.Fallback>
+          </Avatar>
+          <YStack flex={1}>
+            <Text color="white" fontWeight="bold" fontSize="$5">
+              {user?.businessName || user?.fullName || "Seller"}
+            </Text>
+            <Text color="white" opacity={0.8} fontSize="$3">
+              {user?.email || "seller@example.com"}
+            </Text>
+          </YStack>
+        </XStack>
+      </YStack>
+
+      {/* Menu Items */}
+      <DrawerContentScrollView {...props} style={{ flex: 1 }}>
+        <YStack padding="$2" gap="$1">
+          {/* Dashboard */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/dashboard")}
+            icon={<LayoutDashboard size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Dashboard</Text>
+          </Button>
+
+          {/* Kiosk Mode */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/dashboard/kiosk")}
+            icon={<Monitor size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Kiosk Mode</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Orders */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/orders")}
+            icon={<ShoppingBag size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Orders</Text>
+          </Button>
+
+          {/* Menu */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/menu")}
+            icon={<UtensilsCrossed size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Menu</Text>
+          </Button>
+
+          {/* Analytics */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/analytics")}
+            icon={<BarChart3 size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Analytics</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Notifications */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(shared)/notifications")}
+            icon={<Bell size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Notifications</Text>
+          </Button>
+
+          {/* Settings */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/settings")}
+            icon={<Settings size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Settings</Text>
+          </Button>
+
+          {/* Profile */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/profile")}
+            icon={<User size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Profile</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Logout */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$red4" }}
+            onPress={() => setShowLogoutDialog(true)}
+            icon={<LogOut size={20} color="$red10" />}
+          >
+            <Text flex={1} fontSize="$4" color="$red10">Logout</Text>
+          </Button>
+        </YStack>
+      </DrawerContentScrollView>
+
+      {/* Logout Confirmation Dialog */}
+      <AppAlertDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Logout"
+        description="Are you sure you want to logout?"
+        icon={LogOut}
+        confirmText="LOGOUT"
+        onConfirm={handleLogout}
+      />
+    </YStack>
+  );
+}
+
+/**
+ * Seller Drawer Navigation
+ * Contains Dashboard, Orders, Menu, Analytics, Settings, and Profile.
  */
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
-export default function SellerTabsLayout() {
+export default function SellerDrawerLayout() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
@@ -42,90 +250,117 @@ export default function SellerTabsLayout() {
 
   return (
     <>
-      <Tabs
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: theme.primary.val,
-          tabBarInactiveTintColor: theme.colorMuted.val,
-          tabBarStyle: {
-            borderTopWidth: 1,
-            borderTopColor: theme.borderColor.val as string,
-            backgroundColor: theme.background.val as string,
-            height: 65 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-            paddingTop: 10,
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: theme.background.val,
           },
-          tabBarLabelStyle: {
+          headerTintColor: theme.color.val,
+          headerTitleStyle: {
             fontFamily: "Sen_600SemiBold",
-            fontSize: 12,
           },
+          drawerStyle: {
+            backgroundColor: theme.background.val,
+            width: 280,
+          },
+          drawerType: "front",
+          overlayColor: "rgba(0,0,0,0.5)",
         }}
       >
-        <Tabs.Screen
+        <Drawer.Screen
           name="index"
           options={{
-            href: null,
+            drawerItemStyle: { display: "none" },
+            headerShown: false,
           }}
         />
 
-        {/* Dashboard Tab */}
-        <Tabs.Screen
-          name="dashboard"
+        {/* Dashboard */}
+        <Drawer.Screen
+          name="dashboard/index"
           options={{
             title: "Dashboard",
-            tabBarIcon: ({ color }) => (
-              <LayoutDashboard color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <LayoutDashboard color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Orders Tab */}
-        <Tabs.Screen
-          name="orders"
+        {/* Kiosk Mode */}
+        <Drawer.Screen
+          name="dashboard/kiosk"
+          options={{
+            title: "Kiosk Mode",
+            drawerIcon: ({ color, size }) => (
+              <Monitor color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Orders */}
+        <Drawer.Screen
+          name="orders/index"
           options={{
             title: "Orders",
-            tabBarIcon: ({ color }) => (
-              <ShoppingBag color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <ShoppingBag color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Menu Tab */}
-        <Tabs.Screen
-          name="menu"
+        {/* Menu */}
+        <Drawer.Screen
+          name="menu/index"
           options={{
             title: "Menu",
-            tabBarIcon: ({ color }) => (
-              <UtensilsCrossed color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <UtensilsCrossed color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Analytics Tab */}
-        <Tabs.Screen
-          name="analytics"
+        {/* Analytics */}
+        <Drawer.Screen
+          name="analytics/index"
           options={{
             title: "Analytics",
-            tabBarIcon: ({ color }) => (
-              <BarChart3 color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <BarChart3 color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Profile Tab */}
-        <Tabs.Screen
-          name="profile"
+        {/* Settings */}
+        <Drawer.Screen
+          name="settings/index"
+          options={{
+            title: "Settings",
+            drawerIcon: ({ color, size }) => (
+              <Settings color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Profile */}
+        <Drawer.Screen
+          name="profile/index"
           options={{
             title: "Profile",
-            tabBarIcon: ({ color }) => <User color={color as any} size={24} />,
+            drawerIcon: ({ color, size }) => (
+              <User color={color} size={size} />
+            ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
-      </Tabs>
+      </Drawer>
 
       <AppAlertDialog
         open={showAuthDialog}

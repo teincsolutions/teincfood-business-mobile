@@ -7,8 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, BackButton } from '@/components/ui';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
-import { useLocationStore } from '@/stores/location.store';
-import { useOnboardingStore } from '@/stores/onboarding.store';
 
 const OTP_LENGTH = 4;
 const RESEND_DELAY_SEC = 60;
@@ -17,11 +15,9 @@ export default function VerificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { contactInfo = 'your phone number', type } = useLocalSearchParams<{ contactInfo: string, type: string }>();
+  const { contactInfo = 'your phone number', type, role } = useLocalSearchParams<{ contactInfo: string, type: string, role?: string }>();
+  const selectedRole = (role === 'seller' || role === 'rider') ? role : 'seller';
   const setAuth = useAuthStore((state) => state.setAuth);
-  const hasLocation = useLocationStore((state) => state.hasLocation());
-  const locationHydrated = useLocationStore((state) => state.isHydrated);
-  const hasSeenOnboarding = useOnboardingStore((state) => state.hasSeenOnboarding);
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const inputRefs = useRef<Array<TextInput | null>>(Array(OTP_LENGTH).fill(null));
@@ -38,11 +34,6 @@ export default function VerificationScreen() {
     if (digits.length <= 3) return raw;
     return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
   })();
-
-  useEffect(() => {
-    if (!locationHydrated || hasLocation) return;
-    router.replace(hasSeenOnboarding ? '/(auth)/onboarding?requireLocation=1' : '/(auth)/onboarding');
-  }, [locationHydrated, hasLocation, hasSeenOnboarding, router]);
 
   useEffect(() => {
     if (timeLeft === 0) return;
@@ -102,11 +93,20 @@ export default function VerificationScreen() {
       const resp = await authService.verifyOtp({ phone: contactInfo, code, sessionId: 'mock' });
       
       // If logging in or signing up
-      setAuth(resp.user, resp.accessToken, resp.refreshToken);
-      if (hasLocation) {
-        router.replace('/(buyer)/');
+      setAuth(
+        {
+          ...resp.user,
+          role: selectedRole,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        resp.accessToken,
+        resp.refreshToken,
+      );
+      if (selectedRole === 'seller') {
+        router.replace('/(seller)/');
       } else {
-        router.replace('/(auth)/onboarding?requireLocation=1');
+        router.replace('/(rider)/');
       }
       
       // If this was an action from Forgot Password, you might redirect to a Reset Password screen instead.

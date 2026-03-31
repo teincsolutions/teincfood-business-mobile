@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { YStack, Text } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,17 +8,13 @@ import { BackButton, Button, Input } from '@/components/ui';
 import { validation } from '@/utils/validation';
 import { useSignupMutation } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOnboardingStore } from '@/stores/onboarding.store';
-import { useLocationStore } from '@/stores/location.store';
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const hasLocation = useLocationStore((state) => state.hasLocation());
-  const locationHydrated = useLocationStore((state) => state.isHydrated);
-  const currentLocation = useLocationStore((state) => state.currentLocation);
-  const hasSeenOnboarding = useOnboardingStore((state) => state.hasSeenOnboarding);
+  const { role } = useLocalSearchParams<{ role?: string }>();
+  const selectedRole = (role === 'seller' || role === 'rider') ? role : 'seller';
   const signupMutation = useSignupMutation();
 
   const [form, setForm] = useState({
@@ -31,21 +27,12 @@ export default function SignupScreen() {
   });
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!locationHydrated || hasLocation) return;
-    router.replace(hasSeenOnboarding ? '/(auth)/onboarding?requireLocation=1' : '/(auth)/onboarding');
-  }, [locationHydrated, hasLocation, hasSeenOnboarding, router]);
-
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSignup = async () => {
     setError('');
-    if (!hasLocation || !currentLocation?.countryCode) {
-      router.replace(hasSeenOnboarding ? '/(auth)/onboarding?requireLocation=1' : '/(auth)/onboarding');
-      return;
-    }
 
     if (!validation.isNotEmpty(form.fullName)) {
       setError('Full name is required');
@@ -84,6 +71,7 @@ export default function SignupScreen() {
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
         password: form.password,
+        role: selectedRole,
       });
 
       setAuth(
@@ -93,7 +81,7 @@ export default function SignupScreen() {
           email: response.user.email,
           phone: response.user.phone,
           username: response.user.username,
-          role: 'buyer',
+          role: selectedRole,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -101,10 +89,10 @@ export default function SignupScreen() {
         response.refreshToken,
       );
 
-      if (hasLocation) {
-        router.replace('/(buyer)/');
+      if (selectedRole === 'seller') {
+        router.replace('/(seller)/');
       } else {
-        router.replace('/(auth)/onboarding?requireLocation=1');
+        router.replace('/(rider)/');
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to create account. Please try again.');
@@ -129,12 +117,12 @@ export default function SignupScreen() {
             <BackButton />
           </YStack>
 
-          <YStack mb="$7" gap="$2">
+          <YStack mb="$7" gap="$3">
             <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
               Create Account
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
-              Sign up with email and password. Your username will be your public buyer ID.
+              Sign up with email and password.
             </Text>
           </YStack>
 
@@ -192,7 +180,7 @@ export default function SignupScreen() {
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?
             </Text>
-            <Button variant="outline" onPress={() => router.replace('/(auth)/login')}>
+            <Button variant="outline" onPress={() => router.push({ pathname: '/(auth)/login', params: { role: selectedRole } })}>
               LOG IN
             </Button>
           </YStack>

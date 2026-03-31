@@ -1,19 +1,17 @@
 // @ts-nocheck
 import { useState, useRef } from "react";
 import {
-  Alert,
   NativeSyntheticEvent,
   NativeScrollEvent,
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Image, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Input } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { Store, Truck, ChevronRight } from "@tamagui/lucide-icons";
 import { useOnboardingStore } from "@/stores/onboarding.store";
-import { useAuthStore } from "@/stores/auth.store";
 
 const SLIDES = [
   {
@@ -50,7 +48,6 @@ export default function OnboardingScreen() {
   const [selectedRole, setSelectedRole] = useState<"seller" | "rider" | null>(null);
 
   const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding);
-  const user = useAuthStore((state) => state.user);
 
   const handlePageChange = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -78,24 +75,15 @@ export default function OnboardingScreen() {
   };
 
   const handleContinueWithLogin = () => {
+    if (!selectedRole) return;
     completeOnboarding();
-    if (user) {
-      // Redirect based on user role
-      if (user.role === "seller") {
-        router.replace("/(seller)/");
-      } else if (user.role === "rider") {
-        router.replace("/(rider)/");
-      } else {
-        router.replace("/(auth)/login");
-      }
-      return;
-    }
-    router.replace("/(auth)/login");
+    router.push({ pathname: "/(auth)/login", params: { role: selectedRole } });
   };
 
-  const handleSkipLogin = () => {
+  const handleContinueWithSignup = () => {
+    if (!selectedRole) return;
     completeOnboarding();
-    router.replace("/(auth)/login");
+    router.push({ pathname: "/(auth)/signup", params: { role: selectedRole } });
   };
 
   return (
@@ -293,7 +281,15 @@ export default function OnboardingScreen() {
               disabled={!selectedRole}
               opacity={selectedRole ? 1 : 0.5}
             >
-              {user ? "CONTINUE" : "CONTINUE TO LOGIN"}
+              LOG IN
+            </Button>
+            <Button
+              variant="outline"
+              onPress={handleContinueWithSignup}
+              disabled={!selectedRole}
+              opacity={selectedRole ? 1 : 0.5}
+            >
+              CREATE ACCOUNT
             </Button>
           </YStack>
         </YStack>

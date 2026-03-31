@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import {
   YStack,
@@ -44,6 +45,10 @@ export default function LoginScreen() {
     (state) => state.hasSeenOnboarding,
   );
   const loginMutation = useEmailPasswordLoginMutation();
+  const navigation = useNavigation();
+  const { role } = useLocalSearchParams<{ role?: string }>();
+  const selectedRole = (role === 'seller' || role === 'rider') ? role : 'seller';
+  const roleLabel = selectedRole === 'seller' ? 'Seller' : 'Rider';
 
   const [method, setMethod] = useState<LoginMethod>("phone");
   const [phone, setPhone] = useState("");
@@ -59,24 +64,20 @@ export default function LoginScreen() {
   const selectedCountry = getCountryOption(selectedCountryIso);
 
   useEffect(() => {
-    if (!locationHydrated || hasLocation) return;
-    router.replace(
-      hasSeenOnboarding
-        ? "/(auth)/onboarding?requireLocation=1"
-        : "/(auth)/onboarding",
-    );
-  }, [locationHydrated, hasLocation, hasSeenOnboarding, router]);
-
-  useEffect(() => {
     if (!currentLocation?.countryCode) return;
     setSelectedCountryIso(currentLocation.countryCode.toUpperCase());
   }, [currentLocation?.countryCode]);
 
   const goPostAuth = () => {
-    if (hasLocation) {
-      router.replace("/(buyer)/");
+    // Get user from auth store to check role
+    const user = useAuthStore.getState().user;
+    if (user?.role === 'seller') {
+      router.replace("/(seller)/");
+    } else if (user?.role === 'rider') {
+      router.replace("/(rider)/");
     } else {
-      router.replace("/(auth)/onboarding?requireLocation=1");
+      // If no role set, go to onboarding to select role
+      router.replace("/(auth)/onboarding");
     }
   };
 
@@ -101,7 +102,7 @@ export default function LoginScreen() {
       await authService.requestOtp(normalizedPhone);
       router.push({
         pathname: "/(auth)/verification",
-        params: { contactInfo: normalizedPhone, type: "login" },
+        params: { contactInfo: normalizedPhone, type: "login", role: selectedRole },
       });
     } catch (err: any) {
       setError(err?.message || "Failed to send OTP. Please try again.");
@@ -143,7 +144,7 @@ export default function LoginScreen() {
           email: response.user.email,
           phone: response.user.phone,
           username: response.user.username,
-          role: "buyer",
+          role: selectedRole,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -169,7 +170,16 @@ export default function LoginScreen() {
       }
       setError("");
       const response = await authService.loginWithOIDC(provider);
-      setAuth(response.user, response.accessToken, response.refreshToken);
+      setAuth(
+        {
+          ...response.user,
+          role: selectedRole,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        response.accessToken,
+        response.refreshToken,
+      );
       goPostAuth();
     } catch {
       setError(`Failed to sign in with ${provider}`);
@@ -196,13 +206,11 @@ export default function LoginScreen() {
             paddingBottom: Math.max(insets.bottom + 20, 24),
           }}
         >
-          {router.canDismiss() && (
-            <YStack mb="$4">
-              <BackButton />
-            </YStack>
-          )}
+          <YStack mb="$4">
+            <BackButton />
+          </YStack>
 
-          <YStack mb="$6" gap="$2">
+          <YStack mb="$6" gap="$3">
             <Text
               fontSize={30}
               fontWeight="800"
@@ -421,7 +429,7 @@ export default function LoginScreen() {
             </Text>
             <Button
               variant="outline"
-              onPress={() => router.push("/(auth)/signup")}
+              onPress={() => router.push({ pathname: "/(auth)/signup", params: { role: selectedRole } })}
             >
               CREATE ACCOUNT
             </Button>

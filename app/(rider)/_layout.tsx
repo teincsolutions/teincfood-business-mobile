@@ -1,29 +1,232 @@
 // @ts-nocheck
-
 import { useState } from "react";
-import { Tabs, useRouter } from "expo-router";
+import { Drawer } from "expo-router/drawer";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "tamagui";
+import { useTheme, YStack, XStack, Text, Avatar, Separator, Button } from "tamagui";
 import {
   Home,
   Truck,
   DollarSign,
   User,
   LogIn,
+  Settings,
+  Bell,
+  LogOut,
   MapPin,
+  FileText,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
 
 /**
- * Rider Tab Navigation
- * Contains Home, Deliveries, Earnings, and Profile tabs.
+ * Custom Drawer Content for Rider
+ */
+function CustomDrawerContent(props: any) {
+  const theme = useTheme();
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    clearAuth();
+    setShowLogoutDialog(false);
+    router.replace("/(auth)/login");
+  };
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      {/* User Profile Section */}
+      <YStack padding="$4" paddingTop="$6" backgroundColor="$primary">
+        <XStack gap="$3" alignItems="center">
+          <Avatar circular size="$5">
+            <Avatar.Image
+              source={{ uri: user?.avatarUrl || undefined }}
+            />
+            <Avatar.Fallback backgroundColor="$gray8">
+              <Text color="white" fontWeight="bold">
+                {user?.fullName?.charAt(0) || "R"}
+              </Text>
+            </Avatar.Fallback>
+          </Avatar>
+          <YStack flex={1}>
+            <Text color="white" fontWeight="bold" fontSize="$5">
+              {user?.fullName || "Rider"}
+            </Text>
+            <Text color="white" opacity={0.8} fontSize="$3">
+              {user?.email || "rider@example.com"}
+            </Text>
+            <XStack gap="$2" alignItems="center" marginTop="$1">
+              <YStack
+                width={8}
+                height={8}
+                borderRadius="$10"
+                backgroundColor={user?.isOnline ? "$green10" : "$gray8"}
+              />
+              <Text color="white" opacity={0.8} fontSize="$2">
+                {user?.isOnline ? "Online" : "Offline"}
+              </Text>
+            </XStack>
+          </YStack>
+        </XStack>
+      </YStack>
+
+      {/* Menu Items */}
+      <DrawerContentScrollView {...props} style={{ flex: 1 }}>
+        <YStack padding="$2" gap="$1">
+          {/* Home */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/home")}
+            icon={<Home size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Home</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Deliveries */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/deliveries")}
+            icon={<Truck size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Deliveries</Text>
+          </Button>
+
+          {/* Earnings */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/earnings")}
+            icon={<DollarSign size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Earnings</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Notifications */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(shared)/notifications")}
+            icon={<Bell size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Notifications</Text>
+          </Button>
+
+          {/* Settings */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/settings")}
+            icon={<Settings size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Settings</Text>
+          </Button>
+
+          {/* Profile */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/profile")}
+            icon={<User size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Profile</Text>
+          </Button>
+
+          {/* Documents */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(rider)/profile/documents")}
+            icon={<FileText size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">Documents</Text>
+          </Button>
+
+          <Separator marginVertical="$2" />
+
+          {/* Logout */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$red4" }}
+            onPress={() => setShowLogoutDialog(true)}
+            icon={<LogOut size={20} color="$red10" />}
+          >
+            <Text flex={1} fontSize="$4" color="$red10">Logout</Text>
+          </Button>
+        </YStack>
+      </DrawerContentScrollView>
+
+      {/* Logout Confirmation Dialog */}
+      <AppAlertDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Logout"
+        description="Are you sure you want to logout?"
+        icon={LogOut}
+        confirmText="LOGOUT"
+        onConfirm={handleLogout}
+      />
+    </YStack>
+  );
+}
+
+/**
+ * Rider Drawer Navigation
+ * Contains Home, Deliveries, Earnings, Settings, and Profile.
  */
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
-export default function RiderTabsLayout() {
+export default function RiderDrawerLayout() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
@@ -42,76 +245,105 @@ export default function RiderTabsLayout() {
 
   return (
     <>
-      <Tabs
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: theme.primary.val,
-          tabBarInactiveTintColor: theme.colorMuted.val,
-          tabBarStyle: {
-            borderTopWidth: 1,
-            borderTopColor: theme.borderColor.val as string,
-            backgroundColor: theme.background.val as string,
-            height: 65 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-            paddingTop: 10,
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: theme.background.val,
           },
-          tabBarLabelStyle: {
+          headerTintColor: theme.color.val,
+          headerTitleStyle: {
             fontFamily: "Sen_600SemiBold",
-            fontSize: 12,
           },
+          drawerStyle: {
+            backgroundColor: theme.background.val,
+            width: 280,
+          },
+          drawerType: "front",
+          overlayColor: "rgba(0,0,0,0.5)",
         }}
       >
-        <Tabs.Screen
+        <Drawer.Screen
           name="index"
           options={{
-            href: null,
+            drawerItemStyle: { display: "none" },
+            headerShown: false,
           }}
         />
 
-        {/* Home Tab */}
-        <Tabs.Screen
+        {/* Home */}
+        <Drawer.Screen
           name="home"
           options={{
             title: "Home",
-            tabBarIcon: ({ color }) => <Home color={color as any} size={24} />,
+            drawerIcon: ({ color, size }) => (
+              <Home color={color} size={size} />
+            ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Deliveries Tab */}
-        <Tabs.Screen
+        {/* Deliveries */}
+        <Drawer.Screen
           name="deliveries"
           options={{
             title: "Deliveries",
-            tabBarIcon: ({ color }) => (
-              <Truck color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <Truck color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Earnings Tab */}
-        <Tabs.Screen
+        {/* Earnings */}
+        <Drawer.Screen
           name="earnings"
           options={{
             title: "Earnings",
-            tabBarIcon: ({ color }) => (
-              <DollarSign color={color as any} size={24} />
+            drawerIcon: ({ color, size }) => (
+              <DollarSign color={color} size={size} />
             ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Profile Tab */}
-        <Tabs.Screen
+        {/* Settings */}
+        <Drawer.Screen
+          name="settings"
+          options={{
+            title: "Settings",
+            drawerIcon: ({ color, size }) => (
+              <Settings color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Profile */}
+        <Drawer.Screen
           name="profile"
           options={{
             title: "Profile",
-            tabBarIcon: ({ color }) => <User color={color as any} size={24} />,
+            drawerIcon: ({ color, size }) => (
+              <User color={color} size={size} />
+            ),
           }}
-          listeners={{ tabPress: handleProtectedRoute }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
-      </Tabs>
+
+        {/* Documents */}
+        <Drawer.Screen
+          name="profile/documents"
+          options={{
+            title: "Documents",
+            drawerIcon: ({ color, size }) => (
+              <FileText color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+      </Drawer>
 
       <AppAlertDialog
         open={showAuthDialog}
