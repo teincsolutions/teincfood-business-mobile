@@ -236,7 +236,7 @@ export default function SellerDashboard() {
                 You have {metrics.activeOrders} orders being delivered
               </Text>
               <Button
-                onPress={() => router.push('/(seller)/orders/active')}
+                onPress={() => router.push('/(seller)/orders')}
               >
                 Track Orders
               </Button>

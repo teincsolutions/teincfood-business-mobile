@@ -274,6 +274,7 @@ export default function RiderDrawerLayout() {
           name="deliveries/index"
           options={{
             title: "Deliveries",
+            headerShown: false,
             drawerIcon: ({ color, size }) => (
               <Truck color={color} size={size} />
             ),

@@ -213,15 +213,17 @@ export default function RiderHome() {
               <XStack gap="$3">
                 <Button
                   flex={1}
-                  icon={<Navigation size={18} />}
-                  onPress={() => router.push(`/(rider)/deliveries/${activeDelivery.id}`)}
+                  variant="primary"
+                  height={48}
+                  onPress={() => router.push('/(rider)/deliveries')}
                 >
                   Navigate
                 </Button>
                 <Button
                   flex={1}
-                  variant="outlined"
-                  onPress={() => router.push(`/(rider)/deliveries/${activeDelivery.id}`)}
+                  variant="outline"
+                  height={48}
+                  onPress={() => router.push('/(rider)/deliveries')}
                 >
                   View Details
                 </Button>
@@ -239,7 +241,7 @@ export default function RiderHome() {
                 <Button
                 variant="primary"
                 height={48}
-                onPress={() => router.push('/(rider)/deliveries/available')}
+                onPress={() => router.push('/(rider)/deliveries')}
               >
                 Available ({metrics.availableDeliveries})
               </Button>
