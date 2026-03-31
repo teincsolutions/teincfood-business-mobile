@@ -7,10 +7,9 @@ import {
   XStack,
   Text,
   Card,
-  Switch,
   Separator,
 } from 'tamagui';
-import { ArrowLeft, Save, Clock, CheckCircle, AlertCircle } from '@tamagui/lucide-icons';
+import { ArrowLeft, Save, Clock, CheckCircle, AlertCircle, X } from '@tamagui/lucide-icons';
 import { Button } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -45,13 +44,13 @@ export default function OperatingHoursSettings() {
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
 
   const [schedule, setSchedule] = useState<Record<string, DaySchedule>>({
-    monday: { isOpen: true, openTime: '08:00', closeTime: '22:00' },
-    tuesday: { isOpen: true, openTime: '08:00', closeTime: '22:00' },
-    wednesday: { isOpen: true, openTime: '08:00', closeTime: '22:00' },
-    thursday: { isOpen: true, openTime: '08:00', closeTime: '22:00' },
-    friday: { isOpen: true, openTime: '08:00', closeTime: '23:00' },
-    saturday: { isOpen: true, openTime: '09:00', closeTime: '23:00' },
-    sunday: { isOpen: true, openTime: '10:00', closeTime: '21:00' },
+    monday:    { isOpen: true,  openTime: '08:00', closeTime: '22:00' },
+    tuesday:   { isOpen: true,  openTime: '08:00', closeTime: '22:00' },
+    wednesday: { isOpen: true,  openTime: '08:00', closeTime: '22:00' },
+    thursday:  { isOpen: true,  openTime: '08:00', closeTime: '22:00' },
+    friday:    { isOpen: true,  openTime: '08:00', closeTime: '23:00' },
+    saturday:  { isOpen: false, openTime: '09:00', closeTime: '23:00' },
+    sunday:    { isOpen: false, openTime: '10:00', closeTime: '21:00' },
   });
 
   const days = [
@@ -191,79 +190,98 @@ export default function OperatingHoursSettings() {
               </Text>
               <Separator />
 
-              {days.map((day, index) => (
-                <YStack key={day.key} gap="$3">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontWeight="bold">{day.label}</Text>
-                    <Switch
-                      checked={schedule[day.key].isOpen}
-                      onCheckedChange={() => toggleDay(day.key)}
-                      backgroundColor={schedule[day.key].isOpen ? '$green10' : '$gray8'}
-                    >
-                      <Switch.Thumb backgroundColor="$background" />
-                    </Switch>
-                  </XStack>
-
-                  {schedule[day.key].isOpen && (
-                    <XStack gap="$3" paddingLeft="$2">
-                      <YStack flex={1} gap="$1">
-                        <Text fontSize="$2" color="$colorMuted">Opens</Text>
-                        <Pressable
-                          onPress={() => setPickerTarget({ day: day.key, field: 'openTime' })}
+              {days.map((day, index) => {
+                const isOpen = schedule[day.key].isOpen;
+                return (
+                  <YStack key={day.key} gap="$3" opacity={isOpen ? 1 : 0.6}>
+                    {/* Day header: name + "Closed" badge + labeled switch */}
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <Text fontWeight="bold" fontSize="$4">{day.label}</Text>
+                      <Pressable
+                        onPress={() => toggleDay(day.key)}
+                        style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+                      >
+                        <XStack
+                          alignItems="center"
+                          gap="$2"
+                          paddingHorizontal="$3"
+                          paddingVertical="$2"
+                          borderRadius="$10"
+                          borderWidth={1.5}
+                          backgroundColor={isOpen ? '$green3' : '$red3'}
+                          borderColor={isOpen ? '$green8' : '$red8'}
                         >
-                          <XStack
-                            padding="$3"
-                            borderWidth={1}
-                            borderColor={
-                              pickerTarget?.day === day.key && pickerTarget?.field === 'openTime'
-                                ? '$primary'
-                                : '$borderColor'
-                            }
-                            borderRadius="$3"
-                            backgroundColor="$backgroundSoft"
-                            alignItems="center"
-                            gap="$2"
+                          {isOpen
+                            ? <CheckCircle size={14} color="$green10" />
+                            : <X size={14} color="$red10" />
+                          }
+                          <Text
+                            fontSize="$2"
+                            fontWeight="700"
+                            color={isOpen ? '$green10' : '$red10'}
                           >
-                            <Clock size={14} color="$colorMuted" />
-                            <Text fontWeight="500">{schedule[day.key].openTime}</Text>
-                          </XStack>
-                        </Pressable>
-                      </YStack>
-                      <YStack flex={1} gap="$1">
-                        <Text fontSize="$2" color="$colorMuted">Closes</Text>
-                        <Pressable
-                          onPress={() => setPickerTarget({ day: day.key, field: 'closeTime' })}
-                        >
-                          <XStack
-                            padding="$3"
-                            borderWidth={1}
-                            borderColor={
-                              pickerTarget?.day === day.key && pickerTarget?.field === 'closeTime'
-                                ? '$primary'
-                                : '$borderColor'
-                            }
-                            borderRadius="$3"
-                            backgroundColor="$backgroundSoft"
-                            alignItems="center"
-                            gap="$2"
-                          >
-                            <Clock size={14} color="$colorMuted" />
-                            <Text fontWeight="500">{schedule[day.key].closeTime}</Text>
-                          </XStack>
-                        </Pressable>
-                      </YStack>
+                            {isOpen ? 'Open' : 'Closed'}
+                          </Text>
+                        </XStack>
+                      </Pressable>
                     </XStack>
-                  )}
 
-                  {!schedule[day.key].isOpen && (
-                    <Text fontSize="$3" color="$red10" paddingLeft="$2">
-                      Closed
-                    </Text>
-                  )}
+                    {/* Time pickers — only shown when day is open */}
+                    {isOpen && (
+                      <XStack gap="$3" paddingLeft="$2">
+                        <YStack flex={1} gap="$1">
+                          <Text fontSize="$2" color="$colorMuted">Opens</Text>
+                          <Pressable
+                            onPress={() => setPickerTarget({ day: day.key, field: 'openTime' })}
+                          >
+                            <XStack
+                              padding="$3"
+                              borderWidth={1}
+                              borderColor={
+                                pickerTarget?.day === day.key && pickerTarget?.field === 'openTime'
+                                  ? '$primary'
+                                  : '$borderColor'
+                              }
+                              borderRadius="$3"
+                              backgroundColor="$backgroundSoft"
+                              alignItems="center"
+                              gap="$2"
+                            >
+                              <Clock size={14} color="$colorMuted" />
+                              <Text fontWeight="500">{schedule[day.key].openTime}</Text>
+                            </XStack>
+                          </Pressable>
+                        </YStack>
+                        <YStack flex={1} gap="$1">
+                          <Text fontSize="$2" color="$colorMuted">Closes</Text>
+                          <Pressable
+                            onPress={() => setPickerTarget({ day: day.key, field: 'closeTime' })}
+                          >
+                            <XStack
+                              padding="$3"
+                              borderWidth={1}
+                              borderColor={
+                                pickerTarget?.day === day.key && pickerTarget?.field === 'closeTime'
+                                  ? '$primary'
+                                  : '$borderColor'
+                              }
+                              borderRadius="$3"
+                              backgroundColor="$backgroundSoft"
+                              alignItems="center"
+                              gap="$2"
+                            >
+                              <Clock size={14} color="$colorMuted" />
+                              <Text fontWeight="500">{schedule[day.key].closeTime}</Text>
+                            </XStack>
+                          </Pressable>
+                        </YStack>
+                      </XStack>
+                    )}
 
-                  {index < days.length - 1 && <Separator />}
-                </YStack>
-              ))}
+                    {index < days.length - 1 && <Separator marginTop="$1" />}
+                  </YStack>
+                );
+              })}
             </YStack>
           </Card>
 

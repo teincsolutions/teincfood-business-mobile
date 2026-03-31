@@ -141,52 +141,6 @@ export default function ThemeSettings() {
               })}
             </YStack>
           </Card>
-
-          {/* Preview */}
-          <Card padding="$4" bordered>
-            <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$color">
-                Preview
-              </Text>
-              <Separator />
-              <YStack
-                padding="$4"
-                borderRadius="$4"
-                backgroundColor={previewBg ?? '$background'}
-                borderWidth={1}
-                borderColor="$borderColor"
-                gap="$3"
-              >
-                <Text
-                  fontSize="$5"
-                  fontWeight="800"
-                  fontFamily="$heading"
-                  color={previewText ?? '$color'}
-                >
-                  Sample Heading
-                </Text>
-                <Text
-                  fontSize="$3"
-                  fontFamily="$body"
-                  color={previewSub ?? '$colorSecondary'}
-                >
-                  This is how your app will look with the selected theme.
-                </Text>
-                <YStack
-                  height={44}
-                  width={120}
-                  borderRadius="$3"
-                  backgroundColor="#F97316"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text fontFamily="$body" fontWeight="700" color="white" fontSize="$3">
-                    Button
-                  </Text>
-                </YStack>
-              </YStack>
-            </YStack>
-          </Card>
         </YStack>
       </ScrollView>
     </YStack>
