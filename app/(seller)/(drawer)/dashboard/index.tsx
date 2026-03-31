@@ -87,14 +87,15 @@ export default function SellerDashboard() {
           <XStack gap="$2" alignItems="center">
             <Text fontSize="$3">Store {isStoreOpen ? 'Open' : 'Closed'}</Text>
             <Switch
+            size="$8"
               checked={isStoreOpen}
               onCheckedChange={setIsStoreOpen}
-              backgroundColor={isStoreOpen ? '$primary' : '$gray8'}
+              backgroundColor={isStoreOpen ? '$primary' : '$color.gray600'}
             >
-              <Switch.Thumb animation="quick" backgroundColor="white" />
+              <Switch.Thumb animation="quick" backgroundColor="$color.white" />
             </Switch>
             <Button
-              size="$3"
+              size="$4"
               circular
               icon={<Bell size={20} />}
               onPress={() => router.push('/(seller)/notifications')}

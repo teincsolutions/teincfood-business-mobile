@@ -31,6 +31,7 @@ export default function SellerSettings() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack
           paddingHorizontal="$4"
+           paddingTop="$4"
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >
@@ -38,7 +39,7 @@ export default function SellerSettings() {
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
                   Store Status
                 </Text>
                 <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
@@ -46,12 +47,12 @@ export default function SellerSettings() {
                 </Text>
               </YStack>
               <Switch
-                size="$3"
+                size="$5"
                 checked={isOpen}
                 onCheckedChange={setIsOpen}
-                backgroundColor={isOpen ? '#27ae60' : '$gray8'}
+                backgroundColor={isOpen ? '$color.green' : '$color.gray600'}
               >
-                <Switch.Thumb animation="quick" backgroundColor="white" />
+                <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
             </XStack>
           </Card>
@@ -60,7 +61,7 @@ export default function SellerSettings() {
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
                   Order Notifications
                 </Text>
                 <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
@@ -68,12 +69,12 @@ export default function SellerSettings() {
                 </Text>
               </YStack>
               <Switch
-                size="$3"
+                size="$5"
                 checked={notificationsEnabled}
                 onCheckedChange={setNotificationsEnabled}
-                backgroundColor={notificationsEnabled ? '$primary' : '$gray8'}
+                backgroundColor={notificationsEnabled ? '$color.orange' : '$color.gray600'}
               >
-                <Switch.Thumb animation="quick" backgroundColor="white" />
+                <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
             </XStack>
           </Card>
@@ -99,7 +100,7 @@ export default function SellerSettings() {
                       <item.icon size={20} color="$colorSecondary" />
                     </YStack>
                     <YStack flex={1}>
-                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
                         {item.label}
                       </Text>
                       <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
@@ -117,9 +118,9 @@ export default function SellerSettings() {
           </Card>
 
           {/* Danger Zone */}
-          <Card padding="$4" bordered borderColor="#fca5a5">
+          <Card padding="$4" bordered borderColor="$red200">
             <YStack gap="$3">
-              <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="#ef4444"
+              <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$red600"
                 textTransform="uppercase" letterSpacing={0.5}>
                 Danger Zone
               </Text>
@@ -128,7 +129,7 @@ export default function SellerSettings() {
                 height={48}
                 onPress={() => setShowCloseDialog(true)}
               >
-                <Text fontFamily="$body" fontWeight="700" color="#ef4444">
+                <Text fontFamily="$body" fontWeight="700" color="$red600">
                   Close Store Temporarily
                 </Text>
               </Button>

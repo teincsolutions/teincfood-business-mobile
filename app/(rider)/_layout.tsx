@@ -42,7 +42,7 @@ function CustomDrawerContent(props: any) {
         <XStack gap="$3" alignItems="center">
           <Avatar circular size="$5">
             <Avatar.Image
-              source={{ uri: user?.avatarUrl || undefined }}
+              src={user?.avatarUrl}
             />
             <Avatar.Fallback backgroundColor="$gray8">
               <Text color="white" fontWeight="bold">

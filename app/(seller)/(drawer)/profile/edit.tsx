@@ -7,11 +7,10 @@ import {
   XStack,
   Text,
   Card,
-  Button,
   Avatar,
   Separator,
 } from 'tamagui';
-import { FormInput } from '@/components/ui';
+import { FormInput, Button } from '@/components/ui';
 import { ArrowLeft, Save, Camera, User, Mail, Phone } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -69,24 +68,25 @@ export default function EditProfile() {
       >
         <XStack gap="$3" alignItems="center">
           <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
+            variant="outline"
+            width={44}
+            height={44}
+            borderRadius={22}
             onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
+            icon={<ArrowLeft size={20} />}
           />
           <Text fontSize="$6" fontWeight="bold">Edit Profile</Text>
         </XStack>
         <Button
-          size="$3"
-          backgroundColor="$primary"
+          variant="primary"
+          width="auto"
+          height={40}
+          paddingHorizontal="$4"
+          loading={isSaving}
           onPress={handleSave}
-          disabled={isSaving}
-          icon={<Save size={18} color="$background" />}
+          icon={<Save size={18} color="white" />}
         >
-          <Text color="$background" fontWeight="bold">
-            {isSaving ? 'Saving...' : 'Save'}
-          </Text>
+          Save
         </Button>
       </XStack>
 
@@ -97,7 +97,7 @@ export default function EditProfile() {
             <YStack alignItems="center" gap="$3">
               <Avatar circular size="$10">
                 <Avatar.Image
-                  source={{ uri: user?.avatarUrl || undefined }}
+                  src={user?.avatarUrl}
                 />
                 <Avatar.Fallback backgroundColor="$primary">
                   <User size={32} color="$background" />
@@ -105,7 +105,9 @@ export default function EditProfile() {
               </Avatar>
               <Button
                 variant="outline"
-                size="$3"
+                width="auto"
+                height={40}
+                paddingHorizontal="$4"
                 icon={<Camera size={18} />}
               >
                 Change Photo
@@ -150,14 +152,11 @@ export default function EditProfile() {
 
           {/* Save Button */}
           <Button
-            size="$5"
-            backgroundColor="$primary"
+            variant="primary"
+            loading={isSaving}
             onPress={handleSave}
-            disabled={isSaving}
           >
-            <Text color="$background" fontWeight="bold">
-              {isSaving ? 'Saving Changes...' : 'Save Changes'}
-            </Text>
+            Save Changes
           </Button>
         </YStack>
       </ScrollView>

@@ -37,7 +37,7 @@ export default function RiderProfile() {
             <XStack gap="$4" alignItems="center">
               <Avatar circular size="$8">
                 <Avatar.Image
-                  source={{ uri: user?.avatarUrl || undefined }}
+                  src={user?.avatarUrl}
                 />
                 <Avatar.Fallback backgroundColor="$primary">
                   <Text color="$background" fontWeight="bold" fontSize="$6">

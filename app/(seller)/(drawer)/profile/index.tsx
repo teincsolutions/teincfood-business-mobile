@@ -24,7 +24,7 @@ export default function SellerProfile() {
     { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
     { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
     { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/(shared)/profile/privacy-policy' },
-    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(seller)/profile/help' },
+    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(seller)/help' },
   ];
 
   return (
@@ -36,7 +36,7 @@ export default function SellerProfile() {
             <XStack gap="$4" alignItems="center">
               <Avatar circular size="$12">
                 <Avatar.Image
-                  source={{ uri: user?.avatarUrl || undefined }}
+                  src={user?.avatarUrl}
                 />
                 <Avatar.Fallback backgroundColor="$primary" justifyContent="center" alignItems="center">
                   <Text color="$background" fontWeight="bold" fontSize="$7">

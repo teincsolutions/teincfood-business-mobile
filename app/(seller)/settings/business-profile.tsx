@@ -1,21 +1,22 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState } from "react";
+import { ScrollView, Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import {
   YStack,
   XStack,
   Text,
   Card,
-  Button as TamaguiButton,
   TextArea,
   Separator,
   Avatar,
-} from 'tamagui';
-import { ArrowLeft, Camera, Save, Building } from '@tamagui/lucide-icons';
-import { Button, FormInput } from '@/components/ui';
-import { useAuthStore } from '@/stores/auth.store';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+   Button as TamaguiButton,
+} from "tamagui";
+import { ArrowLeft, Camera, Save, Building } from "@tamagui/lucide-icons";
+import { Button, FormInput } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth.store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Business Profile Settings Screen
@@ -26,20 +27,43 @@ export default function BusinessProfileSettings() {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
 
-  const [businessName, setBusinessName] = useState(user?.businessName || '');
+  const [businessName, setBusinessName] = useState(user?.businessName || "");
   const [businessDescription, setBusinessDescription] = useState(
-    user?.businessDescription || ''
+    user?.businessDescription || "",
   );
   const [businessAddress, setBusinessAddress] = useState(
-    user?.businessAddress || ''
+    user?.businessAddress || "",
   );
-  const [businessPhone, setBusinessPhone] = useState(user?.phone || '');
-  const [businessEmail, setBusinessEmail] = useState(user?.email || '');
+  const [businessPhone, setBusinessPhone] = useState(user?.phone || "");
+  const [businessEmail, setBusinessEmail] = useState(user?.email || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [logoUri, setLogoUri] = useState<string | undefined>(
+    user?.businessLogoUrl,
+  );
+
+  const handleChangeLogo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Please allow access to your photo library to change your business logo.",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setLogoUri(result.assets[0].uri);
+    }
+  };
 
   const handleSave = async () => {
     if (!businessName.trim()) {
-      Alert.alert('Error', 'Business name is required');
+      Alert.alert("Error", "Business name is required");
       return;
     }
 
@@ -54,13 +78,14 @@ export default function BusinessProfileSettings() {
         businessAddress: businessAddress.trim(),
         phone: businessPhone.trim(),
         email: businessEmail.trim(),
+        ...(logoUri ? { businessLogoUrl: logoUri } : {}),
       });
 
-      Alert.alert('Success', 'Business profile updated successfully', [
-        { text: 'OK', onPress: () => router.back() },
+      Alert.alert("Success", "Business profile updated successfully", [
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update business profile');
+      Alert.alert("Error", "Failed to update business profile");
     } finally {
       setIsSaving(false);
     }
@@ -71,6 +96,7 @@ export default function BusinessProfileSettings() {
       {/* Header */}
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 8, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -86,21 +112,21 @@ export default function BusinessProfileSettings() {
             onPress={() => router.back()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
-          <Text fontSize="$6" fontWeight="bold">Business Profile</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            Business Profile
+          </Text>
         </XStack>
-        <TamaguiButton
-          height={44}
+        <Button
+          variant="primary"
+          width="auto"
+          height={40}
           paddingHorizontal="$4"
-          backgroundColor="$primary"
-          borderRadius="$3"
+          loading={isSaving}
           onPress={handleSave}
-          disabled={isSaving}
           icon={<Save size={18} color="white" />}
         >
-          <Text color="white" fontWeight="bold">
-            {isSaving ? 'Saving...' : 'Save'}
-          </Text>
-        </TamaguiButton>
+          Save
+        </Button>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -108,25 +134,27 @@ export default function BusinessProfileSettings() {
           {/* Business Logo */}
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
-              <Avatar circular size="$10">
-                <Avatar.Image
-                  source={{ uri: user?.avatarUrl || undefined }}
-                />
-                <Avatar.Fallback backgroundColor="$primary">
-                  <Building size={32} color="$background" />
+              <Avatar circular size="$16">
+                <Avatar.Image src={logoUri} />
+                <Avatar.Fallback
+                  size="$16"
+                  alignItems="center"
+                  justifyContent="center"
+                  backgroundColor="$primary"
+                >
+                  <Building size="$10" color="$background" />
                 </Avatar.Fallback>
               </Avatar>
-              <TamaguiButton
-                height={44}
+              <Button
+                variant="outline"
+                width="auto"
+                height={40}
                 paddingHorizontal="$4"
-                backgroundColor="transparent"
-                borderWidth={1}
-                borderColor="$borderColor"
-                borderRadius="$3"
                 icon={<Camera size={18} />}
+                onPress={handleChangeLogo}
               >
                 Change Logo
-              </TamaguiButton>
+              </Button>
             </YStack>
           </Card>
 
@@ -203,14 +231,8 @@ export default function BusinessProfileSettings() {
           </Card>
 
           {/* Save Button */}
-          <Button
-            variant="primary"
-            onPress={handleSave}
-            disabled={isSaving}
-          >
-            <Text color="white" fontWeight="bold">
-              {isSaving ? 'Saving Changes...' : 'Save Changes'}
-            </Text>
+          <Button variant="primary" loading={isSaving} onPress={handleSave}>
+            Save Changes
           </Button>
         </YStack>
       </ScrollView>

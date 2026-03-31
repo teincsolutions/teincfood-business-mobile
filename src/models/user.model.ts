@@ -5,6 +5,7 @@ export interface User {
   email: string;
   phone: string;
   avatarUrl?: string;
+  businessLogoUrl?: string; // For sellers
   role: 'seller' | 'rider';
   businessName?: string; // For sellers
   businessType?: string; // For sellers: Restaurant, Cafe, Bakery, etc.

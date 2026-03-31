@@ -58,6 +58,7 @@ export default function PaymentSettings() {
       {/* Header */}
       <XStack
         padding="$4"
+         paddingTop={Math.max(insets.top + 8, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -70,7 +71,7 @@ export default function PaymentSettings() {
             height={40}
             circular
             backgroundColor="$backgroundSoft"
-            onPress={() => router.back()}
+            onPress={() => router.dismiss()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
           <Text fontSize="$6" fontWeight="bold">Payment Settings</Text>
