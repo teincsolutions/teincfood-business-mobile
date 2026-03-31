@@ -27,6 +27,7 @@ import { DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawe
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -40,7 +41,7 @@ function CustomDrawerContent(props: any) {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* User Profile Section */}
-      <YStack padding="$4" paddingTop="$6" backgroundColor="$primary">
+      <YStack padding="$4" paddingTop={Math.max(insets.top + 8, 24)} backgroundColor="$primary">
         <XStack gap="$3" alignItems="center">
           <Avatar circular size="$5">
             <Avatar.Image

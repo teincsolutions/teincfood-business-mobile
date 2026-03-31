@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Notifications Screen
@@ -26,6 +27,7 @@ import { useAuthStore } from '@/stores/auth.store';
  */
 export default function NotificationsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -90,7 +92,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <XStack
         padding="$4"
-        paddingTop="$6"
+        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -98,7 +100,7 @@ export default function NotificationsScreen() {
         borderBottomColor="$borderColor"
       >
         <Text fontSize="$7" fontWeight="bold">Notifications</Text>
-        <Button size="$3" variant="outlined">
+        <Button variant="outline" width="auto" height={40} paddingHorizontal="$3">
           Mark All Read
         </Button>
       </XStack>

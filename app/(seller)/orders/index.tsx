@@ -1,12 +1,14 @@
 // @ts-nocheck
 import { YStack, Text, Card, Button, XStack, Separator } from 'tamagui';
-import { ShoppingBag, Clock, CheckCircle, XCircle, Filter } from '@tamagui/lucide-icons';
+import { Filter } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Seller Orders Screen
  */
 export default function SellerOrders() {
+  const insets = useSafeAreaInsets();
   const orders = [
     { id: '1', orderNumber: '#ORD-001', status: 'pending', items: 3, total: 85.00, customer: 'John Doe' },
     { id: '2', orderNumber: '#ORD-002', status: 'preparing', items: 2, total: 65.00, customer: 'Jane Smith' },
@@ -26,9 +28,26 @@ export default function SellerOrders() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <XStack padding="$4" justifyContent="space-between" alignItems="center">
+      <XStack
+        padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
+        justifyContent="space-between"
+        alignItems="center"
+      >
         <Text fontSize="$6" fontWeight="bold">Orders</Text>
-        <Button size="$3" icon={<Filter size={18} />}>Filter</Button>
+        <XStack
+          height={40}
+          paddingHorizontal="$3"
+          borderWidth={1}
+          borderColor="$borderColor"
+          borderRadius="$3"
+          alignItems="center"
+          gap="$2"
+          pressStyle={{ opacity: 0.7 }}
+        >
+          <Filter size={16} color="$color" />
+          <Text fontFamily="$body" fontWeight="600" fontSize="$3">Filter</Text>
+        </XStack>
       </XStack>
 
       <ScrollView>
@@ -54,7 +73,7 @@ export default function SellerOrders() {
                 <Separator />
                 <XStack justifyContent="space-between" alignItems="center">
                   <Text fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                  <Button size="$3">View Details</Button>
+                  <Button variant="outline" width="auto" height={40} paddingHorizontal="$3">View Details</Button>
                 </XStack>
               </YStack>
             </Card>
