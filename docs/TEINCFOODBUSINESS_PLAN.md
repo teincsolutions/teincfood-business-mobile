@@ -9,7 +9,7 @@
 ## Tech Stack (Same as TeincFoods)
 
 - **Framework**: React Native + Expo (SDK 55)
-- **Navigation**: expo-router (file-based)
+- **Navigation**: expo-router (file-based) with Drawer Navigation
 - **UI**: Tamagui
 - **State**: Zustand + MMKV
 - **Data**: TanStack Query + Axios
@@ -33,12 +33,13 @@ app/
 │   ├── verification.tsx       # OTP verification
 │   └── forgot-password.tsx    # Password reset
 │
-├── (seller)/                  # Seller-specific screens
-│   ├── _layout.tsx            # Tab layout (Dashboard, Orders, Menu, Analytics, Profile)
+├── (seller)/                  # Seller-specific screens (Drawer Navigation)
+│   ├── _layout.tsx            # Drawer layout with side menu
 │   ├── index.tsx              # Redirect to dashboard
 │   ├── dashboard/
 │   │   ├── index.tsx          # Dashboard overview
-│   │   └── live-orders.tsx    # Real-time order feed
+│   │   ├── live-orders.tsx    # Real-time order feed
+│   │   └── kiosk.tsx          # Kiosk mode for POS-style order handling
 │   ├── orders/
 │   │   ├── index.tsx          # All orders list
 │   │   ├── pending.tsx        # Pending orders (accept/reject)
@@ -68,8 +69,8 @@ app/
 │       ├── edit.tsx           # Edit profile
 │       └── help.tsx           # Help & support
 │
-├── (rider)/                   # Rider-specific screens
-│   ├── _layout.tsx            # Tab layout (Home, Deliveries, Earnings, Profile)
+├── (rider)/                   # Rider-specific screens (Drawer Navigation)
+│   ├── _layout.tsx            # Drawer layout with side menu
 │   ├── index.tsx              # Redirect to home
 │   ├── home/
 │   │   ├── index.tsx          # Rider dashboard (online/offline toggle)
@@ -179,12 +180,42 @@ app/
   - View pending orders
   - Toggle store open/closed
   - View live order feed
+  - **Enter Kiosk Mode** (new)
 - **Live Order Feed**:
   - Real-time list of incoming orders
   - Sound/vibration alert for new orders
   - Quick accept/reject buttons
 
-#### 2.2 Order Management
+#### 2.2 Kiosk Mode (POS-Style)
+- **Screen**: `dashboard/kiosk.tsx`
+- **Purpose**: Fast, touch-friendly interface for handling orders in a busy restaurant environment
+- **Features**:
+  - **Full-screen mode** with large touch targets
+  - **Order Queue Panel**:
+    - Large cards showing pending orders
+    - One-tap accept/reject buttons
+    - Sound alerts for new orders
+    - Auto-refresh every 5 seconds
+  - **Active Orders Panel**:
+    - Orders being prepared
+    - One-tap "Mark Ready" button
+    - Estimated time display
+  - **Quick Order Entry**:
+    - Fast menu item selection
+    - Custom item entry
+    - Quantity adjustments
+  - **Payment Status**:
+    - Paid/Unpaid indicators
+    - Payment method display
+  - **Keyboard Shortcuts** (for tablet/desktop):
+    - Enter: Accept order
+    - Escape: Reject order
+    - Space: Mark ready
+  - **Dark/Light Mode** for different lighting conditions
+  - **Offline Support**: Queue orders when internet is down
+- **Access**: Toggle from dashboard or dedicated button in drawer menu
+
+#### 2.3 Order Management
 - **Screen**: `orders/index.tsx`
 - **Order States**:
   - `pending` → Seller accepts/rejects
@@ -208,7 +239,7 @@ app/
   - Date range picker
   - Search by order number
 
-#### 2.3 Menu Management
+#### 2.4 Menu Management
 - **Screen**: `menu/index.tsx`
 - **Features**:
   - List all menu items with images, prices, availability
@@ -227,7 +258,7 @@ app/
   - Reorder categories
   - Assign items to categories
 
-#### 2.4 Analytics
+#### 2.5 Analytics
 - **Screen**: `analytics/index.tsx`
 - **Metrics**:
   - Revenue (daily, weekly, monthly, yearly)
@@ -244,7 +275,7 @@ app/
   - Export to PDF
   - Export to CSV
 
-#### 2.5 Business Settings
+#### 2.6 Business Settings
 - **Screen**: `settings/index.tsx`
 - **Settings**:
   - Business profile (name, logo, description, cover image)
@@ -389,6 +420,67 @@ app/
 
 ---
 
+## Navigation Architecture
+
+### Drawer Navigation (Side Menu)
+
+Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for better scalability and easier access to all features.
+
+#### Seller Drawer Menu Items:
+1. **Dashboard** (Home icon)
+   - Overview metrics
+   - Quick actions
+   - **Kiosk Mode** toggle
+2. **Orders** (Shopping bag icon)
+   - Pending orders
+   - Active orders
+   - Order history
+3. **Menu** (Utensils icon)
+   - Menu items
+   - Categories
+   - Availability
+4. **Analytics** (Chart icon)
+   - Revenue reports
+   - Order analytics
+   - Ratings
+5. **Settings** (Gear icon)
+   - Business profile
+   - Operating hours
+   - Delivery settings
+   - Payment settings
+6. **Profile** (User icon)
+   - View profile
+   - Edit profile
+   - Help & support
+7. **Notifications** (Bell icon) - Badge with count
+8. **Logout** (Log out icon)
+
+#### Rider Drawer Menu Items:
+1. **Home** (Home icon)
+   - Dashboard
+   - Online/offline toggle
+   - Map view
+2. **Deliveries** (Truck icon)
+   - Available deliveries
+   - Active delivery
+   - Delivery history
+3. **Earnings** (Dollar icon)
+   - Today's earnings
+   - Weekly summary
+   - Payout history
+4. **Settings** (Gear icon)
+   - Vehicle info
+   - Delivery zones
+   - Notification preferences
+5. **Profile** (User icon)
+   - View profile
+   - Documents
+   - Help & support
+6. **Notifications** (Bell icon) - Badge with count
+7. **Logout** (Log out icon)
+
+---
+
 ## State Management
 
 ### Zustand Stores
@@ -401,6 +493,7 @@ app/
 | `orders.store.ts` | Orders list, filters, selected order |
 | `deliveries.store.ts` | Deliveries list, active delivery, earnings |
 | `menu.store.ts` | Menu items, categories, editing state |
+| `kiosk.store.ts` | Kiosk mode state, queue, active orders |
 | `notifications.store.ts` | Notifications list, badge count |
 | `chat.store.ts` | Chat conversations, messages |
 | `location.store.ts` | Current location, delivery zones |
@@ -420,6 +513,7 @@ app/
 | `orders.service.ts` | Order CRUD, status updates |
 | `deliveries.service.ts` | Delivery CRUD, status updates |
 | `menu.service.ts` | Menu item CRUD, categories |
+| `kiosk.service.ts` | Kiosk-specific order operations |
 | `analytics.service.ts` | Revenue, orders, ratings data |
 | `notifications.service.ts` | Notification CRUD, push tokens |
 | `chat.service.ts` | Messages, conversations |
@@ -453,7 +547,7 @@ app/
 ## Implementation Phases
 
 ### Phase 1: Foundation (Week 1-2)
-- [ ] Set up project structure
+- [ ] Set up project structure with drawer navigation
 - [ ] Configure auth flow with role selection
 - [ ] Create shared components (Button, Input, Card, etc.)
 - [ ] Set up state management stores
@@ -463,6 +557,7 @@ app/
 ### Phase 2: Seller Core (Week 3-4)
 - [ ] Seller registration flow
 - [ ] Seller dashboard with metrics
+- [ ] **Kiosk Mode** for POS-style order handling
 - [ ] Order management (accept/reject/prepare)
 - [ ] Menu management (CRUD)
 - [ ] Business settings
@@ -506,6 +601,13 @@ app/
 - `GET /seller/dashboard` — Dashboard metrics
 - `PUT /seller/settings` — Update settings
 - `PUT /seller/status` — Toggle open/closed
+
+### Kiosk
+- `GET /kiosk/orders/queue` — Get order queue for kiosk
+- `PUT /kiosk/orders/:id/accept` — Accept order (kiosk)
+- `PUT /kiosk/orders/:id/reject` — Reject order (kiosk)
+- `PUT /kiosk/orders/:id/ready` — Mark order ready (kiosk)
+- `POST /kiosk/orders` — Create manual order (kiosk)
 
 ### Rider
 - `GET /rider/profile` — Get rider profile
@@ -552,11 +654,36 @@ app/
 | Aspect | TeincFoods (Buyer) | TeincFoodBusiness (Seller/Rider) |
 |--------|-------------------|----------------------------------|
 | Primary User | Customer | Business owner / Delivery agent |
+| Navigation | Bottom tabs | Side menu (drawer) |
 | Main Action | Browse & Order | Manage & Deliver |
 | Notifications | Order updates | New orders / Delivery requests |
 | Maps | Track delivery | Navigate to pickup/dropoff |
 | Payments | Pay for orders | Receive payouts |
 | Analytics | Order history | Revenue & performance metrics |
+| Special Features | Cart, Favorites | **Kiosk Mode (POS)** |
+
+---
+
+## Kiosk Mode Technical Details
+
+### UI Components
+- **Large Touch Buttons**: Minimum 48x48dp touch targets
+- **High Contrast Colors**: Easy to read in busy environments
+- **Sound Alerts**: Different sounds for new orders, accepted, ready
+- **Vibration Feedback**: Haptic response on button presses
+- **Auto-Scroll**: New orders automatically scroll into view
+
+### Performance
+- **Optimized Polling**: 5-second refresh for order queue
+- **Offline Queue**: Store orders locally when internet is down
+- **Background Sync**: Sync queued orders when connection restored
+- **Memory Management**: Efficient handling of large order lists
+
+### Hardware Support
+- **Tablet Optimized**: Landscape mode support
+- **External Display**: Support for kitchen display systems
+- **Receipt Printer**: Integration with thermal printers (future)
+- **Barcode Scanner**: Quick order lookup (future)
 
 ---
 
@@ -568,3 +695,4 @@ app/
 - Separate EAS project for builds
 - Shared backend API with role-based access control
 - Push notification channels: `seller-orders`, `rider-deliveries`, `chat`, `system`
+- **Kiosk Mode** is a premium feature for high-volume sellers

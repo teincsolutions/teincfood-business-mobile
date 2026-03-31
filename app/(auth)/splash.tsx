@@ -263,7 +263,9 @@ export default function SplashScreen() {
           } else if (user.role === 'rider') {
             router.replace('/(rider)/');
           } else {
-            router.replace('/(auth)/onboarding');
+            // Invalid or old role - send to login to re-authenticate
+            clearAuth();
+            router.replace('/(auth)/login');
           }
         } else if (!hasSeenOnboarding) {
           router.replace('/(auth)/onboarding');
@@ -274,7 +276,7 @@ export default function SplashScreen() {
 
       return () => clearTimeout(timeout);
     }
-  }, [authHydrated, onboardingHydrated, locationHydrated, authCheckComplete, user, hasSeenOnboarding, hasLocation, mountedTime, router]);
+  }, [authHydrated, onboardingHydrated, locationHydrated, authCheckComplete, user, hasSeenOnboarding, hasLocation, mountedTime, router, clearAuth]);
 
   return (
     <YStack

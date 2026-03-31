@@ -287,9 +287,6 @@ export default function OnboardingScreen() {
           </YStack>
 
           <YStack mt="auto" gap="$3">
-            {!user && (
-              <Button onPress={handleSkipLogin}>SKIP LOGIN FOR NOW</Button>
-            )}
             <Button
               variant="primary"
               onPress={handleContinueWithLogin}
