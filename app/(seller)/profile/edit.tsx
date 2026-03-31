@@ -11,7 +11,7 @@ import {
   Avatar,
   Separator,
 } from 'tamagui';
-import { Input } from '@/components/ui';
+import { FormInput } from '@/components/ui';
 import { ArrowLeft, Save, Camera, User, Mail, Phone } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,7 +61,6 @@ export default function EditProfile() {
       {/* Header */}
       <XStack
         padding="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -122,50 +121,30 @@ export default function EditProfile() {
               </Text>
               <Separator />
 
-              <YStack gap="$2">
-                <XStack gap="$2" alignItems="center">
-                  <User size={16} color="$colorMuted" />
-                  <Text fontSize="$3" color="$colorMuted">
-                    Full Name *
-                  </Text>
-                </XStack>
-                <Input
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChangeText={setFullName}
-                />
-              </YStack>
+              <FormInput
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChangeText={setFullName}
+                required
+              />
 
-              <YStack gap="$2">
-                <XStack gap="$2" alignItems="center">
-                  <Mail size={16} color="$colorMuted" />
-                  <Text fontSize="$3" color="$colorMuted">
-                    Email Address
-                  </Text>
-                </XStack>
-                <Input
-                  placeholder="your@email.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </YStack>
+              <FormInput
+                label="Email Address"
+                placeholder="your@email.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
 
-              <YStack gap="$2">
-                <XStack gap="$2" alignItems="center">
-                  <Phone size={16} color="$colorMuted" />
-                  <Text fontSize="$3" color="$colorMuted">
-                    Phone Number
-                  </Text>
-                </XStack>
-                <Input
-                  placeholder="+233 XX XXX XXXX"
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                />
-              </YStack>
+              <FormInput
+                label="Phone Number"
+                placeholder="+233 XX XXX XXXX"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
             </YStack>
           </Card>
 

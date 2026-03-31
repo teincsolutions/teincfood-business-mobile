@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { YStack, Text } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton, Button, Input } from '@/components/ui';
+import { BackButton, Button, FormInput } from '@/components/ui';
 import { validation } from '@/utils/validation';
 import { useSignupMutation } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
@@ -127,48 +127,54 @@ export default function SignupScreen() {
           </YStack>
 
           <YStack gap="$4">
-            <Input
+            <FormInput
               label="Full Name"
               placeholder="Eric Mensah"
               value={form.fullName}
               onChangeText={(value) => updateField('fullName', value)}
+              required
             />
-            <Input
+            <FormInput
               label="Username"
               placeholder="ericm"
               autoCapitalize="none"
               value={form.username}
               onChangeText={(value) => updateField('username', value)}
+              required
             />
-            <Input
+            <FormInput
               label="Email"
               placeholder="you@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
               value={form.email}
               onChangeText={(value) => updateField('email', value)}
+              required
             />
-            <Input
+            <FormInput
               label="Phone Number"
               placeholder="+233 24 000 0000"
               keyboardType="phone-pad"
               value={form.phone}
               onChangeText={(value) => updateField('phone', value)}
+              required
             />
-            <Input
+            <FormInput
               label="Password"
               placeholder="Create password"
               value={form.password}
               onChangeText={(value) => updateField('password', value)}
               isPassword
+              required
             />
-            <Input
+            <FormInput
               label="Confirm Password"
               placeholder="Re-enter password"
               value={form.confirmPassword}
               onChangeText={(value) => updateField('confirmPassword', value)}
               isPassword
               error={error}
+              required
             />
           </YStack>
 

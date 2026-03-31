@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { YStack, XStack, Text, Input, Button } from 'tamagui';
 import { Mail, ArrowLeft } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton } from '@/components/ui';
+import { BackButton, FormInput } from '@/components/ui';
 import { requestPasswordReset } from '@/services/account-validation.service';
 
 export default function ForgotPasswordScreen() {
@@ -105,46 +105,19 @@ export default function ForgotPasswordScreen() {
         </YStack>
 
         <YStack gap="$4">
-          <YStack gap="$2">
-            <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
-              Email Address
-            </Text>
-            <XStack
-              alignItems="center"
-              backgroundColor="$backgroundStrong"
-              borderRadius="$4"
-              borderWidth={1}
-              borderColor={error ? '$red' : '$borderColor'}
-              paddingHorizontal="$4"
-              height={56}
-            >
-              <Mail size={20} color="$colorSecondary" />
-              <Input
-                flex={1}
-                marginLeft="$3"
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError('');
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                borderWidth={0}
-                backgroundColor="transparent"
-                color="$color"
-                fontFamily="$body"
-                fontSize="$4"
-                placeholderTextColor="$colorPlaceholder"
-              />
-            </XStack>
-            {error && (
-              <Text fontSize="$3" color="$red" fontFamily="$body">
-                {error}
-              </Text>
-            )}
-          </YStack>
+          <FormInput
+            label="Email Address"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError('');
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={error}
+            required
+          />
 
           <Button
             variant="primary"

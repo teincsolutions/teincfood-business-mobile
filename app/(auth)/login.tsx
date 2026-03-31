@@ -14,7 +14,7 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Apple, Facebook, Chrome, ChevronDown, Check } from "@tamagui/lucide-icons";
-import { Button, Input, BackButton } from "@/components/ui";
+import { Button, FormInput, BackButton } from "@/components/ui";
 import { validation } from "@/utils/validation";
 import {
   PHONE_COUNTRIES,
@@ -327,21 +327,23 @@ export default function LoginScreen() {
             </YStack>
           ) : (
             <YStack gap="$4">
-              <Input
+              <FormInput
                 label="Email"
                 placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                required
               />
-              <Input
+              <FormInput
                 label="Password"
                 placeholder="Enter your password"
                 value={password}
                 onChangeText={setPassword}
                 isPassword
                 error={error}
+                required
               />
               <XStack justifyContent="flex-end">
                 <Button

@@ -13,7 +13,7 @@ import {
   Avatar,
 } from 'tamagui';
 import { ArrowLeft, Camera, Save, Building } from '@tamagui/lucide-icons';
-import { Button, Input } from '@/components/ui';
+import { Button, FormInput } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
