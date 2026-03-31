@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { YStack, Text, Card, Button, XStack, Separator, Switch } from 'tamagui';
-import { Truck, MapPin, Bell, ChevronRight, Navigation, Volume2 } from '@tamagui/lucide-icons';
+import { Truck, MapPin, Bell, ChevronRight, Navigation, Volume2, Clock } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -16,6 +16,7 @@ export default function RiderSettings() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const settingsItems = [
+    { icon: Clock, label: 'Operating Hours', description: 'Set your availability schedule', route: '/(shared)/settings/operating-hours' },
     { icon: Truck, label: 'Vehicle Information', description: 'Type, plate number, color', route: '/(rider)/settings/vehicle-info' },
     { icon: MapPin, label: 'Delivery Zones', description: 'Preferred delivery areas', route: '/(rider)/settings/delivery-zones' },
     { icon: Navigation, label: 'Navigation Settings', description: 'Preferred maps app', route: '/(rider)/settings/navigation' },

@@ -20,7 +20,7 @@ export default function SellerSettings() {
 
   const settingsItems = [
     { icon: Building, label: 'Business Profile', description: 'Update business name, logo, description', route: '/(seller)/settings/business-profile' },
-    { icon: Clock, label: 'Operating Hours', description: 'Set your business hours', route: '/(seller)/settings/operating-hours' },
+    { icon: Clock, label: 'Operating Hours', description: 'Set your business hours', route: '/(shared)/settings/operating-hours' },
     { icon: MapPin, label: 'Delivery Settings', description: 'Delivery radius, fees, minimum order', route: '/(seller)/settings/delivery-settings' },
     { icon: CreditCard, label: 'Payment Settings', description: 'Bank account, payout schedule', route: '/(seller)/settings/payment-settings' },
     { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
@@ -100,7 +100,7 @@ export default function SellerSettings() {
                       <item.icon size={20} color="$colorSecondary" />
                     </YStack>
                     <YStack flex={1}>
-                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
+                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
                         {item.label}
                       </Text>
                       <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
