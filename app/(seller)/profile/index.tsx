@@ -32,20 +32,20 @@ export default function SellerProfile() {
       <ScrollView>
         <YStack padding="$4" gap="$4">
           {/* Profile Header */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <XStack gap="$4" alignItems="center">
-              <Avatar circular size="$8">
+              <Avatar circular size="$6">
                 <Avatar.Image
                   source={{ uri: user?.avatarUrl || undefined }}
                 />
-                <Avatar.Fallback backgroundColor="$primary">
-                  <Text color="$background" fontWeight="bold" fontSize="$6">
+                <Avatar.Fallback backgroundColor="$primary" justifyContent="center" alignItems="center">
+                  <Text color="$background" fontWeight="bold" fontSize="$5">
                     {user?.fullName?.charAt(0) || 'S'}
                   </Text>
                 </Avatar.Fallback>
               </Avatar>
               <YStack flex={1} gap="$1">
-                <Text fontSize="$6" fontWeight="bold">
+                <Text fontSize="$5" fontWeight="bold" color="$color">
                   {user?.businessName || user?.fullName || 'Seller'}
                 </Text>
                 <Text color="$colorMuted" fontSize="$3">
@@ -60,28 +60,28 @@ export default function SellerProfile() {
 
           {/* Business Info */}
           {user?.businessName && (
-            <Card padding="$4" bordered>
+            <Card padding="$4" bordered backgroundColor="$background">
               <YStack gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <Building size={20} color="$primary" />
-                  <Text fontWeight="bold">Business Information</Text>
+                  <Text fontWeight="bold" color="$color">Business Information</Text>
                 </XStack>
-                <Separator />
+                <Separator backgroundColor="$borderColor" />
                 <YStack gap="$2">
                   <XStack justifyContent="space-between">
                     <Text color="$colorMuted">Business Name</Text>
-                    <Text>{user.businessName}</Text>
+                    <Text color="$color">{user.businessName}</Text>
                   </XStack>
                   {user.businessType && (
                     <XStack justifyContent="space-between">
                       <Text color="$colorMuted">Type</Text>
-                      <Text>{user.businessType}</Text>
+                      <Text color="$color">{user.businessType}</Text>
                     </XStack>
                   )}
                   {user.businessAddress && (
                     <XStack justifyContent="space-between">
                       <Text color="$colorMuted">Address</Text>
-                      <Text flex={1} textAlign="right">{user.businessAddress}</Text>
+                      <Text color="$color" flex={1} textAlign="right">{user.businessAddress}</Text>
                     </XStack>
                   )}
                 </YStack>
@@ -90,7 +90,7 @@ export default function SellerProfile() {
           )}
 
           {/* Menu Items */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <YStack gap="$1">
               {profileItems.map((item, index) => (
                 <YStack key={index}>
@@ -100,25 +100,26 @@ export default function SellerProfile() {
                     alignItems="center"
                     gap="$3"
                     padding="$3"
-                    pressStyle={{ backgroundColor: "$gray3" }}
+                    pressStyle={{ backgroundColor: "$backgroundHover" }}
                     onPress={() => router.push(item.route)}
                   >
                     <item.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
-                      <Text fontWeight="bold">{item.label}</Text>
+                      <Text fontWeight="bold" color="$color">{item.label}</Text>
                       <Text color="$colorMuted" fontSize="$2">{item.description}</Text>
                     </YStack>
                   </Button>
-                  {index < profileItems.length - 1 && <Separator />}
+                  {index < profileItems.length - 1 && <Separator backgroundColor="$borderColor" />}
                 </YStack>
               ))}
             </YStack>
           </Card>
 
           {/* Logout */}
-          <Card padding="$4" bordered>
+          <Card padding="$4" bordered backgroundColor="$background">
             <Button
-              backgroundColor="$red10"
+              backgroundColor="$error"
+              color="$background"
               onPress={handleLogout}
               icon={<LogOut size={18} color="$background" />}
             >

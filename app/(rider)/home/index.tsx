@@ -1,13 +1,12 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { ScrollView, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { useRouter, useNavigation } from 'expo-router';
 import {
   YStack,
   XStack,
   Text,
   Card,
-  Button,
   Separator,
   Switch,
 } from 'tamagui';
@@ -20,8 +19,10 @@ import {
   TrendingUp,
   Bell,
   ChevronRight,
-  Circle,
+  Menu,
 } from '@tamagui/lucide-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 
 /**
@@ -30,6 +31,8 @@ import { useAuthStore } from '@/stores/auth.store';
  */
 export default function RiderHome() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOnline, setIsOnline] = useState(user?.isOnline ?? false);
@@ -79,49 +82,69 @@ export default function RiderHome() {
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
     >
-      <YStack padding="$4" gap="$4" backgroundColor="$background">
+      <YStack
+        paddingHorizontal="$4"
+        paddingBottom="$4"
+        paddingTop={insets.top + 12}
+        gap="$4"
+        backgroundColor="$background"
+      >
         {/* Header */}
         <XStack justifyContent="space-between" alignItems="center">
-          <YStack>
-            <Text fontSize="$4" color="$colorMuted">
-              Welcome back,
-            </Text>
-            <Text fontSize="$6" fontWeight="bold">
-              {user?.fullName || 'Rider'}
-            </Text>
-          </YStack>
-          <XStack gap="$2" alignItems="center">
-            <Circle
-              size={12}
-              backgroundColor={isOnline ? '#27ae60' : '#95a5a6'}
-            />
-            <Text fontSize="$3">{isOnline ? 'Online' : 'Offline'}</Text>
+          <XStack gap="$3" alignItems="center">
+            <TouchableOpacity onPress={() => navigation.openDrawer()}>
+              <Menu size={24} color="$color" />
+            </TouchableOpacity>
+            <YStack>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                Welcome back,
+              </Text>
+              <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+                {user?.fullName || 'Rider'}
+              </Text>
+            </YStack>
+          </XStack>
+          <XStack gap="$3" alignItems="center">
+            <XStack gap="$1" alignItems="center">
+              <YStack
+                width={10}
+                height={10}
+                borderRadius={5}
+                backgroundColor={isOnline ? '#27ae60' : '#95a5a6'}
+              />
+              <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
+                {isOnline ? 'Online' : 'Offline'}
+              </Text>
+            </XStack>
             <Switch
+              size="$2"
               checked={isOnline}
               onCheckedChange={setIsOnline}
               backgroundColor={isOnline ? '#27ae60' : '$gray8'}
             >
               <Switch.Thumb animation="quick" backgroundColor="white" />
             </Switch>
-            <Button
-              size="$3"
-              circular
-              icon={<Bell size={20} />}
-              onPress={() => router.push('/(rider)/notifications')}
-            />
+            <TouchableOpacity
+              onPress={() => router.push('/(shared)/notifications')}
+            >
+              <Bell size={22} />
+            </TouchableOpacity>
           </XStack>
         </XStack>
 
         {/* Online Status Card */}
         {!isOnline && (
-          <Card padding="$4" bordered backgroundColor="$gray2">
-            <YStack gap="$2" alignItems="center">
-              <Text fontSize="$5" fontWeight="bold">You're Offline</Text>
-              <Text color="$colorMuted" textAlign="center">
+          <Card padding="$4" bordered backgroundColor="$backgroundSoft">
+            <YStack gap="$3" alignItems="center">
+              <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
+                You're Offline
+              </Text>
+              <Text color="$colorSecondary" textAlign="center" fontFamily="$body">
                 Go online to start receiving delivery requests
               </Text>
               <Button
-                theme="alt1"
+                variant="primary"
+                height={48}
                 onPress={() => setIsOnline(true)}
               >
                 Go Online
@@ -214,19 +237,19 @@ export default function RiderHome() {
               <Text fontSize="$5" fontWeight="bold">Quick Actions</Text>
               <XStack gap="$3">
                 <Button
-                  flex={1}
-                  icon={<Package size={18} />}
-                  onPress={() => router.push('/(rider)/deliveries/available')}
-                >
-                  Available ({metrics.availableDeliveries})
-                </Button>
-                <Button
-                  flex={1}
-                  icon={<TrendingUp size={18} />}
-                  onPress={() => router.push('/(rider)/earnings')}
-                >
-                  Earnings
-                </Button>
+                variant="primary"
+                height={48}
+                onPress={() => router.push('/(rider)/deliveries/available')}
+              >
+                Available ({metrics.availableDeliveries})
+              </Button>
+              <Button
+                variant="outline"
+                height={48}
+                onPress={() => router.push('/(rider)/earnings')}
+              >
+                Earnings
+              </Button>
               </XStack>
             </YStack>
           </Card>
@@ -238,8 +261,10 @@ export default function RiderHome() {
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">Recent Deliveries</Text>
               <Button
-                size="$3"
-                variant="outlined"
+                variant="ghost"
+                height={36}
+                width="auto"
+                paddingHorizontal="$3"
                 onPress={() => router.push('/(rider)/deliveries')}
               >
                 View All
@@ -289,8 +314,9 @@ export default function RiderHome() {
                 </Text>
               </YStack>
               <Button
-                width="100%"
-                icon={<MapPin size={18} />}
+                variant="outline"
+                height={48}
+                onPress={() => {}}
               >
                 Open Full Map
               </Button>

@@ -14,7 +14,6 @@ import {
   Bell,
   LogOut,
   MapPin,
-  FileText,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -170,21 +169,6 @@ function CustomDrawerContent(props: any) {
             <Text flex={1} fontSize="$4">Profile</Text>
           </Button>
 
-          {/* Documents */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(rider)/profile/documents")}
-            icon={<FileText size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">Documents</Text>
-          </Button>
-
           <Separator marginVertical="$2" />
 
           {/* Logout */}
@@ -274,9 +258,10 @@ export default function RiderDrawerLayout() {
 
         {/* Home */}
         <Drawer.Screen
-          name="home"
+          name="home/index"
           options={{
             title: "Home",
+            headerShown: false,
             drawerIcon: ({ color, size }) => (
               <Home color={color} size={size} />
             ),
@@ -286,7 +271,7 @@ export default function RiderDrawerLayout() {
 
         {/* Deliveries */}
         <Drawer.Screen
-          name="deliveries"
+          name="deliveries/index"
           options={{
             title: "Deliveries",
             drawerIcon: ({ color, size }) => (
@@ -298,7 +283,7 @@ export default function RiderDrawerLayout() {
 
         {/* Earnings */}
         <Drawer.Screen
-          name="earnings"
+          name="earnings/index"
           options={{
             title: "Earnings",
             drawerIcon: ({ color, size }) => (
@@ -310,7 +295,7 @@ export default function RiderDrawerLayout() {
 
         {/* Settings */}
         <Drawer.Screen
-          name="settings"
+          name="settings/index"
           options={{
             title: "Settings",
             drawerIcon: ({ color, size }) => (
@@ -322,23 +307,11 @@ export default function RiderDrawerLayout() {
 
         {/* Profile */}
         <Drawer.Screen
-          name="profile"
+          name="profile/index"
           options={{
             title: "Profile",
             drawerIcon: ({ color, size }) => (
               <User color={color} size={size} />
-            ),
-          }}
-          listeners={{ drawerItemPress: handleProtectedRoute }}
-        />
-
-        {/* Documents */}
-        <Drawer.Screen
-          name="profile/documents"
-          options={{
-            title: "Documents",
-            drawerIcon: ({ color, size }) => (
-              <FileText color={color} size={size} />
             ),
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
