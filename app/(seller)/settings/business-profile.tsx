@@ -7,13 +7,14 @@ import {
   XStack,
   Text,
   Card,
-  Button,
+  Button as TamaguiButton,
   Input,
   TextArea,
   Separator,
   Avatar,
 } from 'tamagui';
 import { ArrowLeft, Camera, Save, Building } from '@tamagui/lucide-icons';
+import { Button } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -71,7 +72,6 @@ export default function BusinessProfileSettings() {
       {/* Header */}
       <XStack
         padding="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -79,26 +79,29 @@ export default function BusinessProfileSettings() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
+          <TamaguiButton
+            width={40}
+            height={40}
             circular
-            backgroundColor="$gray3"
+            backgroundColor="$backgroundSoft"
             onPress={() => router.back()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
           <Text fontSize="$6" fontWeight="bold">Business Profile</Text>
         </XStack>
-        <Button
-          size="$3"
+        <TamaguiButton
+          height={44}
+          paddingHorizontal="$4"
           backgroundColor="$primary"
+          borderRadius="$3"
           onPress={handleSave}
           disabled={isSaving}
-          icon={<Save size={18} color="$background" />}
+          icon={<Save size={18} color="white" />}
         >
-          <Text color="$background" fontWeight="bold">
+          <Text color="white" fontWeight="bold">
             {isSaving ? 'Saving...' : 'Save'}
           </Text>
-        </Button>
+        </TamaguiButton>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -114,13 +117,17 @@ export default function BusinessProfileSettings() {
                   <Building size={32} color="$background" />
                 </Avatar.Fallback>
               </Avatar>
-              <Button
-                variant="outline"
-                size="$3"
+              <TamaguiButton
+                height={44}
+                paddingHorizontal="$4"
+                backgroundColor="transparent"
+                borderWidth={1}
+                borderColor="$borderColor"
+                borderRadius="$3"
                 icon={<Camera size={18} />}
               >
                 Change Logo
-              </Button>
+              </TamaguiButton>
             </YStack>
           </Card>
 
@@ -210,12 +217,11 @@ export default function BusinessProfileSettings() {
 
           {/* Save Button */}
           <Button
-            size="$5"
-            backgroundColor="$primary"
+            variant="primary"
             onPress={handleSave}
             disabled={isSaving}
           >
-            <Text color="$background" fontWeight="bold">
+            <Text color="white" fontWeight="bold">
               {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </Text>
           </Button>

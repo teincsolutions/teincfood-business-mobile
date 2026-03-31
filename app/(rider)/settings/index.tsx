@@ -117,7 +117,7 @@ export default function RiderSettings() {
                     alignItems="center"
                     gap="$3"
                     padding="$3"
-                    pressStyle={{ backgroundColor: "$gray3" }}
+                    pressStyle={{ opacity: 0.7 }}
                     onPress={() => router.push(item.route)}
                   >
                     <item.icon size={20} color="$colorMuted" />

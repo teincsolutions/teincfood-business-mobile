@@ -7,12 +7,13 @@ import {
   XStack,
   Text,
   Card,
-  Button,
+  Button as TamaguiButton,
   Input,
   Switch,
   Separator,
 } from 'tamagui';
 import { ArrowLeft, Save, CreditCard, Building, Clock, DollarSign } from '@tamagui/lucide-icons';
+import { Button } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
@@ -58,7 +59,6 @@ export default function PaymentSettings() {
       {/* Header */}
       <XStack
         padding="$4"
-        paddingTop={Math.max(insets.top + 12, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -66,26 +66,29 @@ export default function PaymentSettings() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
+          <TamaguiButton
+            width={40}
+            height={40}
             circular
-            backgroundColor="$gray3"
+            backgroundColor="$backgroundSoft"
             onPress={() => router.back()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
           <Text fontSize="$6" fontWeight="bold">Payment Settings</Text>
         </XStack>
-        <Button
-          size="$3"
+        <TamaguiButton
+          height={44}
+          paddingHorizontal="$4"
           backgroundColor="$primary"
+          borderRadius="$3"
           onPress={handleSave}
           disabled={isSaving}
-          icon={<Save size={18} color="$background" />}
+          icon={<Save size={18} color="white" />}
         >
-          <Text color="$background" fontWeight="bold">
+          <Text color="white" fontWeight="bold">
             {isSaving ? 'Saving...' : 'Save'}
           </Text>
-        </Button>
+        </TamaguiButton>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -238,7 +241,7 @@ export default function PaymentSettings() {
               <Separator />
 
               {payoutOptions.map((option) => (
-                <Button
+                <TamaguiButton
                   key={option.value}
                   unstyled
                   padding="$3"
@@ -272,19 +275,18 @@ export default function PaymentSettings() {
                       </YStack>
                     )}
                   </XStack>
-                </Button>
+                </TamaguiButton>
               ))}
             </YStack>
           </Card>
 
           {/* Save Button */}
           <Button
-            size="$5"
-            backgroundColor="$primary"
+            variant="primary"
             onPress={handleSave}
             disabled={isSaving}
           >
-            <Text color="$background" fontWeight="bold">
+            <Text color="white" fontWeight="bold">
               {isSaving ? 'Saving Changes...' : 'Save Changes'}
             </Text>
           </Button>
