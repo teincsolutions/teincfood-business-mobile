@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "TeincFoods",
-    "slug": "teinc-foods",
+    "name": "TeincFoodBusiness",
+    "slug": "teinc-food-business",
     "owner": "teincsolutions",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "teincfoods",
+    "scheme": "teincfoodbusiness",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,16 +15,16 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.teincfoods.app",
+      "bundleIdentifier": "com.teincfoods.business",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "tel"
         ],
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera to take profile pictures.",
-        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures.",
-        "NSLocationWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to show nearby restaurants and deliver orders accurately.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to track deliveries in real-time.",
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera to take profile pictures and upload documents.",
+        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures and documents.",
+        "NSLocationWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to manage deliveries and track your position.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "$(PRODUCT_NAME) uses your location to track deliveries in real-time and update your availability.",
         "UIBackgroundModes": [
           "fetch",
           "remote-notification",
@@ -39,7 +39,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.teincfoods.app",
+      "package": "com.teincfoods.business",
       "predictiveBackGestureEnabled": false,
       "config": {
         "googleMaps": {
@@ -69,8 +69,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "$(PRODUCT_NAME) uses your location to show nearby restaurants and deliver orders accurately.",
-          "locationAlwaysAndWhenInUsePermission": "$(PRODUCT_NAME) uses your location to track deliveries in real-time.",
+          "locationWhenInUsePermission": "$(PRODUCT_NAME) uses your location to manage deliveries and track your position.",
+          "locationAlwaysAndWhenInUsePermission": "$(PRODUCT_NAME) uses your location to track deliveries in real-time and update your availability.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
@@ -79,8 +79,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures.",
-          "cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take profile pictures."
+          "photosPermission": "$(PRODUCT_NAME) needs access to your photos to upload profile pictures and documents.",
+          "cameraPermission": "$(PRODUCT_NAME) needs access to your camera to take profile pictures and upload documents."
         }
       ],
       [

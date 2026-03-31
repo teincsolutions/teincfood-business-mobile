@@ -8,35 +8,33 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { YStack, XStack, Text, Image } from "tamagui";
+import { YStack, XStack, Text, Image, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Input } from "@/components/ui";
-import * as Location from "expo-location";
+import { Store, Truck, ChevronRight } from "@tamagui/lucide-icons";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useAuthStore } from "@/stores/auth.store";
-import { useLocationStore } from "@/stores/location.store";
-import { useSetUserLocationMutation } from "@/services/location.service";
 
 const SLIDES = [
   {
     key: "1",
-    title: "Discover nearby meals",
+    title: "Manage Your Business",
     subtitle:
-      "Find top-rated dishes and restaurants around your area in seconds.",
+      "Take orders, track deliveries, and grow your food business with powerful tools.",
     image: require("../../assets/images/onboarding2.png"),
   },
   {
     key: "2",
-    title: "Track every order live",
+    title: "Real-Time Order Management",
     subtitle:
-      "Follow your rider in real time and know exactly when your food arrives.",
+      "Accept or reject orders instantly and keep your customers happy with fast service.",
     image: require("../../assets/images/onboarding5.png"),
   },
   {
     key: "3",
-    title: "Fast and easy delivery",
+    title: "Earn Money Delivering",
     subtitle:
-      "Track your order live and get it delivered quickly to your doorstep.",
+      "Join as a rider and earn by delivering food orders to customers in your area.",
     image: require("../../assets/images/onboarding4.png"),
   },
 ];
@@ -46,26 +44,12 @@ export default function OnboardingScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const slideWidth = Math.max(1, Math.floor(windowWidth));
   const insets = useSafeAreaInsets();
-  const { requireLocation } = useLocalSearchParams<{
-    requireLocation?: string;
-  }>();
-  const locationOnlyMode = requireLocation === "1";
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const [stage, setStage] = useState<"slides" | "location">(
-    locationOnlyMode ? "location" : "slides",
-  );
-  const [city, setCity] = useState("Accra");
-  const [area, setArea] = useState("");
-  const persistedLocation = useLocationStore((state) => state.currentLocation);
-  const [countryCode, setCountryCode] = useState(
-    persistedLocation?.countryCode || "GH",
-  );
-  const [locationError, setLocationError] = useState("");
-  const [isLocating, setIsLocating] = useState(false);
+  const [stage, setStage] = useState<"slides" | "role">("slides");
+  const [selectedRole, setSelectedRole] = useState<"seller" | "rider" | null>(null);
 
   const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding);
-  const { mutateAsync: setUserLocation } = useSetUserLocationMutation();
   const user = useAuthStore((state) => state.user);
 
   const handlePageChange = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -82,7 +66,7 @@ export default function OnboardingScreen() {
 
   const handleNext = () => {
     if (activeIndex >= SLIDES.length - 1) {
-      setStage("location");
+      setStage("role");
     } else {
       const nextIndex = activeIndex + 1;
       setActiveIndex(nextIndex);
@@ -93,98 +77,25 @@ export default function OnboardingScreen() {
     }
   };
 
-  const applyLocation = async () => {
-    if (!area.trim()) {
-      setLocationError(
-        "Enter your area so we can personalize nearby restaurants.",
-      );
-      return false;
-    }
-    if (!countryCode.trim()) {
-      setLocationError("Country is required to validate phone login format.");
-      return false;
-    }
-
-    setLocationError("");
-    const fullAddress = `${area.trim()}, ${city.trim()}`;
-    try {
-      await setUserLocation({
-        latitude: 5.6037,
-        longitude: -0.187,
-        city: city.trim(),
-        area: area.trim(),
-        countryCode: countryCode.trim().toUpperCase(),
-      });
-      return true;
-    } catch {
-      setLocationError("Unable to save location. Please try again.");
-      return false;
-    }
-  };
-
-  const handleContinueWithLogin = async () => {
-    if (!(await applyLocation())) return;
+  const handleContinueWithLogin = () => {
     completeOnboarding();
     if (user) {
-      router.replace("/(buyer)/");
+      // Redirect based on user role
+      if (user.role === "seller") {
+        router.replace("/(seller)/");
+      } else if (user.role === "rider") {
+        router.replace("/(rider)/");
+      } else {
+        router.replace("/(auth)/login");
+      }
       return;
     }
     router.replace("/(auth)/login");
   };
 
-  const handleSkipLogin = async () => {
-    if (!(await applyLocation())) return;
+  const handleSkipLogin = () => {
     completeOnboarding();
-    router.replace("/(buyer)/(home)");
-  };
-
-  const handleUseCurrentLocation = async () => {
-    try {
-      setIsLocating(true);
-      setLocationError("");
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Location Permission Needed",
-          "Please allow location access so we can show nearby restaurants and delivery options.",
-        );
-        return;
-      }
-
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-
-      const [place] = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-
-      const nextCity =
-        place?.city || place?.subregion || place?.region || "Current City";
-      const nextArea =
-        place?.district ||
-        place?.street ||
-        place?.name ||
-        place?.subregion ||
-        "Current Area";
-      const nextCountryCode = place?.isoCountryCode || countryCode || "GH";
-
-      setCity(nextCity);
-      setArea(nextArea);
-      setCountryCode(nextCountryCode.toUpperCase());
-    } catch {
-      Alert.alert(
-        "Could Not Detect Location",
-        "Please enter your city and area manually.",
-      );
-    } finally {
-      setIsLocating(false);
-    }
+    router.replace("/(auth)/login");
   };
 
   return (
@@ -276,14 +187,14 @@ export default function OnboardingScreen() {
             </XStack>
 
             <Button variant="primary" onPress={handleNext}>
-              {activeIndex === SLIDES.length - 1 ? "SET MY LOCATION" : "NEXT"}
+              {activeIndex === SLIDES.length - 1 ? "GET STARTED" : "NEXT"}
             </Button>
 
             <Button
               variant="ghost"
               height={36}
               backgroundColor="transparent"
-              onPress={() => setStage("location")}
+              onPress={() => setStage("role")}
             >
               <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">
                 Skip
@@ -306,51 +217,84 @@ export default function OnboardingScreen() {
               fontFamily="$heading"
               color="$color"
             >
-              Set Your Location
+              Choose Your Role
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Location is required so we can show food and restaurants near you.
+              Select how you want to use TeincFoodBusiness
             </Text>
           </YStack>
 
           <YStack gap="$4">
-            <Input
-              label="Country Code"
-              placeholder="GH"
-              autoCapitalize="characters"
-              value={countryCode}
-              onChangeText={(value) => setCountryCode(value.slice(0, 2))}
-            />
-            <Input
-              label="City"
-              placeholder="Accra"
-              value={city}
-              onChangeText={setCity}
-            />
-            <Input
-              label="Area / Neighborhood"
-              placeholder="East Legon"
-              value={area}
-              onChangeText={setArea}
-              error={locationError}
-            />
-          </YStack>
+            {/* Seller Card */}
+            <Card
+              bordered
+              padding="$5"
+              pressStyle={{ scale: 0.98, opacity: 0.9 }}
+              onPress={() => setSelectedRole("seller")}
+              backgroundColor={selectedRole === "seller" ? "$primaryLight" : "$background"}
+              borderColor={selectedRole === "seller" ? "$primary" : "$borderColor"}
+            >
+              <XStack gap="$4" alignItems="center">
+                <YStack
+                  width={60}
+                  height={60}
+                  backgroundColor={selectedRole === "seller" ? "$primary" : "$gray5"}
+                  borderRadius="$4"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Store size={28} color={selectedRole === "seller" ? "white" : "$colorMuted"} />
+                </YStack>
+                <YStack flex={1} gap="$1">
+                  <Text fontSize="$6" fontWeight="bold">I'm a Seller</Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    Restaurant or business owner managing orders and menu
+                  </Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorMuted" />
+              </XStack>
+            </Card>
 
-          <Button
-            variant="outline"
-            loading={isLocating}
-            onPress={handleUseCurrentLocation}
-          >
-            USE CURRENT LOCATION
-          </Button>
+            {/* Rider Card */}
+            <Card
+              bordered
+              padding="$5"
+              pressStyle={{ scale: 0.98, opacity: 0.9 }}
+              onPress={() => setSelectedRole("rider")}
+              backgroundColor={selectedRole === "rider" ? "$primaryLight" : "$background"}
+              borderColor={selectedRole === "rider" ? "$primary" : "$borderColor"}
+            >
+              <XStack gap="$4" alignItems="center">
+                <YStack
+                  width={60}
+                  height={60}
+                  backgroundColor={selectedRole === "rider" ? "$primary" : "$gray5"}
+                  borderRadius="$4"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Truck size={28} color={selectedRole === "rider" ? "white" : "$colorMuted"} />
+                </YStack>
+                <YStack flex={1} gap="$1">
+                  <Text fontSize="$6" fontWeight="bold">I'm a Rider</Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    Delivery agent picking up and delivering orders
+                  </Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorMuted" />
+              </XStack>
+            </Card>
+          </YStack>
 
           <YStack mt="auto" gap="$3">
             {!user && (
               <Button onPress={handleSkipLogin}>SKIP LOGIN FOR NOW</Button>
             )}
             <Button
-              variant={user ? "primary" : "outline"}
+              variant="primary"
               onPress={handleContinueWithLogin}
+              disabled={!selectedRole}
+              opacity={selectedRole ? 1 : 0.5}
             >
               {user ? "CONTINUE" : "CONTINUE TO LOGIN"}
             </Button>

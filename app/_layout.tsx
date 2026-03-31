@@ -50,6 +50,8 @@ function AppShell() {
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated;
   const isAuthenticated = Boolean(user && accessToken);
+  const isSeller = user?.role === 'seller';
+  const isRider = user?.role === 'rider';
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen
@@ -107,28 +109,22 @@ function AppShell() {
             <Stack.Screen name="index" />
             <Stack.Screen name="+not-found" />
 
+            {/* Auth routes - accessible to all */}
             <Stack.Screen name="(auth)" />
 
-            <Stack.Protected guard={hasLocation}>
-              <Stack.Screen name="(buyer)" />
-              <Stack.Screen name="search/index" />
-              <Stack.Screen name="results/index" />
-              <Stack.Screen name="restaurant/[id]" />
+            {/* Seller routes - protected for sellers only */}
+            <Stack.Protected guard={isAuthenticated && isSeller}>
+              <Stack.Screen name="(seller)" />
             </Stack.Protected>
 
-            <Stack.Protected guard={isAuthenticated && hasLocation}>
-              <Stack.Screen name="cart" />
-              <Stack.Screen name="saved/index" />
-              <Stack.Screen name="track/[id]" />
-              <Stack.Screen name="profile/add-address" />
-              <Stack.Screen name="profile/add-payment" />
-              <Stack.Screen name="profile/addresses" />
-              <Stack.Screen name="profile/edit" />
-              <Stack.Screen name="profile/help" />
-              <Stack.Screen name="profile/notifications" />
-              <Stack.Screen name="profile/payments" />
-              <Stack.Screen name="profile/security" />
-              <Stack.Screen name="profile/theme" />
+            {/* Rider routes - protected for riders only */}
+            <Stack.Protected guard={isAuthenticated && isRider}>
+              <Stack.Screen name="(rider)" />
+            </Stack.Protected>
+
+            {/* Shared routes - protected for authenticated users */}
+            <Stack.Protected guard={isAuthenticated}>
+              <Stack.Screen name="(shared)" />
               <Stack.Screen name="(communication)" />
             </Stack.Protected>
           </Stack>

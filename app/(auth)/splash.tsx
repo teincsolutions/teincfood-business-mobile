@@ -256,14 +256,17 @@ export default function SplashScreen() {
       const remainingTime = Math.max(0, SPLASH_MIN_DURATION - elapsed);
 
       const timeout = setTimeout(() => {
-        if (user && hasLocation) {
-          router.replace('/(buyer)/');
-        } else if (user && !hasLocation) {
-          router.replace('/(auth)/onboarding?requireLocation=1');
+        if (user) {
+          // Route based on user role
+          if (user.role === 'seller') {
+            router.replace('/(seller)/');
+          } else if (user.role === 'rider') {
+            router.replace('/(rider)/');
+          } else {
+            router.replace('/(auth)/onboarding');
+          }
         } else if (!hasSeenOnboarding) {
           router.replace('/(auth)/onboarding');
-        } else if (!hasLocation) {
-          router.replace('/(auth)/onboarding?requireLocation=1');
         } else {
           router.replace('/(auth)/login');
         }
@@ -399,17 +402,17 @@ export default function SplashScreen() {
 
         {/* Tagline */}
         <Animated.View style={{ opacity: subtitleOpacity }}>
-          <Text
-            fontSize={15}
-            color="$white"
-            opacity={0.85}
-            fontFamily="$body"
-            textAlign="center"
-            letterSpacing={0.5}
-            marginTop="$2"
-          >
-            Delicious food, delivered to you
-          </Text>
+            <Text
+              fontSize={15}
+              color="$white"
+              opacity={0.85}
+              fontFamily="$body"
+              textAlign="center"
+              letterSpacing={0.5}
+              marginTop="$2"
+            >
+              Your food business companion
+            </Text>
         </Animated.View>
       </YStack>
 
