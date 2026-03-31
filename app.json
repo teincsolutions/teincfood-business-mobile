@@ -124,7 +124,8 @@
         {
           "launchMode": "most-recent"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

@@ -19,13 +19,12 @@ export default function RiderProfile() {
   };
 
   const profileItems = [
-    { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(rider)/profile/edit' },
-    { icon: FileText, label: 'Documents', description: 'Upload ID, license, insurance', route: '/(rider)/profile/documents' },
-    { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/profile/security' },
-    { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/profile/theme' },
-    { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/profile/terms' },
-    { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/profile/privacy-policy' },
-    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(rider)/profile/help' },
+    { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(shared)/profile/edit' },
+    { icon: FileText, label: 'Documents', description: 'Upload ID, license, insurance', route: '/(shared)/profile/documents' },
+    { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/(shared)/profile/security' },
+    { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
+    { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/(shared)/profile/privacy-policy' },
+    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(shared)/profile/help' },
   ];
 
   return (

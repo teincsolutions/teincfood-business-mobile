@@ -1,19 +1,19 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState } from "react";
+import { ScrollView, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
+import { FormInput, Button } from "@/components/ui";
 import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Avatar,
-  Separator,
-} from 'tamagui';
-import { FormInput, Button } from '@/components/ui';
-import { ArrowLeft, Save, Camera, User, Mail, Phone } from '@tamagui/lucide-icons';
-import { useAuthStore } from '@/stores/auth.store';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  ArrowLeft,
+  Save,
+  Camera,
+  User,
+  Mail,
+  Phone,
+} from "@tamagui/lucide-icons";
+import { useAuthStore } from "@/stores/auth.store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Edit Profile Screen
@@ -24,14 +24,14 @@ export default function EditProfile() {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
 
-  const [fullName, setFullName] = useState(user?.fullName || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [fullName, setFullName] = useState(user?.fullName || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Full name is required');
+      Alert.alert("Error", "Full name is required");
       return;
     }
 
@@ -45,11 +45,11 @@ export default function EditProfile() {
         phone: phone.trim(),
       });
 
-      Alert.alert('Success', 'Profile updated successfully', [
-        { text: 'OK', onPress: () => router.back() },
+      Alert.alert("Success", "Profile updated successfully", [
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert("Error", "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
@@ -61,6 +61,7 @@ export default function EditProfile() {
       <XStack
         padding="$4"
         justifyContent="space-between"
+        paddingTop={Math.max(insets.top + 8, 24)}
         alignItems="center"
         backgroundColor="$background"
         borderBottomWidth={1}
@@ -75,7 +76,9 @@ export default function EditProfile() {
             onPress={() => router.back()}
             icon={<ArrowLeft size={20} />}
           />
-          <Text fontSize="$6" fontWeight="bold">Edit Profile</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            Edit Profile
+          </Text>
         </XStack>
         <Button
           variant="primary"
@@ -96,9 +99,7 @@ export default function EditProfile() {
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
               <Avatar circular size="$10">
-                <Avatar.Image
-                  src={user?.avatarUrl}
-                />
+                <Avatar.Image src={user?.avatarUrl} />
                 <Avatar.Fallback backgroundColor="$primary">
                   <User size={32} color="$background" />
                 </Avatar.Fallback>
@@ -151,11 +152,7 @@ export default function EditProfile() {
           </Card>
 
           {/* Save Button */}
-          <Button
-            variant="primary"
-            loading={isSaving}
-            onPress={handleSave}
-          >
+          <Button variant="primary" loading={isSaving} onPress={handleSave}>
             Save Changes
           </Button>
         </YStack>

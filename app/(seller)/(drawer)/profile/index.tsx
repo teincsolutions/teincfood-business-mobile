@@ -19,7 +19,7 @@ export default function SellerProfile() {
   };
 
   const profileItems = [
-    { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(seller)/profile/edit' },
+    { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(shared)/profile/edit' },
     { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/(shared)/profile/security' },
     { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
     { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
