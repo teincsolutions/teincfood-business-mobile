@@ -6,6 +6,8 @@ import { Save, Check, ArrowLeft } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, FormInput } from "@/components/ui";
+import { useVehicleInfoQuery, useUpdateVehicleInfoMutation } from "@/hooks/rider.hooks";
+import { VEHICLE_TYPES, MOCK_VEHICLE_INFO } from "@/mocks/rider.mock";
 
 /**
  * Rider Vehicle Information Screen
@@ -13,13 +15,16 @@ import { Button, FormInput } from "@/components/ui";
 export default function VehicleInfo() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = useState(false);
 
-  const [vehicleType, setVehicleType] = useState("motorcycle");
-  const [plateNumber, setPlateNumber] = useState("GR-1234-20");
-  const [vehicleColor, setVehicleColor] = useState("Black");
-  const [vehicleBrand, setVehicleBrand] = useState("Honda");
-  const [vehicleModel, setVehicleModel] = useState("CBR 150");
+  // TanStack Query hooks
+  const { data: vehicleInfo, isLoading } = useVehicleInfoQuery();
+  const updateVehicle = useUpdateVehicleInfoMutation();
+
+  const [vehicleType, setVehicleType] = useState(vehicleInfo?.type || MOCK_VEHICLE_INFO.type);
+  const [plateNumber, setPlateNumber] = useState(vehicleInfo?.plateNumber || MOCK_VEHICLE_INFO.plateNumber);
+  const [vehicleColor, setVehicleColor] = useState(vehicleInfo?.color || MOCK_VEHICLE_INFO.color);
+  const [vehicleBrand, setVehicleBrand] = useState(vehicleInfo?.brand || MOCK_VEHICLE_INFO.brand);
+  const [vehicleModel, setVehicleModel] = useState(vehicleInfo?.model || MOCK_VEHICLE_INFO.model);
 
   const [errors, setErrors] = useState<{
     plateNumber?: string;
@@ -27,13 +32,6 @@ export default function VehicleInfo() {
     brand?: string;
     model?: string;
   }>({});
-
-  const vehicleTypes = [
-    { value: "motorcycle", label: "Motorcycle" },
-    { value: "bicycle", label: "Bicycle" },
-    { value: "scooter", label: "Scooter" },
-    { value: "car", label: "Car" },
-  ];
 
   const handleSave = () => {
     const newErrors: typeof errors = {};
@@ -49,11 +47,18 @@ export default function VehicleInfo() {
     }
 
     setErrors({});
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      router.back();
-    }, 1500);
+    updateVehicle.mutate(
+      {
+        type: vehicleType as any,
+        plateNumber,
+        color: vehicleColor,
+        brand: vehicleBrand,
+        model: vehicleModel,
+      },
+      {
+        onSuccess: () => router.back(),
+      }
+    );
   };
 
   return (
@@ -79,9 +84,9 @@ export default function VehicleInfo() {
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Vehicle Information
         </Text>
-        <Pressable onPress={handleSave} disabled={isSaving}>
+        <Pressable onPress={handleSave} disabled={updateVehicle.isPending}>
           <Text fontSize="$4" color="$primary" fontWeight="bold">
-            {isSaving ? "Saving..." : "Save"}
+            {updateVehicle.isPending ? "Saving..." : "Save"}
           </Text>
         </Pressable>
       </XStack>
@@ -91,7 +96,7 @@ export default function VehicleInfo() {
           {/* Vehicle Type */}
           <Card padding="$4" bordered>
             <YStack gap="$2">
-              {vehicleTypes.map((type) => (
+              {VEHICLE_TYPES.map((type) => (
                 <Pressable
                   key={type.value}
                   onPress={() => setVehicleType(type.value)}
@@ -202,7 +207,7 @@ export default function VehicleInfo() {
                   borderRadius="$10"
                 >
                   <Text color="white" fontSize="$2" fontWeight="bold">
-                    Pending
+                    {vehicleInfo?.verificationStatus === 'verified' ? 'Verified' : 'Pending'}
                   </Text>
                 </YStack>
               </XStack>
@@ -218,10 +223,10 @@ export default function VehicleInfo() {
             backgroundColor="$primary"
             icon={<Save size={18} />}
             onPress={handleSave}
-            disabled={isSaving}
-            opacity={isSaving ? 0.7 : 1}
+            disabled={updateVehicle.isPending}
+            opacity={updateVehicle.isPending ? 0.7 : 1}
           >
-            {isSaving ? "Saving..." : "Save Changes"}
+            {updateVehicle.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </YStack>
       </ScrollView>

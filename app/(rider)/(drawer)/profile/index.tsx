@@ -4,6 +4,7 @@ import { User, Mail, Phone, Truck, LogOut, HelpCircle, FileText, Shield, Palette
 import { ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
+import { useRiderStatisticsQuery } from '@/hooks/rider.hooks';
 
 /**
  * Rider Profile Screen
@@ -12,6 +13,9 @@ export default function RiderProfile() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  // TanStack Query hooks
+  const { data: statistics } = useRiderStatisticsQuery();
 
   const handleLogout = () => {
     clearAuth();
@@ -101,19 +105,19 @@ export default function RiderProfile() {
               <Separator />
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Total Deliveries</Text>
-                <Text fontWeight="bold">156</Text>
+                <Text fontWeight="bold">{statistics?.totalDeliveries || 156}</Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Acceptance Rate</Text>
-                <Text fontWeight="bold">94%</Text>
+                <Text fontWeight="bold">{statistics?.acceptanceRate || 94}%</Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Average Rating</Text>
-                <Text fontWeight="bold">4.8 ★</Text>
+                <Text fontWeight="bold">{statistics?.averageRating || 4.8} ★</Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Total Earnings</Text>
-                <Text fontWeight="bold">GHS 5,680.00</Text>
+                <Text fontWeight="bold">GHS {statistics?.totalEarnings?.toFixed(2) || '5,680.00'}</Text>
               </XStack>
             </YStack>
           </Card>

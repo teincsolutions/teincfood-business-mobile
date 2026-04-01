@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { MOCK_RIDER_METRICS } from '@/mocks/rider.mock';
 import { ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import {
@@ -9,7 +10,6 @@ import {
   Card,
   Separator,
   Switch,
-  ScrollView as TamaguiScrollView,
 } from 'tamagui';
 import {
   DollarSign,
@@ -17,14 +17,20 @@ import {
   MapPin,
   Navigation,
   Clock,
-  TrendingUp,
   Bell,
   ChevronRight,
   Menu,
+  RefreshCw,
 } from '@tamagui/lucide-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
+import {
+  useRiderMetricsQuery,
+  useActiveDeliveryQuery,
+  useUpdateOnlineStatusMutation,
+} from '@/hooks/rider.hooks';
+import { MOCK_RECENT_DELIVERIES } from '@/mocks/rider.mock';
 
 /**
  * Rider Home Screen
@@ -35,37 +41,21 @@ export default function RiderHome() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOnline, setIsOnline] = useState(user?.isOnline ?? false);
 
-  // Mock data - will be replaced with API calls
-  const metrics = {
-    todayEarnings: 85.50,
-    todayDeliveries: 12,
-    activeDelivery: null as any,
-    availableDeliveries: 3,
-  };
+  // TanStack Query hooks
+  const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
+  const { data: activeDeliveryData } = useActiveDeliveryQuery();
+  const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
-  const activeDelivery = {
-    id: '1',
-    orderId: '#ORD-001',
-    pickup: 'TeincFoods Restaurant',
-    dropoff: '123 Main Street',
-    status: 'picked_up',
-    estimatedTime: '15 min',
-  };
+  // Use query data or fallback to mock data
+  const metrics = metricsData ?? MOCK_RIDER_METRICS;
+  const activeDelivery = activeDeliveryData ?? null;
+  const recentDeliveries = MOCK_RECENT_DELIVERIES;
 
-  const recentDeliveries = [
-    { id: '1', orderId: '#ORD-001', earnings: 12.50, status: 'delivered' },
-    { id: '2', orderId: '#ORD-002', earnings: 8.75, status: 'delivered' },
-    { id: '3', orderId: '#ORD-003', earnings: 15.00, status: 'delivered' },
-  ];
-
-  const onRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate API call
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
+  const onRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -80,7 +70,7 @@ export default function RiderHome() {
     <ScrollView
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
       }
      contentContainerStyle={{ backgroundColor: '$background' }}
     >

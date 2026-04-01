@@ -2,26 +2,24 @@
 import { YStack, Text, Card, XStack, Separator } from 'tamagui';
 import { DollarSign, TrendingUp, Clock, Wallet, Calendar } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
+import { useRiderEarningsQuery, useRecentTransactionsQuery, useEarningsBreakdownQuery } from '@/hooks/rider.hooks';
 
 /**
  * Rider Earnings Screen
  */
 export default function RiderEarnings() {
-  const earnings = {
-    today: 85.50,
-    thisWeek: 420.00,
-    thisMonth: 1250.00,
-    total: 5680.00,
-    pendingPayout: 320.00,
-  };
+  // TanStack Query hooks
+  const { data: earnings, isLoading: earningsLoading } = useRiderEarningsQuery();
+  const { data: recentTransactions = [], isLoading: transactionsLoading } = useRecentTransactionsQuery();
+  const { data: breakdown, isLoading: breakdownLoading } = useEarningsBreakdownQuery();
 
-  const recentTransactions = [
-    { id: '1', orderId: '#ORD-001', amount: 12.50, date: 'Today, 2:30 PM', type: 'delivery' },
-    { id: '2', orderId: '#ORD-002', amount: 15.00, date: 'Today, 1:15 PM', type: 'delivery' },
-    { id: '3', orderId: '#ORD-003', amount: 10.00, date: 'Today, 11:45 AM', type: 'delivery' },
-    { id: '4', orderId: '#ORD-004', amount: 18.75, date: 'Yesterday, 6:20 PM', type: 'delivery' },
-    { id: '5', orderId: 'Bonus', amount: 25.00, date: 'Yesterday, 5:00 PM', type: 'bonus' },
-  ];
+  if (!earnings) {
+    return (
+      <YStack flex={1} backgroundColor="$background" justifyContent="center" alignItems="center">
+        <Text>Loading...</Text>
+      </YStack>
+    );
+  }
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -108,29 +106,31 @@ export default function RiderEarnings() {
           </Card>
 
           {/* Earnings Breakdown */}
-          <Card padding="$4" bordered>
-            <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Earnings Breakdown</Text>
-              <Separator />
-              <XStack justifyContent="space-between">
-                <Text color="$colorMuted">Base delivery fees</Text>
-                <Text>GHS 380.00</Text>
-              </XStack>
-              <XStack justifyContent="space-between">
-                <Text color="$colorMuted">Tips received</Text>
-                <Text>GHS 25.00</Text>
-              </XStack>
-              <XStack justifyContent="space-between">
-                <Text color="$colorMuted">Bonuses</Text>
-                <Text>GHS 15.00</Text>
-              </XStack>
-              <Separator />
-              <XStack justifyContent="space-between">
-                <Text fontWeight="bold">Total This Week</Text>
-                <Text fontWeight="bold">GHS 420.00</Text>
-              </XStack>
-            </YStack>
-          </Card>
+          {breakdown && (
+            <Card padding="$4" bordered>
+              <YStack gap="$3">
+                <Text fontSize="$5" fontWeight="bold">Earnings Breakdown</Text>
+                <Separator />
+                <XStack justifyContent="space-between">
+                  <Text color="$colorMuted">Base delivery fees</Text>
+                  <Text>GHS {breakdown.baseDeliveryFees.toFixed(2)}</Text>
+                </XStack>
+                <XStack justifyContent="space-between">
+                  <Text color="$colorMuted">Tips received</Text>
+                  <Text>GHS {breakdown.tipsReceived.toFixed(2)}</Text>
+                </XStack>
+                <XStack justifyContent="space-between">
+                  <Text color="$colorMuted">Bonuses</Text>
+                  <Text>GHS {breakdown.bonuses.toFixed(2)}</Text>
+                </XStack>
+                <Separator />
+                <XStack justifyContent="space-between">
+                  <Text fontWeight="bold">Total This Week</Text>
+                  <Text fontWeight="bold">GHS {breakdown.totalThisWeek.toFixed(2)}</Text>
+                </XStack>
+              </YStack>
+            </Card>
+          )}
         </YStack>
       </ScrollView>
     </YStack>

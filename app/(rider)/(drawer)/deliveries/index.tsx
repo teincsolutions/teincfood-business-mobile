@@ -6,6 +6,7 @@ import { ScrollView } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
+import { useRiderDeliveriesQuery } from '@/hooks/rider.hooks';
 
 /**
  * Rider Deliveries Screen
@@ -15,12 +16,8 @@ export default function RiderDeliveries() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const deliveries = [
-    { id: '1', orderId: '#ORD-001', pickup: 'TeincFoods Restaurant', dropoff: '123 Main Street', status: 'picked_up', earnings: 12.50 },
-    { id: '2', orderId: '#ORD-002', pickup: 'TeincFoods Restaurant', dropoff: '456 Oak Avenue', status: 'delivering', earnings: 15.00 },
-    { id: '3', orderId: '#ORD-003', pickup: 'TeincFoods Restaurant', dropoff: '789 Pine Road', status: 'delivered', earnings: 10.00 },
-    { id: '4', orderId: '#ORD-004', pickup: 'TeincFoods Restaurant', dropoff: '321 Elm Street', status: 'delivered', earnings: 18.75 },
-  ];
+  // TanStack Query hooks
+  const { data: deliveries = [], isLoading } = useRiderDeliveriesQuery();
 
   const getStatusColor = (status: string) => {
     switch (status) {

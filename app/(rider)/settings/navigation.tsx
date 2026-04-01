@@ -13,6 +13,11 @@ import {
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
+import {
+  useNavigationSettingsQuery,
+  useUpdateNavigationSettingsMutation,
+} from "@/hooks/rider.hooks";
+import { MOCK_NAVIGATION_APPS } from "@/mocks/rider.mock";
 
 /**
  * Rider Navigation Settings Screen
@@ -20,49 +25,37 @@ import { Button } from "@/components/ui";
 export default function NavigationSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Navigation app options
-  const [selectedApp, setSelectedApp] = useState("google_maps");
-  const [autoStart, setAutoStart] = useState(true);
-  const [avoidTolls, setAvoidTolls] = useState(false);
-  const [avoidHighways, setAvoidHighways] = useState(false);
+  // TanStack Query hooks
+  const { data: settings, isLoading } = useNavigationSettingsQuery();
+  const updateSettings = useUpdateNavigationSettingsMutation();
 
-  const navigationApps = [
-    {
-      id: "google_maps",
-      name: "Google Maps",
-      description: "Most popular navigation app",
-      icon: "🗺️",
-      installed: true,
-    },
-    {
-      id: "apple_maps",
-      name: "Apple Maps",
-      description: "Built-in iOS navigation",
-      icon: "🍎",
-      installed: true,
-    },
-    {
-      id: "waze",
-      name: "Waze",
-      description: "Community-based traffic alerts",
-      icon: "🚗",
-      installed: false,
-    },
-  ];
+  const [selectedApp, setSelectedApp] = useState(
+    settings?.selectedApp || "google_maps",
+  );
+  const [autoStart, setAutoStart] = useState(settings?.autoStart ?? true);
+  const [avoidTolls, setAvoidTolls] = useState(settings?.avoidTolls ?? false);
+  const [avoidHighways, setAvoidHighways] = useState(
+    settings?.avoidHighways ?? false,
+  );
+
+  const navigationApps = MOCK_NAVIGATION_APPS;
 
   const handleSave = () => {
-    setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
-      router.back();
-    }, 1500);
+    updateSettings.mutate(
+      {
+        selectedApp: selectedApp as any,
+        autoStart,
+        avoidTolls,
+        avoidHighways,
+      },
+      {
+        onSuccess: () => router.back(),
+      },
+    );
   };
 
   const openAppStore = (appId) => {
-    // In real app, open app store to install the navigation app
     const urls = {
       google_maps: "https://apps.apple.com/app/google-maps/id585027354",
       waze: "https://apps.apple.com/app/waze-navigation/id323229106",
@@ -95,9 +88,12 @@ export default function NavigationSettings() {
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Navigation Settings
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={updateSettings.isPending}
+        >
           <Text fontSize="$4" color="$primary" fontWeight="bold">
-            {isSaving ? "Saving..." : "Save"}
+            {updateSettings.isPending ? "Saving..." : "Save"}
           </Text>
         </TouchableOpacity>
       </XStack>
@@ -204,6 +200,7 @@ export default function NavigationSettings() {
                   </Text>
                 </YStack>
                 <Switch
+                  size="$6"
                   checked={autoStart}
                   onCheckedChange={setAutoStart}
                   backgroundColor={autoStart ? "$primary" : "$gray8"}
@@ -226,9 +223,10 @@ export default function NavigationSettings() {
                   </Text>
                 </YStack>
                 <Switch
+                  size="$6"
                   checked={avoidTolls}
                   onCheckedChange={setAvoidTolls}
-                  backgroundColor={avoidTolls ? "$primary" : "$gray8"}
+                  backgroundColor={avoidTolls ? "$primary" : "$color.gray900"}
                 >
                   <Switch.Thumb backgroundColor="white" />
                 </Switch>
@@ -248,9 +246,10 @@ export default function NavigationSettings() {
                   </Text>
                 </YStack>
                 <Switch
+                  size="$6"
                   checked={avoidHighways}
                   onCheckedChange={setAvoidHighways}
-                  backgroundColor={avoidHighways ? "$primary" : "$gray8"}
+                  backgroundColor={avoidHighways ? "$primary" : "$color.gray900"}
                 >
                   <Switch.Thumb backgroundColor="white" />
                 </Switch>
@@ -285,10 +284,10 @@ export default function NavigationSettings() {
             backgroundColor="$primary"
             icon={<Save size={18} />}
             onPress={handleSave}
-            disabled={isSaving}
-            opacity={isSaving ? 0.7 : 1}
+            disabled={updateSettings.isPending}
+            opacity={updateSettings.isPending ? 0.7 : 1}
           >
-            {isSaving ? "Saving..." : "Save Changes"}
+            {updateSettings.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </YStack>
       </ScrollView>

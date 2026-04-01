@@ -1,10 +1,11 @@
 // @ts-nocheck
-import { useState } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Button, Separator, Avatar } from 'tamagui';
 import { MapPin, Navigation, Clock, Package, Phone, MessageCircle, User, DollarSign, Truck } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDeliveryDetailQuery, useUpdateDeliveryStatusMutation } from '@/hooks/rider.hooks';
+import type { RiderDeliveryDetail } from '@/models/rider.model';
 
 /**
  * Rider Delivery Details Screen
@@ -13,49 +14,12 @@ export default function RiderDeliveryDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const [deliveryStatus, setDeliveryStatus] = useState('picked_up');
 
-  // Mock delivery data - in real app, fetch based on id
-  const delivery = {
-    id: id || '1',
-    orderId: '#ORD-001',
-    status: deliveryStatus,
-    customer: {
-      name: 'John Doe',
-      phone: '+233201234567',
-      avatar: null,
-    },
-    pickup: {
-      name: 'TeincFoods Restaurant',
-      address: '45 Liberation Road, Accra',
-      phone: '+233201112222',
-      lat: 5.5600,
-      lng: -0.2050,
-    },
-    dropoff: {
-      name: 'John Doe',
-      address: '123 Main Street, Accra, Ghana',
-      lat: 5.5650,
-      lng: -0.2100,
-      notes: 'Blue gate, call when you arrive',
-    },
-    items: [
-      { name: 'Jollof Rice', quantity: 2, price: 45.00 },
-      { name: 'Grilled Chicken', quantity: 1, price: 35.00 },
-      { name: 'Coca Cola', quantity: 2, price: 8.00 },
-    ],
-    orderTotal: 136.00,
-    deliveryFee: 12.50,
-    earnings: 12.50,
-    distance: '3.2 km',
-    estimatedTime: '15 min',
-    actualTime: null,
-    acceptedAt: '2026-03-31T14:30:00',
-    pickedUpAt: '2026-03-31T14:45:00',
-    deliveredAt: null,
-  };
+  // TanStack Query hooks
+  const { data: delivery, isLoading } = useDeliveryDetailQuery(id as string);
+  const updateStatus = useUpdateDeliveryStatusMutation();
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'assigned': return '#FFA500';
       case 'picked_up': return '#3498db';
@@ -65,10 +29,19 @@ export default function RiderDeliveryDetails() {
     }
   };
 
-  const handleStatusUpdate = (newStatus) => {
-    setDeliveryStatus(newStatus);
-    // In real app, update backend
+  const handleStatusUpdate = (newStatus: RiderDeliveryDetail['status']) => {
+    if (id) {
+      updateStatus.mutate({ deliveryId: id as string, status: newStatus });
+    }
   };
+
+  if (!delivery) {
+    return (
+      <YStack flex={1} backgroundColor="$background" justifyContent="center" alignItems="center">
+        <Text>Loading...</Text>
+      </YStack>
+    );
+  }
 
   return (
     <YStack flex={1} backgroundColor="$background">

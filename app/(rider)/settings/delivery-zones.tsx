@@ -1,11 +1,12 @@
 // @ts-nocheck
-import { useState } from "react";
 import { ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
 import { MapPin, Check, Save, Navigation, ArrowLeft } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
+import { useDeliveryZonesQuery, useUpdateDeliveryZonesMutation, useToggleDeliveryZoneMutation } from "@/hooks/rider.hooks";
+import type { DeliveryZone } from "@/models/rider.model";
 
 /**
  * Rider Delivery Zones Screen
@@ -13,59 +14,18 @@ import { Button } from "@/components/ui";
 export default function DeliveryZones() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Mock delivery zones data
-  const [zones, setZones] = useState([
-    {
-      id: "1",
-      name: "Greater Accra",
-      enabled: true,
-      radius: "15 km",
-      deliveries: 45,
-    },
-    { id: "2", name: "Tema", enabled: true, radius: "10 km", deliveries: 32 },
-    { id: "3", name: "Kasoa", enabled: false, radius: "12 km", deliveries: 18 },
-    { id: "4", name: "Madina", enabled: true, radius: "8 km", deliveries: 28 },
-    {
-      id: "5",
-      name: "East Legon",
-      enabled: true,
-      radius: "5 km",
-      deliveries: 22,
-    },
-    {
-      id: "6",
-      name: "Achimota",
-      enabled: false,
-      radius: "10 km",
-      deliveries: 15,
-    },
-    {
-      id: "7",
-      name: "Dansoman",
-      enabled: false,
-      radius: "12 km",
-      deliveries: 12,
-    },
-    { id: "8", name: "Spintex", enabled: true, radius: "8 km", deliveries: 20 },
-  ]);
+  // TanStack Query hooks
+  const { data: zones = [], isLoading } = useDeliveryZonesQuery();
+  const updateZones = useUpdateDeliveryZonesMutation();
+  const toggleZone = useToggleDeliveryZoneMutation();
 
-  const toggleZone = (zoneId) => {
-    setZones(
-      zones.map((zone) =>
-        zone.id === zoneId ? { ...zone, enabled: !zone.enabled } : zone,
-      ),
-    );
+  const handleToggleZone = (zoneId: string, currentEnabled: boolean) => {
+    toggleZone.mutate({ zoneId, enabled: !currentEnabled });
   };
 
   const handleSave = () => {
-    setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
-      router.back();
-    }, 1500);
+    router.back();
   };
 
   const enabledZones = zones.filter((z) => z.enabled).length;
@@ -93,9 +53,9 @@ export default function DeliveryZones() {
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Delivery Zones
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+        <TouchableOpacity onPress={handleSave}>
           <Text fontSize="$4" color="$primary" fontWeight="bold">
-            {isSaving ? "Saving..." : "Save"}
+            Save
           </Text>
         </TouchableOpacity>
       </XStack>
@@ -149,7 +109,7 @@ export default function DeliveryZones() {
               <Separator />
               {zones.map((zone, index) => (
                 <YStack key={zone.id}>
-                  <TouchableOpacity onPress={() => toggleZone(zone.id)}>
+                  <TouchableOpacity onPress={() => handleToggleZone(zone.id, zone.enabled)}>
                     <XStack
                       padding="$3"
                       borderRadius="$4"
@@ -185,9 +145,10 @@ export default function DeliveryZones() {
                         </YStack>
                       </XStack>
                       <Switch
+                      size="$6"
                         checked={zone.enabled}
-                        onCheckedChange={() => toggleZone(zone.id)}
-                        backgroundColor={zone.enabled ? "$green10" : "$gray8"}
+                        onCheckedChange={() => handleToggleZone(zone.id, zone.enabled)}
+                        backgroundColor={zone.enabled ? "$color.green" : "$color.gray900"}
                       >
                         <Switch.Thumb backgroundColor="white" />
                       </Switch>
@@ -226,10 +187,8 @@ export default function DeliveryZones() {
             backgroundColor="$primary"
             icon={<Save size={18} />}
             onPress={handleSave}
-            disabled={isSaving}
-            opacity={isSaving ? 0.7 : 1}
           >
-            {isSaving ? "Saving..." : "Save Changes"}
+            Save Changes
           </Button>
         </YStack>
       </ScrollView>

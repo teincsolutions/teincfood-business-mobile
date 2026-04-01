@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Card, Button } from "tamagui";
+import { YStack, XStack, Text, Card } from "tamagui";
 import {
   Bell,
   ShoppingBag,
@@ -13,6 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "@/components/ui";
 
 /**
  * Notifications Screen
