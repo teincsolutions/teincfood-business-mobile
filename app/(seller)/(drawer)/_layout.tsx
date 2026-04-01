@@ -24,6 +24,7 @@ import {
   Monitor,
   LogOut,
   Menu,
+  MessageSquare,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -172,6 +173,23 @@ function CustomDrawerContent(props: any) {
           </Button>
 
           <Separator marginVertical="$2" />
+
+          {/* Messages */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(communication)")}
+            icon={<MessageSquare size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Messages
+            </Text>
+          </Button>
 
           {/* Notifications */}
           <Button

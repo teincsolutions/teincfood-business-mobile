@@ -6,7 +6,7 @@ export interface User {
   phone: string;
   avatarUrl?: string;
   businessLogoUrl?: string; // For sellers
-  role: 'seller' | 'rider';
+  role: 'seller' | 'rider' | 'buyer';
   businessName?: string; // For sellers
   businessType?: string; // For sellers: Restaurant, Cafe, Bakery, etc.
   businessAddress?: string; // For sellers

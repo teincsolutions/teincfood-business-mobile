@@ -280,23 +280,45 @@ export const mockBackend = {
 
   async getInboxConversations() {
     requireSession();
-    const conversations = sellerUsers()
-      .slice(0, 5)
-      .map((u, i) => ({
-        id: u.id,
-        name: u.fullName,
-        avatar: u.avatarUrl,
-        lastMessage: i === 0 ? 'Your order is being prepared!' : 'Hello! How can I help you today?',
-        time: i === 0 ? '2m' : `${i + 1}h`,
-        unreadCount: i < 2 ? i + 1 : 0,
-      }));
+    const { user } = useAuthStore.getState();
+    const userRole = user?.role || 'seller';
+
+    // Get both sellers and riders for conversations
+    const sellers = sellerUsers();
+    const riders = MOCK_USERS.filter((u) => u.role === 'rider');
+    
+    // Combine users based on who the current user might have chatted with
+    // Buyers chat with sellers and riders; sellers chat with riders; riders chat with sellers
+    let potentialContacts;
+    if (userRole === 'seller') {
+      // Sellers primarily chat with riders for delivery coordination
+      potentialContacts = [...riders.slice(0, 4), ...sellers.filter(u => u.id !== user?.id).slice(0, 2)];
+    } else {
+      // Riders primarily chat with sellers for pickup coordination
+      potentialContacts = [...sellers.slice(0, 4), ...riders.filter(u => u.id !== user?.id).slice(0, 2)];
+    }
+
+    const conversations = potentialContacts.slice(0, 6).map((contact, i) => ({
+      id: contact.id,
+      name: contact.fullName,
+      avatar: contact.avatarUrl,
+      lastMessage: i === 0 
+        ? 'Your order is being prepared!' 
+        : i === 1 
+          ? 'The rider is on the way to pickup your order.'
+          : 'Hello! How can I help you today?',
+      time: i === 0 ? '2m' : i === 1 ? '15m' : `${i + 1}h`,
+      unreadCount: i < 2 ? i + 1 : 0,
+      role: contact.role,
+    }));
 
     return withDelay(conversations);
   },
 
   async getChatParticipant(userId: string) {
     requireSession();
-    const user = sellerUsers().find((u) => u.id === userId) || sellerUsers()[0] || null;
+    // Search for user in all mock users (sellers, riders, etc.)
+    const user = MOCK_USERS.find((u) => u.id === userId) || sellerUsers()[0] || null;
     return withDelay(user);
   },
 
