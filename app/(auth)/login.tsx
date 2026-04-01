@@ -13,9 +13,15 @@ import {
   Separator,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Apple, Facebook, Chrome, ChevronDown, Check } from "@tamagui/lucide-icons";
+import {
+  Apple,
+  Facebook,
+  Chrome,
+  ChevronDown,
+  Check,
+} from "@tamagui/lucide-icons";
 import { Button, FormInput, BackButton } from "@/components/ui";
-import { validation } from "@/utils/validation";
+import { validateEmail, validatePassword } from "@/utils/validation";
 import {
   PHONE_COUNTRIES,
   getCountryOption,
@@ -47,8 +53,8 @@ export default function LoginScreen() {
   const loginMutation = useEmailPasswordLoginMutation();
   const navigation = useNavigation();
   const { role } = useLocalSearchParams<{ role?: string }>();
-  const selectedRole = (role === 'seller' || role === 'rider') ? role : 'seller';
-  const roleLabel = selectedRole === 'seller' ? 'Seller' : 'Rider';
+  const selectedRole = role === "seller" || role === "rider" ? role : "seller";
+  const roleLabel = selectedRole === "seller" ? "Seller" : "Rider";
 
   const [method, setMethod] = useState<LoginMethod>("phone");
   const [phone, setPhone] = useState("");
@@ -71,9 +77,9 @@ export default function LoginScreen() {
   const goPostAuth = () => {
     // Get user from auth store to check role
     const user = useAuthStore.getState().user;
-    if (user?.role === 'seller') {
+    if (user?.role === "seller") {
       router.replace("/(seller)/");
-    } else if (user?.role === 'rider') {
+    } else if (user?.role === "rider") {
       router.replace("/(rider)/");
     } else {
       // If no role set, go to onboarding to select role
@@ -86,8 +92,7 @@ export default function LoginScreen() {
 
     const countryCode = selectedCountryIso?.trim().toUpperCase();
     if (!countryCode) {
-      setError("Please set your location country before logging in.");
-      router.replace("/(auth)/onboarding?requireLocation=1");
+      setError("Please select a country code.");
       return;
     }
 
@@ -102,7 +107,11 @@ export default function LoginScreen() {
       await authService.requestOtp(normalizedPhone);
       router.push({
         pathname: "/(auth)/verification",
-        params: { contactInfo: normalizedPhone, type: "login", role: selectedRole },
+        params: {
+          contactInfo: normalizedPhone,
+          type: "login",
+          role: selectedRole,
+        },
       });
     } catch (err: any) {
       setError(err?.message || "Failed to send OTP. Please try again.");
@@ -113,22 +122,16 @@ export default function LoginScreen() {
 
   const handleEmailLogin = async () => {
     setError("");
-    if (!hasLocation || !currentLocation?.countryCode) {
-      router.replace(
-        hasSeenOnboarding
-          ? "/(auth)/onboarding?requireLocation=1"
-          : "/(auth)/onboarding",
-      );
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setError(emailValidation.errors[0] || "Invalid email");
       return;
     }
 
-    if (!validation.isValid(email, validation.email)) {
-      setError(validation.email.message);
-      return;
-    }
-
-    if (!validation.isValid(password, validation.password)) {
-      setError(validation.password.message);
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      setError(passwordValidation.errors[0] || "Invalid password");
       return;
     }
 
@@ -160,14 +163,6 @@ export default function LoginScreen() {
 
   const handleOIDCLogin = async (provider: string) => {
     try {
-      if (!hasLocation || !currentLocation?.countryCode) {
-        router.replace(
-          hasSeenOnboarding
-            ? "/(auth)/onboarding?requireLocation=1"
-            : "/(auth)/onboarding",
-        );
-        return;
-      }
       setError("");
       const response = await authService.loginWithOIDC(provider);
       setAuth(
@@ -206,9 +201,7 @@ export default function LoginScreen() {
             paddingBottom: Math.max(insets.bottom + 20, 24),
           }}
         >
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
+          <YStack mb="$4">{router.canDismiss() && <BackButton />}</YStack>
 
           <YStack mb="$6" gap="$3">
             <Text
@@ -316,7 +309,8 @@ export default function LoginScreen() {
                   />
                 </XStack>
                 <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  {selectedCountry?.name || "Selected country"} ({selectedCountryIso})
+                  {selectedCountry?.name || "Selected country"} (
+                  {selectedCountryIso})
                 </Text>
                 {error ? (
                   <Text fontSize="$2" color="$error" fontFamily="$body">
@@ -353,7 +347,12 @@ export default function LoginScreen() {
                   paddingVertical="$2"
                   onPress={() => router.push("/(auth)/forgot-password")}
                 >
-                  <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$primary"
+                    fontWeight="600"
+                    fontFamily="$body"
+                  >
                     Forgot Password?
                   </Text>
                 </Button>
@@ -431,7 +430,12 @@ export default function LoginScreen() {
             </Text>
             <Button
               variant="outline"
-              onPress={() => router.push({ pathname: "/(auth)/signup", params: { role: selectedRole } })}
+              onPress={() =>
+                router.push({
+                  pathname: "/(auth)/signup",
+                  params: { role: selectedRole },
+                })
+              }
             >
               CREATE ACCOUNT
             </Button>
@@ -440,7 +444,12 @@ export default function LoginScreen() {
               height={40}
               onPress={() => router.push({ pathname: "/(auth)/role" })}
             >
-              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+              <Text
+                fontSize="$3"
+                color="$primary"
+                fontWeight="600"
+                fontFamily="$body"
+              >
                 Logging in as {roleLabel} · Switch Role
               </Text>
             </Button>
@@ -477,7 +486,12 @@ export default function LoginScreen() {
             >
               Select Country Code
             </Text>
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" mt="$1">
+            <Text
+              fontSize="$3"
+              color="$colorSecondary"
+              fontFamily="$body"
+              mt="$1"
+            >
               Choose a country for OTP routing.
             </Text>
           </YStack>
@@ -503,7 +517,11 @@ export default function LoginScreen() {
                       >
                         {country.name}
                       </Text>
-                      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                      <Text
+                        fontSize="$3"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
                         {country.iso}
                       </Text>
                     </YStack>

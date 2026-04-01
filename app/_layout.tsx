@@ -23,6 +23,7 @@ import { useLocationStore } from '../src/stores/location.store';
 import { useOnboardingStore } from '../src/stores/onboarding.store';
 import { useSecurityStore } from '../src/stores/security.store';
 import { BiometricLockOverlay } from '../src/components/security/BiometricLockOverlay';
+import { LocationGuard } from '../src/components/LocationGuard';
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
@@ -98,41 +99,43 @@ function AppShell() {
   return (
     <SafeAreaProvider>
       <QueryProvider>
-        <YStack flex={1}>
-          <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="+not-found" />
+        <LocationGuard>
+          <YStack flex={1}>
+            <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="+not-found" />
 
-            {/* Auth routes - accessible to all */}
-            <Stack.Screen name="(auth)" />
+              {/* Auth routes - accessible to all */}
+              <Stack.Screen name="(auth)" />
 
-            {/* Seller routes - protected for sellers only */}
-            <Stack.Protected guard={isAuthenticated && isSeller}>
-              <Stack.Screen name="(seller)" />
-            </Stack.Protected>
+              {/* Seller routes - protected for sellers only */}
+              <Stack.Protected guard={isAuthenticated && isSeller}>
+                <Stack.Screen name="(seller)" />
+              </Stack.Protected>
 
-            {/* Rider routes - protected for riders only */}
-            <Stack.Protected guard={isAuthenticated && isRider}>
-              <Stack.Screen name="(rider)" />
-            </Stack.Protected>
+              {/* Rider routes - protected for riders only */}
+              <Stack.Protected guard={isAuthenticated && isRider}>
+                <Stack.Screen name="(rider)" />
+              </Stack.Protected>
 
-            {/* Shared routes - protected for authenticated users */}
-            <Stack.Protected guard={isAuthenticated}>
-              <Stack.Screen name="(shared)" />
-              <Stack.Screen name="(communication)" />
-            </Stack.Protected>
-          </Stack>
+              {/* Shared routes - protected for authenticated users */}
+              <Stack.Protected guard={isAuthenticated}>
+                <Stack.Screen name="(shared)" />
+                <Stack.Screen name="(communication)" />
+              </Stack.Protected>
+            </Stack>
 
-          {showLock && (
-            <BiometricLockOverlay onUnlock={() => setIsUnlocked(true)} />
-          )}
-        </YStack>
+            {showLock && (
+              <BiometricLockOverlay onUnlock={() => setIsUnlocked(true)} />
+            )}
+          </YStack>
+        </LocationGuard>
       </QueryProvider>
     </SafeAreaProvider>
   );
