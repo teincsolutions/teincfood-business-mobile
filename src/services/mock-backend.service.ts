@@ -24,6 +24,7 @@ const MIN_DELAY_MS = 180;
 const MAX_DELAY_MS = 520;
 const registeredPushTokens = new Map<string, PushTokenRegistrationRequest>();
 const liveActivityTokens = new Map<string, LiveActivityRegistrationRequest>();
+const chatReadStatus = new Map<string, Set<string>>(); // chatId -> Set of read messageIds
 
 function withDelay<T>(value: T): Promise<T> {
   const jitter = Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1));
@@ -298,21 +299,36 @@ export const mockBackend = {
       potentialContacts = [...sellers.slice(0, 4), ...riders.filter(u => u.id !== user?.id).slice(0, 2)];
     }
 
-    const conversations = potentialContacts.slice(0, 6).map((contact, i) => ({
-      id: contact.id,
-      name: contact.fullName,
-      avatar: contact.avatarUrl,
-      lastMessage: i === 0 
-        ? 'Your order is being prepared!' 
-        : i === 1 
-          ? 'The rider is on the way to pickup your order.'
-          : 'Hello! How can I help you today?',
-      time: i === 0 ? '2m' : i === 1 ? '15m' : `${i + 1}h`,
-      unreadCount: i < 2 ? i + 1 : 0,
-      role: contact.role,
-    }));
+    const conversations = potentialContacts.slice(0, 6).map((contact, i) => {
+      // Check if this chat has been marked as read
+      const readMessages = chatReadStatus.get(contact.id);
+      const hasBeenRead = readMessages && readMessages.size > 0;
+      
+      return {
+        id: contact.id,
+        name: contact.fullName,
+        avatar: contact.avatarUrl,
+        lastMessage: i === 0 
+          ? 'Your order is being prepared!' 
+          : i === 1 
+            ? 'The rider is on the way to pickup your order.'
+            : 'Hello! How can I help you today?',
+        time: i === 0 ? '2m' : i === 1 ? '15m' : `${i + 1}h`,
+        unreadCount: hasBeenRead ? 0 : (i < 2 ? i + 1 : 0),
+        role: contact.role,
+      };
+    });
 
     return withDelay(conversations);
+  },
+
+  async markChatAsRead(chatId: string, messageId: string) {
+    requireSession();
+    if (!chatReadStatus.has(chatId)) {
+      chatReadStatus.set(chatId, new Set());
+    }
+    chatReadStatus.get(chatId)!.add(messageId);
+    return withDelay({ success: true });
   },
 
   async getChatParticipant(userId: string) {

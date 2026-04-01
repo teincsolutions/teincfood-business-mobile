@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import type { EventEnvelope } from './backend-contracts.types';
 import { mockBackend } from './mock-backend.service';
@@ -23,6 +23,7 @@ export function useChatParticipantQuery(userId: string) {
 export function useChatSocket(chatId: string, onEvent: (event: EventEnvelope) => void) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const userId = useAuthStore((state) => state.user?.id || 'me');
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!chatId || !accessToken) return;
@@ -62,5 +63,19 @@ export function useChatSocket(chatId: string, onEvent: (event: EventEnvelope) =>
     [chatId, userId]
   );
 
-  return { sendMessage, setTyping };
+  const markAsRead = useCallback(
+    async (messageId: string) => {
+      // Mark as read via socket
+      mockChatSocket.markRead(chatId, messageId, userId);
+      
+      // Also mark as read in the backend to update inbox conversations
+      await mockBackend.markChatAsRead(chatId, messageId);
+      
+      // Invalidate the inbox conversations query to refresh the unread count
+      queryClient.invalidateQueries({ queryKey: ['inbox-conversations'] });
+    },
+    [chatId, userId, queryClient]
+  );
+
+  return { sendMessage, setTyping, markAsRead };
 }

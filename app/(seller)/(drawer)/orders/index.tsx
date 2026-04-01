@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { YStack, Text, Card, Button, XStack, Separator } from 'tamagui';
+import { YStack, Text, Card, Button, XStack, Separator, CardHeader } from 'tamagui';
 import { Filter, X, Check } from '@tamagui/lucide-icons';
 import { ScrollView, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

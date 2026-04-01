@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, KeyboardAvoidingView, Platform, TextInput, Alert, Linking } from 'react-native';
 import { YStack, XStack, Text, Image, Button, useTheme, Sheet, Separator } from 'tamagui';
@@ -46,7 +46,18 @@ export default function ChatScreen() {
     },
     [currentUserId]
   );
-  const { sendMessage } = useChatSocket(normalizedUserId || '', onChatEvent);
+  const { sendMessage, markAsRead } = useChatSocket(normalizedUserId || '', onChatEvent);
+
+  // Mark messages as read when chat opens
+  useEffect(() => {
+    if (normalizedUserId && messages.length > 0) {
+      // Mark the last message as read to clear unread count
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        markAsRead(lastMessage.id);
+      }
+    }
+  }, [normalizedUserId, messages, markAsRead]);
 
   const handleCall = async () => {
     const phone = user?.phone?.trim();

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { useRouter } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
-import { YStack, XStack, Text, Image, Separator } from "tamagui";
+import { YStack, XStack, Text, Image, Separator, Input } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare, ChevronRight } from "@tamagui/lucide-icons";
-import { BackButton, Button, Input } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 import { useInboxConversationsQuery } from "@/services/messages.service";
 
 export default function InboxScreen() {
@@ -94,6 +94,7 @@ export default function InboxScreen() {
         <YStack padding="$5" gap="$5">
           {/* Search Bar */}
           <XStack
+          flex={1}
             alignItems="center"
             backgroundColor="$backgroundSoft"
             borderRadius="$4"
