@@ -56,7 +56,7 @@ export const EMPTY_FORM: MenuItemForm = {
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-export const INITIAL_ITEMS: MenuItem[] = [
+let menuItems: MenuItem[] = [
   {
     id: '1',
     name: 'Jollof Rice',
@@ -137,7 +137,7 @@ const SIMULATED_DELAY = 300;
 
 export async function fetchMenuItems(): Promise<MenuItem[]> {
   return new Promise((resolve) => {
-    setTimeout(() => resolve([...INITIAL_ITEMS]), SIMULATED_DELAY);
+    setTimeout(() => resolve([...menuItems]), SIMULATED_DELAY);
   });
 }
 
@@ -148,6 +148,7 @@ export async function createMenuItem(item: Omit<MenuItem, 'id'>): Promise<MenuIt
         ...item,
         id: Date.now().toString(),
       };
+      menuItems = [newItem, ...menuItems];
       resolve(newItem);
     }, SIMULATED_DELAY);
   });
@@ -159,15 +160,23 @@ export async function updateMenuItem(
 ): Promise<MenuItem> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const existing = INITIAL_ITEMS.find((i) => i.id === id) || INITIAL_ITEMS[0];
-      resolve({ ...existing, ...updates, id });
+      const index = menuItems.findIndex((i) => i.id === id);
+      if (index !== -1) {
+        menuItems[index] = { ...menuItems[index], ...updates };
+        resolve(menuItems[index]);
+      } else {
+        resolve(menuItems[0]);
+      }
     }, SIMULATED_DELAY);
   });
 }
 
 export async function deleteMenuItem(id: string): Promise<{ success: boolean }> {
   return new Promise((resolve) => {
-    setTimeout(() => resolve({ success: true }), SIMULATED_DELAY);
+    setTimeout(() => {
+      menuItems = menuItems.filter((item) => item.id !== id);
+      resolve({ success: true });
+    }, SIMULATED_DELAY);
   });
 }
 
@@ -177,8 +186,13 @@ export async function toggleItemAvailability(
 ): Promise<MenuItem> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const existing = INITIAL_ITEMS.find((i) => i.id === id) || INITIAL_ITEMS[0];
-      resolve({ ...existing, available });
+      const index = menuItems.findIndex((i) => i.id === id);
+      if (index !== -1) {
+        menuItems[index] = { ...menuItems[index], available };
+        resolve(menuItems[index]);
+      } else {
+        resolve(menuItems[0]);
+      }
     }, SIMULATED_DELAY);
   });
 }

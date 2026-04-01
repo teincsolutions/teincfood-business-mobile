@@ -186,7 +186,7 @@ export function MenuFormSheet({
                     size="$6"
                     checked={form.available}
                     onCheckedChange={(v) => updateFormField('available', v)}
-                    backgroundColor={form.available ? '$primary' : '$gray8'}
+                    backgroundColor={form.available ? '$primary' : '$color.gray900'}
                   >
                     <Switch.Thumb animation="quick" backgroundColor="white" />
                   </Switch>
