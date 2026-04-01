@@ -12,8 +12,7 @@ import {
   FileText,
 } from "@tamagui/lucide-icons";
 import { MOCK_SELLER_ORDERS, SellerOrder } from "@/services/mock-data.service";
-import { Button } from "@/components/ui";
-
+import { BackButton, Button } from "@/components/ui";
 /**
  * Order Details Screen
  */
@@ -87,6 +86,7 @@ export default function OrderDetails() {
   return (
     <YStack
       flex={1}
+      paddingTop={Math.max(insets.top + 12, 24)}
       paddingBottom={insets.bottom + 16}
       backgroundColor="$background"
     >
@@ -98,12 +98,7 @@ export default function OrderDetails() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <Button
-          size="$3"
-          circular
-          icon={<ArrowLeft size={20} />}
-          onPress={() => router.back()}
-        />
+          <BackButton />
         <YStack flex={1}>
           <Text fontSize="$6" fontWeight="bold">
             Order Details

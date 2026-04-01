@@ -11,7 +11,7 @@ import {
   Separator,
   TextArea,
 } from 'tamagui';
-import { FormInput } from '@/components/ui';
+import { BackButton, FormInput } from '@/components/ui';
 import {
   ArrowLeft,
   HelpCircle,
@@ -114,13 +114,7 @@ export default function HelpSupport() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
-          />
+          <BackButton />
           <Text fontSize="$6" fontWeight="bold">Help & Support</Text>
         </XStack>
       </XStack>
