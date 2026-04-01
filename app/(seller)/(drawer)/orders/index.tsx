@@ -77,7 +77,7 @@ export default function SellerOrders() {
           {filteredOrders.length === 0 ? (
             <YStack padding="$6" alignItems="center" justifyContent="center">
               <Text color="$colorMuted" fontSize="$4">No orders found with selected filters</Text>
-              <Button variant="outline" marginTop="$3" onPress={clearFilters}>Clear Filters</Button>
+              <Button variant="outlined" marginTop="$3" onPress={clearFilters}>Clear Filters</Button>
             </YStack>
           ) : (
             filteredOrders.map((order) => (
@@ -101,7 +101,7 @@ export default function SellerOrders() {
                   <Separator />
                   <XStack justifyContent="space-between" alignItems="center">
                     <Text fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                    <Button variant="outline" width="auto" height={40} paddingHorizontal="$3">View Details</Button>
+                    <Button variant="outlined" width="auto" height={40} paddingHorizontal="$3">View Details</Button>
                   </XStack>
                 </YStack>
               </Card>

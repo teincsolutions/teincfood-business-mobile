@@ -447,7 +447,7 @@ export default function KioskMode() {
 
         {/* Exit Kiosk Mode */}
         <YStack padding="$4" paddingBottom="$8">
-          <Button variant="outline" onPress={() => router.back()}>
+          <Button variant="outlined" onPress={() => router.back()}>
             <XStack gap="$2" alignItems="center">
               <LogOut size={18} />
               <Text fontFamily="$body" fontWeight="700" color="$color">

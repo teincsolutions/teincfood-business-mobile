@@ -164,7 +164,7 @@ export function FilterSheet({ open, onOpenChange, onApply }: FilterSheetProps) {
 
         {/* Footer Actions */}
         <XStack gap="$3" marginTop="$4" paddingTop="$4" borderTopWidth={1} borderColor="$gray100">
-          <Button variant="outline" flex={1} height={56} onPress={clearAll}>
+          <Button variant="outlined" flex={1} height={56} onPress={clearAll}>
             Clear All
           </Button>
           <Button variant="primary" flex={1} height={56} onPress={handleApply}>

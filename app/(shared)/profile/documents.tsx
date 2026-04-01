@@ -254,7 +254,7 @@ export default function Documents() {
           </Card>
 
           {/* Help */}
-          <Button variant="outline" onPress={() => router.push('/(shared)/profile/help')}>
+          <Button variant="outlined" onPress={() => router.push('/(shared)/profile/help')}>
             Need Help with Documents?
           </Button>
         </YStack>

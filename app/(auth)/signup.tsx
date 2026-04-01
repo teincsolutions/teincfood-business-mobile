@@ -186,7 +186,7 @@ export default function SignupScreen() {
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?
             </Text>
-            <Button variant="outline" onPress={() => router.push({ pathname: '/(auth)/login', params: { role: selectedRole } })}>
+            <Button variant="outlined" onPress={() => router.push({ pathname: '/(auth)/login', params: { role: selectedRole } })}>
               LOG IN
             </Button>
             <Button

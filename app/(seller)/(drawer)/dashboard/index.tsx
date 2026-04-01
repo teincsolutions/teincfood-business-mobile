@@ -59,10 +59,10 @@ export default function SellerDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#FFA500';
-      case 'preparing': return '#3498db';
-      case 'ready': return '#27ae60';
-      default: return '#95a5a6';
+      case 'pending': return '$star';
+      case 'preparing': return '$info';
+      case 'ready': return '$success';
+      default: return '$colorMuted';
     }
   };
 
@@ -118,7 +118,7 @@ export default function SellerDashboard() {
           <Card flex={1} minWidth="45%" padding="$4" bordered>
             <YStack gap="$2">
               <XStack gap="$2" alignItems="center">
-                <DollarSign size={20} color="#27ae60" />
+                <DollarSign size={20} color="$success" />
                 <Text fontSize="$3" color="$colorMuted">Today's Revenue</Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">GHS {metrics.todayRevenue.toFixed(2)}</Text>
@@ -128,7 +128,7 @@ export default function SellerDashboard() {
           <Card flex={1} minWidth="45%" padding="$4" bordered>
             <YStack gap="$2">
               <XStack gap="$2" alignItems="center">
-                <Clock size={20} color="#FFA500" />
+                <Clock size={20} color="$star" />
                 <Text fontSize="$3" color="$colorMuted">Pending Orders</Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">{metrics.pendingOrders}</Text>
@@ -138,7 +138,7 @@ export default function SellerDashboard() {
           <Card flex={1} minWidth="45%" padding="$4" bordered>
             <YStack gap="$2">
               <XStack gap="$2" alignItems="center">
-                <Star size={20} color="#f1c40f" />
+                <Star size={20} color="$star" />
                 <Text fontSize="$3" color="$colorMuted">Avg Rating</Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">{metrics.averageRating}</Text>
@@ -156,8 +156,8 @@ export default function SellerDashboard() {
                 onPress={() => router.push('/(seller)/orders/pending')}
               >
                 <XStack gap="$2" alignItems="center">
-                  <Clock size={18} color="white" />
-                  <Text color="white" fontFamily="$body" fontWeight="bold">Pending ({metrics.pendingOrders})</Text>
+                  <Clock size={18} color="$color.white" />
+                  <Text color="$color.white" fontFamily="$body" fontWeight="bold">Pending ({metrics.pendingOrders})</Text>
                 </XStack>
               </Button>
               <Button
@@ -165,13 +165,13 @@ export default function SellerDashboard() {
                 onPress={() => router.push('/(seller)/orders/active')}
               >
                 <XStack gap="$2" alignItems="center">
-                  <Package size={18} color="white" />
-                  <Text color="white" fontFamily="$body" fontWeight="bold">Active ({metrics.activeOrders})</Text>
+                  <Package size={18} color="$color.white" />
+                  <Text color="$color.white" fontFamily="$body" fontWeight="bold">Active ({metrics.activeOrders})</Text>
                 </XStack>
               </Button>
             </XStack>
             <Button
-              variant="outline"
+              variant="outlined"
               onPress={() => router.push('/(seller)/analytics')}
             >
               <XStack gap="$2" alignItems="center">
@@ -188,7 +188,7 @@ export default function SellerDashboard() {
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">Recent Orders</Text>
               <Button
-                variant="outline"
+                variant="outlined"
                 height={36}
                 paddingHorizontal="$3"
                 onPress={() => router.push('/(seller)/orders')}
@@ -215,7 +215,7 @@ export default function SellerDashboard() {
                       paddingVertical="$1"
                       borderRadius="$2"
                     >
-                      <Text fontSize="$2" color="white" textTransform="capitalize">
+                      <Text fontSize="$2" color="$color.white" textTransform="capitalize">
                         {order.status}
                       </Text>
                     </YStack>

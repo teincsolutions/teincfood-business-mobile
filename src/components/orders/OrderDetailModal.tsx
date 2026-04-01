@@ -265,7 +265,7 @@ export function OrderDetailModal({ open, onOpenChange, order }: OrderDetailModal
           borderTopWidth={1}
           borderTopColor="$borderColor"
         >
-          <Button variant="outline" height={50} onPress={() => onOpenChange(false)}>
+          <Button variant="outlined" height={50} onPress={() => onOpenChange(false)}>
             Close
           </Button>
         </YStack>

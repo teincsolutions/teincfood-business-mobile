@@ -255,7 +255,7 @@ export default function Security() {
                   <Text color="white" fontSize="$1">Current</Text>
                 </YStack>
               </XStack>
-              <Button variant="outline" size="$3">
+              <Button variant="outlined" size="$3">
                 View All Sessions
               </Button>
             </YStack>
@@ -266,7 +266,7 @@ export default function Security() {
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold" color="$red10">Danger Zone</Text>
               <Separator />
-              <Button variant="outline" borderColor="$red10" color="$red10">
+              <Button variant="outlined" borderColor="$red10" color="$red10">
                 Deactivate Account
               </Button>
               <Text fontSize="$2" color="$colorMuted">

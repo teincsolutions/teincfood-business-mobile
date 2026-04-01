@@ -482,7 +482,7 @@ export default function SellerMenu() {
               <Text color="$colorSecondary" fontFamily="$body" fontSize="$4">
                 No items in this category
               </Text>
-              <Button variant="outline" height={44} width="auto" paddingHorizontal="$5" onPress={openAdd}>
+              <Button variant="outlined" height={44} width="auto" paddingHorizontal="$5" onPress={openAdd}>
                 Add First Item
               </Button>
             </YStack>
