@@ -203,7 +203,7 @@ export default function ChatScreen() {
               borderWidth={1}
               borderColor={canSend ? '$primary' : '$borderColor'}
               pressStyle={{ backgroundColor: '$primaryDark' }}
-              icon={<Send size={20} color={theme.white?.val as string || '#FFFFFF'} />} 
+              icon={<Send size={20} color="$white" />} 
               onPress={handleSend}
               disabled={!canSend}
             />

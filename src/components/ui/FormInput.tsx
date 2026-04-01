@@ -76,12 +76,9 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
       <YStack w="100%" gap="$2">
         {label && (
           <Label
-            fontSize="$3"
-            fontWeight="600"
-            color={localError ? '$error' : '$colorSecondary'}
+            style={{ fontSize: 14, fontWeight: '400' }}
+            color={localError ? '$error' : '$color.gray600'}
             fontFamily="$body"
-            textTransform="uppercase"
-            letterSpacing={0.5}
             htmlFor={name || label.toLowerCase().replace(/\s+/g, '-')}
           >
             {label}

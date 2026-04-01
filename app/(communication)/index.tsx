@@ -112,9 +112,9 @@ export default function InboxScreen() {
           </XStack>
 
           {/* Conversation List */}
-          <YStack backgroundColor="$white" borderRadius="$5" overflow="hidden">
+          <YStack backgroundColor="$backgroundSoft" borderRadius="$5" overflow="hidden">
             {conversations.map((chat, idx) => (
-              <YStack key={chat.id}>
+              <YStack  key={chat.id}>
                 <TouchableOpacity
                   onPress={() =>
                     router.push(`/(communication)/chat/${chat.id}`)
@@ -139,7 +139,7 @@ export default function InboxScreen() {
                           borderRadius="$full"
                           backgroundColor="$primary"
                           borderWidth={2}
-                          borderColor="white"
+                          borderColor="$white"
                         />
                       )}
                     </YStack>
@@ -192,7 +192,7 @@ export default function InboxScreen() {
                             paddingHorizontal="$1"
                             marginLeft="$2"
                           >
-                            <Text fontSize={10} fontWeight="800" color="white">
+                            <Text fontSize={10} fontWeight="800" color="$white">
                               {chat.unreadCount}
                             </Text>
                           </YStack>
@@ -202,7 +202,7 @@ export default function InboxScreen() {
                   </XStack>
                 </TouchableOpacity>
                 {idx < conversations.length - 1 && (
-                  <Separator borderColor="$gray100" />
+                  <Separator/>
                 )}
               </YStack>
             ))}
