@@ -99,7 +99,7 @@ export function AppAlertDialog({
               <Button 
                 flex={1} 
                 height={50} 
-                variant="outline" 
+                variant="outlined" 
                 borderColor="$borderColor"
                 fontFamily="$body"
                 fontWeight="700"

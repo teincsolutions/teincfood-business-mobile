@@ -24,9 +24,10 @@ export interface KioskOrder {
   paymentStatus: 'paid' | 'unpaid';
   paymentMethod: 'mobile_money' | 'card' | 'cash';
   createdAt?: string;
-  status?: 'preparing';
+  status?: 'pending' | 'preparing' | 'ready';
   startedAt?: string;
   estimatedTime: number;
+  assignedRider?: string;
 }
 
 export const MOCK_PENDING_ORDERS: KioskOrder[] = [

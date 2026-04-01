@@ -9,6 +9,7 @@ import type { KioskOrder } from '@/services/mock-data.service';
 import type {
   KioskOrdersResponse,
   KioskOrderActionResponse,
+  AvailableRider,
 } from '@/services/kiosk.service';
 import * as kioskService from '@/services/kiosk.service';
 
@@ -17,34 +18,42 @@ import * as kioskService from '@/services/kiosk.service';
 export const KIOSK_KEYS = {
   all: ['kiosk'] as const,
   orders: () => [...KIOSK_KEYS.all, 'orders'] as const,
+  riders: () => [...KIOSK_KEYS.all, 'riders'] as const,
 };
 
 // ─── Query Hooks ─────────────────────────────────────────────────────────────
 
 /**
- * Fetches kiosk orders (pending + active) with automatic refetching.
- * 
- * - refetchInterval: polls every 5s (same as old setInterval)
- * - refetchOnWindowFocus: refreshes when app comes to foreground
- * - staleTime: 3s — marks data stale quickly for near-realtime feel
+ * Fetches kiosk orders (pending + preparing + ready) with automatic refetching.
  */
 export function useKioskOrdersQuery(enabled = true) {
   return useQuery({
     queryKey: KIOSK_KEYS.orders(),
     queryFn: () => kioskService.fetchKioskOrders(),
     enabled,
-    refetchInterval: 5000, // replaces old setInterval
+    refetchInterval: 5000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     staleTime: 3000,
   });
 }
 
+/**
+ * Fetches available riders sorted by distance
+ */
+export function useAvailableRidersQuery(enabled = true) {
+  return useQuery({
+    queryKey: KIOSK_KEYS.riders(),
+    queryFn: () => kioskService.fetchAvailableRiders(),
+    enabled,
+    staleTime: 10000,
+  });
+}
+
 // ─── Mutation Hooks ──────────────────────────────────────────────────────────
 
 /**
- * Accept a pending order — moves it to active (preparing)
- * Uses optimistic update for instant UI feedback
+ * Accept a pending order — moves it to preparing
  */
 export function useAcceptKioskOrderMutation() {
   const queryClient = useQueryClient();
@@ -53,24 +62,22 @@ export function useAcceptKioskOrderMutation() {
     mutationFn: (orderId: string) => kioskService.acceptKioskOrder(orderId),
 
     onMutate: async (orderId) => {
-      // Cancel in-flight queries to prevent overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
 
-      // Snapshot previous state
       const previous = queryClient.getQueryData<KioskOrdersResponse>(
         KIOSK_KEYS.orders()
       );
 
-      // Optimistically move order from pending to active
       if (previous) {
         const order = previous.pendingOrders.find((o) => o.id === orderId);
         if (order) {
           queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
             pendingOrders: previous.pendingOrders.filter((o) => o.id !== orderId),
-            activeOrders: [
-              ...previous.activeOrders,
-              { ...order, status: 'preparing', startedAt: new Date().toISOString() },
+            preparingOrders: [
+              ...previous.preparingOrders,
+              { ...order, status: 'preparing' as const, startedAt: new Date().toISOString() },
             ],
+            readyOrders: previous.readyOrders,
           });
         }
       }
@@ -79,14 +86,12 @@ export function useAcceptKioskOrderMutation() {
     },
 
     onError: (_err, _orderId, context) => {
-      // Rollback on error
       if (context?.previous) {
         queryClient.setQueryData(KIOSK_KEYS.orders(), context.previous);
       }
     },
 
     onSettled: () => {
-      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders() });
     },
   });
@@ -94,7 +99,6 @@ export function useAcceptKioskOrderMutation() {
 
 /**
  * Reject a pending order — removes it from the queue
- * Uses optimistic update for instant UI feedback
  */
 export function useRejectKioskOrderMutation() {
   const queryClient = useQueryClient();
@@ -132,8 +136,7 @@ export function useRejectKioskOrderMutation() {
 }
 
 /**
- * Mark an active order as ready — removes it from active queue
- * Uses optimistic update for instant UI feedback
+ * Mark a preparing order as ready — moves it to ready queue
  */
 export function useMarkKioskOrderReadyMutation() {
   const queryClient = useQueryClient();
@@ -149,16 +152,62 @@ export function useMarkKioskOrderReadyMutation() {
       );
 
       if (previous) {
-        queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
-          ...previous,
-          activeOrders: previous.activeOrders.filter((o) => o.id !== orderId),
-        });
+        const order = previous.preparingOrders.find((o) => o.id === orderId);
+        if (order) {
+          queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
+            pendingOrders: previous.pendingOrders,
+            preparingOrders: previous.preparingOrders.filter((o) => o.id !== orderId),
+            readyOrders: [
+              ...previous.readyOrders,
+              { ...order, status: 'ready' as const },
+            ],
+          });
+        }
       }
 
       return { previous };
     },
 
     onError: (_err, _orderId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(KIOSK_KEYS.orders(), context.previous);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders() });
+    },
+  });
+}
+
+/**
+ * Assign a rider to a ready order — removes it from kiosk queue
+ */
+export function useAssignRiderMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, riderId }: { orderId: string; riderId: string }) =>
+      kioskService.assignKioskOrderToRider(orderId, riderId),
+
+    onMutate: async ({ orderId }) => {
+      await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
+
+      const previous = queryClient.getQueryData<KioskOrdersResponse>(
+        KIOSK_KEYS.orders()
+      );
+
+      if (previous) {
+        queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
+          ...previous,
+          readyOrders: previous.readyOrders.filter((o) => o.id !== orderId),
+        });
+      }
+
+      return { previous };
+    },
+
+    onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(KIOSK_KEYS.orders(), context.previous);
       }
