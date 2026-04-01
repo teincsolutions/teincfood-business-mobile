@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Pressable } from 'react-native';
-import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
-import { Save, Check } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FormInput } from '@/components/ui';
+import { useState } from "react";
+import { ScrollView, Pressable } from "react-native";
+import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import { Save, Check, ArrowLeft } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button, FormInput } from "@/components/ui";
 
 /**
  * Rider Vehicle Information Screen
@@ -15,11 +15,11 @@ export default function VehicleInfo() {
   const insets = useSafeAreaInsets();
   const [isSaving, setIsSaving] = useState(false);
 
-  const [vehicleType, setVehicleType] = useState('motorcycle');
-  const [plateNumber, setPlateNumber] = useState('GR-1234-20');
-  const [vehicleColor, setVehicleColor] = useState('Black');
-  const [vehicleBrand, setVehicleBrand] = useState('Honda');
-  const [vehicleModel, setVehicleModel] = useState('CBR 150');
+  const [vehicleType, setVehicleType] = useState("motorcycle");
+  const [plateNumber, setPlateNumber] = useState("GR-1234-20");
+  const [vehicleColor, setVehicleColor] = useState("Black");
+  const [vehicleBrand, setVehicleBrand] = useState("Honda");
+  const [vehicleModel, setVehicleModel] = useState("CBR 150");
 
   const [errors, setErrors] = useState<{
     plateNumber?: string;
@@ -29,19 +29,19 @@ export default function VehicleInfo() {
   }>({});
 
   const vehicleTypes = [
-    { value: 'motorcycle', label: 'Motorcycle' },
-    { value: 'bicycle', label: 'Bicycle' },
-    { value: 'scooter', label: 'Scooter' },
-    { value: 'car', label: 'Car' },
+    { value: "motorcycle", label: "Motorcycle" },
+    { value: "bicycle", label: "Bicycle" },
+    { value: "scooter", label: "Scooter" },
+    { value: "car", label: "Car" },
   ];
 
   const handleSave = () => {
     const newErrors: typeof errors = {};
 
-    if (!plateNumber.trim()) newErrors.plateNumber = 'Plate number is required';
-    if (!vehicleColor.trim()) newErrors.color = 'Color is required';
-    if (!vehicleBrand.trim()) newErrors.brand = 'Brand is required';
-    if (!vehicleModel.trim()) newErrors.model = 'Model is required';
+    if (!plateNumber.trim()) newErrors.plateNumber = "Plate number is required";
+    if (!vehicleColor.trim()) newErrors.color = "Color is required";
+    if (!vehicleBrand.trim()) newErrors.brand = "Brand is required";
+    if (!vehicleModel.trim()) newErrors.model = "Model is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -67,15 +67,21 @@ export default function VehicleInfo() {
         alignItems="center"
         backgroundColor="$background"
       >
-        <Pressable onPress={() => router.back()}>
-          <Text fontSize="$4" color="$primary">← Back</Text>
-        </Pressable>
+        <Button
+          variant="outline"
+          width={44}
+          height={44}
+          borderRadius={22}
+          paddingHorizontal={0}
+          onPress={() => router.back()}
+          icon={<ArrowLeft size={20} />}
+        />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Vehicle Information
         </Text>
         <Pressable onPress={handleSave} disabled={isSaving}>
           <Text fontSize="$4" color="$primary" fontWeight="bold">
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? "Saving..." : "Save"}
           </Text>
         </Pressable>
       </XStack>
@@ -93,13 +99,17 @@ export default function VehicleInfo() {
                   <XStack
                     padding="$3"
                     borderRadius="$10"
-                    backgroundColor={vehicleType === type.value ? '$primary' : 'transparent'}
+                    backgroundColor={
+                      vehicleType === type.value ? "$primary" : "transparent"
+                    }
                     justifyContent="space-between"
                     alignItems="center"
                   >
                     <Text
-                      color={vehicleType === type.value ? 'white' : '$color'}
-                      fontWeight={vehicleType === type.value ? 'bold' : 'normal'}
+                      color={vehicleType === type.value ? "white" : "$color"}
+                      fontWeight={
+                        vehicleType === type.value ? "bold" : "normal"
+                      }
                     >
                       {type.label}
                     </Text>
@@ -115,7 +125,9 @@ export default function VehicleInfo() {
           {/* Plate Number */}
           <Card padding="$4" bordered>
             <YStack gap="$2">
-              <Text fontSize="$5" fontWeight="bold">Plate Number</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Plate Number
+              </Text>
               <FormInput
                 placeholder="e.g., GR-1234-20"
                 value={plateNumber}
@@ -135,7 +147,9 @@ export default function VehicleInfo() {
           {/* Vehicle Details */}
           <Card padding="$4" bordered>
             <YStack gap="$4">
-              <Text fontSize="$5" fontWeight="bold">Vehicle Details</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Vehicle Details
+              </Text>
 
               <FormInput
                 label="Color"
@@ -175,7 +189,9 @@ export default function VehicleInfo() {
           {/* Verification Status */}
           <Card padding="$4" bordered backgroundColor="$yellow2">
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Verification Status</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Verification Status
+              </Text>
               <Separator />
               <XStack justifyContent="space-between" alignItems="center">
                 <Text color="$colorMuted">Vehicle Verified</Text>
@@ -185,7 +201,9 @@ export default function VehicleInfo() {
                   paddingVertical="$1"
                   borderRadius="$10"
                 >
-                  <Text color="white" fontSize="$2" fontWeight="bold">Pending</Text>
+                  <Text color="white" fontSize="$2" fontWeight="bold">
+                    Pending
+                  </Text>
                 </YStack>
               </XStack>
               <Text fontSize="$3" color="$colorMuted">
@@ -203,7 +221,7 @@ export default function VehicleInfo() {
             disabled={isSaving}
             opacity={isSaving ? 0.7 : 1}
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </YStack>
       </ScrollView>

@@ -1,14 +1,8 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Button,
-} from 'tamagui';
+import { useState } from "react";
+import { ScrollView, RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
+import { YStack, XStack, Text, Card, Button } from "tamagui";
 import {
   Bell,
   ShoppingBag,
@@ -16,9 +10,9 @@ import {
   Truck,
   MessageCircle,
   ArrowLeft,
-} from '@tamagui/lucide-icons';
-import { useNotificationStore } from '@/stores/notification.store';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "@tamagui/lucide-icons";
+import { useNotificationStore } from "@/stores/notification.store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Notifications Screen
@@ -46,21 +40,29 @@ export default function NotificationsScreen() {
 
   const getIconComponent = (type: string) => {
     switch (type) {
-      case 'order': return ShoppingBag;
-      case 'delivery':
-      case 'delivered': return Truck;
-      case 'promo': return DollarSign;
-      default: return MessageCircle;
+      case "order":
+        return ShoppingBag;
+      case "delivery":
+      case "delivered":
+        return Truck;
+      case "promo":
+        return DollarSign;
+      default:
+        return MessageCircle;
     }
   };
 
   const getIconColor = (type: string) => {
     switch (type) {
-      case 'order': return '$primary';
-      case 'delivery':
-      case 'delivered': return '#27ae60';
-      case 'promo': return '#f1c40f';
-      default: return '$colorMuted';
+      case "order":
+        return "$primary";
+      case "delivery":
+      case "delivered":
+        return "#27ae60";
+      case "promo":
+        return "#f1c40f";
+      default:
+        return "$colorMuted";
     }
   };
 
@@ -80,13 +82,17 @@ export default function NotificationsScreen() {
       >
         <XStack gap="$3" alignItems="center">
           <Button
-            size="$3"
-            circular
-            backgroundColor="$gray3"
+            variant="outline"
+            width={44}
+            height={44}
+            borderRadius={22}
+            paddingHorizontal={0}
             onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color="$color" />}
+            icon={<ArrowLeft size={20} />}
           />
-          <Text fontSize="$7" fontWeight="bold">Notifications</Text>
+          <Text fontSize="$7" fontWeight="bold">
+            Notifications
+          </Text>
           {unreadCount > 0 && (
             <YStack
               backgroundColor="$primary"
@@ -126,7 +132,9 @@ export default function NotificationsScreen() {
           {notifications.length === 0 ? (
             <YStack padding="$8" alignItems="center" gap="$4">
               <Bell size={48} color="$colorMuted" />
-              <Text fontSize="$5" color="$colorMuted">No notifications yet</Text>
+              <Text fontSize="$5" color="$colorMuted">
+                No notifications yet
+              </Text>
             </YStack>
           ) : (
             notifications.map((notification, index) => {
@@ -136,7 +144,9 @@ export default function NotificationsScreen() {
                   key={notification.id}
                   padding="$4"
                   bordered
-                  backgroundColor={notification.read ? '$background' : '$primaryLight'}
+                  backgroundColor={
+                    notification.read ? "$background" : "$primaryLight"
+                  }
                   pressStyle={{ scale: 0.98, opacity: 0.9 }}
                   onPress={() => handleNotificationPress(notification.id)}
                 >
@@ -144,19 +154,26 @@ export default function NotificationsScreen() {
                     <YStack
                       width={44}
                       height={44}
-                      backgroundColor={notification.read ? '$gray5' : '$primary'}
+                      backgroundColor={
+                        notification.read ? "$gray5" : "$primary"
+                      }
                       borderRadius="$3"
                       alignItems="center"
                       justifyContent="center"
                     >
                       <IconComponent
                         size={22}
-                        color={notification.read ? '$colorMuted' : 'white'}
+                        color={notification.read ? "$colorMuted" : "white"}
                       />
                     </YStack>
                     <YStack flex={1} gap="$1">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontWeight={notification.read ? 'normal' : 'bold'}>
+                      <XStack
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Text
+                          fontWeight={notification.read ? "normal" : "bold"}
+                        >
                           {notification.title}
                         </Text>
                         {!notification.read && (
@@ -173,8 +190,8 @@ export default function NotificationsScreen() {
                       </Text>
                       <Text fontSize="$2" color="$colorMuted" marginTop="$1">
                         {new Date(notification.time).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </Text>
                     </YStack>
