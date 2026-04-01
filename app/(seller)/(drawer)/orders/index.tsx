@@ -4,12 +4,14 @@ import { YStack, Text, Card, Button, XStack, Separator, CardHeader } from 'tamag
 import { Filter, X, Check } from '@tamagui/lucide-icons';
 import { ScrollView, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { MOCK_SELLER_ORDERS } from '@/services/mock-data.service';
 /**
  * Seller Orders Screen
  */
 export default function SellerOrders() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   
@@ -101,7 +103,15 @@ export default function SellerOrders() {
                   <Separator />
                   <XStack justifyContent="space-between" alignItems="center">
                     <Text fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                    <Button variant="outlined" width="auto" height={40} paddingHorizontal="$3">View Details</Button>
+                    <Button 
+                      variant="outlined" 
+                      width="auto" 
+                      height={40} 
+                      paddingHorizontal="$3"
+                      onPress={() => router.push(`/(seller)/(drawer)/orders/${order.id}`)}
+                    >
+                      View Details
+                    </Button>
                   </XStack>
                 </YStack>
               </Card>

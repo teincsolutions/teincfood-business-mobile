@@ -107,6 +107,13 @@ export const MOCK_ACTIVE_ORDERS: KioskOrder[] = [
 ];
 
 // ─── Seller Orders Data ───
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  addons?: Array<{ name: string; price: number }>;
+}
+
 export interface SellerOrder {
   id: string;
   orderNumber: string;
@@ -114,13 +121,102 @@ export interface SellerOrder {
   items: number;
   total: number;
   customer: string;
+  customerPhone?: string;
+  deliveryAddress?: string;
+  orderDate: string;
+  estimatedDelivery?: string;
+  paymentMethod: 'mobile_money' | 'card' | 'cash';
+  paymentStatus: 'paid' | 'unpaid';
+  orderItems?: OrderItem[];
+  subtotal?: number;
+  deliveryFee?: number;
+  notes?: string;
 }
 
 export const MOCK_SELLER_ORDERS: SellerOrder[] = [
-  { id: '1', orderNumber: '#ORD-001', status: 'pending', items: 3, total: 85.00, customer: 'John Doe' },
-  { id: '2', orderNumber: '#ORD-002', status: 'preparing', items: 2, total: 65.00, customer: 'Jane Smith' },
-  { id: '3', orderNumber: '#ORD-003', status: 'ready', items: 4, total: 120.00, customer: 'Kwame Asante' },
-  { id: '4', orderNumber: '#ORD-004', status: 'delivered', items: 1, total: 35.00, customer: 'Abena Mensah' },
+  { 
+    id: '1', 
+    orderNumber: '#ORD-001', 
+    status: 'pending', 
+    items: 3, 
+    total: 85.00, 
+    customer: 'John Doe',
+    customerPhone: '+233 24 567 8901',
+    deliveryAddress: '123 Liberation Road, Accra',
+    orderDate: '2026-04-01T09:30:00Z',
+    estimatedDelivery: '2026-04-01T10:15:00Z',
+    paymentMethod: 'mobile_money',
+    paymentStatus: 'paid',
+    subtotal: 75.00,
+    deliveryFee: 10.00,
+    orderItems: [
+      { name: 'Jollof Rice', quantity: 2, price: 25.00 },
+      { name: 'Grilled Chicken', quantity: 1, price: 35.00 },
+      { name: 'Kelewele', quantity: 1, price: 10.00, addons: [{ name: 'Extra Pepper', price: 0.50 }] }
+    ],
+    notes: 'Please make it less spicy'
+  },
+  { 
+    id: '2', 
+    orderNumber: '#ORD-002', 
+    status: 'preparing', 
+    items: 2, 
+    total: 65.00, 
+    customer: 'Jane Smith',
+    customerPhone: '+233 20 123 4567',
+    deliveryAddress: '456 Independence Ave, Accra',
+    orderDate: '2026-04-01T09:45:00Z',
+    estimatedDelivery: '2026-04-01T10:30:00Z',
+    paymentMethod: 'cash',
+    paymentStatus: 'unpaid',
+    subtotal: 55.00,
+    deliveryFee: 10.00,
+    orderItems: [
+      { name: 'Banku & Tilapia', quantity: 1, price: 45.00 },
+      { name: 'Kelewele', quantity: 2, price: 10.00 }
+    ]
+  },
+  { 
+    id: '3', 
+    orderNumber: '#ORD-003', 
+    status: 'ready', 
+    items: 4, 
+    total: 120.00, 
+    customer: 'Kwame Asante',
+    customerPhone: '+233 27 890 1234',
+    deliveryAddress: '789 Oxford Street, Osu',
+    orderDate: '2026-04-01T08:15:00Z',
+    estimatedDelivery: '2026-04-01T09:00:00Z',
+    paymentMethod: 'card',
+    paymentStatus: 'paid',
+    subtotal: 110.00,
+    deliveryFee: 10.00,
+    orderItems: [
+      { name: 'Waakye', quantity: 2, price: 20.00, addons: [{ name: 'Extra Wele', price: 5.00 }] },
+      { name: 'Fried Plantain', quantity: 2, price: 8.00 },
+      { name: 'Fried Fish', quantity: 1, price: 25.00 }
+    ],
+    notes: 'Call when arriving'
+  },
+  { 
+    id: '4', 
+    orderNumber: '#ORD-004', 
+    status: 'delivered', 
+    items: 1, 
+    total: 35.00, 
+    customer: 'Abena Mensah',
+    customerPhone: '+233 26 345 6789',
+    deliveryAddress: '321 Ring Road Central, Accra',
+    orderDate: '2026-04-01T07:00:00Z',
+    estimatedDelivery: '2026-04-01T07:45:00Z',
+    paymentMethod: 'mobile_money',
+    paymentStatus: 'paid',
+    subtotal: 25.00,
+    deliveryFee: 10.00,
+    orderItems: [
+      { name: 'Fufu & Light Soup', quantity: 1, price: 30.00 }
+    ]
+  },
 ];
 
 // ─── Helper Functions ───
