@@ -158,18 +158,6 @@ export default function NavigationSettings() {
                           </Text>
                         </YStack>
                       </XStack>
-                      {selectedApp === app.id ? (
-                        <Check size={20} color="white" />
-                      ) : !app.installed ? (
-                        <Button
-                          size="$2"
-                          variant="outline"
-                          icon={<ExternalLink size={14} />}
-                          onPress={() => openAppStore(app.id)}
-                        >
-                          Install
-                        </Button>
-                      ) : null}
                     </XStack>
                   </TouchableOpacity>
                   {index < navigationApps.length - 1 && (
