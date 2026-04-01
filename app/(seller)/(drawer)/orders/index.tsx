@@ -102,13 +102,13 @@ export default function SellerOrders() {
                   </XStack>
                   <Separator />
                   <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
+                    <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
                     <Button 
                       variant="outlined" 
                       width="auto" 
                       height={40} 
                       paddingHorizontal="$3"
-                      onPress={() => router.push(`/(seller)/(drawer)/orders/${order.id}`)}
+                      onPress={() => router.push(`/(seller)/orders/${order.id}`)}
                     >
                       View Details
                     </Button>

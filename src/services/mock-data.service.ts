@@ -111,7 +111,8 @@ export interface OrderItem {
   name: string;
   quantity: number;
   price: number;
-  addons?: Array<{ name: string; price: number }>;
+  currency?: string;
+  addons?: Array<{ name: string; price: number; currency: string }>;
 }
 
 export interface SellerOrder {
@@ -150,9 +151,9 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 75.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Jollof Rice', quantity: 2, price: 25.00 },
-      { name: 'Grilled Chicken', quantity: 1, price: 35.00 },
-      { name: 'Kelewele', quantity: 1, price: 10.00, addons: [{ name: 'Extra Pepper', price: 0.50 }] }
+      { name: 'Jollof Rice', quantity: 2, price: 25.00, currency: 'GHS' },
+      { name: 'Grilled Chicken', quantity: 1, price: 35.00, currency: 'GHS' },
+      { name: 'Kelewele', quantity: 1, price: 10.00, addons: [{ name: 'Extra Pepper', price: 0.50, currency: 'GHS' }] }
     ],
     notes: 'Please make it less spicy'
   },
@@ -172,8 +173,8 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 55.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Banku & Tilapia', quantity: 1, price: 45.00 },
-      { name: 'Kelewele', quantity: 2, price: 10.00 }
+      { name: 'Banku & Tilapia', quantity: 1, price: 45.00, currency: 'GHS' },
+      { name: 'Kelewele', quantity: 2, price: 10.00, currency: 'GHS' }
     ]
   },
   { 
@@ -192,9 +193,9 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 110.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Waakye', quantity: 2, price: 20.00, addons: [{ name: 'Extra Wele', price: 5.00 }] },
-      { name: 'Fried Plantain', quantity: 2, price: 8.00 },
-      { name: 'Fried Fish', quantity: 1, price: 25.00 }
+      { name: 'Waakye', quantity: 2, price: 20.00, currency: 'GHS', addons: [{ name: 'Extra Wele', price: 5.00, currency: 'GHS' }] },
+      { name: 'Fried Plantain', quantity: 2, price: 8.00, currency: 'GHS' },
+      { name: 'Fried Fish', quantity: 1, price: 25.00, currency: 'GHS' }
     ],
     notes: 'Call when arriving'
   },
@@ -214,7 +215,7 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 25.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Fufu & Light Soup', quantity: 1, price: 30.00 }
+      { name: 'Fufu & Light Soup', quantity: 1, price: 30.00, currency: 'GHS' }
     ]
   },
 ];

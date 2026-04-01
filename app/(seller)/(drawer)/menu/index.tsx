@@ -1,32 +1,28 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import {
-  YStack,
-  XStack,
-  Text,
-  useTheme,
-} from 'tamagui';
-import { UtensilsCrossed, Plus } from '@tamagui/lucide-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
-import { AppAlertDialog } from '@/components/ui/AlertDialog';
-import { CategoryPill } from '@/components/home/CategoryPill';
-import { MenuItemCard, MenuFormSheet } from '@/components/menu';
+import { useState } from "react";
+import { ScrollView, TouchableOpacity } from "react-native";
+import { YStack, XStack, Text, useTheme } from "tamagui";
+import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "@/components/ui";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { CategoryPill } from "@/components/home/CategoryPill";
+import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import {
   useMenuItemsQuery,
   useCreateMenuItemMutation,
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
   useToggleAvailabilityMutation,
-} from '@/hooks/menu.hooks';
-import type { MenuItem, MenuItemForm } from '@/services/menu.service';
+} from "@/hooks/menu.hooks";
+import type { MenuItem, MenuItemForm } from "@/services/menu.service";
 import {
   MENU_CATEGORIES,
   EMPTY_FORM,
   toGHS,
   toMinor,
-} from '@/services/menu.service';
+} from "@/services/menu.service";
+import Drawer from "expo-router/drawer";
 
 export default function SellerMenu() {
   const insets = useSafeAreaInsets();
@@ -40,7 +36,7 @@ export default function SellerMenu() {
   const toggleMutation = useToggleAvailabilityMutation();
 
   // UI state
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState("All");
 
   // Sheet state
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -48,10 +44,10 @@ export default function SellerMenu() {
 
   // Form state
   const [form, setForm] = useState<MenuItemForm>({ ...EMPTY_FORM });
-  const [variantLabel, setVariantLabel] = useState('');
-  const [variantPrice, setVariantPrice] = useState('');
-  const [extraLabel, setExtraLabel] = useState('');
-  const [extraPrice, setExtraPrice] = useState('');
+  const [variantLabel, setVariantLabel] = useState("");
+  const [variantPrice, setVariantPrice] = useState("");
+  const [extraLabel, setExtraLabel] = useState("");
+  const [extraPrice, setExtraPrice] = useState("");
 
   // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
@@ -60,7 +56,7 @@ export default function SellerMenu() {
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
 
   const filtered =
-    activeCategory === 'All'
+    activeCategory === "All"
       ? items
       : items.filter((i) => i.category === activeCategory);
 
@@ -68,10 +64,10 @@ export default function SellerMenu() {
   const openAdd = () => {
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });
-    setVariantLabel('');
-    setVariantPrice('');
-    setExtraLabel('');
-    setExtraPrice('');
+    setVariantLabel("");
+    setVariantPrice("");
+    setExtraLabel("");
+    setExtraPrice("");
     setSheetOpen(true);
   };
 
@@ -88,10 +84,10 @@ export default function SellerMenu() {
       extras: [...item.extras],
       available: item.available,
     });
-    setVariantLabel('');
-    setVariantPrice('');
-    setExtraLabel('');
-    setExtraPrice('');
+    setVariantLabel("");
+    setVariantPrice("");
+    setExtraLabel("");
+    setExtraPrice("");
     setSheetOpen(true);
   };
 
@@ -161,8 +157,8 @@ export default function SellerMenu() {
         },
       ],
     }));
-    setVariantLabel('');
-    setVariantPrice('');
+    setVariantLabel("");
+    setVariantPrice("");
   };
 
   const removeVariant = (id: string) => {
@@ -182,8 +178,8 @@ export default function SellerMenu() {
         },
       ],
     }));
-    setExtraLabel('');
-    setExtraPrice('');
+    setExtraLabel("");
+    setExtraPrice("");
   };
 
   const removeExtra = (id: string) => {
@@ -192,32 +188,32 @@ export default function SellerMenu() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Header */}
-      <XStack
-        paddingHorizontal="$4"
-        paddingBottom="$3"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color="$color">
-          Menu
-        </Text>
-        <Button
-          variant="primary"
-          height={44}
-          width="auto"
-          paddingHorizontal="$4"
-          onPress={openAdd}
-        >
-          <XStack gap="$1" alignItems="center">
-            <Plus size={16} color="white" />
-            <Text fontFamily="$body" fontWeight="700" fontSize="$3" color="white">
-              Add Item
-            </Text>
-          </XStack>
-        </Button>
-      </XStack>
-
+      <Drawer.Screen
+        options={{
+          headerRight: () => (
+            <Button
+              variant="primary"
+              height="$10"
+              width="auto"
+              paddingHorizontal="$4"
+              marginBottom="$2"
+              onPress={openAdd}
+            >
+              <XStack gap="$1" alignItems="center">
+                <Plus size={16} color="white" />
+                <Text
+                  fontFamily="$body"
+                  fontWeight="700"
+                  fontSize="$3"
+                  color="white"
+                >
+                  Add Item
+                </Text>
+              </XStack>
+            </Button>
+          ),
+        }}
+      />
       {/* Category filter */}
       <ScrollView
         horizontal
@@ -225,9 +221,9 @@ export default function SellerMenu() {
         style={{ flexGrow: 0 }}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingBottom: 12,
+          paddingVertical: 12,
           gap: 8,
-          flexDirection: 'row',
+          flexDirection: "row",
         }}
       >
         {MENU_CATEGORIES.map((cat) => (
@@ -243,13 +239,17 @@ export default function SellerMenu() {
       {/* Item count */}
       <XStack paddingHorizontal="$4" pb="$2">
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-          {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+          {filtered.length} {filtered.length === 1 ? "item" : "items"}
         </Text>
       </XStack>
 
       {/* List */}
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack paddingHorizontal="$4" paddingBottom={insets.bottom + 16} gap="$3">
+        <YStack
+          paddingHorizontal="$4"
+          paddingBottom={insets.bottom + 16}
+          gap="$3"
+        >
           {filtered.map((item) => (
             <MenuItemCard
               key={item.id}
