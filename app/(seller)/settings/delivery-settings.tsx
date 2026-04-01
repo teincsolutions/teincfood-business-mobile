@@ -212,13 +212,14 @@ export default function DeliverySettings() {
                       min={1}
                       max={20}
                       step={1}
+                      size="$12"
                     >
-                      <Slider.Track backgroundColor="$gray4">
+                      <Slider.Track backgroundColor="$color.gray50">
                         <Slider.TrackActive backgroundColor="$primary" />
                       </Slider.Track>
                       <Slider.Thumb
                         circular
-                        size="$3"
+                        size="$5"
                         backgroundColor="$primary"
                         index={0}
                       />

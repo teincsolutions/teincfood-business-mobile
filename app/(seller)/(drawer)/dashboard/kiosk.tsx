@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
-import { ScrollView, RefreshControl, Alert } from 'react-native';
+import { useState } from 'react';
+import { ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   YStack,
@@ -13,8 +13,8 @@ import {
   useTheme,
 } from 'tamagui';
 import { Badge } from '@/components/ui/Badge';
+import { AppAlertDialog } from '@/components/ui/AlertDialog';
 import {
-  ShoppingBag,
   Clock,
   CheckCircle,
   XCircle,
@@ -28,43 +28,65 @@ import {
   LogOut,
 } from '@tamagui/lucide-icons';
 import { useAuthStore } from '@/stores/auth.store';
+import { useKioskStore } from '@/stores/kiosk.store';
 import * as Haptics from 'expo-haptics';
+import type { KioskOrder } from '@/services/mock-data.service';
 import {
-  MOCK_PENDING_ORDERS,
-  MOCK_ACTIVE_ORDERS,
-  KioskOrder,
-} from '@/services/mock-data.service';
+  useKioskOrdersQuery,
+  useAcceptKioskOrderMutation,
+  useRejectKioskOrderMutation,
+  useMarkKioskOrderReadyMutation,
+} from '@/hooks/kiosk.hooks';
+
+interface DialogState {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  icon?: any;
+  isDestructive: boolean;
+}
+
+const defaultDialogState: DialogState = {
+  open: false,
+  title: '',
+  description: '',
+  confirmText: 'OK',
+  cancelText: 'Cancel',
+  onConfirm: () => {},
+  icon: undefined,
+  isDestructive: false,
+};
 
 /**
  * Kiosk Mode Screen
  * POS-style interface for handling orders in busy restaurant environments
+ * Uses TanStack Query for data lifecycle — no setInterval polling
  */
 export default function KioskMode() {
   const router = useRouter();
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const [pendingOrders, setPendingOrders] = useState<KioskOrder[]>(MOCK_PENDING_ORDERS);
-  const [activeOrders, setActiveOrders] = useState<KioskOrder[]>(MOCK_ACTIVE_ORDERS);
+  // UI preferences from persisted store
+  const soundEnabled = useKioskStore((state) => state.soundEnabled);
+  const autoRefresh = useKioskStore((state) => state.autoRefresh);
+  const toggleSound = useKioskStore((state) => state.toggleSound);
+  const toggleAutoRefresh = useKioskStore((state) => state.toggleAutoRefresh);
 
-  // Auto-refresh effect
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      handleRefresh();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+  // Dialog state
+  const [dialog, setDialog] = useState<DialogState>(defaultDialogState);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 500);
-  };
+  // TanStack Query for orders data
+  const { data, isRefetching, refetch } = useKioskOrdersQuery(autoRefresh);
+  const acceptOrder = useAcceptKioskOrderMutation();
+  const rejectOrder = useRejectKioskOrderMutation();
+  const markReady = useMarkKioskOrderReadyMutation();
+
+  const pendingOrders = data?.pendingOrders ?? [];
+  const activeOrders = data?.activeOrders ?? [];
 
   const playSound = (type: 'success' | 'alert' | 'error') => {
     if (!soundEnabled) return;
@@ -84,45 +106,62 @@ export default function KioskMode() {
   const handleAcceptOrder = (orderId: string) => {
     triggerHaptic('medium');
     playSound('success');
-    
+
     const order = pendingOrders.find((o) => o.id === orderId);
     if (!order) return;
 
-    setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
-    setActiveOrders((prev) => [
-      ...prev,
-      { ...order, status: 'preparing', startedAt: new Date().toISOString() },
-    ]);
+    acceptOrder.mutate(orderId);
 
-    Alert.alert('Order Accepted', `${order.orderNumber} is now being prepared.`);
+    setDialog({
+      open: true,
+      title: 'Order Accepted',
+      description: `${order.orderNumber} is now being prepared.`,
+      confirmText: 'OK',
+      cancelText: '',
+      onConfirm: () => setDialog(defaultDialogState),
+      icon: CheckCircle,
+      isDestructive: false,
+    });
   };
 
   const handleRejectOrder = (orderId: string) => {
     triggerHaptic('heavy');
     playSound('error');
 
-    Alert.alert(
-      'Reject Order',
-      'Are you sure you want to reject this order?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: () => {
-            setPendingOrders((prev) => prev.filter((o) => o.id !== orderId));
-          },
-        },
-      ]
-    );
+    const order = pendingOrders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    setDialog({
+      open: true,
+      title: 'Reject Order',
+      description: 'Are you sure you want to reject this order?',
+      confirmText: 'Reject',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        rejectOrder.mutate(orderId);
+        setDialog(defaultDialogState);
+      },
+      icon: XCircle,
+      isDestructive: true,
+    });
   };
 
   const handleMarkReady = (orderId: string) => {
     triggerHaptic('medium');
     playSound('success');
 
-    setActiveOrders((prev) => prev.filter((o) => o.id !== orderId));
-    Alert.alert('Order Ready', 'Order is now ready for pickup!');
+    markReady.mutate(orderId);
+
+    setDialog({
+      open: true,
+      title: 'Order Ready',
+      description: 'Order is now ready for pickup!',
+      confirmText: 'OK',
+      cancelText: '',
+      onConfirm: () => setDialog(defaultDialogState),
+      icon: CheckCircle,
+      isDestructive: false,
+    });
   };
 
   const getTimeSince = (dateString: string) => {
@@ -170,7 +209,7 @@ export default function KioskMode() {
             size="$3"
             circular
             backgroundColor="$whiteAlpha"
-            onPress={() => setSoundEnabled(!soundEnabled)}
+            onPress={toggleSound}
             icon={soundEnabled ? <Volume2 size={18} color="$background" /> : <VolumeX size={18} color="$background" />}
           />
 
@@ -180,7 +219,7 @@ export default function KioskMode() {
             <Switch
               size="$2"
               checked={autoRefresh}
-              onCheckedChange={setAutoRefresh}
+              onCheckedChange={toggleAutoRefresh}
               backgroundColor={autoRefresh ? '$green10' : '$gray8'}
             >
               <Switch.Thumb backgroundColor="$background" />
@@ -192,19 +231,14 @@ export default function KioskMode() {
             size="$3"
             circular
             backgroundColor="$whiteAlpha"
-            onPress={handleRefresh}
-            disabled={isRefreshing}
+            onPress={() => refetch()}
+            disabled={isRefetching}
             icon={<RefreshCw size={18} color="$background" />}
           />
         </XStack>
       </XStack>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-      >
+      <ScrollView showsVerticalScrollIndicator={false}>
         <XStack
           padding="$4"
           gap="$4"
@@ -457,6 +491,22 @@ export default function KioskMode() {
           </Button>
         </YStack>
       </ScrollView>
+
+      {/* Alert Dialog */}
+      <AppAlertDialog
+        open={dialog.open}
+        onOpenChange={(open) => {
+          if (!open) setDialog(defaultDialogState);
+        }}
+        title={dialog.title}
+        description={dialog.description}
+        confirmText={dialog.confirmText}
+        cancelText={dialog.cancelText}
+        onConfirm={dialog.onConfirm}
+        onCancel={() => setDialog(defaultDialogState)}
+        icon={dialog.icon}
+        isDestructive={dialog.isDestructive}
+      />
     </YStack>
   );
 }
