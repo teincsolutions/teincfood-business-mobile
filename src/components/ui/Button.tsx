@@ -61,8 +61,8 @@ const StyledButton = styled(TamaguiButton, {
         pressStyle: {
           backgroundColor: "$gray200",
         },
-        $md: { width: "$16" }, // Slightly wider on medium screens
-        $lg: { width: "$18" }, // Even wider on large screens
+        $md: { width: "$16", height: "$16" }, // Slightly wider on medium screens
+        $lg: { width: "$18", height: "$18" }, // Even wider on large screens
       },
     },
     disabled: {
