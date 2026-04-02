@@ -281,7 +281,7 @@ export default function SplashScreen() {
   return (
     <YStack
       flex={1}
-      ai="center"
+      items="center"
       jc="center"
       bg="$primary"
       paddingTop={insets.top}
@@ -323,7 +323,7 @@ export default function SplashScreen() {
       />
 
       {/* Main content */}
-      <YStack flex={1} ai="center" jc="center" gap="$6" padding="$6">
+      <YStack flex={1} items="center" jc="center" gap="$6" padding="$6">
         {/* Logo */}
         <Animated.View
           style={{
@@ -336,7 +336,7 @@ export default function SplashScreen() {
             height={120}
             borderRadius={30}
             bg="$white"
-            ai="center"
+            items="center"
             jc="center"
             shadowColor="$shadowColor"
             shadowOffset={{ width: 0, height: 8 }}
@@ -362,7 +362,7 @@ export default function SplashScreen() {
             transform: [{ translateY: textTranslateY }],
           }}
         >
-          <YStack ai="center" gap="$2">
+          <YStack items="center" gap="$2">
             <Text
               fontSize={42}
               fontWeight="800"
@@ -372,7 +372,7 @@ export default function SplashScreen() {
             >
               Teinc
             </Text>
-            <XStack ai="center" gap="$2">
+            <XStack items="center" gap="$2">
               <YStack
                 width={24}
                 height={2}
@@ -421,7 +421,7 @@ export default function SplashScreen() {
       {/* Bottom section with loader */}
       <YStack
         paddingBottom={insets.bottom + 40}
-        ai="center"
+        items="center"
         gap="$3"
       >
         <Animated.View
@@ -430,7 +430,7 @@ export default function SplashScreen() {
             transform: [{ scale: pulseAnim }],
           }}
         >
-          <YStack ai="center" gap="$3">
+          <YStack items="center" gap="$3">
             {/* Loading dots */}
             <XStack gap="$2">
               {[0, 1, 2].map((index) => (

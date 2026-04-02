@@ -32,6 +32,7 @@ import {
   DrawerContentScrollView,
   DrawerItemList,
 } from "@react-navigation/drawer";
+import { useResponsive } from "@/utils/responsive";
 
 /**
  * Custom Drawer Content
@@ -292,6 +293,7 @@ export default function SellerDrawerLayout() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = Boolean(user && accessToken);
+  const { isTablet, isLandscape } = useResponsive();
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
@@ -301,6 +303,8 @@ export default function SellerDrawerLayout() {
       setShowAuthDialog(true);
     }
   };
+
+  const usePermanentDrawer = isTablet && isLandscape;
 
   return (
     <>
@@ -318,11 +322,11 @@ export default function SellerDrawerLayout() {
           },
           drawerStyle: {
             backgroundColor: theme.background.val,
-            width: 280,
+            width: isTablet ? 300 : 280,
           },
           sceneStyle: { backgroundColor: theme.background.val },
-          drawerType: "front",
-          overlayColor: "rgba(0,0,0,0.5)",
+          drawerType: usePermanentDrawer ? "permanent" : "front",
+          overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
         }}
       >
         {/* Dashboard */}

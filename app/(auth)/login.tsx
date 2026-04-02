@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import {
   YStack,
   XStack,
@@ -11,6 +11,7 @@ import {
   useTheme,
   Sheet,
   Separator,
+  ScrollView,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -36,6 +37,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
+import { useResponsive } from "@/utils/responsive";
 
 type LoginMethod = "phone" | "email";
 
@@ -184,22 +186,23 @@ export default function LoginScreen() {
   const isPrimaryLoading =
     method === "phone" ? isSendingCode : loginMutation.isPending;
 
+  const { isTablet } = useResponsive();
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <YStack flex={1} bg="$background">
+      <YStack flex={1} bg="$background" items="center">
         <ScrollView
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            flexGrow: 1,
-            paddingHorizontal: 20,
-            paddingTop: Math.max(insets.top, 24),
-            paddingBottom: Math.max(insets.bottom + 20, 24),
-          }}
+          width="100%"
+          maxW={"$media.sm"}
+          paddingHorizontal={"$8"}
+          paddingTop={Math.max(insets.top, 24)}
+          paddingBottom={Math.max(insets.bottom + 20, 24)}
         >
           <YStack mb="$4">{router.canDismiss() && <BackButton />}</YStack>
 
@@ -262,7 +265,7 @@ export default function LoginScreen() {
                 >
                   Phone Number
                 </Text>
-                <XStack gap="$2" ai="center">
+                <XStack gap="$2" items="center">
                   <YStack
                     width={88}
                     height={60}
@@ -275,7 +278,7 @@ export default function LoginScreen() {
                     pressStyle={{ opacity: 0.85 }}
                     onPress={() => setCountrySheetOpen(true)}
                   >
-                    <XStack ai="center" gap="$1">
+                    <XStack items="center" gap="$1">
                       <Text
                         fontSize="$5"
                         fontWeight="700"
@@ -360,8 +363,10 @@ export default function LoginScreen() {
             </YStack>
           )}
 
-          <YStack mt="$7" mb="$4" gap="$4">
+          <YStack mt="$7" mb="$4" gap="$4" items="center">
             <Button
+              variant="primary"
+              width="100%"
               loading={isPrimaryLoading}
               onPress={method === "phone" ? handleSendCode : handleEmailLogin}
             >
@@ -372,59 +377,35 @@ export default function LoginScreen() {
               Or continue with
             </Text>
 
-            <XStack jc="center" ai="center" gap="$4">
+            <XStack jc="center" items="center" gap="$4">
               <Button
-                variant="ghost"
-                width={56}
-                height={56}
-                minWidth={56}
-                maxWidth={56}
-                borderRadius="$full"
+                variant="social"
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                padding={0}
-                justifyContent="center"
-                alignItems="center"
                 icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               />
               <Button
-                variant="ghost"
-                width={56}
-                height={56}
-                minWidth={56}
-                maxWidth={56}
-                borderRadius="$full"
+                variant="social"
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                padding={0}
-                justifyContent="center"
-                alignItems="center"
                 icon={<Apple size={20} color="$color" />}
                 onPress={() => handleOIDCLogin("apple")}
               />
               <Button
-                variant="ghost"
-                width={56}
-                height={56}
-                minWidth={56}
-                maxWidth={56}
-                borderRadius="$full"
+                variant="social"
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                padding={0}
-                justifyContent="center"
-                alignItems="center"
                 icon={<Chrome size={20} color="#DB4437" />}
                 onPress={() => handleOIDCLogin("google")}
               />
             </XStack>
           </YStack>
 
-          <YStack mt="auto" pt="$6" gap="$3" pb="$2">
+          <YStack pt="$6" gap="$3" pb="$2">
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               New to TeincFoods?
             </Text>
@@ -500,7 +481,7 @@ export default function LoginScreen() {
               {PHONE_COUNTRIES.map((country, index) => (
                 <YStack key={country.iso}>
                   <XStack
-                    ai="center"
+                    items="center"
                     jc="space-between"
                     py="$4"
                     onPress={() => {
@@ -525,7 +506,7 @@ export default function LoginScreen() {
                         {country.iso}
                       </Text>
                     </YStack>
-                    <XStack ai="center" gap="$2">
+                    <XStack items="center" gap="$2">
                       <Text fontSize="$4" color="$color" fontFamily="$body">
                         {country.dialCode}
                       </Text>

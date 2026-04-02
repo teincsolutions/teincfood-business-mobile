@@ -24,6 +24,12 @@ const tamaguiConfig = createTamagui({
     body: bodyFont,
   },
   defaultFont: 'body',
+  media: {
+    xs: { maxWidth: 390 },           // iPhone SE / mini portrait
+    sm: { maxWidth: 767 },           // iPhone Pro Max landscape / small tablet
+    md: { minWidth: 768, maxWidth: 1023 },  // iPad portrait / tablet split-view
+    lg: { minWidth: 1024 },          // iPad landscape / iPad Pro or Tablet split-view
+  },
 });
 
 export default tamaguiConfig;

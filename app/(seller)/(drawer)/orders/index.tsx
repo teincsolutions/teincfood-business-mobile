@@ -6,12 +6,14 @@ import { ScrollView, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MOCK_SELLER_ORDERS } from '@/services/mock-data.service';
+import { useResponsive } from '@/utils/responsive';
 /**
  * Seller Orders Screen
  */
 export default function SellerOrders() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isLargeTablet, isTablet } = useResponsive();
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   
@@ -22,6 +24,11 @@ export default function SellerOrders() {
   const filteredOrders = selectedFilters.length === 0 
     ? orders 
     : orders.filter(order => selectedFilters.includes(order.status));
+
+  // Group orders by status for responsive columns
+  const pendingOrders = filteredOrders.filter(o => o.status === 'pending');
+  const preparingOrders = filteredOrders.filter(o => o.status === 'preparing');
+  const doneOrders = filteredOrders.filter(o => ['ready', 'delivered'].includes(o.status));
 
   const toggleFilter = (status: string) => {
     setSelectedFilters(prev => 
@@ -75,49 +82,298 @@ export default function SellerOrders() {
       </XStack>
 
       <ScrollView>
-        <YStack padding="$4" gap="$3">
-          {filteredOrders.length === 0 ? (
-            <YStack padding="$6" alignItems="center" justifyContent="center">
-              <Text color="$colorMuted" fontSize="$4">No orders found with selected filters</Text>
-              <Button variant="outlined" marginTop="$3" onPress={clearFilters}>Clear Filters</Button>
+        {isTablet ? (
+          <XStack padding="$4" gap="$4" alignItems="flex-start">
+            {/* Column 1: Pending — always isolated on tablet */}
+            <YStack flex={1} gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$5" fontWeight="bold" color="$yellow9">Pending</Text>
+                <Text fontSize="$3" color="$colorMuted">{pendingOrders.length}</Text>
+              </XStack>
+              {pendingOrders.length === 0 ? (
+                <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+                  <Text color="$colorMuted">No pending orders</Text>
+                </Card>
+              ) : (
+                pendingOrders.map((order) => (
+                  <Card key={order.id} padding="$4" bordered>
+                    <YStack gap="$3">
+                      <XStack justifyContent="space-between" alignItems="center">
+                        <Text fontWeight="bold">{order.orderNumber}</Text>
+                        <YStack
+                          paddingHorizontal="$2"
+                          paddingVertical="$1"
+                          borderRadius="$2"
+                          backgroundColor={getStatusColor(order.status)}
+                        >
+                          <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                        </YStack>
+                      </XStack>
+                      <XStack justifyContent="space-between">
+                        <Text color="$colorMuted">{order.customer}</Text>
+                        <Text color="$colorMuted">{order.items} items</Text>
+                      </XStack>
+                      <Separator />
+                      <XStack justifyContent="space-between" alignItems="center">
+                        <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                        <Button 
+                          variant="outlined" 
+                          width="auto" 
+                          height={40} 
+                          paddingHorizontal="$3"
+                          onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                        >
+                          View Details
+                        </Button>
+                      </XStack>
+                    </YStack>
+                  </Card>
+                ))
+              )}
             </YStack>
-          ) : (
-            filteredOrders.map((order) => (
-              <Card key={order.id} padding="$4" bordered>
+
+            {isLargeTablet ? (
+              // 3-column: Preparing and Done each get their own flex column
+              <>
+                <YStack flex={1} gap="$3">
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$5" fontWeight="bold" color="$blue9">Preparing</Text>
+                    <Text fontSize="$3" color="$colorMuted">{preparingOrders.length}</Text>
+                  </XStack>
+                  {preparingOrders.length === 0 ? (
+                    <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+                      <Text color="$colorMuted">No orders being prepared</Text>
+                    </Card>
+                  ) : (
+                    preparingOrders.map((order) => (
+                      <Card key={order.id} padding="$4" bordered>
+                        <YStack gap="$3">
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.orderNumber}</Text>
+                            <YStack
+                              paddingHorizontal="$2"
+                              paddingVertical="$1"
+                              borderRadius="$2"
+                              backgroundColor={getStatusColor(order.status)}
+                            >
+                              <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                            </YStack>
+                          </XStack>
+                          <XStack justifyContent="space-between">
+                            <Text color="$colorMuted">{order.customer}</Text>
+                            <Text color="$colorMuted">{order.items} items</Text>
+                          </XStack>
+                          <Separator />
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Button 
+                              variant="outlined" 
+                              width="auto" 
+                              height={40} 
+                              paddingHorizontal="$3"
+                              onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </XStack>
+                        </YStack>
+                      </Card>
+                    ))
+                  )}
+                </YStack>
+
+                <YStack flex={1} gap="$3">
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$5" fontWeight="bold" color="$green9">Ready / Delivered</Text>
+                    <Text fontSize="$3" color="$colorMuted">{doneOrders.length}</Text>
+                  </XStack>
+                  {doneOrders.length === 0 ? (
+                    <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+                      <Text color="$colorMuted">No ready or delivered orders</Text>
+                    </Card>
+                  ) : (
+                    doneOrders.map((order) => (
+                      <Card key={order.id} padding="$4" bordered>
+                        <YStack gap="$3">
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.orderNumber}</Text>
+                            <YStack
+                              paddingHorizontal="$2"
+                              paddingVertical="$1"
+                              borderRadius="$2"
+                              backgroundColor={getStatusColor(order.status)}
+                            >
+                              <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                            </YStack>
+                          </XStack>
+                          <XStack justifyContent="space-between">
+                            <Text color="$colorMuted">{order.customer}</Text>
+                            <Text color="$colorMuted">{order.items} items</Text>
+                          </XStack>
+                          <Separator />
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Button 
+                              variant="outlined" 
+                              width="auto" 
+                              height={40} 
+                              paddingHorizontal="$3"
+                              onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </XStack>
+                        </YStack>
+                      </Card>
+                    ))
+                  )}
+                </YStack>
+              </>
+            ) : (
+              // 2-column: Preparing + Done stacked in column 2
+              <YStack flex={1} gap="$4">
                 <YStack gap="$3">
                   <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontWeight="bold">{order.orderNumber}</Text>
-                    <YStack
-                      paddingHorizontal="$2"
-                      paddingVertical="$1"
-                      borderRadius="$2"
-                      backgroundColor={getStatusColor(order.status)}
-                    >
-                      <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
-                    </YStack>
+                    <Text fontSize="$5" fontWeight="bold" color="$blue9">Preparing</Text>
+                    <Text fontSize="$3" color="$colorMuted">{preparingOrders.length}</Text>
                   </XStack>
-                  <XStack justifyContent="space-between">
-                    <Text color="$colorMuted">{order.customer}</Text>
-                    <Text color="$colorMuted">{order.items} items</Text>
-                  </XStack>
-                  <Separator />
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
-                    <Button 
-                      variant="outlined" 
-                      width="auto" 
-                      height={40} 
-                      paddingHorizontal="$3"
-                      onPress={() => router.push(`/(seller)/orders/${order.id}`)}
-                    >
-                      View Details
-                    </Button>
-                  </XStack>
+                  {preparingOrders.length === 0 ? (
+                    <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+                      <Text color="$colorMuted">No orders being prepared</Text>
+                    </Card>
+                  ) : (
+                    preparingOrders.map((order) => (
+                      <Card key={order.id} padding="$4" bordered>
+                        <YStack gap="$3">
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.orderNumber}</Text>
+                            <YStack
+                              paddingHorizontal="$2"
+                              paddingVertical="$1"
+                              borderRadius="$2"
+                              backgroundColor={getStatusColor(order.status)}
+                            >
+                              <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                            </YStack>
+                          </XStack>
+                          <XStack justifyContent="space-between">
+                            <Text color="$colorMuted">{order.customer}</Text>
+                            <Text color="$colorMuted">{order.items} items</Text>
+                          </XStack>
+                          <Separator />
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Button 
+                              variant="outlined" 
+                              width="auto" 
+                              height={40} 
+                              paddingHorizontal="$3"
+                              onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </XStack>
+                        </YStack>
+                      </Card>
+                    ))
+                  )}
                 </YStack>
-              </Card>
-            ))
-          )}
-        </YStack>
+
+                <YStack gap="$3">
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$5" fontWeight="bold" color="$green9">Ready / Delivered</Text>
+                    <Text fontSize="$3" color="$colorMuted">{doneOrders.length}</Text>
+                  </XStack>
+                  {doneOrders.length === 0 ? (
+                    <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+                      <Text color="$colorMuted">No ready or delivered orders</Text>
+                    </Card>
+                  ) : (
+                    doneOrders.map((order) => (
+                      <Card key={order.id} padding="$4" bordered>
+                        <YStack gap="$3">
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.orderNumber}</Text>
+                            <YStack
+                              paddingHorizontal="$2"
+                              paddingVertical="$1"
+                              borderRadius="$2"
+                              backgroundColor={getStatusColor(order.status)}
+                            >
+                              <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                            </YStack>
+                          </XStack>
+                          <XStack justifyContent="space-between">
+                            <Text color="$colorMuted">{order.customer}</Text>
+                            <Text color="$colorMuted">{order.items} items</Text>
+                          </XStack>
+                          <Separator />
+                          <XStack justifyContent="space-between" alignItems="center">
+                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Button 
+                              variant="outlined" 
+                              width="auto" 
+                              height={40} 
+                              paddingHorizontal="$3"
+                              onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </XStack>
+                        </YStack>
+                      </Card>
+                    ))
+                  )}
+                </YStack>
+              </YStack>
+            )}
+          </XStack>
+        ) : (
+          // Phone: 1-column (all stacked, original behavior)
+          <YStack padding="$4" gap="$3">
+            {filteredOrders.length === 0 ? (
+              <YStack padding="$6" alignItems="center" justifyContent="center">
+                <Text color="$colorMuted" fontSize="$4">No orders found with selected filters</Text>
+                <Button variant="outlined" marginTop="$3" onPress={clearFilters}>Clear Filters</Button>
+              </YStack>
+            ) : (
+              filteredOrders.map((order) => (
+                <Card key={order.id} padding="$4" bordered>
+                  <YStack gap="$3">
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <Text fontWeight="bold">{order.orderNumber}</Text>
+                      <YStack
+                        paddingHorizontal="$2"
+                        paddingVertical="$1"
+                        borderRadius="$2"
+                        backgroundColor={getStatusColor(order.status)}
+                      >
+                        <Text color="$background" fontSize="$2" textTransform="capitalize">{order.status}</Text>
+                      </YStack>
+                    </XStack>
+                    <XStack justifyContent="space-between">
+                      <Text color="$colorMuted">{order.customer}</Text>
+                      <Text color="$colorMuted">{order.items} items</Text>
+                    </XStack>
+                    <Separator />
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                      <Button 
+                        variant="outlined" 
+                        width="auto" 
+                        height={40} 
+                        paddingHorizontal="$3"
+                        onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+                      >
+                        View Details
+                      </Button>
+                    </XStack>
+                  </YStack>
+                </Card>
+              ))
+            )}
+          </YStack>
+        )}
       </ScrollView>
 
       {/* Filter Modal */}

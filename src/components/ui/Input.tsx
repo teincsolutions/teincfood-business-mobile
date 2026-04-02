@@ -20,6 +20,10 @@ const BaseInput = styled(TamaguiInput, {
     borderColor: '$primary',
     backgroundColor: '$background', // slightly separate from soft background when active
   },
+
+  // Responsive height
+  $md: { height: 64 },
+  $lg: { height: 70 },
 });
 
 export type InputProps = GetProps<typeof BaseInput> & {
@@ -50,7 +54,7 @@ export const Input = forwardRef<TamaguiInput, InputProps>(
           </Text>
         )}
         
-        <XStack w="100%" ai="center">
+        <XStack w="100%" items="center">
           <BaseInput
             ref={ref}
             flex={1}
@@ -67,7 +71,7 @@ export const Input = forwardRef<TamaguiInput, InputProps>(
               top={8}
               width={44}
               height={44}
-              ai="center"
+              items="center"
               jc="center"
               zIndex={20}
             >

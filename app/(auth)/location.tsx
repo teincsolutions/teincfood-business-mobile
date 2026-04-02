@@ -237,7 +237,7 @@ export default function LocationScreen() {
               {PHONE_COUNTRIES.map((country, index) => (
                 <YStack key={country.iso}>
                   <XStack
-                    ai="center"
+                    items="center"
                     jc="space-between"
                     py="$4"
                     onPress={() => {
@@ -258,7 +258,7 @@ export default function LocationScreen() {
                         {country.iso}
                       </Text>
                     </YStack>
-                    <XStack ai="center" gap="$2">
+                    <XStack items="center" gap="$2">
                       <Text fontSize="$4" color="$color" fontFamily="$body">
                         {country.dialCode}
                       </Text>

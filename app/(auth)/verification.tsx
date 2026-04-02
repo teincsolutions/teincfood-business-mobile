@@ -135,29 +135,31 @@ export default function VerificationScreen() {
     <YStack
       flex={1}
       bg="$background"
+      items="center"
       paddingHorizontal="$5"
       paddingTop={Math.max(insets.top, 24)}
       paddingBottom={Math.max(insets.bottom + 12, 20)}
     >
-      {/* Header */}
-      <YStack mb="$4">
-        <BackButton />
-      </YStack>
+      <YStack width="100%" maxWidth={640}>
+        {/* Header */}
+        <YStack mb="$4">
+          <BackButton />
+        </YStack>
 
-      <YStack mb="$8">
-        <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
-          Verification
-        </Text>
-        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" mt="$2" lineHeight={22}>
-          We have sent a code to your phone
-        </Text>
-        <Text fontSize="$4" fontWeight="600" color="$color" fontFamily="$body">
-          {formattedContactInfo}
-        </Text>
-      </YStack>
+        <YStack mb="$8">
+          <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
+            Verification
+          </Text>
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" mt="$2" lineHeight={22}>
+            We have sent a code to your phone
+          </Text>
+          <Text fontSize="$4" fontWeight="600" color="$color" fontFamily="$body">
+            {formattedContactInfo}
+          </Text>
+        </YStack>
 
       {/* 4-Digit Input Array */}
-      <XStack w="100%" jc="center" ai="center" mt="$5" mb="$2" alignSelf="center">
+      <XStack w="100%" jc="center" items="center" mt="$5" mb="$2" alignSelf="center">
         {otp.map((digit, i) => (
           <TextInput
             key={i}
@@ -185,7 +187,7 @@ export default function VerificationScreen() {
       </XStack>
 
       {error ? (
-        <YStack mt="$5" ai="center">
+        <YStack mt="$5" items="center">
           <Text color="$error" fontSize="$3">{error}</Text>
         </YStack>
       ) : null}
@@ -218,6 +220,7 @@ export default function VerificationScreen() {
         )}
       </XStack>
       
+      </YStack>
     </YStack>
   );
 }

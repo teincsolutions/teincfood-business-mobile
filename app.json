@@ -14,7 +14,7 @@
       "backgroundColor": "#FF7622"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.teincfoods.business",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -29,6 +29,16 @@
           "fetch",
           "remote-notification",
           "location"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown"
+        ],
+        "UISupportedInterfaceOrientationsIpad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ]
       }
     },

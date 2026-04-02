@@ -5,6 +5,7 @@ import { BackButton } from './BackButton';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
 import { AppAlertDialog } from './AlertDialog';
 import { Badge } from './Badge';
+import { ScreenContainer } from './ScreenContainer';
 
 export { 
   Button, 
@@ -16,5 +17,6 @@ export {
   RestaurantCardSkeleton,
   OrderCardSkeleton,
   AppAlertDialog,
-  Badge
+  Badge,
+  ScreenContainer
 };

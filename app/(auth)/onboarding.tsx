@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
                   width="100%"
                   paddingHorizontal="$6"
                   paddingTop="$6"
-                  ai="center"
+                  items="center"
                   gap="$3"
                 >
                   <Text

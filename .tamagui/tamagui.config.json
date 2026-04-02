@@ -28614,47 +28614,18 @@
       "useAnimations": "Function"
     },
     "media": {
-      "maxXs": {
-        "maxWidth": 460
+      "xs": {
+        "maxWidth": 390
       },
-      "max2xs": {
-        "maxWidth": 340
+      "sm": {
+        "maxWidth": 767
       },
-      "maxSm": {
-        "maxWidth": 640
-      },
-      "maxMd": {
-        "maxWidth": 768
-      },
-      "maxLg": {
-        "maxWidth": 1024
-      },
-      "maxXl": {
-        "maxWidth": 1280
-      },
-      "max2Xl": {
-        "maxWidth": 1536
-      },
-      "2xl": {
-        "minWidth": 1536
-      },
-      "xl": {
-        "minWidth": 1280
+      "md": {
+        "minWidth": 768,
+        "maxWidth": 1023
       },
       "lg": {
         "minWidth": 1024
-      },
-      "md": {
-        "minWidth": 768
-      },
-      "sm": {
-        "minWidth": 640
-      },
-      "xs": {
-        "minWidth": 460
-      },
-      "2xs": {
-        "minWidth": 340
       }
     },
     "themes": {
@@ -29323,6 +29294,43 @@
           "val": 500,
           "variable": ""
         }
+      },
+      "media": {
+        "xs": {
+          "isVar": true,
+          "key": "$xs",
+          "name": "t-media-xs",
+          "val": "360",
+          "variable": ""
+        },
+        "sm": {
+          "isVar": true,
+          "key": "$sm",
+          "name": "t-media-sm",
+          "val": "480",
+          "variable": ""
+        },
+        "md": {
+          "isVar": true,
+          "key": "$md",
+          "name": "t-media-md",
+          "val": "768",
+          "variable": ""
+        },
+        "lg": {
+          "isVar": true,
+          "key": "$lg",
+          "name": "t-media-lg",
+          "val": "1024",
+          "variable": ""
+        },
+        "xl": {
+          "isVar": true,
+          "key": "$xl",
+          "name": "t-media-xl",
+          "val": "1280",
+          "variable": ""
+        }
       }
     },
     "selectionStyles": "Function",
@@ -29556,6 +29564,41 @@
         "key": "$white",
         "name": "c-white",
         "val": "#FFFFFF",
+        "variable": ""
+      },
+      "$media.lg": {
+        "isVar": true,
+        "key": "$lg",
+        "name": "t-media-lg",
+        "val": "1024",
+        "variable": ""
+      },
+      "$media.md": {
+        "isVar": true,
+        "key": "$md",
+        "name": "t-media-md",
+        "val": "768",
+        "variable": ""
+      },
+      "$media.sm": {
+        "isVar": true,
+        "key": "$sm",
+        "name": "t-media-sm",
+        "val": "480",
+        "variable": ""
+      },
+      "$media.xl": {
+        "isVar": true,
+        "key": "$xl",
+        "name": "t-media-xl",
+        "val": "1280",
+        "variable": ""
+      },
+      "$media.xs": {
+        "isVar": true,
+        "key": "$xs",
+        "name": "t-media-xs",
+        "val": "360",
         "variable": ""
       },
       "$radius.0": {

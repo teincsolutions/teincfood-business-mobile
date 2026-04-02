@@ -243,16 +243,16 @@ export default function ChatScreen() {
               </Text>
             </YStack>
             <YStack px="$5" pb="$6">
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleCall}>
+              <XStack py="$4" items="center" jc="space-between" onPress={handleCall}>
                 <Text fontSize="$4" fontFamily="$body" color="$color">Call {user?.fullName || 'Contact'}</Text>
                 <Phone size={18} color="$primary" />
               </XStack>
               <Separator borderColor="$borderColor" />
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleViewContact}>
+              <XStack py="$4" items="center" jc="space-between" onPress={handleViewContact}>
                 <Text fontSize="$4" fontFamily="$body" color="$color">View contact</Text>
               </XStack>
               <Separator borderColor="$borderColor" />
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleClearConversation}>
+              <XStack py="$4" items="center" jc="space-between" onPress={handleClearConversation}>
                 <Text fontSize="$4" fontFamily="$body" color="$error">Clear conversation</Text>
               </XStack>
             </YStack>

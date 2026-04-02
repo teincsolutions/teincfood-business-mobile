@@ -14,7 +14,7 @@ interface FoodCardProps {
   marginRight?: number | string;
 }
 
-export function FoodCard({ food, width = 160, marginRight = '$4' }: FoodCardProps) {
+export function FoodCard({ food, width, marginRight = '$4' }: FoodCardProps) {
   const router = useRouter();
   const toggleFood = useFavoritesStore((state) => state.toggleFood);
   const isSaved = useFavoritesStore((state) => state.isFoodSaved(food.id));

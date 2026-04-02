@@ -86,7 +86,7 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
           </Label>
         )}
         
-        <XStack w="100%" ai="center">
+        <XStack w="100%" items="center">
           <BaseInput
             ref={ref}
             id={name || label?.toLowerCase().replace(/\s+/g, '-')}
@@ -121,7 +121,7 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
               top={8}
               width={44}
               height={44}
-              ai="center"
+              items="center"
               jc="center"
               zIndex={20}
             >

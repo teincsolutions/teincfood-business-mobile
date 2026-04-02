@@ -89,7 +89,7 @@ export const FormTextArea = forwardRef<TamaguiTextArea, FormTextAreaProps>(
           </Label>
         )}
 
-        <XStack w="100%" ai="center">
+        <XStack w="100%" items="center">
           <BaseTextArea
             ref={ref}
             id={name || label?.toLowerCase().replace(/\s+/g, "-")}

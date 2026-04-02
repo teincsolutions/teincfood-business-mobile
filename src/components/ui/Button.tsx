@@ -12,11 +12,15 @@ const StyledButton = styled(TamaguiButton, {
   borderRadius: '$3',
   justifyContent: 'center',
   alignItems: 'center',
-  height: 60, // Mockups use very tall/prominent buttons
-  width: '100%',
+  height: 50, // Mockups use very tall/prominent buttons
+  width: 'auto',
   pressStyle: {
     opacity: 0.8,
   },
+
+  // Responsive base height
+  $md: { height: 64 },
+  $lg: { height: 70 },
 
   variants: {
     variant: {
@@ -49,13 +53,12 @@ const StyledButton = styled(TamaguiButton, {
         backgroundColor: '$backgroundSoft',
         borderWidth: 0,
         color: '$color',
-        height: 56, // Slightly shorter for social buttons
-        borderRadius: '$4',
-        justifyContent: 'flex-start',
-        paddingHorizontal: '$5',
+        height: '$14', // Slightly shorter for social buttons
+        borderRadius: '$full',
         pressStyle: {
           backgroundColor: '$gray200',
         },
+        $sm: { height: '$14' }, // Responsive social button height
       },
     },
     disabled: {
