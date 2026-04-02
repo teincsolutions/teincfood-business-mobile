@@ -25,6 +25,7 @@ import {
   Package,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { ServiceStatusBanner } from "@/components/ui";
 
 /**
  * Seller Dashboard Screen
@@ -96,7 +97,13 @@ export default function SellerDashboard() {
       }
     >
       <YStack padding="$4" paddingBottom="$6" gap="$4" backgroundColor="$background">
-        {/* Header */}
+        {/* Service Status */}
+        <ServiceStatusBanner
+          status={user?.serviceStatus}
+          hasCompletedKyc={user?.hasCompletedKyc}
+        />
+
+        {/* Header */}}
         <XStack justifyContent="space-between" alignItems="center">
           <YStack>
             <Text fontSize="$4" color="$colorMuted">

@@ -6,7 +6,7 @@ import { router } from 'expo-router';
  */
 export default function FleetIndex() {
   useEffect(() => {
-    router.replace('/(fleet)/dashboard');
+    router.replace('/(fleet)/(drawer)/dashboard');
   }, []);
 
   return null;

@@ -25,6 +25,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
+import { ServiceStatusBanner } from '@/components/ui';
 import {
   useRiderMetricsQuery,
   useActiveDeliveryQuery,
@@ -81,7 +82,13 @@ export default function RiderHome() {
         gap="$4"
         backgroundColor="$background"
       >
-        {/* Header */}
+        {/* Service Status */}
+        <ServiceStatusBanner
+          status={user?.serviceStatus}
+          hasCompletedKyc={user?.hasCompletedKyc}
+        />
+
+        {/* Header */}}
         <XStack justifyContent="space-between" alignItems="center">
           <XStack gap="$3" alignItems="center">
             <TouchableOpacity onPress={() => navigation.openDrawer()}>

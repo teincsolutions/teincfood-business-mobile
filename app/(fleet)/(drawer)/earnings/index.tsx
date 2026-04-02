@@ -105,13 +105,13 @@ export default function FleetEarningsScreen() {
         </XStack>
 
         {/* Earnings Summary */}
-        <Card padding="$5" bordered backgroundColor="$blue2">
+        <Card padding="$5" bordered backgroundColor="$primaryLight">
           <YStack gap="$4" alignItems="center">
             <YStack
               width={64}
               height={64}
               borderRadius="$6"
-              backgroundColor="$blue10"
+              backgroundColor="$primary"
               alignItems="center"
               justifyContent="center"
             >
@@ -121,7 +121,7 @@ export default function FleetEarningsScreen() {
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Total Earnings
               </Text>
-              <Text fontSize="$10" fontWeight="bold" color="$blue10" fontFamily="$heading">
+              <Text fontSize="$10" fontWeight="bold" color="$primary" fontFamily="$heading">
                 GHS {getEarningsByPeriod().toFixed(2)}
               </Text>
             </YStack>
@@ -155,7 +155,7 @@ export default function FleetEarningsScreen() {
               <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
                 Fleet Commission
               </Text>
-              <Text fontSize="$5" fontWeight="600" color="$green10" fontFamily="$heading">
+              <Text fontSize="$5" fontWeight="600" color="$success" fontFamily="$heading">
                 GHS {(getEarningsByPeriod() * 0.15).toFixed(2)}
               </Text>
             </XStack>
@@ -194,7 +194,7 @@ export default function FleetEarningsScreen() {
                   width={32}
                   height={32}
                   borderRadius="$10"
-                  backgroundColor={index < 3 ? "$yellow10" : "$gray8"}
+                  backgroundColor={index < 3 ? "$primary" : "$colorMuted"}
                   alignItems="center"
                   justifyContent="center"
                 >
@@ -204,7 +204,7 @@ export default function FleetEarningsScreen() {
                 </YStack>
                 <Avatar circular size="$4">
                   <Avatar.Image src={rider.riderAvatarUrl} />
-                  <Avatar.Fallback backgroundColor="$gray8">
+                  <Avatar.Fallback backgroundColor="$colorMuted">
                     <Text color="white" fontWeight="bold">
                       {rider.riderName?.charAt(0) || "R"}
                     </Text>
@@ -219,7 +219,7 @@ export default function FleetEarningsScreen() {
                   </Text>
                 </YStack>
                 <YStack alignItems="flex-end">
-                  <Text fontSize="$4" fontWeight="600" color="$green10" fontFamily="$heading">
+                  <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
                     GHS {rider.totalEarnings.toFixed(2)}
                   </Text>
                   <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
@@ -262,7 +262,7 @@ export default function FleetEarningsScreen() {
                 <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
                   Fleet Commission (15%)
                 </Text>
-                <Text fontSize="$4" fontWeight="600" color="$green10" fontFamily="$heading">
+                <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
                   + GHS {(getEarningsByPeriod() * 0.15).toFixed(2)}
                 </Text>
               </XStack>

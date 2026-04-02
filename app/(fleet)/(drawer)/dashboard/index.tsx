@@ -15,6 +15,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { ServiceStatusBanner } from "@/components/ui";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 
@@ -36,6 +37,12 @@ export default function FleetDashboardScreen() {
       }}
     >
       <YStack padding="$4" gap="$4">
+        {/* Service Status */}
+        <ServiceStatusBanner
+          status={user?.serviceStatus}
+          hasCompletedKyc={user?.hasCompletedKyc}
+        />
+
         {/* Welcome Section */}
         <YStack gap="$2">
           <Text

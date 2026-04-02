@@ -85,6 +85,7 @@ export default function SignupScreen() {
           phone: response.user.phone,
           username: response.user.username,
           role: selectedRole,
+          serviceStatus: 'pending_verification',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },

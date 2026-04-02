@@ -13,6 +13,7 @@ interface AuthState {
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
+  completeKyc: () => void;
   clearAuth: () => void;
   setHydrated: (hydrated: boolean) => void;
 }
@@ -33,6 +34,11 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (updates) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...updates } : null,
+        })),
+
+      completeKyc: () =>
+        set((state) => ({
+          user: state.user ? { ...state.user, hasCompletedKyc: true } : null,
         })),
 
       clearAuth: () =>

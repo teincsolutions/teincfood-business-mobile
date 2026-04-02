@@ -119,11 +119,9 @@ export default function AddBusinessScreen() {
 
       addBusiness(newBusiness as any);
 
-      if (navigation.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/(seller)/(drawer)/dashboard");
-      }
+      // Navigate to the new business's detail page so the seller can
+      // add a logo, edit details, and upload operational documents immediately
+      router.replace(`/(seller)/businesses/${newBusiness.id}`);
     } catch (err: any) {
       setErrors({ form: err?.message || "Failed to add business. Please try again." });
     } finally {

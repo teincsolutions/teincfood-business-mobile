@@ -6,6 +6,7 @@ import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton }
 import { AppAlertDialog } from './AlertDialog';
 import { Badge } from './Badge';
 import { ScreenContainer } from './ScreenContainer';
+import { ServiceStatusBanner } from './ServiceStatusBanner';
 
 export { 
   Button, 
@@ -18,5 +19,6 @@ export {
   OrderCardSkeleton,
   AppAlertDialog,
   Badge,
-  ScreenContainer
+  ScreenContainer,
+  ServiceStatusBanner,
 };

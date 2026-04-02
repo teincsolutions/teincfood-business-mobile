@@ -120,9 +120,14 @@ export default function RoleScreen() {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Truck
-                  size={28}
-                  color={selectedRole === "rider" ? "white" : "$colorMuted"}
+                <Image
+                  source={require("assets/icons/delivery-bike.png")}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    tintColor:
+                      selectedRole === "rider" ? "white" : "$colorMuted",
+                  }}
                 />
               </YStack>
               <YStack flex={1} gap="$1">

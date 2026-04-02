@@ -1,4 +1,5 @@
 export type UserRole = 'seller' | 'rider' | 'fleet_manager';
+export type ServiceStatus = 'pending_verification' | 'verified' | 'suspended' | 'banned';
 
 export interface User {
   id: string;
@@ -13,6 +14,8 @@ export interface User {
   vehiclePlateNumber?: string;
   isOnline?: boolean;
   bio?: string;
+  hasCompletedKyc?: boolean;
+  serviceStatus?: ServiceStatus;
   createdAt: string;
   updatedAt: string;
 }

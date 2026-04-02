@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
+import { useBusinessStore } from '@/stores/business.store';
 
 /**
  * Seller Settings Screen
@@ -17,9 +18,18 @@ export default function SellerSettings() {
   const [isOpen, setIsOpen] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+
+  const handleBusinessProfile = () => {
+    if (activeBusiness?.id) {
+      router.push(`/(seller)/businesses/${activeBusiness.id}`);
+    } else {
+      router.push('/(seller)/businesses');
+    }
+  };
 
   const settingsItems = [
-    { icon: Building, label: 'Business Profile', description: 'Update business name, logo, description', route: '/(seller)/settings/business-profile' },
+    { icon: Building, label: 'Business Profile', description: 'Update business name, logo, description', onPress: handleBusinessProfile },
     { icon: Clock, label: 'Operating Hours', description: 'Set your business hours', route: '/(shared)/settings/operating-hours' },
     { icon: MapPin, label: 'Delivery Settings', description: 'Delivery radius, fees, minimum order', route: '/(seller)/settings/delivery-settings' },
     { icon: CreditCard, label: 'Payment Settings', description: 'Bank account, payout schedule', route: '/(seller)/settings/payment-settings' },
@@ -85,7 +95,7 @@ export default function SellerSettings() {
               <YStack key={item.route}>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => router.push(item.route)}
+                  onPress={() => item.onPress ? item.onPress() : router.push(item.route)}
                   style={{ paddingHorizontal: 12, paddingVertical: 14 }}
                 >
                   <XStack alignItems="center" gap="$3">

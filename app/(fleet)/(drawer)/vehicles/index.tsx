@@ -106,38 +106,38 @@ export default function FleetVehiclesScreen() {
             <XStack gap="$2">
               <Button
                 size="$2"
-                variant={filterType === "all" ? "solid" : "outlined"}
+                variant={filterType === "all" ? "primary" : "outline"}
                 onPress={() => setFilterType("all")}
               >
                 All ({vehicles.length})
               </Button>
               <Button
                 size="$2"
-                variant={filterType === "motorcycle" ? "solid" : "outlined"}
+                variant={filterType === "motorcycle" ? "primary" : "outline"}
                 onPress={() => setFilterType("motorcycle")}
               >
                 Motorcycle ({vehicles.filter((v) => v.vehicleType === "motorcycle").length})
               </Button>
               <Button
                 size="$2"
-                variant={filterType === "car" ? "solid" : "outlined"}
+                variant={filterType === "car" ? "primary" : "outline"}
                 onPress={() => setFilterType("car")}
               >
-                Car ({vehicles.filter((v) => v.vehicleType === "car").length})
+                Car ({vehicles.filter((v) => v.vehicleType === "car").length || "0"})
               </Button>
               <Button
                 size="$2"
-                variant={filterType === "van" ? "solid" : "outlined"}
+                variant={filterType === "van" ? "primary" : "outline"}
                 onPress={() => setFilterType("van")}
               >
-                Van ({vehicles.filter((v) => v.vehicleType === "van").length})
+                Van ({vehicles.filter((v) => v.vehicleType === "van").length || "0"})
               </Button>
               <Button
                 size="$2"
-                variant={filterType === "bicycle" ? "solid" : "outlined"}
+                variant={filterType === "bicycle" ? "primary" : "outline"}
                 onPress={() => setFilterType("bicycle")}
               >
-                Bicycle ({vehicles.filter((v) => v.vehicleType === "bicycle").length})
+                Bicycle ({vehicles.filter((v) => v.vehicleType === "bicycle").length || "0"})
               </Button>
             </XStack>
           </ScrollView>
@@ -160,7 +160,7 @@ export default function FleetVehiclesScreen() {
                     width={56}
                     height={56}
                     borderRadius="$4"
-                    backgroundColor={vehicle.isActive ? "$blue2" : "$gray2"}
+                    backgroundColor={vehicle.isActive ? "$primaryLight" : "$backgroundSoft"}
                     alignItems="center"
                     justifyContent="center"
                   >
@@ -176,11 +176,11 @@ export default function FleetVehiclesScreen() {
                         paddingHorizontal="$2"
                         paddingVertical="$1"
                         borderRadius="$2"
-                        backgroundColor={vehicle.isActive ? "$green2" : "$gray2"}
+                        backgroundColor={vehicle.isActive ? "$success" : "$backgroundSoft"}
                       >
                         <Text
                           fontSize="$2"
-                          color={vehicle.isActive ? "$green10" : "$gray10"}
+                          color={vehicle.isActive ? "$success" : "$colorSecondary"}
                           fontFamily="$body"
                         >
                           {vehicle.isActive ? "Active" : "Inactive"}
@@ -219,7 +219,7 @@ export default function FleetVehiclesScreen() {
 
                     {!vehicle.assignedRiderId && vehicle.isActive && (
                       <XStack gap="$2" alignItems="center" marginTop="$1">
-                        <Text fontSize="$2" color="$orange10" fontFamily="$body">
+                        <Text fontSize="$2" color="$primary" fontFamily="$body">
                           Not assigned to any rider
                         </Text>
                       </XStack>
