@@ -28,9 +28,10 @@ export const MOCK_ORDERS: Order[] = [
     deliveryAddress: MOCK_ADDRESSES[0],
     paymentMethod: {
       id: 'pm-1',
-      type: 'visa',
+      type: 'card',
       last4: '4242',
       cardHolderName: 'Vishal Khadok',
+      cardBrand: 'visa',
       isDefault: true,
     },
     subtotal: MOCK_FOODS[0].price * 2 + MOCK_FOODS[1].price,
@@ -66,9 +67,10 @@ export const MOCK_ORDERS: Order[] = [
     deliveryAddress: MOCK_ADDRESSES[0],
     paymentMethod: {
       id: 'pm-1',
-      type: 'visa',
+      type: 'card',
       last4: '4242',
       cardHolderName: 'Vishal Khadok',
+      cardBrand: 'visa',
       isDefault: true,
     },
     subtotal: MOCK_FOODS[2].price,

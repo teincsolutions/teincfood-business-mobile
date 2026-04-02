@@ -36,10 +36,14 @@ export interface Address {
 
 export interface PaymentMethod {
   id: string;
-  type: 'bank_account' | 'mobile_money';
+  type: 'bank_account' | 'mobile_money' | 'card' | 'cash';
   accountNumber?: string;
   bankName?: string;
   accountHolderName?: string;
+  // Card-specific fields
+  last4?: string;
+  cardHolderName?: string;
+  cardBrand?: 'visa' | 'mastercard' | 'amex';
   isDefault: boolean;
 }
 
