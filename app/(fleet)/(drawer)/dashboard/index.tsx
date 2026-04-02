@@ -65,7 +65,7 @@ export default function FleetDashboardScreen() {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Users size={24} color="white" />
+                <Users size={24} color="$white" />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
@@ -84,11 +84,11 @@ export default function FleetDashboardScreen() {
                 width={48}
                 height={48}
                 borderRadius="$4"
-                backgroundColor="$blue10"
+                backgroundColor="$info"
                 alignItems="center"
                 justifyContent="center"
               >
-                <Car size={24} color="white" />
+                <Car size={24} color="$white" />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
@@ -107,11 +107,11 @@ export default function FleetDashboardScreen() {
                 width={48}
                 height={48}
                 borderRadius="$4"
-                backgroundColor="$green10"
+                backgroundColor="$success"
                 alignItems="center"
                 justifyContent="center"
               >
-                <DollarSign size={24} color="white" />
+                <DollarSign size={24} color="$white" />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
@@ -130,11 +130,11 @@ export default function FleetDashboardScreen() {
                 width={48}
                 height={48}
                 borderRadius="$4"
-                backgroundColor="$orange10"
+                backgroundColor="$primary"
                 alignItems="center"
                 justifyContent="center"
               >
-                <TrendingUp size={24} color="white" />
+                <TrendingUp size={24} color="$white" />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
@@ -194,8 +194,8 @@ export default function FleetDashboardScreen() {
               <XStack gap="$3" alignItems="center">
                 <Avatar circular size="$4">
                   <Avatar.Image src={rider.riderAvatarUrl} />
-                  <Avatar.Fallback backgroundColor="$gray8">
-                    <Text color="white" fontWeight="bold">
+                  <Avatar.Fallback backgroundColor="$colorMuted">
+                    <Text color="$white" fontWeight="bold">
                       {rider.riderName?.charAt(0) || "R"}
                     </Text>
                   </Avatar.Fallback>
@@ -210,7 +210,7 @@ export default function FleetDashboardScreen() {
                       height={8}
                       borderRadius="$10"
                       backgroundColor={
-                        rider.status === "active" ? "$green10" : "$gray8"
+                        rider.status === "active" ? "$success" : "$colorMuted"
                       }
                     />
                     <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
@@ -229,7 +229,7 @@ export default function FleetDashboardScreen() {
                   </XStack>
                 </YStack>
               <YStack alignItems="flex-end">
-                <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$green10">
+                <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$success">
                   GHS {rider.totalEarnings.toFixed(2)}
                 </Text>
                 <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
@@ -261,17 +261,17 @@ export default function FleetDashboardScreen() {
             <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
               Fleet Activity
             </Text>
-            <Card padding="$4" bordered backgroundColor="$blue2">
+            <Card padding="$4" bordered backgroundColor="$infoMuted">
               <XStack gap="$3" alignItems="center">
                 <YStack
                   width={48}
                   height={48}
                   borderRadius="$4"
-                  backgroundColor="$blue10"
+                  backgroundColor="$info"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <MapPin size={24} color="white" />
+                  <MapPin size={24} color="$white" />
                 </YStack>
                 <YStack flex={1}>
                   <Text fontSize="$5" fontWeight="600" fontFamily="$heading">

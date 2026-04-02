@@ -262,15 +262,19 @@ export default function SplashScreen() {
             router.replace('/(seller)/');
           } else if (user.role === 'rider') {
             router.replace('/(rider)/');
-          } else {
+          } 
+          else if (user.role === 'fleet_manager') {
+            router.replace('/(fleet)/');
+          }
+          else {
             // Invalid or old role - send to login to re-authenticate
             clearAuth();
-            router.replace('/(auth)/login');
+            router.replace('/(auth)/role');
           }
         } else if (!hasSeenOnboarding) {
           router.replace('/(auth)/onboarding');
         } else {
-          router.replace('/(auth)/login');
+          router.replace('/(auth)/role');
         }
       }, remainingTime);
 

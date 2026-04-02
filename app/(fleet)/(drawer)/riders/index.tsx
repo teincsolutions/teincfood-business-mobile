@@ -71,13 +71,14 @@ export default function FleetRidersScreen() {
                 placeholder="Search riders..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                paddingLeft="$4"
+                paddingStart="$10"
               />
-              <YStack position="absolute" left="$3" top="$3">
+              <YStack position="absolute" left="$3" top="$5">
                 <Search size={20} color="$colorMuted" />
               </YStack>
             </YStack>
             <Button
+              variant="outline"
               icon={Plus}
               onPress={() => router.push("/(fleet)/riders/add")}
             >
@@ -89,24 +90,24 @@ export default function FleetRidersScreen() {
           <XStack gap="$2">
             <Button
               size="$2"
-              variant={filterStatus === "all" ? "solid" : "outlined"}
+              variant={filterStatus === "all" ? "primary" : "outline"}
               onPress={() => setFilterStatus("all")}
             >
-              All ({riders.length})
+              All ({riders.length || "0"})
             </Button>
             <Button
               size="$2"
-              variant={filterStatus === "active" ? "solid" : "outlined"}
+              variant={filterStatus === "active" ? "primary" : "outline"}
               onPress={() => setFilterStatus("active")}
             >
-              Online ({riders.filter((r) => r.status === "active").length})
+              Online ({riders.filter((r) => r.status === "active").length || "0"})
             </Button>
             <Button
               size="$2"
-              variant={filterStatus === "inactive" ? "solid" : "outlined"}
+              variant={filterStatus === "inactive" ? "primary" : "outline"}
               onPress={() => setFilterStatus("inactive")}
             >
-              Offline ({riders.filter((r) => r.status !== "active").length})
+              Offline ({riders.filter((r) => r.status !== "active").length || "0"})
             </Button>
           </XStack>
         </YStack>
