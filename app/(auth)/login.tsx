@@ -12,6 +12,7 @@ import {
   Sheet,
   Separator,
   ScrollView,
+  Image,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -383,7 +384,7 @@ export default function LoginScreen() {
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                icon={<Facebook size={20} color="#1877F2" />}
+                icon={<Facebook size={isTablet ? 24 : 20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               />
               <Button
@@ -391,7 +392,7 @@ export default function LoginScreen() {
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                icon={<Apple size={20} color="$color" />}
+                icon={<Apple size={isTablet ? 24 : 20} color="$color" />}
                 onPress={() => handleOIDCLogin("apple")}
               />
               <Button
@@ -399,7 +400,7 @@ export default function LoginScreen() {
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                icon={<Chrome size={20} color="#DB4437" />}
+                icon={<Image  objectFit="contain" height={isTablet ? 24 : 20} src={require('assets/icons/icons8-google-100.png')} />}
                 onPress={() => handleOIDCLogin("google")}
               />
             </XStack>

@@ -54,11 +54,13 @@ const StyledButton = styled(TamaguiButton, {
         borderWidth: 0,
         color: '$color',
         height: '$14', // Slightly shorter for social buttons
+        width: '$14', // Base width for social buttons
         borderRadius: '$full',
         pressStyle: {
           backgroundColor: '$gray200',
         },
-        $sm: { height: '$14' }, // Responsive social button height
+        $md: { width: '$16' }, // Slightly wider on medium screens
+        $lg: { width: '$18' }, // Even wider on large screens
       },
     },
     disabled: {

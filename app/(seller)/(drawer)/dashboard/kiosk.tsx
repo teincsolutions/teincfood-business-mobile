@@ -7,13 +7,13 @@ import {
   XStack,
   Text,
   Card,
-  Button,
   Separator,
   Switch,
   useTheme,
 } from 'tamagui';
 import { Badge } from '@/components/ui/Badge';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
+import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard } from '@/components/kiosk';
 import {
   Clock,
   CheckCircle,
@@ -48,6 +48,7 @@ import {
   useAvailableRidersQuery,
 } from '@/hooks/kiosk.hooks';
 import { useResponsive } from '@/utils/responsive';
+import { Button } from '@/components/ui';
 
 interface DialogState {
   open: boolean;
@@ -122,21 +123,21 @@ export default function KioskMode() {
   };
 
   const handleAcceptOrder = (orderId: string) => {
-    triggerHaptic('medium');
-    playSound('success');
-
     const order = pendingOrders.find((o) => o.id === orderId);
     if (!order) return;
 
-    acceptOrder.mutate(orderId);
-
     setDialog({
       open: true,
-      title: 'Order Accepted',
-      description: `${order.orderNumber} is now being prepared.`,
-      confirmText: 'OK',
+      title: 'Accept Order',
+      description: `Are you sure you want to accept ${order.orderNumber}?`,
+      confirmText: 'Accept',
       cancelText: 'Cancel',
-      onConfirm: () => setDialog(defaultDialogState),
+      onConfirm: () => {
+        triggerHaptic('medium');
+        playSound('success');
+        acceptOrder.mutate(orderId);
+        setDialog(defaultDialogState);
+      },
       icon: CheckCircle,
       isDestructive: false,
     });
@@ -193,22 +194,22 @@ export default function KioskMode() {
   const handleAssignRider = (riderId: string) => {
     if (!selectedOrderId) return;
 
-    triggerHaptic('medium');
-    playSound('success');
-
     const rider = riders?.find((r) => r.id === riderId);
-    assignRider.mutate({ orderId: selectedOrderId, riderId });
-
-    setShowRiderSheet(false);
-    setSelectedOrderId(null);
 
     setDialog({
       open: true,
-      title: 'Order Assigned',
-      description: `Order assigned to ${rider?.name ?? 'rider'}. They will pick it up shortly.`,
-      confirmText: 'OK',
+      title: 'Assign Rider',
+      description: `Are you sure you want to assign this order to ${rider?.name ?? 'rider'}?`,
+      confirmText: 'Assign',
       cancelText: 'Cancel',
-      onConfirm: () => setDialog(defaultDialogState),
+      onConfirm: () => {
+        triggerHaptic('medium');
+        playSound('success');
+        assignRider.mutate({ orderId: selectedOrderId, riderId });
+        setShowRiderSheet(false);
+        setSelectedOrderId(null);
+        setDialog(defaultDialogState);
+      },
       icon: Truck,
       isDestructive: false,
     });
@@ -320,72 +321,13 @@ export default function KioskMode() {
                 </Card>
               ) : (
                 pendingOrders.map((order) => (
-                  <Card
+                  <PendingOrderCard
                     key={order.id}
-                    padding="$4"
-                    bordered
-                    backgroundColor="$orangeLight"
-                    borderColor="$primary"
-                    borderWidth={1}
-                  >
-                    <YStack gap="$3">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                        <XStack gap="$2" alignItems="center">
-                          <Clock size={14} color="$colorMuted" />
-                          <Text fontSize="$2" color="$colorMuted">{getTimeSince(order.createdAt)}m ago</Text>
-                        </XStack>
-                      </XStack>
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$3">{order.customerName}</Text>
-                        <XStack gap="$2" alignItems="center">
-                          {getPaymentIcon(order.paymentMethod)}
-                          <Badge
-                            backgroundColor={order.paymentStatus === 'paid' ? '$success' : '$error'}
-                            size="$2"
-                          >
-                            <Text color="white" fontSize="$1">
-                              {order.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
-                            </Text>
-                          </Badge>
-                        </XStack>
-                      </XStack>
-
-                      <YStack gap="$1">
-                        {order.items.map((item, index) => (
-                          <XStack key={index} justifyContent="space-between">
-                            <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                            <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                          </XStack>
-                        ))}
-                      </YStack>
-
-                      <Separator />
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                        <XStack gap="$2">
-                          <Button
-                            height={48}
-                            backgroundColor="$error"
-                            onPress={() => handleRejectOrder(order.id)}
-                            icon={<XCircle size={18} color="white" />}
-                          >
-                            <Text color="white" fontWeight="bold">REJECT</Text>
-                          </Button>
-                          <Button
-                            height={48}
-                            backgroundColor="$success"
-                            onPress={() => handleAcceptOrder(order.id)}
-                            icon={<CheckCircle size={18} color="white" />}
-                          >
-                            <Text color="white" fontWeight="bold">ACCEPT</Text>
-                          </Button>
-                        </XStack>
-                      </XStack>
-                    </YStack>
-                  </Card>
+                    order={order}
+                    onAccept={handleAcceptOrder}
+                    onReject={handleRejectOrder}
+                    getTimeSince={getTimeSince}
+                  />
                 ))
               )}
             </YStack>
@@ -411,53 +353,11 @@ export default function KioskMode() {
                     </Card>
                   ) : (
                     preparingOrders.map((order) => (
-                      <Card
+                      <PreparingOrderCard
                         key={order.id}
-                        padding="$4"
-                        bordered
-                        backgroundColor="$blue2"
-                        borderColor="$info"
-                        borderWidth={1}
-                      >
-                        <YStack gap="$3">
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                            <Badge backgroundColor="$info" size="$2">
-                              <Text color="white" fontSize="$1">PREPARING</Text>
-                            </Badge>
-                          </XStack>
-
-                          <Text fontSize="$3">{order.customerName}</Text>
-
-                          <YStack gap="$1">
-                            {order.items.map((item, index) => (
-                              <XStack key={index} justifyContent="space-between">
-                                <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                                <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                              </XStack>
-                            ))}
-                          </YStack>
-
-                          <XStack gap="$2" alignItems="center">
-                            <Clock size={14} color="$info" />
-                            <Text fontSize="$3" color="$info" fontWeight="bold">ETA: {order.estimatedTime} min</Text>
-                          </XStack>
-
-                          <Separator />
-
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                            <Button
-                              height={48}
-                              backgroundColor="$success"
-                              onPress={() => handleMarkReady(order.id)}
-                              icon={<CheckCircle size={18} color="white" />}
-                            >
-                              <Text color="white" fontWeight="bold">MARK READY</Text>
-                            </Button>
-                          </XStack>
-                        </YStack>
-                      </Card>
+                        order={order}
+                        onMarkReady={handleMarkReady}
+                      />
                     ))
                   )}
                 </YStack>
@@ -480,48 +380,11 @@ export default function KioskMode() {
                     </Card>
                   ) : (
                     readyOrders.map((order) => (
-                      <Card
+                      <ReadyOrderCard
                         key={order.id}
-                        padding="$4"
-                        bordered
-                        backgroundColor="$green2"
-                        borderColor="$success"
-                        borderWidth={1}
-                      >
-                        <YStack gap="$3">
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                            <Badge backgroundColor="$success" size="$2">
-                              <Text color="white" fontSize="$1">READY</Text>
-                            </Badge>
-                          </XStack>
-
-                          <Text fontSize="$3">{order.customerName}</Text>
-
-                          <YStack gap="$1">
-                            {order.items.map((item, index) => (
-                              <XStack key={index} justifyContent="space-between">
-                                <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                                <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                              </XStack>
-                            ))}
-                          </YStack>
-
-                          <Separator />
-
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                            <Button
-                              height={48}
-                              backgroundColor="$primary"
-                              onPress={() => handleOpenRiderSheet(order.id)}
-                              icon={<Truck size={18} color="white" />}
-                            >
-                              <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
-                            </Button>
-                          </XStack>
-                        </YStack>
-                      </Card>
+                        order={order}
+                        onAssignRider={handleOpenRiderSheet}
+                      />
                     ))
                   )}
                 </YStack>
@@ -547,53 +410,11 @@ export default function KioskMode() {
                     </Card>
                   ) : (
                     preparingOrders.map((order) => (
-                      <Card
+                      <PreparingOrderCard
                         key={order.id}
-                        padding="$4"
-                        bordered
-                        backgroundColor="$blue2"
-                        borderColor="$info"
-                        borderWidth={1}
-                      >
-                        <YStack gap="$3">
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                            <Badge backgroundColor="$info" size="$2">
-                              <Text color="white" fontSize="$1">PREPARING</Text>
-                            </Badge>
-                          </XStack>
-
-                          <Text fontSize="$3">{order.customerName}</Text>
-
-                          <YStack gap="$1">
-                            {order.items.map((item, index) => (
-                              <XStack key={index} justifyContent="space-between">
-                                <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                                <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                              </XStack>
-                            ))}
-                          </YStack>
-
-                          <XStack gap="$2" alignItems="center">
-                            <Clock size={14} color="$info" />
-                            <Text fontSize="$3" color="$info" fontWeight="bold">ETA: {order.estimatedTime} min</Text>
-                          </XStack>
-
-                          <Separator />
-
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                            <Button
-                              height={48}
-                              backgroundColor="$success"
-                              onPress={() => handleMarkReady(order.id)}
-                              icon={<CheckCircle size={18} color="white" />}
-                            >
-                              <Text color="white" fontWeight="bold">MARK READY</Text>
-                            </Button>
-                          </XStack>
-                        </YStack>
-                      </Card>
+                        order={order}
+                        onMarkReady={handleMarkReady}
+                      />
                     ))
                   )}
                 </YStack>
@@ -616,48 +437,11 @@ export default function KioskMode() {
                     </Card>
                   ) : (
                     readyOrders.map((order) => (
-                      <Card
+                      <ReadyOrderCard
                         key={order.id}
-                        padding="$4"
-                        bordered
-                        backgroundColor="$green2"
-                        borderColor="$success"
-                        borderWidth={1}
-                      >
-                        <YStack gap="$3">
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                            <Badge backgroundColor="$success" size="$2">
-                              <Text color="white" fontSize="$1">READY</Text>
-                            </Badge>
-                          </XStack>
-
-                          <Text fontSize="$3">{order.customerName}</Text>
-
-                          <YStack gap="$1">
-                            {order.items.map((item, index) => (
-                              <XStack key={index} justifyContent="space-between">
-                                <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                                <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                              </XStack>
-                            ))}
-                          </YStack>
-
-                          <Separator />
-
-                          <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                            <Button
-                              height={48}
-                              backgroundColor="$primary"
-                              onPress={() => handleOpenRiderSheet(order.id)}
-                              icon={<Truck size={18} color="white" />}
-                            >
-                              <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
-                            </Button>
-                          </XStack>
-                        </YStack>
-                      </Card>
+                        order={order}
+                        onAssignRider={handleOpenRiderSheet}
+                      />
                     ))
                   )}
                 </YStack>
@@ -686,72 +470,13 @@ export default function KioskMode() {
                 </Card>
               ) : (
                 pendingOrders.map((order) => (
-                  <Card
+                  <PendingOrderCard
                     key={order.id}
-                    padding="$4"
-                    bordered
-                    backgroundColor="$orangeLight"
-                    borderColor="$primary"
-                    borderWidth={1}
-                  >
-                    <YStack gap="$3">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                        <XStack gap="$2" alignItems="center">
-                          <Clock size={14} color="$colorMuted" />
-                          <Text fontSize="$2" color="$colorMuted">{getTimeSince(order.createdAt)}m ago</Text>
-                        </XStack>
-                      </XStack>
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$3">{order.customerName}</Text>
-                        <XStack gap="$2" alignItems="center">
-                          {getPaymentIcon(order.paymentMethod)}
-                          <Badge
-                            backgroundColor={order.paymentStatus === 'paid' ? '$success' : '$error'}
-                            size="$2"
-                          >
-                            <Text color="white" fontSize="$1">
-                              {order.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
-                            </Text>
-                          </Badge>
-                        </XStack>
-                      </XStack>
-
-                      <YStack gap="$1">
-                        {order.items.map((item, index) => (
-                          <XStack key={index} justifyContent="space-between">
-                            <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                            <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                          </XStack>
-                        ))}
-                      </YStack>
-
-                      <Separator />
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                        <XStack gap="$2">
-                          <Button
-                            height={48}
-                            backgroundColor="$error"
-                            onPress={() => handleRejectOrder(order.id)}
-                            icon={<XCircle size={18} color="white" />}
-                          >
-                            <Text color="white" fontWeight="bold">REJECT</Text>
-                          </Button>
-                          <Button
-                            height={48}
-                            backgroundColor="$success"
-                            onPress={() => handleAcceptOrder(order.id)}
-                            icon={<CheckCircle size={18} color="white" />}
-                          >
-                            <Text color="white" fontWeight="bold">ACCEPT</Text>
-                          </Button>
-                        </XStack>
-                      </XStack>
-                    </YStack>
-                  </Card>
+                    order={order}
+                    onAccept={handleAcceptOrder}
+                    onReject={handleRejectOrder}
+                    getTimeSince={getTimeSince}
+                  />
                 ))
               )}
             </YStack>
@@ -775,53 +500,11 @@ export default function KioskMode() {
                 </Card>
               ) : (
                 preparingOrders.map((order) => (
-                  <Card
+                  <PreparingOrderCard
                     key={order.id}
-                    padding="$4"
-                    bordered
-                    backgroundColor="$blue2"
-                    borderColor="$info"
-                    borderWidth={1}
-                  >
-                    <YStack gap="$3">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                        <Badge backgroundColor="$info" size="$2">
-                          <Text color="white" fontSize="$1">PREPARING</Text>
-                        </Badge>
-                      </XStack>
-
-                      <Text fontSize="$3">{order.customerName}</Text>
-
-                      <YStack gap="$1">
-                        {order.items.map((item, index) => (
-                          <XStack key={index} justifyContent="space-between">
-                            <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                            <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                          </XStack>
-                        ))}
-                      </YStack>
-
-                      <XStack gap="$2" alignItems="center">
-                        <Clock size={14} color="$info" />
-                        <Text fontSize="$3" color="$info" fontWeight="bold">ETA: {order.estimatedTime} min</Text>
-                      </XStack>
-
-                      <Separator />
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                        <Button
-                          height={48}
-                          backgroundColor="$success"
-                          onPress={() => handleMarkReady(order.id)}
-                          icon={<CheckCircle size={18} color="white" />}
-                        >
-                          <Text color="white" fontWeight="bold">MARK READY</Text>
-                        </Button>
-                      </XStack>
-                    </YStack>
-                  </Card>
+                    order={order}
+                    onMarkReady={handleMarkReady}
+                  />
                 ))
               )}
             </YStack>
@@ -845,48 +528,11 @@ export default function KioskMode() {
                 </Card>
               ) : (
                 readyOrders.map((order) => (
-                  <Card
+                  <ReadyOrderCard
                     key={order.id}
-                    padding="$4"
-                    bordered
-                    backgroundColor="$green2"
-                    borderColor="$success"
-                    borderWidth={1}
-                  >
-                    <YStack gap="$3">
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
-                        <Badge backgroundColor="$success" size="$2">
-                          <Text color="white" fontSize="$1">READY</Text>
-                        </Badge>
-                      </XStack>
-
-                      <Text fontSize="$3">{order.customerName}</Text>
-
-                      <YStack gap="$1">
-                        {order.items.map((item, index) => (
-                          <XStack key={index} justifyContent="space-between">
-                            <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-                            <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
-                          </XStack>
-                        ))}
-                      </YStack>
-
-                      <Separator />
-
-                      <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
-                        <Button
-                          height={48}
-                          backgroundColor="$primary"
-                          onPress={() => handleOpenRiderSheet(order.id)}
-                          icon={<Truck size={18} color="white" />}
-                        >
-                          <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
-                        </Button>
-                      </XStack>
-                    </YStack>
-                  </Card>
+                    order={order}
+                    onAssignRider={handleOpenRiderSheet}
+                  />
                 ))
               )}
             </YStack>
@@ -913,7 +559,7 @@ export default function KioskMode() {
 
           <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$star">
+              <Text fontSize="$7" fontWeight="bold" color="$color.starOrange">
                 GHS {[...pendingOrders, ...preparingOrders, ...readyOrders].reduce((sum, o) => sum + o.total, 0).toFixed(0)}
               </Text>
               <Text fontSize="$3" color="$colorMuted">Total Value</Text>
@@ -950,11 +596,14 @@ export default function KioskMode() {
             <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
               <Text fontSize="$6" fontWeight="bold">Select a Rider</Text>
               <Button
-                size="$3"
-                circular
+                width="$8"
+                height="$8"
+                $lg={{ width:'$12', height: "$12" }}
+                variant='ghost'
+                rounded="$full"
                 backgroundColor="$backgroundSoft"
                 onPress={() => setShowRiderSheet(false)}
-                icon={<X size={18} />}
+                icon={<X size={isTablet ? 24 : 18} />}
               />
             </XStack>
 
@@ -991,7 +640,7 @@ export default function KioskMode() {
                       <XStack alignItems="center" gap="$2">
                         <Text fontSize="$4" fontWeight="bold">{rider.name}</Text>
                         <XStack alignItems="center" gap="$0.5">
-                          <Star size={12} color="$star" fill="$star" />
+                          <Star size={12} color="$color.starOrange" />
                           <Text fontSize="$2" color="$colorMuted">{rider.rating}</Text>
                         </XStack>
                       </XStack>
