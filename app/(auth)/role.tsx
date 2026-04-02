@@ -10,9 +10,9 @@ export default function RoleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const [selectedRole, setSelectedRole] = useState<"seller" | "rider" | "fleet_manager" | null>(
-    null,
-  );
+  const [selectedRole, setSelectedRole] = useState<
+    "seller" | "rider" | "fleet_manager" | null
+  >(null);
 
   const handleLogin = () => {
     if (!selectedRole) return;
@@ -146,7 +146,9 @@ export default function RoleScreen() {
             backgroundColor={
               selectedRole === "fleet_manager" ? "$primaryLight" : "$background"
             }
-            borderColor={selectedRole === "fleet_manager" ? "$primary" : "$borderColor"}
+            borderColor={
+              selectedRole === "fleet_manager" ? "$primary" : "$borderColor"
+            }
           >
             <XStack gap="$4" alignItems="center">
               <YStack
@@ -161,7 +163,9 @@ export default function RoleScreen() {
               >
                 <Users
                   size={28}
-                  color={selectedRole === "fleet_manager" ? "white" : "$colorMuted"}
+                  color={
+                    selectedRole === "fleet_manager" ? "white" : "$colorMuted"
+                  }
                 />
               </YStack>
               <YStack flex={1} gap="$1">
@@ -189,7 +193,7 @@ export default function RoleScreen() {
           </Button>
           <Button
             variant="outline"
-            width={"100%"} 
+            width={"100%"}
             onPress={handleSignup}
             disabled={!selectedRole}
             opacity={selectedRole ? 1 : 0.5}
@@ -198,17 +202,24 @@ export default function RoleScreen() {
           </Button>
           <Button
             variant="ghost"
-            height={40}
+            height="$12"
+            mt="$2"
+            $lg={{ height: "$12" }}
             onPress={() => router.push({ pathname: "/(auth)/role" })}
           >
             <Text
-              fontSize="$3"
+              fontSize="$5"
               color="$primary"
               fontWeight="600"
               fontFamily="$body"
             >
-              Signing up as {selectedRole === "seller" ? "Seller" : selectedRole === "rider" ? "Rider" : "Fleet Manager"} ·
-              Switch Role
+              Signing up as{" "}
+              {selectedRole === "seller"
+                ? "Seller"
+                : selectedRole === "rider"
+                  ? "Rider"
+                  : "Fleet Manager"}{" "}
+              · Switch Role
             </Text>
           </Button>
         </YStack>
