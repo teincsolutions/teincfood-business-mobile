@@ -6,8 +6,6 @@ import {
   XStack,
   Text,
   Card,
-  Avatar,
-  Separator,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -15,19 +13,15 @@ import {
   Plus,
   Search,
   MapPin,
-  Phone,
-  Star,
-  Clock,
   ChevronRight,
-  Check,
-  MoreVertical,
 } from "@tamagui/lucide-icons";
 import { useBusinessStore } from "@/stores/business.store";
-import { useRouter } from "expo-router";
-import { Button, Input } from "@/components/ui";
+import { useRouter, useNavigation } from "expo-router";
+import { Button, Input, BackButton } from "@/components/ui";
 
 export default function BusinessesScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { businesses, setDefaultBusiness, getDefaultBusiness } = useBusinessStore();
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,10 +49,18 @@ export default function BusinessesScreen() {
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{
+        paddingTop: insets.top + 8,
         paddingBottom: Math.max(insets.bottom + 20, 24),
       }}
     >
       <YStack padding="$4" gap="$4">
+        {/* Back button */}
+        {navigation.canGoBack() && (
+          <YStack>
+            <BackButton />
+          </YStack>
+        )}
+
         {/* Header */}
         <YStack gap="$2">
           <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
@@ -98,21 +100,27 @@ export default function BusinessesScreen() {
               variant={filterStatus === "all" ? "solid" : "outlined"}
               onPress={() => setFilterStatus("all")}
             >
-              All ({businesses.length})
+              <Text fontSize="$2" fontFamily="$body">
+                All ({businesses.length})
+              </Text>
             </Button>
             <Button
               size="$2"
               variant={filterStatus === "active" ? "solid" : "outlined"}
               onPress={() => setFilterStatus("active")}
             >
-              Active ({businesses.filter((b) => b.status === "active").length})
+              <Text fontSize="$2" fontFamily="$body">
+                Active ({businesses.filter((b) => b.status === "active").length})
+              </Text>
             </Button>
             <Button
               size="$2"
               variant={filterStatus === "inactive" ? "solid" : "outlined"}
               onPress={() => setFilterStatus("inactive")}
             >
-              Inactive ({businesses.filter((b) => b.status !== "active").length})
+              <Text fontSize="$2" fontFamily="$body">
+                Inactive ({businesses.filter((b) => b.status !== "active").length})
+              </Text>
             </Button>
           </XStack>
         </YStack>
@@ -121,109 +129,94 @@ export default function BusinessesScreen() {
         <YStack gap="$3">
           {filteredBusinesses.map((business) => {
             const isDefault = getDefaultBusiness()?.id === business.id;
+            const isActive = business.status === "active";
             return (
               <Card
                 key={business.id}
-                padding="$4"
                 bordered
-                pressStyle={{ scale: 0.98, opacity: 0.9 }}
+                overflow="hidden"
+                pressStyle={{ scale: 0.99, opacity: 0.9 }}
                 onPress={() => router.push(`/(seller)/businesses/${business.id}`)}
               >
-                <XStack gap="$3" alignItems="center">
-                  <Avatar circular size="$5">
-                    <Avatar.Image src={business.logoUrl} />
-                    <Avatar.Fallback backgroundColor="$gray8">
-                      <Text color="white" fontWeight="bold">
-                        {business.name?.charAt(0) || "B"}
-                      </Text>
-                    </Avatar.Fallback>
-                  </Avatar>
+                {/* Status accent bar */}
+                <YStack
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  bottom={0}
+                  width={4}
+                  backgroundColor={isActive ? "$green8" : "$gray6"}
+                />
 
-                  <YStack flex={1} gap="$1">
-                    <XStack justifyContent="space-between" alignItems="center">
-                      <XStack gap="$2" alignItems="center">
-                        <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                          {business.name}
-                        </Text>
-                        {isDefault && (
-                          <YStack
-                            paddingHorizontal="$2"
-                            paddingVertical="$1"
-                            borderRadius="$2"
-                            backgroundColor="$blue2"
-                          >
-                            <Text fontSize="$2" color="$blue10" fontFamily="$body">
-                              Default
-                            </Text>
-                          </YStack>
-                        )}
-                      </XStack>
-                      <YStack
+                <XStack
+                  paddingLeft="$5"
+                  paddingRight="$4"
+                  paddingVertical="$4"
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  {/* Name + location */}
+                  <YStack flex={1} gap="$1" paddingRight="$3">
+                    <XStack gap="$2" alignItems="center">
+                      <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                        {business.name}
+                      </Text>
+                      {isDefault && (
+                        <XStack
+                          paddingHorizontal="$2"
+                          paddingVertical="$1"
+                          borderRadius="$10"
+                          backgroundColor="$blue3"
+                          borderWidth={1}
+                          borderColor="$blue6"
+                        >
+                          <Text fontSize="$1" color="$blue10" fontFamily="$body" fontWeight="600">
+                            DEFAULT
+                          </Text>
+                        </XStack>
+                      )}
+                      <XStack
                         paddingHorizontal="$2"
                         paddingVertical="$1"
-                        borderRadius="$2"
-                        backgroundColor={
-                          business.status === "active" ? "$green2" : "$gray2"
-                        }
+                        borderRadius="$10"
+                        backgroundColor={isActive ? "$green3" : "$gray3"}
+                        borderWidth={1}
+                        borderColor={isActive ? "$green6" : "$gray6"}
                       >
                         <Text
-                          fontSize="$2"
-                          color={business.status === "active" ? "$green10" : "$gray10"}
+                          fontSize="$1"
+                          color={isActive ? "$green10" : "$gray10"}
                           fontFamily="$body"
+                          fontWeight="600"
                         >
-                          {business.status === "active" ? "Active" : "Inactive"}
+                          {isActive ? "ACTIVE" : "INACTIVE"}
                         </Text>
-                      </YStack>
+                      </XStack>
                     </XStack>
-
-                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                      {business.code}
-                    </Text>
-
-                    <XStack gap="$2" alignItems="center" marginTop="$1">
-                      <MapPin size={14} color="$colorMuted" />
-                      <Text fontSize="$3" color="$colorSecondary" flex={1} numberOfLines={1} fontFamily="$body">
-                        {business.address?.city || business.address?.fullAddress || "No address"}
+                    <XStack gap="$1" alignItems="center">
+                      <MapPin size={13} color="$colorMuted" />
+                      <Text fontSize="$3" color="$colorSecondary" numberOfLines={1} fontFamily="$body">
+                        {business.address?.city || "No address"}
                       </Text>
-                    </XStack>
-
-                    {business.phone && (
-                      <XStack gap="$2" alignItems="center">
-                        <Phone size={14} color="$colorMuted" />
-                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                          {business.phone}
-                        </Text>
-                      </XStack>
-                    )}
-
-                    <XStack gap="$3" marginTop="$1">
-                      <XStack gap="$1" alignItems="center">
-                        <Star size={14} color="$yellow10" />
-                        <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
-                          {business.rating?.toFixed(1) || "5.0"}
-                        </Text>
-                      </XStack>
-                      <XStack gap="$1" alignItems="center">
-                        <Clock size={14} color="$colorMuted" />
-                        <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
-                          {business.todayOrders || 0} orders today
-                        </Text>
-                      </XStack>
                     </XStack>
                   </YStack>
 
-                  <YStack gap="$2">
-                    {!isDefault && business.status === "active" && (
+                  {/* Actions */}
+                  <XStack gap="$2" alignItems="center">
+                    {!isDefault && isActive && (
                       <Button
                         size="$2"
                         variant="outlined"
-                        onPress={() => handleSetDefault(business.id)}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleSetDefault(business.id);
+                        }}
                       >
-                        Set Default
+                        <Text fontSize="$2" fontFamily="$body">Set Default</Text>
                       </Button>
                     )}
-                    <ChevronRight size={20} color="$colorMuted" />
-                  </YStack>
+                    <ChevronRight size={18} color="$colorMuted" />
+                  </XStack>
                 </XStack>
               </Card>
             );
