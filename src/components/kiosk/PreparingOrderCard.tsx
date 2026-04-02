@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack, Separator } from 'tamagui';
-import { Clock, CheckCircle, Utensils } from '@tamagui/lucide-icons';
+import { Clock, CheckCircle, FileText } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { KioskOrder } from '@/services/mock-data.service';
@@ -8,9 +8,10 @@ import type { KioskOrder } from '@/services/mock-data.service';
 interface PreparingOrderCardProps {
   order: KioskOrder;
   onMarkReady: (orderId: string) => void;
+  onViewDetails: (order: KioskOrder) => void;
 }
 
-export function PreparingOrderCard({ order, onMarkReady }: PreparingOrderCardProps) {
+export function PreparingOrderCard({ order, onMarkReady, onViewDetails }: PreparingOrderCardProps) {
   return (
     <Card
       padding="$4"
@@ -18,6 +19,9 @@ export function PreparingOrderCard({ order, onMarkReady }: PreparingOrderCardPro
       backgroundColor="$blue2"
       borderColor="$info"
       borderWidth={1}
+      onPress={() => onViewDetails(order)}
+      pressStyle={{ opacity: 0.8 }}
+      cursor="pointer"
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
@@ -27,7 +31,14 @@ export function PreparingOrderCard({ order, onMarkReady }: PreparingOrderCardPro
           </Badge>
         </XStack>
 
-        <Text fontSize="$3">{order.customerName}</Text>
+        {order.specialInstructions && (
+          <XStack gap="$2" alignItems="flex-start">
+            <FileText size={14} color="$info" />
+            <Text fontSize="$2" color="$info" flex={1}>
+              {order.specialInstructions}
+            </Text>
+          </XStack>
+        )}
 
         <YStack gap="$1">
           {order.items.map((item, index) => (

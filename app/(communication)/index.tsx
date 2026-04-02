@@ -237,7 +237,7 @@ export default function InboxScreen() {
                 </Text>
                 <Button
                   variant="primary"
-                  flex={1}
+                  width="100%"
                   marginTop="$2"
                   onPress={() => router.push(`/(communication)/chat/support`)}
                 >

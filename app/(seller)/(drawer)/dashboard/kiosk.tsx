@@ -13,7 +13,7 @@ import {
 } from 'tamagui';
 import { Badge } from '@/components/ui/Badge';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
-import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard, RiderSelectionSheet } from '@/components/kiosk';
+import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard, RiderSelectionSheet, OrderDetailsSheet } from '@/components/kiosk';
 import {
   Clock,
   CheckCircle,
@@ -94,6 +94,10 @@ export default function KioskMode() {
   // Rider selection sheet
   const [showRiderSheet, setShowRiderSheet] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  
+  // Order details sheet
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<KioskOrder | null>(null);
 
   // TanStack Query
   const { data, isRefetching, refetch } = useKioskOrdersQuery(autoRefresh);
@@ -189,6 +193,11 @@ export default function KioskMode() {
   const handleOpenRiderSheet = (orderId: string) => {
     setSelectedOrderId(orderId);
     setShowRiderSheet(true);
+  };
+
+  const handleViewDetails = (order: KioskOrder) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
   };
 
   const handleAssignRider = (riderId: string) => {
@@ -326,6 +335,7 @@ export default function KioskMode() {
                     order={order}
                     onAccept={handleAcceptOrder}
                     onReject={handleRejectOrder}
+                    onViewDetails={handleViewDetails}
                     getTimeSince={getTimeSince}
                   />
                 ))
@@ -352,13 +362,14 @@ export default function KioskMode() {
                       <Text marginTop="$2" color="$colorMuted">No orders being prepared</Text>
                     </Card>
                   ) : (
-                    preparingOrders.map((order) => (
-                      <PreparingOrderCard
-                        key={order.id}
-                        order={order}
-                        onMarkReady={handleMarkReady}
-                      />
-                    ))
+                  preparingOrders.map((order) => (
+                    <PreparingOrderCard
+                      key={order.id}
+                      order={order}
+                      onMarkReady={handleMarkReady}
+                      onViewDetails={handleViewDetails}
+                    />
+                  ))
                   )}
                 </YStack>
 
@@ -384,6 +395,7 @@ export default function KioskMode() {
                         key={order.id}
                         order={order}
                         onAssignRider={handleOpenRiderSheet}
+                        onViewDetails={handleViewDetails}
                       />
                     ))
                   )}
@@ -409,13 +421,14 @@ export default function KioskMode() {
                       <Text marginTop="$2" color="$colorMuted">No orders being prepared</Text>
                     </Card>
                   ) : (
-                    preparingOrders.map((order) => (
-                      <PreparingOrderCard
-                        key={order.id}
-                        order={order}
-                        onMarkReady={handleMarkReady}
-                      />
-                    ))
+                preparingOrders.map((order) => (
+                  <PreparingOrderCard
+                    key={order.id}
+                    order={order}
+                    onMarkReady={handleMarkReady}
+                    onViewDetails={handleViewDetails}
+                  />
+                ))
                   )}
                 </YStack>
 
@@ -475,6 +488,7 @@ export default function KioskMode() {
                     order={order}
                     onAccept={handleAcceptOrder}
                     onReject={handleRejectOrder}
+                    onViewDetails={handleViewDetails}
                     getTimeSince={getTimeSince}
                   />
                 ))
@@ -504,6 +518,7 @@ export default function KioskMode() {
                     key={order.id}
                     order={order}
                     onMarkReady={handleMarkReady}
+                    onViewDetails={handleViewDetails}
                   />
                 ))
               )}
@@ -532,6 +547,7 @@ export default function KioskMode() {
                     key={order.id}
                     order={order}
                     onAssignRider={handleOpenRiderSheet}
+                    onViewDetails={handleViewDetails}
                   />
                 ))
               )}
@@ -596,6 +612,14 @@ export default function KioskMode() {
         onClose={() => setShowRiderSheet(false)}
         riders={riders ?? []}
         onSelectRider={handleAssignRider}
+      />
+
+      {/* Order Details Sheet */}
+      <OrderDetailsSheet
+        visible={showOrderDetails}
+        onClose={() => setShowOrderDetails(false)}
+        order={selectedOrder}
+        getTimeSince={getTimeSince}
       />
 
       {/* Alert Dialog */}

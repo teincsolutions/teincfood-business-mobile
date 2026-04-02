@@ -2,11 +2,9 @@
 import { Card, Text, XStack, YStack, Separator } from "tamagui";
 import {
   Clock,
-  DollarSign,
-  CreditCard,
-  Banknote,
   CheckCircle,
   XCircle,
+  FileText,
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +14,7 @@ interface PendingOrderCardProps {
   order: KioskOrder;
   onAccept: (orderId: string) => void;
   onReject: (orderId: string) => void;
+  onViewDetails: (order: KioskOrder) => void;
   getTimeSince: (dateString: string) => number;
 }
 
@@ -23,21 +22,9 @@ export function PendingOrderCard({
   order,
   onAccept,
   onReject,
+  onViewDetails,
   getTimeSince,
 }: PendingOrderCardProps) {
-  const getPaymentIcon = (method: string) => {
-    switch (method) {
-      case "mobile_money":
-        return <DollarSign size={16} />;
-      case "card":
-        return <CreditCard size={16} />;
-      case "cash":
-        return <Banknote size={16} />;
-      default:
-        return <DollarSign size={16} />;
-    }
-  };
-
   return (
     <Card
       padding="$4"
@@ -45,6 +32,9 @@ export function PendingOrderCard({
       backgroundColor="$orangeLight"
       borderColor="$primary"
       borderWidth={1}
+      onPress={() => onViewDetails(order)}
+      pressStyle={{ opacity: 0.8 }}
+      cursor="pointer"
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
@@ -59,22 +49,15 @@ export function PendingOrderCard({
           </XStack>
         </XStack>
 
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$3">{order.customerName}</Text>
-          <XStack gap="$2" alignItems="center">
-            {getPaymentIcon(order.paymentMethod)}
-            <Badge
-              backgroundColor={
-                order.paymentStatus === "paid" ? "$success" : "$error"
-              }
-              size="$2"
-            >
-              <Text color="white" fontSize="$1">
-                {order.paymentStatus === "paid" ? "PAID" : "UNPAID"}
-              </Text>
-            </Badge>
-          </XStack>
-        </XStack>
+        <Badge
+          backgroundColor="$primary"
+          size="$2"
+          alignSelf="flex-start"
+        >
+          <Text color="white" fontSize="$1" fontWeight="bold">
+            PENDING
+          </Text>
+        </Badge>
 
         <YStack gap="$1">
           {order.items.map((item, index) => (
@@ -88,6 +71,15 @@ export function PendingOrderCard({
             </XStack>
           ))}
         </YStack>
+
+        {order.specialInstructions && (
+          <XStack gap="$2" alignItems="flex-start">
+            <FileText size={14} color="$info" />
+            <Text fontSize="$2" color="$info" flex={1}>
+              {order.specialInstructions}
+            </Text>
+          </XStack>
+        )}
 
         <Separator />
 

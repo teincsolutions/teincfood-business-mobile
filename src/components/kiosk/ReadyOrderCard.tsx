@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack, Separator } from 'tamagui';
-import { Truck } from '@tamagui/lucide-icons';
+import { Truck, FileText } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { KioskOrder } from '@/services/mock-data.service';
@@ -8,9 +8,10 @@ import type { KioskOrder } from '@/services/mock-data.service';
 interface ReadyOrderCardProps {
   order: KioskOrder;
   onAssignRider: (orderId: string) => void;
+  onViewDetails: (order: KioskOrder) => void;
 }
 
-export function ReadyOrderCard({ order, onAssignRider }: ReadyOrderCardProps) {
+export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrderCardProps) {
   return (
     <Card
       padding="$4"
@@ -18,6 +19,9 @@ export function ReadyOrderCard({ order, onAssignRider }: ReadyOrderCardProps) {
       backgroundColor="$green2"
       borderColor="$success"
       borderWidth={1}
+      onPress={() => onViewDetails(order)}
+      pressStyle={{ opacity: 0.8 }}
+      cursor="pointer"
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
@@ -27,7 +31,14 @@ export function ReadyOrderCard({ order, onAssignRider }: ReadyOrderCardProps) {
           </Badge>
         </XStack>
 
-        <Text fontSize="$3">{order.customerName}</Text>
+        {order.specialInstructions && (
+          <XStack gap="$2" alignItems="flex-start">
+            <FileText size={14} color="$info" />
+            <Text fontSize="$2" color="$info" flex={1}>
+              {order.specialInstructions}
+            </Text>
+          </XStack>
+        )}
 
         <YStack gap="$1">
           {order.items.map((item, index) => (
