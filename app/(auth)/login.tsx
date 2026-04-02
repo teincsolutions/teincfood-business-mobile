@@ -427,6 +427,7 @@ export default function LoginScreen() {
             </Text>
             <Button
               variant="outline"
+              width="100%"
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/signup",

@@ -1,14 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
-import { ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Separator,
-  Avatar,
-} from "tamagui";
+import { Image, ScrollView } from "react-native";
+import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Users,
@@ -45,7 +38,12 @@ export default function FleetDashboardScreen() {
       <YStack padding="$4" gap="$4">
         {/* Welcome Section */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Fleet Dashboard
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -88,14 +86,17 @@ export default function FleetDashboardScreen() {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Car size={24} color="$white" />
+                <Image
+                  source={require("assets/icons/delivery-bike.png")}
+                  style={{ width: 24, height: 24, tintColor: "white" }}
+                />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
                   {assignedVehicles}/{totalVehicles}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Assigned Vehicles
+                  Assigned Motors
                 </Text>
               </YStack>
             </YStack>
@@ -150,7 +151,12 @@ export default function FleetDashboardScreen() {
 
         {/* Quick Actions */}
         <YStack gap="$3">
-          <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$6"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$color"
+          >
             Quick Actions
           </Text>
           <XStack gap="$3">
@@ -176,9 +182,14 @@ export default function FleetDashboardScreen() {
         {/* Recent Riders */}
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
-            Recent Riders
-          </Text>
+            <Text
+              fontSize="$6"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Recent Riders
+            </Text>
             <Button
               variant="ghost"
               size="$2"
@@ -213,7 +224,11 @@ export default function FleetDashboardScreen() {
                         rider.status === "active" ? "$success" : "$colorMuted"
                       }
                     />
-                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
                       {rider.status === "active" ? "Online" : "Offline"}
                     </Text>
                     {rider.vehiclePlateNumber && (
@@ -221,21 +236,34 @@ export default function FleetDashboardScreen() {
                         <Text fontSize="$3" color="$colorSecondary">
                           •
                         </Text>
-                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                        <Text
+                          fontSize="$3"
+                          color="$colorSecondary"
+                          fontFamily="$body"
+                        >
                           {rider.vehiclePlateNumber}
                         </Text>
                       </>
                     )}
                   </XStack>
                 </YStack>
-              <YStack alignItems="flex-end">
-                <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$success">
-                  GHS {rider.totalEarnings.toFixed(2)}
-                </Text>
-                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  earnings
-                </Text>
-              </YStack>
+                <YStack alignItems="flex-end">
+                  <Text
+                    fontSize="$4"
+                    fontWeight="600"
+                    fontFamily="$heading"
+                    color="$success"
+                  >
+                    GHS {rider.totalEarnings.toFixed(2)}
+                  </Text>
+                  <Text
+                    fontSize="$2"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    earnings
+                  </Text>
+                </YStack>
               </XStack>
             </Card>
           ))}
@@ -244,7 +272,12 @@ export default function FleetDashboardScreen() {
             <Card padding="$4" bordered>
               <YStack alignItems="center" gap="$3">
                 <Users size={48} color="$colorMuted" />
-                <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+                <Text
+                  fontSize="$4"
+                  color="$colorSecondary"
+                  textAlign="center"
+                  fontFamily="$body"
+                >
                   No riders yet. Add your first rider to get started.
                 </Text>
                 <Button onPress={() => router.push("/(fleet)/riders/add")}>
@@ -258,7 +291,12 @@ export default function FleetDashboardScreen() {
         {/* Fleet Performance Summary */}
         {dashboard?.activeDeliveries > 0 && (
           <YStack gap="$3">
-            <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
+            <Text
+              fontSize="$6"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
               Fleet Activity
             </Text>
             <Card padding="$4" bordered backgroundColor="$infoMuted">
@@ -277,7 +315,11 @@ export default function FleetDashboardScreen() {
                   <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
                     {dashboard.activeDeliveries} Active Riders
                   </Text>
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     Riders are currently on delivery
                   </Text>
                 </YStack>
@@ -288,7 +330,12 @@ export default function FleetDashboardScreen() {
 
         {/* Fleet Performance */}
         <YStack gap="$3">
-          <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$6"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$color"
+          >
             Fleet Performance
           </Text>
           <Card padding="$4" bordered>
