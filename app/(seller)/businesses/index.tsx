@@ -145,7 +145,7 @@ export default function BusinessesScreen() {
                   top={0}
                   bottom={0}
                   width={4}
-                  backgroundColor={isActive ? "$green8" : "$gray6"}
+                  backgroundColor={isActive ? "$success" : "$colorMuted"}
                 />
 
                 <XStack
@@ -166,11 +166,11 @@ export default function BusinessesScreen() {
                           paddingHorizontal="$2"
                           paddingVertical="$1"
                           borderRadius="$10"
-                          backgroundColor="$blue3"
+                        backgroundColor="$infoMuted"
                           borderWidth={1}
-                          borderColor="$blue6"
+                          borderColor="$info"
                         >
-                          <Text fontSize="$1" color="$blue10" fontFamily="$body" fontWeight="600">
+                          <Text fontSize="$1" color="$info" fontFamily="$body" fontWeight="600">
                             DEFAULT
                           </Text>
                         </XStack>
@@ -179,13 +179,13 @@ export default function BusinessesScreen() {
                         paddingHorizontal="$2"
                         paddingVertical="$1"
                         borderRadius="$10"
-                        backgroundColor={isActive ? "$green3" : "$gray3"}
+                        backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"}
                         borderWidth={1}
-                        borderColor={isActive ? "$green6" : "$gray6"}
+                        borderColor={isActive ? "$success" : "$borderColor"}
                       >
                         <Text
                           fontSize="$1"
-                          color={isActive ? "$green10" : "$gray10"}
+                          color={isActive ? "$success" : "$colorMuted"}
                           fontFamily="$body"
                           fontWeight="600"
                         >

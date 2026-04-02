@@ -91,13 +91,13 @@ export default function BusinessDetailScreen() {
             paddingHorizontal="$3"
             paddingVertical="$2"
             borderRadius="$10"
-            backgroundColor={isActive ? "$green3" : "$gray3"}
+            backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"}
             borderWidth={1}
-            borderColor={isActive ? "$green6" : "$gray6"}
+            borderColor={isActive ? "$success" : "$borderColor"}
           >
             <Text
               fontSize="$2"
-              color={isActive ? "$green10" : "$gray10"}
+              color={isActive ? "$success" : "$colorMuted"}
               fontFamily="$body"
               fontWeight="600"
             >
@@ -111,7 +111,7 @@ export default function BusinessDetailScreen() {
           <Card flex={1} padding="$3" bordered>
             <YStack gap="$1" alignItems="center">
               <XStack gap="$1" alignItems="center">
-                <Star size={14} color="$yellow9" />
+                <Star size={14} color="$star" />
                 <Text fontSize="$4" fontWeight="700" fontFamily="$heading">
                   {business.rating?.toFixed(1) ?? "5.0"}
                 </Text>
@@ -201,8 +201,8 @@ export default function BusinessDetailScreen() {
 
             {isDefault && (
               <XStack gap="$3" alignItems="center">
-                <Building size={18} color="$blue9" />
-                <Text fontSize="$3" color="$blue10" fontFamily="$body" fontWeight="500">
+                <Building size={18} color="$info" />
+                <Text fontSize="$3" color="$info" fontFamily="$body" fontWeight="500">
                   This is your default business
                 </Text>
               </XStack>

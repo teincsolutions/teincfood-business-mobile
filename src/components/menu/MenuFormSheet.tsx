@@ -387,6 +387,7 @@ export function MenuFormSheet({
                 {/* Save button */}
                 <Button
                   variant="primary"
+                  width="100%"
                   onPress={onSave}
                   disabled={!isFormValid}
                   opacity={isFormValid ? 1 : 0.5}

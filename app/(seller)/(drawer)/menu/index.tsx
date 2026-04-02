@@ -193,8 +193,8 @@ export default function SellerMenu() {
           headerRight: () => (
             <Button
               variant="primary"
-              height="$10"
-              width="auto"
+              height="$8"
+              $lg={{height: "$8"}}
               paddingHorizontal="$4"
               marginBottom="$2"
               onPress={openAdd}
