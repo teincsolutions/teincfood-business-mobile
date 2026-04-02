@@ -124,6 +124,11 @@ function AppShell() {
                 <Stack.Screen name="(rider)" />
               </Stack.Protected>
 
+              {/* Fleet Manager routes - protected for fleet managers only */}
+              <Stack.Protected guard={isAuthenticated && user?.role === 'fleet_manager'}>
+                <Stack.Screen name="(fleet)" />
+              </Stack.Protected>
+
               {/* Shared routes - protected for authenticated users */}
               <Stack.Protected guard={isAuthenticated}>
                 <Stack.Screen name="(shared)" />

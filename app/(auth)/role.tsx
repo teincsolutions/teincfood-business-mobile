@@ -4,13 +4,13 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
-import { Store, Truck, ChevronRight } from "@tamagui/lucide-icons";
+import { Store, Truck, Users, ChevronRight } from "@tamagui/lucide-icons";
 
 export default function RoleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const [selectedRole, setSelectedRole] = useState<"seller" | "rider" | null>(
+  const [selectedRole, setSelectedRole] = useState<"seller" | "rider" | "fleet_manager" | null>(
     null,
   );
 
@@ -87,10 +87,10 @@ export default function RoleScreen() {
                 />
               </YStack>
               <YStack flex={1} gap="$1">
-                <Text fontSize="$6" fontWeight="bold">
+                <Text fontSize="$6" fontWeight="bold" fontFamily="$body">
                   I'm a Seller
                 </Text>
-                <Text fontSize="$3" color="$colorMuted">
+                <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
                   Restaurant or business owner managing orders and menu
                 </Text>
               </YStack>
@@ -136,6 +136,45 @@ export default function RoleScreen() {
               <ChevronRight size={20} color="$colorMuted" />
             </XStack>
           </Card>
+
+          {/* Fleet Manager Card */}
+          <Card
+            bordered
+            padding="$5"
+            pressStyle={{ scale: 0.98, opacity: 0.9 }}
+            onPress={() => setSelectedRole("fleet_manager")}
+            backgroundColor={
+              selectedRole === "fleet_manager" ? "$primaryLight" : "$background"
+            }
+            borderColor={selectedRole === "fleet_manager" ? "$primary" : "$borderColor"}
+          >
+            <XStack gap="$4" alignItems="center">
+              <YStack
+                width={60}
+                height={60}
+                backgroundColor={
+                  selectedRole === "fleet_manager" ? "$primary" : "$gray5"
+                }
+                borderRadius="$4"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Users
+                  size={28}
+                  color={selectedRole === "fleet_manager" ? "white" : "$colorMuted"}
+                />
+              </YStack>
+              <YStack flex={1} gap="$1">
+                <Text fontSize="$6" fontWeight="bold">
+                  I'm a Fleet Manager
+                </Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Manage multiple riders and vehicles for your fleet
+                </Text>
+              </YStack>
+              <ChevronRight size={20} color="$colorMuted" />
+            </XStack>
+          </Card>
         </YStack>
 
         <YStack mt="auto" gap="$3">
@@ -154,6 +193,21 @@ export default function RoleScreen() {
             opacity={selectedRole ? 1 : 0.5}
           >
             CREATE ACCOUNT
+          </Button>
+          <Button
+            variant="ghost"
+            height={40}
+            onPress={() => router.push({ pathname: "/(auth)/role" })}
+          >
+            <Text
+              fontSize="$3"
+              color="$primary"
+              fontWeight="600"
+              fontFamily="$body"
+            >
+              Signing up as {selectedRole === "seller" ? "Seller" : selectedRole === "rider" ? "Rider" : "Fleet Manager"} ·
+              Switch Role
+            </Text>
           </Button>
         </YStack>
       </YStack>

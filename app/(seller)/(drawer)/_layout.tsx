@@ -25,6 +25,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Building,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -70,7 +71,7 @@ function CustomDrawerContent(props: any) {
           </Avatar>
           <YStack flex={1}>
             <Text color="white" fontWeight="bold" fontSize="$5">
-              {user?.businessName || user?.fullName || "Seller"}
+              {user?.fullName || "Seller"}
             </Text>
             <Text color="white" opacity={0.8} fontSize="$3">
               {user?.email || "seller@example.com"}
@@ -153,6 +154,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Menu
+            </Text>
+          </Button>
+
+          {/* Businesses */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/businesses")}
+            icon={<Building size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Businesses
             </Text>
           </Button>
 
