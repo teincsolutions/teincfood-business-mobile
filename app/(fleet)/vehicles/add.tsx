@@ -12,10 +12,11 @@ import {
   Form,
   Label,
   ScrollView,
+  Input as TamaguiInput,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { BackButton, Button } from "@/components/ui";
+import { BackButton, Button, FormInput } from "@/components/ui";
 import { validation } from "@/utils/validation";
 import { useFleetStore } from "@/stores/fleet.store";
 import { Car, Hash, Palette, Calendar } from "@tamagui/lucide-icons";

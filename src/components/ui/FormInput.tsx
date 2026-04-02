@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { forwardRef, useState, useEffect } from 'react';
+import { forwardRef, useState, useEffect, ReactNode } from 'react';
 import { Input as TamaguiInput, YStack, XStack, Text, styled, GetProps, Label } from 'tamagui';
 import { Eye, EyeOff } from '@tamagui/lucide-icons';
 import { Pressable } from 'react-native';
@@ -26,6 +26,7 @@ export type FormInputProps = {
   label?: string;
   error?: string;
   isPassword?: boolean;
+  icon?: ReactNode;
   placeholder?: string;
   value?: string;
   onChangeText?: (text: string) => void;
@@ -49,6 +50,7 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
     label, 
     error, 
     isPassword, 
+    icon,
     placeholder,
     value,
     onChangeText,
@@ -87,11 +89,17 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
         )}
         
         <XStack w="100%" items="center">
+          {icon && (
+            <YStack position="absolute" left="$3" zIndex={1}>
+              {icon}
+            </YStack>
+          )}
           <BaseInput
             ref={ref}
             id={name || label?.toLowerCase().replace(/\s+/g, '-')}
             flex={1}
             secureTextEntry={secure}
+            paddingLeft={icon ? '$10' : '$4'}
             paddingRight={isPassword ? '$10' : '$4'}
             placeholder={placeholder}
             value={value}

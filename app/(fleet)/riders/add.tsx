@@ -125,6 +125,7 @@ export default function AddRiderScreen() {
         backgroundColor="$background"
         contentContainerStyle={{
           paddingBottom: Math.max(insets.bottom + 20, 24),
+          paddingTop: Math.max(insets.top + 8, 24),
         }}
       >
         <YStack padding="$4" gap="$4" $gtSm={{ padding: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
@@ -290,6 +291,7 @@ export default function AddRiderScreen() {
 
               <Button
                 variant="outlined"
+                width="100%"
                 size="$5"
                 onPress={() => navigation.canGoBack() ? router.back() : router.replace("/(fleet)/riders")}
                 disabled={isLoading}

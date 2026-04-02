@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { Image } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
@@ -126,7 +127,7 @@ export default function RoleScreen() {
                     width: 28,
                     height: 28,
                     tintColor:
-                      selectedRole === "rider" ? "white" : "$colorMuted",
+                      selectedRole === "rider" ? "white" : "#9CA3AF" /* $colorMuted */,
                   }}
                 />
               </YStack>
