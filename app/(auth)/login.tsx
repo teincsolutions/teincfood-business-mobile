@@ -94,7 +94,6 @@ export default function LoginScreen() {
       router.replace("/(rider)/");
     } else if (user?.role === "fleet_manager") {
       router.replace("/(fleet)/");
-      router.replace("/(auth)/onboarding");
     }
   };
 

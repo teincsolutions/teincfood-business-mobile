@@ -62,6 +62,7 @@ export default function RiderDeliveryDetails() {
 
   const handleNavigateToPickup = () => {
     if (!delivery) return;
+    
     const locationData = {
       name: delivery.pickup.name,
       address: delivery.pickup.address,
