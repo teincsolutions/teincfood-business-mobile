@@ -14,6 +14,8 @@ const StyledButton = styled(TamaguiButton, {
   alignItems: 'center',
   height: 50, // Mockups use very tall/prominent buttons
   width: 'auto',
+  maxW: 420, // Limit max width for large screens
+  self: 'center',
   pressStyle: {
     opacity: 0.8,
   },

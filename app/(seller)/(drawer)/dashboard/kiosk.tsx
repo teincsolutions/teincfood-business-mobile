@@ -13,7 +13,7 @@ import {
 } from 'tamagui';
 import { Badge } from '@/components/ui/Badge';
 import { AppAlertDialog } from '@/components/ui/AlertDialog';
-import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard } from '@/components/kiosk';
+import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard, RiderSelectionSheet } from '@/components/kiosk';
 import {
   Clock,
   CheckCircle,
@@ -567,119 +567,36 @@ export default function KioskMode() {
           </Card>
         </XStack>
 
-        {/* Exit Kiosk Mode */}
-        <YStack padding="$4" paddingBottom="$8">
-          <Button variant="outlined" onPress={() => router.back()}>
-            <XStack gap="$2" alignItems="center">
-              <LogOut size={18} />
-              <Text fontFamily="$body" fontWeight="700" color="$color">Exit Kiosk Mode</Text>
-            </XStack>
-          </Button>
-        </YStack>
       </ScrollView>
 
-      {/* Rider Selection Sheet */}
-      <Modal
-        visible={showRiderSheet}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowRiderSheet(false)}
+      {/* Footer - Exit Kiosk Mode */}
+      <XStack
+        padding="$4"
+        paddingBottom="$8"
+        backgroundColor="$background"
+        borderTopWidth={1}
+        borderTopColor="$borderColor"
+        justifyContent="center"
       >
-        <YStack flex={1} justifyContent="flex-end" backgroundColor="rgba(0,0,0,0.4)">
-          <YStack
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            padding="$5"
-            maxHeight="70%"
-          >
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
-              <Text fontSize="$6" fontWeight="bold">Select a Rider</Text>
-              <Button
-                width="$8"
-                height="$8"
-                $lg={{ width:'$12', height: "$12" }}
-                variant='ghost'
-                rounded="$full"
-                backgroundColor="$backgroundSoft"
-                onPress={() => setShowRiderSheet(false)}
-                icon={<X size={isTablet ? 24 : 18} />}
-              />
-            </XStack>
+        <Button
+          flex={1}
+          variant="outlined"
+          onPress={() => router.back()}
+        >
+          <XStack gap="$2" alignItems="center">
+            <LogOut size={18} />
+            <Text fontFamily="$body" fontWeight="700" color="$color">Exit Kiosk Mode</Text>
+          </XStack>
+        </Button>
+      </XStack>
 
-            <FlatList
-              data={riders ?? []}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item: rider }) => (
-                <Card
-                  padding="$4"
-                  marginBottom="$3"
-                  bordered
-                  backgroundColor="$backgroundSoft"
-                  borderColor="$borderColor"
-                  pressStyle={{ opacity: 0.7 }}
-                  onPress={() => handleAssignRider(rider.id)}
-                >
-                  <XStack gap="$3" alignItems="center">
-                    {/* Avatar */}
-                    <YStack
-                      width={48}
-                      height={48}
-                      borderRadius="$full"
-                      backgroundColor="$primary"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Text color="white" fontSize="$5" fontWeight="bold">
-                        {rider.name.charAt(0)}
-                      </Text>
-                    </YStack>
-
-                    {/* Rider Info */}
-                    <YStack flex={1} gap="$1">
-                      <XStack alignItems="center" gap="$2">
-                        <Text fontSize="$4" fontWeight="bold">{rider.name}</Text>
-                        <XStack alignItems="center" gap="$0.5">
-                          <Star size={12} color="$color.starOrange" />
-                          <Text fontSize="$2" color="$colorMuted">{rider.rating}</Text>
-                        </XStack>
-                      </XStack>
-
-                      <XStack alignItems="center" gap="$2">
-                        {getVehicleIcon(rider.vehicleType)}
-                        <Text fontSize="$3" color="$colorSecondary">
-                          {rider.vehicleType === 'motorcycle' ? 'Motorcycle' : rider.vehicleType === 'car' ? 'Car' : 'Bicycle'}
-                          {rider.plateNumber ? ` • ${rider.plateNumber}` : ''}
-                        </Text>
-                      </XStack>
-
-                      <XStack alignItems="center" gap="$1">
-                        <Navigation size={12} color="$success" />
-                        <Text fontSize="$2" color="$success" fontWeight="600">
-                          {rider.distanceKm < 1 ? `${(rider.distanceKm * 1000).toFixed(0)}m away` : `${rider.distanceKm.toFixed(1)}km away`}
-                        </Text>
-                      </XStack>
-                    </YStack>
-
-                    {/* Phone */}
-                    <Button
-                      size="$3"
-                      circular
-                      backgroundColor="$backgroundSoft"
-                      icon={<Phone size={16} color="$colorMuted" />}
-                    />
-                  </XStack>
-                </Card>
-              )}
-              ListEmptyComponent={
-                <YStack padding="$6" alignItems="center">
-                  <Text color="$colorMuted">No riders available</Text>
-                </YStack>
-              }
-            />
-          </YStack>
-        </YStack>
-      </Modal>
+      {/* Rider Selection Sheet */}
+      <RiderSelectionSheet
+        visible={showRiderSheet}
+        onClose={() => setShowRiderSheet(false)}
+        riders={riders ?? []}
+        onSelectRider={handleAssignRider}
+      />
 
       {/* Alert Dialog */}
       <AppAlertDialog
