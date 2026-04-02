@@ -22,7 +22,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "@tamagui/lucide-icons";
-import { Button, FormInput } from "@/components/ui";
+import { BackButton, Button, FormInput } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type FormErrors = {
@@ -118,15 +118,7 @@ export default function DeliverySettings() {
           borderBottomColor="$borderColor"
         >
           <XStack gap="$3" alignItems="center">
-            <Button
-              variant="outline"
-              width={44}
-              height={44}
-              borderRadius={22}
-              padding={0}
-              onPress={() => router.back()}
-              icon={<ArrowLeft size={20} />}
-            />
+           <BackButton />
             <Text fontSize="$6" fontWeight="bold">
               Delivery Settings
             </Text>

@@ -10,7 +10,7 @@ import {
   Separator,
 } from 'tamagui';
 import { ArrowLeft, Save, Clock, CheckCircle, AlertCircle, X } from '@tamagui/lucide-icons';
-import { Button } from '@/components/ui';
+import { BackButton, Button } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
@@ -109,15 +109,7 @@ export default function OperatingHoursSettings() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            variant="outline"
-            width={44}
-            height={44}
-            borderRadius={22}
-            paddingHorizontal={0}
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} />}
-          />
+          <BackButton />
           <Text fontSize="$6" fontWeight="bold">Operating Hours</Text>
         </XStack>
         <Button

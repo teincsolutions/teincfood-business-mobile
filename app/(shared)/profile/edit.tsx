@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
-import { FormInput, Button } from "@/components/ui";
+import { FormInput, Button, BackButton } from "@/components/ui";
 import {
   ArrowLeft,
   Save,
@@ -68,14 +68,7 @@ export default function EditProfile() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            variant="outline"
-            width={44}
-            height={44}
-            borderRadius={22}
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} />}
-          />
+          <BackButton />
           <Text fontSize="$6" fontWeight="bold">
             Edit Profile
           </Text>

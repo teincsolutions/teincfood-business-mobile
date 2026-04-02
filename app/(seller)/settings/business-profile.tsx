@@ -21,7 +21,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "@tamagui/lucide-icons";
-import { Button, FormInput } from "@/components/ui";
+import { BackButton, Button, FormInput } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FormTextArea } from "@/components/ui/FormTextArea";
@@ -146,14 +146,7 @@ export default function BusinessProfileSettings() {
           borderBottomColor="$borderColor"
         >
           <XStack gap="$3" alignItems="center">
-            <Button
-              variant="outline"
-              width={44}
-              height={44}
-              circular
-              onPress={() => router.back()}
-              icon={<ArrowLeft size={20} />}
-            />
+            <BackButton />
             <Text fontSize="$6" fontWeight="bold">
               Business Profile
             </Text>

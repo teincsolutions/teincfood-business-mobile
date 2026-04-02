@@ -1,27 +1,7 @@
 // @ts-nocheck
+import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useNavigation, useRouter } from "expo-router";
 import { Button, styled } from "tamagui";
-import { ChevronLeft } from "@tamagui/lucide-icons";
-
-const CircularButton = styled(Button, {
-  width: 44,
-  height: 44,
-  borderRadius: 22,
-  backgroundColor: "$background",
-  padding: 0,
-  justifyContent: "center",
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: "$borderColor",
-  shadowColor: "$shadowColor",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.05,
-  shadowRadius: 6,
-
-  pressStyle: {
-    backgroundColor: "$backgroundSoft",
-  },
-});
 
 interface BackButtonProps {
   onPress?: () => void;
@@ -46,9 +26,13 @@ export function BackButton({ onPress }: BackButtonProps) {
   };
 
   return (
-    <CircularButton
+    <Button
+      width={40}
+      height={40}
+      circular
+      backgroundColor="$backgroundSoft"
       onPress={handlePress}
-      icon={<ChevronLeft size={24} color="$color" />}
+      icon={<ArrowLeft size={20} color="$color" />}
     />
   );
 }
