@@ -154,8 +154,8 @@ export default function BusinessProfileSettings() {
           <Form.Trigger asChild>
             <Button
               variant="primary"
-              width="auto"
-              height={40}
+              height="$10"
+              $lg={{ height: "$10" }}
               paddingHorizontal="$4"
               loading={isSaving}
               icon={<Save size={18} color="white" />}
@@ -299,7 +299,7 @@ export default function BusinessProfileSettings() {
 
             {/* Save Button */}
             <Form.Trigger asChild>
-              <Button variant="primary" loading={isSaving}>
+              <Button variant="primary" width="100%" loading={isSaving}>
                 Save Changes
               </Button>
             </Form.Trigger>
