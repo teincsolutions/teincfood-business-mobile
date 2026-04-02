@@ -2,7 +2,9 @@
 
 ## Overview
 
-**TeincFoodBusiness** is a companion app to TeincFoods, designed for **Sellers** (restaurant/business owners) and **Riders** (delivery agents). It shares the same tech stack and codebase patterns but serves a different user base.
+**TeincFoodBusiness** is a companion app to TeincFoods, designed for **Sellers** (restaurant/business owners), **Riders** (delivery agents), and **Fleet Managers** (companies managing multiple riders). It shares the same tech stack and codebase patterns but serves a different user base.
+
+**Important**: This app does NOT support buyer accounts. It is solely for business operations.
 
 ---
 
@@ -21,13 +23,110 @@
 
 ---
 
+## Data Model Architecture
+
+### User (Account)
+```typescript
+export interface User {
+  id: string;
+  username?: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  avatarUrl?: string;
+  role: 'seller' | 'rider' | 'fleet_manager';
+  // Rider-specific fields
+  vehicleType?: 'bicycle' | 'motorcycle' | 'car';
+  vehiclePlateNumber?: string;
+  isOnline?: boolean;
+  bio?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Business (for Sellers)
+```typescript
+export interface Business {
+  id: string;
+  code: string;                  // Human-readable: "TEINC-ACC-001"
+  ownerId: string;               // Links to User.id
+  name: string;                  // "Teinc Foods - Accra Mall"
+  type: 'restaurant' | 'cafe' | 'bakery' | 'food_truck' | 'cloud_kitchen';
+  logoUrl?: string;
+  coverImageUrl?: string;
+  description?: string;
+  address: BusinessAddress;
+  phone: string;
+  email?: string;
+  operatingHours: OperatingHours[];
+  deliverySettings: DeliverySettings;
+  paymentSettings: PaymentSettings;
+  status: 'active' | 'inactive' | 'pending_verification' | 'suspended';
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Fleet Manager
+```typescript
+export interface FleetManager {
+  id: string;
+  code: string;                  // "FLEET-SD-001"
+  userId: string;                // Links to User.id
+  companyName: string;           // "Speedy Deliveries Ltd"
+  licenseNumber?: string;
+  totalVehicles: number;
+  activeRiders: number;
+  status: 'active' | 'suspended';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FleetVehicle {
+  id: string;
+  fleetId: string;
+  vehicleType: 'motorcycle' | 'car' | 'bicycle' | 'van';
+  plateNumber: string;
+  model?: string;
+  color?: string;
+  isActive: boolean;
+  assignedRiderId?: string;
+  createdAt: string;
+}
+```
+
+---
+
+## Code Generation Strategy
+
+### Business Code
+```
+Format: {PREFIX}-{CITY}-{SEQ}
+Examples:
+  - TEINC-ACC-001  (Teinc Foods, Accra, Branch 1)
+  - ROS-AMA-002    (Rose Garden, Kumasi, Branch 2)
+  - SPICE-ACC-001  (Spice Haven, Accra, Branch 1)
+```
+
+### Fleet Code
+```
+Format: FLEET-{INITIALS}-{SEQ}
+Examples:
+  - FLEET-SD-001   (Speedy Deliveries)
+  - FLEET-KD-002   (Kwame Deliveries)
+```
+
+---
+
 ## App Architecture
 
 ```
 app/
 ├── (auth)/                    # Shared auth flow
 │   ├── splash.tsx             # Splash screen
-│   ├── onboarding.tsx         # Role selection (Seller or Rider)
+│   ├── onboarding.tsx         # Role selection (Seller, Rider, Fleet Manager)
 │   ├── login.tsx              # Login
 │   ├── signup.tsx             # Register (with role selection)
 │   ├── verification.tsx       # OTP verification
@@ -35,7 +134,8 @@ app/
 │
 ├── (seller)/                  # Seller-specific screens (Drawer Navigation)
 │   ├── _layout.tsx            # Drawer layout with side menu
-│   ├── index.tsx              # Redirect to dashboard
+│   ├── index.tsx              # Redirect to dashboard or select-business
+│   ├── select-business.tsx    # Business selection screen (NEW)
 │   ├── dashboard/
 │   │   ├── index.tsx          # Dashboard overview
 │   │   ├── live-orders.tsx    # Real-time order feed
@@ -52,6 +152,10 @@ app/
 │   │   ├── edit/[id].tsx      # Edit item
 │   │   ├── categories.tsx     # Manage categories
 │   │   └── availability.tsx   # Toggle item availability
+│   ├── businesses/
+│   │   ├── index.tsx          # Manage businesses list (NEW)
+│   │   ├── add.tsx            # Add new business (NEW)
+│   │   └── [id].tsx           # Edit business (NEW)
 │   ├── analytics/
 │   │   ├── index.tsx          # Analytics overview
 │   │   ├── revenue.tsx        # Revenue reports
@@ -59,7 +163,6 @@ app/
 │   │   └── ratings.tsx        # Customer ratings
 │   ├── settings/
 │   │   ├── index.tsx          # Business settings
-│   │   ├── business-profile.tsx  # Business name, logo, description
 │   │   ├── operating-hours.tsx   # Set business hours
 │   │   ├── delivery-settings.tsx # Delivery radius, fees
 │   │   ├── payment-settings.tsx  # Bank account, payout schedule
@@ -97,6 +200,27 @@ app/
 │       ├── documents.tsx      # Upload ID, license, insurance
 │       └── help.tsx           # Help & support
 │
+├── (fleet)/                   # Fleet Manager screens (Drawer Navigation) (NEW)
+│   ├── _layout.tsx            # Drawer layout with side menu
+│   ├── index.tsx              # Redirect to dashboard
+│   ├── dashboard/
+│   │   └── index.tsx          # Fleet overview (riders, vehicles, earnings)
+│   ├── riders/
+│   │   ├── index.tsx          # List all riders
+│   │   ├── add.tsx            # Add/invite rider
+│   │   └── [id].tsx           # Rider details & performance
+│   ├── vehicles/
+│   │   ├── index.tsx          # List all vehicles
+│   │   ├── add.tsx            # Add new vehicle
+│   │   └── [id].tsx           # Edit vehicle & assign rider
+│   ├── earnings/
+│   │   ├── index.tsx          # Fleet earnings overview
+│   │   └── breakdown.tsx      # Per-rider breakdown
+│   └── settings/
+│       ├── index.tsx          # Fleet settings
+│       ├── commission.tsx     # Commission rates
+│       └── profile.tsx        # Fleet profile
+│
 ├── (shared)/                  # Shared screens
 │   ├── notifications/
 │   │   ├── index.tsx          # Notifications list
@@ -121,25 +245,26 @@ app/
 #### 1.1 Role Selection (Onboarding)
 - **Screen**: `onboarding.tsx`
 - **Features**:
-  - Two role cards: "I'm a Seller" and "I'm a Rider"
+  - Three role cards: "I'm a Seller", "I'm a Rider", "I'm a Fleet Manager"
   - Each card shows benefits and requirements
   - Selected role determines registration form fields
   - Role stored in auth state
 
 #### 1.2 Seller Registration
 - **Required Fields**:
-  - Business name
-  - Business type (Restaurant, Cafe, Bakery, etc.)
-  - Business address (with map picker)
-  - Business phone number
   - Owner full name
   - Owner email
   - Owner password
-  - Business license number (optional)
+  - Owner phone number
+  - Business name (first business)
+  - Business type (Restaurant, Cafe, Bakery, etc.)
+  - Business address (with map picker)
+  - Business phone number
   - Operating hours (default: 9 AM - 10 PM)
-- **Verification**:
-  - Email OTP verification
-  - Business license verification (manual review)
+- **Post-Registration**:
+  - Business code auto-generated (e.g., "TEINC-ACC-001")
+  - Business set as default
+  - Redirect to dashboard
 
 #### 1.3 Rider Registration
 - **Required Fields**:
@@ -156,19 +281,46 @@ app/
   - Document upload (ID, driver's license, vehicle registration)
   - Background check (manual review)
 
-#### 1.4 Login
+#### 1.4 Fleet Manager Registration
+- **Required Fields**:
+  - Company name
+  - Contact person full name
+  - Contact email
+  - Contact phone
+  - Password
+  - Business license number (optional)
+- **Post-Registration**:
+  - Fleet code auto-generated (e.g., "FLEET-SD-001")
+  - Redirect to fleet dashboard
+  - Can start adding vehicles and riders
+
+#### 1.5 Login
 - **Features**:
   - Email/password login
   - Apple Sign-In (iOS)
   - Google Sign-In
   - "Remember me" option
   - Biometric login (Face ID / Fingerprint)
+- **Post-Login**:
+  - Detect user role
+  - If seller: Fetch businesses, show selection if multiple
+  - If rider: Go to rider dashboard
+  - If fleet manager: Go to fleet dashboard
 
 ---
 
 ### 2. Seller Features
 
-#### 2.1 Dashboard
+#### 2.1 Business Selection
+- **Screen**: `select-business.tsx`
+- **Features**:
+  - List all businesses owned by seller
+  - Each card shows: name, code, address, status, pending orders
+  - "Add New Business" button
+  - Tap to select and enter dashboard
+  - Remember last selected business
+
+#### 2.2 Dashboard
 - **Screen**: `dashboard/index.tsx`
 - **Metrics**:
   - Today's orders (count)
@@ -180,42 +332,26 @@ app/
   - View pending orders
   - Toggle store open/closed
   - View live order feed
-  - **Enter Kiosk Mode** (new)
+  - Enter Kiosk Mode
 - **Live Order Feed**:
   - Real-time list of incoming orders
   - Sound/vibration alert for new orders
   - Quick accept/reject buttons
 
-#### 2.2 Kiosk Mode (POS-Style)
+#### 2.3 Kiosk Mode (POS-Style)
 - **Screen**: `dashboard/kiosk.tsx`
 - **Purpose**: Fast, touch-friendly interface for handling orders in a busy restaurant environment
 - **Features**:
-  - **Full-screen mode** with large touch targets
-  - **Order Queue Panel**:
-    - Large cards showing pending orders
-    - One-tap accept/reject buttons
-    - Sound alerts for new orders
-    - Auto-refresh every 5 seconds
-  - **Active Orders Panel**:
-    - Orders being prepared
-    - One-tap "Mark Ready" button
-    - Estimated time display
-  - **Quick Order Entry**:
-    - Fast menu item selection
-    - Custom item entry
-    - Quantity adjustments
-  - **Payment Status**:
-    - Paid/Unpaid indicators
-    - Payment method display
-  - **Keyboard Shortcuts** (for tablet/desktop):
-    - Enter: Accept order
-    - Escape: Reject order
-    - Space: Mark ready
-  - **Dark/Light Mode** for different lighting conditions
-  - **Offline Support**: Queue orders when internet is down
-- **Access**: Toggle from dashboard or dedicated button in drawer menu
+  - Full-screen mode with large touch targets
+  - Order Queue Panel with accept/reject buttons
+  - Active Orders Panel with "Mark Ready" button
+  - Quick Order Entry for manual orders
+  - Payment status indicators
+  - Keyboard shortcuts for tablet/desktop
+  - Dark/Light Mode
+  - Offline Support
 
-#### 2.3 Order Management
+#### 2.4 Order Management
 - **Screen**: `orders/index.tsx`
 - **Order States**:
   - `pending` → Seller accepts/rejects
@@ -224,65 +360,52 @@ app/
   - `ready_for_pickup` → Rider picks up
   - `on_the_way` → Rider delivers
   - `delivered` → Completed
-  - `cancelled` → Cancelled by seller/buyer/system
+  - `cancelled` → Cancelled
 - **Actions**:
   - Accept order (with estimated prep time)
   - Reject order (with reason)
   - Mark as "Preparing"
   - Mark as "Ready for Pickup"
   - Cancel order (with reason and refund)
-  - View order details (items, buyer info, delivery address)
   - Contact buyer (chat/call)
   - Contact rider (chat/call)
-- **Filters**:
-  - All, Pending, Active, Completed, Cancelled
-  - Date range picker
-  - Search by order number
 
-#### 2.4 Menu Management
+#### 2.5 Menu Management
 - **Screen**: `menu/index.tsx`
 - **Features**:
   - List all menu items with images, prices, availability
-  - Add new item (name, description, price, image, category, options)
-  - Edit existing item
-  - Delete item (with confirmation)
-  - Toggle item availability (in stock / out of stock)
-  - Bulk actions (enable/disable multiple items)
+  - Add/edit/delete items
+  - Toggle item availability
+  - Bulk actions
   - Drag-and-drop reorder
-- **Item Options**:
-  - Size options (Small, Medium, Large) with price modifiers
-  - Add-ons (Extra cheese, Extra sauce, etc.) with prices
-  - Dietary tags (Vegetarian, Vegan, Gluten-free, Halal)
-- **Categories**:
-  - Create/edit/delete categories
-  - Reorder categories
-  - Assign items to categories
+  - Categories management
 
-#### 2.5 Analytics
+#### 2.6 Business Management
+- **Screen**: `businesses/index.tsx`
+- **Features**:
+  - List all owned businesses
+  - Add new business
+  - Edit business details
+  - View business code
+  - Set default business
+  - Deactivate business
+
+#### 2.7 Analytics
 - **Screen**: `analytics/index.tsx`
 - **Metrics**:
   - Revenue (daily, weekly, monthly, yearly)
-  - Order count (daily, weekly, monthly)
+  - Order count
   - Average order value
   - Top-selling items
   - Peak hours
   - Customer ratings breakdown
-- **Charts**:
-  - Revenue line chart
-  - Orders bar chart
-  - Ratings pie chart
-- **Export**:
-  - Export to PDF
-  - Export to CSV
 
-#### 2.6 Business Settings
+#### 2.8 Business Settings
 - **Screen**: `settings/index.tsx`
 - **Settings**:
-  - Business profile (name, logo, description, cover image)
   - Operating hours (per-day schedule)
   - Delivery settings (radius, minimum order, delivery fee)
   - Payment settings (bank account, payout schedule)
-  - Tax settings (tax rate, tax ID)
   - Notification preferences
 
 ---
@@ -296,13 +419,8 @@ app/
   - Current location on map
   - Today's earnings summary
   - Today's delivery count
-  - Active delivery status (if any)
-  - Available delivery requests (nearby)
-- **Map View**:
-  - Shows rider's current location
-  - Shows pickup/dropoff points for active delivery
-  - Shows available delivery requests as pins
-  - Navigation integration (Google Maps / Apple Maps)
+  - Active delivery status
+  - Available delivery requests
 
 #### 3.2 Delivery Management
 - **Screen**: `deliveries/index.tsx`
@@ -313,20 +431,6 @@ app/
   - `delivering` → Rider heading to dropoff
   - `delivered` → Completed
   - `cancelled` → Cancelled
-- **Actions**:
-  - Accept delivery request
-  - Decline delivery request
-  - Mark as "Arrived at Pickup"
-  - Mark as "Picked Up" (with photo confirmation)
-  - Mark as "Arrived at Dropoff"
-  - Mark as "Delivered" (with photo/signature confirmation)
-  - Navigate to pickup/dropoff (external maps app)
-  - Contact buyer (chat/call)
-  - Contact seller (chat/call)
-  - Report issue (wrong address, buyer not available, etc.)
-- **Filters**:
-  - Available, Active, Completed, Cancelled
-  - Date range picker
 
 #### 3.3 Earnings
 - **Screen**: `earnings/index.tsx`
@@ -336,101 +440,110 @@ app/
   - This month's earnings
   - Total earnings
   - Pending payouts
-- **Breakdown**:
-  - Base delivery fee per order
-  - Tips received
-  - Bonuses (surge, peak hours, streak)
-  - Deductions (cancellations, penalties)
-- **Payout**:
-  - Payout history
-  - Payout schedule (weekly, bi-weekly)
-  - Bank account details
-  - Request early payout
 
 #### 3.4 Rider Settings
 - **Screen**: `settings/index.tsx`
 - **Settings**:
-  - Vehicle information (type, plate, color, model)
+  - Vehicle information
   - Preferred delivery zones
   - Maximum delivery distance
   - Notification preferences
-  - Sound/vibration alerts
-  - Auto-accept deliveries (toggle)
 
 #### 3.5 Documents
 - **Screen**: `profile/documents.tsx`
 - **Documents**:
-  - National ID (photo upload)
-  - Driver's license (photo upload)
-  - Vehicle registration (photo upload)
-  - Insurance certificate (photo upload)
+  - National ID
+  - Driver's license
+  - Vehicle registration
+  - Insurance certificate
   - Profile photo
-- **Status**:
-  - Pending review
-  - Approved
-  - Rejected (with reason)
 
 ---
 
-### 4. Shared Features
+### 4. Fleet Manager Features
 
-#### 4.1 Notifications
-- **Android**: Rich notifications with @notifee/react-native
-  - New order notification (seller)
-  - New delivery request (rider)
-  - Order status updates
-  - Earnings updates
-  - Chat messages
-- **iOS**: Live Activities with expo-live-activity
-  - Active delivery tracking
-  - Order preparation status
-  - Earnings countdown
+#### 4.1 Fleet Dashboard
+- **Screen**: `dashboard/index.tsx`
+- **Metrics**:
+  - Total riders (online/offline)
+  - Today's fleet deliveries
+  - Fleet earnings summary
+  - Vehicle utilization rate
 
-#### 4.2 Chat
-- **Screen**: `chat/[id].tsx`
+#### 4.2 Rider Management
+- **Screen**: `riders/index.tsx`
 - **Features**:
-  - Real-time messaging (WebSocket)
-  - Text messages
-  - Image messages
-  - Location sharing
-  - Order reference cards
-  - Read receipts
-  - Typing indicators
+  - List all riders in fleet
+  - Invite new rider (email/phone)
+  - View rider performance
+  - Activate/deactivate rider
 
-#### 4.3 Calls
-- **Screen**: `call/[id].tsx`
+#### 4.3 Vehicle Management
+- **Screen**: `vehicles/index.tsx`
 - **Features**:
-  - Voice calls (VoIP)
-  - Call history
-  - Call recording (with consent)
-  - Mute/speaker controls
+  - List all vehicles
+  - Add new vehicle (type, plate, model, color)
+  - Assign vehicle to rider
+  - Track vehicle status
 
-#### 4.4 Profile
+#### 4.4 Fleet Earnings
+- **Screen**: `earnings/index.tsx`
 - **Features**:
-  - View/edit profile
-  - Change password
-  - Two-factor authentication
-  - Language preference
-  - Theme (Light/Dark/System)
-  - Help & support
-  - Terms of service
-  - Privacy policy
-  - Logout
-  - Delete account
+  - Fleet total earnings
+  - Per-rider breakdown
+  - Commission calculations
+  - Payout management
+
+#### 4.5 Fleet Settings
+- **Screen**: `settings/index.tsx`
+- **Settings**:
+  - Commission rates
+  - Fleet profile
+  - Notification preferences
+
+---
+
+### 5. Shared Features
+
+#### 5.1 Notifications
+- New order notification (seller)
+- New delivery request (rider)
+- Order status updates
+- Earnings updates
+- Chat messages
+
+#### 5.2 Chat
+- Real-time messaging
+- Text messages
+- Image messages
+- Location sharing
+- Order reference cards
+
+#### 5.3 Calls
+- Voice calls (VoIP)
+- Call history
+- Mute/speaker controls
+
+#### 5.4 Profile
+- View/edit profile
+- Change password
+- Two-factor authentication
+- Language preference
+- Theme (Light/Dark/System)
+- Help & support
+- Terms of service
+- Privacy policy
+- Logout
 
 ---
 
 ## Navigation Architecture
 
-### Drawer Navigation (Side Menu)
-
-Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for better scalability and easier access to all features.
-
-#### Seller Drawer Menu Items:
+### Seller Drawer Menu Items:
 1. **Dashboard** (Home icon)
    - Overview metrics
    - Quick actions
-   - **Kiosk Mode** toggle
+   - Kiosk Mode toggle
 2. **Orders** (Shopping bag icon)
    - Pending orders
    - Active orders
@@ -439,45 +552,54 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
    - Menu items
    - Categories
    - Availability
-4. **Analytics** (Chart icon)
+4. **Businesses** (Building icon) - NEW
+   - Manage businesses
+   - Add new business
+5. **Analytics** (Chart icon)
    - Revenue reports
    - Order analytics
    - Ratings
-5. **Settings** (Gear icon)
-   - Business profile
+6. **Settings** (Gear icon)
    - Operating hours
    - Delivery settings
    - Payment settings
-6. **Profile** (User icon)
+7. **Profile** (User icon)
    - View profile
    - Edit profile
    - Help & support
-7. **Notifications** (Bell icon) - Badge with count
-8. **Logout** (Log out icon)
+8. **Switch Business** (Swap icon) - NEW
+   - Quick switch between businesses
+9. **Notifications** (Bell icon) - Badge with count
+10. **Logout** (Log out icon)
 
-#### Rider Drawer Menu Items:
+### Rider Drawer Menu Items:
 1. **Home** (Home icon)
-   - Dashboard
-   - Online/offline toggle
-   - Map view
 2. **Deliveries** (Truck icon)
-   - Available deliveries
-   - Active delivery
-   - Delivery history
 3. **Earnings** (Dollar icon)
-   - Today's earnings
-   - Weekly summary
-   - Payout history
 4. **Settings** (Gear icon)
-   - Vehicle info
-   - Delivery zones
-   - Notification preferences
 5. **Profile** (User icon)
-   - View profile
-   - Documents
-   - Help & support
-6. **Notifications** (Bell icon) - Badge with count
+6. **Notifications** (Bell icon)
 7. **Logout** (Log out icon)
+
+### Fleet Manager Drawer Menu Items:
+1. **Dashboard** (Home icon)
+   - Fleet overview
+   - Key metrics
+2. **Riders** (Users icon)
+   - Manage riders
+   - Invite rider
+3. **Vehicles** (Car icon)
+   - Manage vehicles
+   - Add vehicle
+4. **Earnings** (Dollar icon)
+   - Fleet earnings
+   - Rider breakdown
+5. **Settings** (Gear icon)
+   - Commission rates
+   - Fleet profile
+6. **Profile** (User icon)
+7. **Notifications** (Bell icon)
+8. **Logout** (Log out icon)
 
 ---
 
@@ -488,8 +610,8 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
 | Store | Purpose |
 |-------|---------|
 | `auth.store.ts` | Authentication state, user data, tokens |
-| `seller.store.ts` | Seller-specific state (business info, menu, settings) |
-| `rider.store.ts` | Rider-specific state (vehicle, zones, online status) |
+| `business.store.ts` | Business list, active business (NEW) |
+| `fleet.store.ts` | Fleet data, vehicles, riders (NEW) |
 | `orders.store.ts` | Orders list, filters, selected order |
 | `deliveries.store.ts` | Deliveries list, active delivery, earnings |
 | `menu.store.ts` | Menu items, categories, editing state |
@@ -508,8 +630,8 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
 | Service | Purpose |
 |---------|---------|
 | `auth.service.ts` | Login, register, OTP, password reset |
-| `seller.service.ts` | Business CRUD, settings |
-| `rider.service.ts` | Rider CRUD, documents, availability |
+| `business.service.ts` | Business CRUD, code generation (NEW) |
+| `fleet.service.ts` | Fleet CRUD, vehicles, riders (NEW) |
 | `orders.service.ts` | Order CRUD, status updates |
 | `deliveries.service.ts` | Delivery CRUD, status updates |
 | `menu.service.ts` | Menu item CRUD, categories |
@@ -537,51 +659,14 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
   <Stack.Screen name="(rider)" />
 </Stack.Protected>
 
+<Stack.Protected guard={isAuthenticated && userRole === 'fleet_manager'}>
+  <Stack.Screen name="(fleet)" />
+</Stack.Protected>
+
 <Stack.Protected guard={isAuthenticated}>
   <Stack.Screen name="(shared)" />
 </Stack.Protected>
 ```
-
----
-
-## Implementation Phases
-
-### Phase 1: Foundation (Week 1-2)
-- [ ] Set up project structure with drawer navigation
-- [ ] Configure auth flow with role selection
-- [ ] Create shared components (Button, Input, Card, etc.)
-- [ ] Set up state management stores
-- [ ] Configure API client
-- [ ] Set up navigation with role guards
-
-### Phase 2: Seller Core (Week 3-4)
-- [ ] Seller registration flow
-- [ ] Seller dashboard with metrics
-- [ ] **Kiosk Mode** for POS-style order handling
-- [ ] Order management (accept/reject/prepare)
-- [ ] Menu management (CRUD)
-- [ ] Business settings
-
-### Phase 3: Rider Core (Week 5-6)
-- [ ] Rider registration flow with document upload
-- [ ] Rider dashboard with online/offline toggle
-- [ ] Delivery management (accept/navigate/deliver)
-- [ ] Earnings tracking
-- [ ] Map integration
-
-### Phase 4: Shared Features (Week 7-8)
-- [ ] Real-time notifications (Android + iOS)
-- [ ] Chat system
-- [ ] Voice calls
-- [ ] Analytics dashboards
-- [ ] Profile management
-
-### Phase 5: Polish & Testing (Week 9-10)
-- [ ] End-to-end testing
-- [ ] Performance optimization
-- [ ] Accessibility improvements
-- [ ] App store preparation
-- [ ] Beta testing
 
 ---
 
@@ -590,24 +675,31 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
 ### Auth
 - `POST /auth/seller/register` — Seller registration
 - `POST /auth/rider/register` — Rider registration
+- `POST /auth/fleet/register` — Fleet manager registration
 - `POST /auth/login` — Login (role-agnostic)
 - `POST /auth/verify-otp` — OTP verification
 - `POST /auth/forgot-password` — Password reset
 - `POST /auth/refresh-token` — Token refresh
 
-### Seller
-- `GET /seller/profile` — Get seller profile
-- `PUT /seller/profile` — Update seller profile
-- `GET /seller/dashboard` — Dashboard metrics
-- `PUT /seller/settings` — Update settings
-- `PUT /seller/status` — Toggle open/closed
+### Business (NEW)
+- `GET /businesses` — List user's businesses
+- `POST /businesses` — Create new business
+- `GET /businesses/:id` — Get business details
+- `PUT /businesses/:id` — Update business
+- `DELETE /businesses/:id` — Deactivate business
+- `PUT /businesses/:id/default` — Set as default business
 
-### Kiosk
-- `GET /kiosk/orders/queue` — Get order queue for kiosk
-- `PUT /kiosk/orders/:id/accept` — Accept order (kiosk)
-- `PUT /kiosk/orders/:id/reject` — Reject order (kiosk)
-- `PUT /kiosk/orders/:id/ready` — Mark order ready (kiosk)
-- `POST /kiosk/orders` — Create manual order (kiosk)
+### Fleet (NEW)
+- `GET /fleet/profile` — Get fleet profile
+- `PUT /fleet/profile` — Update fleet profile
+- `GET /fleet/riders` — List fleet riders
+- `POST /fleet/riders/invite` — Invite rider
+- `PUT /fleet/riders/:id/status` — Update rider status
+- `GET /fleet/vehicles` — List vehicles
+- `POST /fleet/vehicles` — Add vehicle
+- `PUT /fleet/vehicles/:id` — Update vehicle
+- `PUT /fleet/vehicles/:id/assign` — Assign rider to vehicle
+- `GET /fleet/earnings` — Fleet earnings
 
 ### Rider
 - `GET /rider/profile` — Get rider profile
@@ -646,53 +738,19 @@ Both seller and rider apps use **Drawer Navigation** instead of bottom tabs for 
 - `GET /seller/analytics/orders` — Order analytics
 - `GET /seller/analytics/ratings` — Ratings data
 - `GET /rider/analytics/earnings` — Earnings analytics
+- `GET /fleet/analytics/earnings` — Fleet earnings analytics
 
 ---
 
-## Key Differences from TeincFoods (Buyer App)
+## Implementation Phases
 
-| Aspect | TeincFoods (Buyer) | TeincFoodBusiness (Seller/Rider) |
-|--------|-------------------|----------------------------------|
-| Primary User | Customer | Business owner / Delivery agent |
-| Navigation | Bottom tabs | Side menu (drawer) |
-| Main Action | Browse & Order | Manage & Deliver |
-| Notifications | Order updates | New orders / Delivery requests |
-| Maps | Track delivery | Navigate to pickup/dropoff |
-| Payments | Pay for orders | Receive payouts |
-| Analytics | Order history | Revenue & performance metrics |
-| Special Features | Cart, Favorites | **Kiosk Mode (POS)** |
+### Phase 1: Foundation (Week 1-2)
+- [ ] Create Business and Fleet models
+- [ ] Update User model (remove business fields, remove buyer role)
+- [ ] Create business and fleet stores
+- [ ] Create business and fleet services
+- [ ] Update auth flow for new roles
 
----
-
-## Kiosk Mode Technical Details
-
-### UI Components
-- **Large Touch Buttons**: Minimum 48x48dp touch targets
-- **High Contrast Colors**: Easy to read in busy environments
-- **Sound Alerts**: Different sounds for new orders, accepted, ready
-- **Vibration Feedback**: Haptic response on button presses
-- **Auto-Scroll**: New orders automatically scroll into view
-
-### Performance
-- **Optimized Polling**: 5-second refresh for order queue
-- **Offline Queue**: Store orders locally when internet is down
-- **Background Sync**: Sync queued orders when connection restored
-- **Memory Management**: Efficient handling of large order lists
-
-### Hardware Support
-- **Tablet Optimized**: Landscape mode support
-- **External Display**: Support for kitchen display systems
-- **Receipt Printer**: Integration with thermal printers (future)
-- **Barcode Scanner**: Quick order lookup (future)
-
----
-
-## Notes
-
-- Reuse shared components from TeincFoods where possible
-- Use same design system (Tamagui tokens, fonts, colors)
-- Separate app bundle ID: `com.teincfoods.business`
-- Separate EAS project for builds
-- Shared backend API with role-based access control
-- Push notification channels: `seller-orders`, `rider-deliveries`, `chat`, `system`
-- **Kiosk Mode** is a premium feature for high-volume sellers
+### Phase 2: Seller Multi-Business (Week 3-4)
+- [ ] Business selection screen
+- [ ] Business management screens (

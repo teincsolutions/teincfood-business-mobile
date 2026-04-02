@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   USER_PROFILE: 'user_profile',
   HAS_SEEN_ONBOARDING: 'has_seen_onboarding',
   THEME_PREFERENCE: 'theme_preference',
+  BUSINESS_DATA: 'business_data',
+  FLEET_DATA: 'fleet_data',
 } as const;
 
 /** OTP configuration */

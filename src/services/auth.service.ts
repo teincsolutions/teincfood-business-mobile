@@ -116,7 +116,7 @@ export const authService = {
             email: googleUser.email,
             phone: '',
             username: googleUser.email?.split('@')[0] || `google_${googleUser.id}`,
-            role: 'buyer',
+            role: 'seller', // Default to seller for business app
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },

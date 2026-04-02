@@ -7,7 +7,7 @@ export const MOCK_CURRENT_USER: User = {
   email: 'vishal@teincfoods.com',
   phone: '+1 234 567 8900',
   avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop',
-  role: 'buyer',
+  role: 'seller',
   bio: 'Food lover & home cook enthusiast',
   createdAt: '2025-11-01T10:00:00Z',
   updatedAt: '2026-03-15T14:30:00Z',

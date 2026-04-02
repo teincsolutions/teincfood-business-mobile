@@ -1,3 +1,5 @@
+export type UserRole = 'seller' | 'rider' | 'fleet_manager';
+
 export interface User {
   id: string;
   username?: string;
@@ -5,14 +7,11 @@ export interface User {
   email: string;
   phone: string;
   avatarUrl?: string;
-  businessLogoUrl?: string; // For sellers
-  role: 'seller' | 'rider' | 'buyer';
-  businessName?: string; // For sellers
-  businessType?: string; // For sellers: Restaurant, Cafe, Bakery, etc.
-  businessAddress?: string; // For sellers
-  vehicleType?: 'bicycle' | 'motorcycle' | 'car'; // For riders
-  vehiclePlateNumber?: string; // For riders
-  isOnline?: boolean; // For riders - availability status
+  role: UserRole;
+  // Rider-specific fields
+  vehicleType?: 'bicycle' | 'motorcycle' | 'car';
+  vehiclePlateNumber?: string;
+  isOnline?: boolean;
   bio?: string;
   createdAt: string;
   updatedAt: string;

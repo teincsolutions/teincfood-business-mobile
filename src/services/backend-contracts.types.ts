@@ -36,7 +36,7 @@ export interface SignupRequest {
   password: string;
   fullName: string;
   phone: string;
-  role: 'seller' | 'rider';
+  role: 'seller' | 'rider' | 'fleet_manager';
 }
 
 export interface LoginRequest {
