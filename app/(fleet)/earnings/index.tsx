@@ -41,14 +41,14 @@ export default function FleetEarningsScreen() {
     }
   };
 
-  const getDeliveriesByPeriod = () => {
+  const getRidersByPeriod = () => {
     switch (selectedPeriod) {
       case "today":
-        return dashboard?.todayDeliveries || 0;
+        return riders.filter((r) => r.status === "active").length;
       case "week":
-        return dashboard?.weekDeliveries || 0;
+        return riders.length;
       case "month":
-        return dashboard?.monthDeliveries || 0;
+        return riders.length;
       default:
         return 0;
     }
@@ -128,20 +128,20 @@ export default function FleetEarningsScreen() {
             <XStack gap="$6">
               <YStack alignItems="center">
                 <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                  {getDeliveriesByPeriod()}
+                  {getRidersByPeriod()}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Deliveries
+                  Active Riders
                 </Text>
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                  {getDeliveriesByPeriod() > 0
-                    ? (getEarningsByPeriod() / getDeliveriesByPeriod()).toFixed(2)
+                  {getRidersByPeriod() > 0
+                    ? (getEarningsByPeriod() / getRidersByPeriod()).toFixed(2)
                     : "0.00"}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Avg per delivery
+                  Avg per rider
                 </Text>
               </YStack>
             </XStack>

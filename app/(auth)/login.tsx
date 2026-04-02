@@ -56,8 +56,16 @@ export default function LoginScreen() {
   const loginMutation = useEmailPasswordLoginMutation();
   const navigation = useNavigation();
   const { role } = useLocalSearchParams<{ role?: string }>();
-  const selectedRole = role === "seller" || role === "rider" ? role : "seller";
-  const roleLabel = selectedRole === "seller" ? "Seller" : "Rider";
+  const selectedRole =
+    role === "seller" || role === "rider" || role === "fleet_manager"
+      ? role
+      : "seller";
+  const roleLabel =
+    selectedRole === "seller"
+      ? "Seller"
+      : selectedRole === "rider"
+        ? "Rider"
+        : "Fleet Manager";
 
   const [method, setMethod] = useState<LoginMethod>("phone");
   const [phone, setPhone] = useState("");
@@ -84,8 +92,8 @@ export default function LoginScreen() {
       router.replace("/(seller)/");
     } else if (user?.role === "rider") {
       router.replace("/(rider)/");
-    } else {
-      // If no role set, go to onboarding to select role
+    } else if (user?.role === "fleet_manager") {
+      router.replace("/(fleet)/");
       router.replace("/(auth)/onboarding");
     }
   };
@@ -194,6 +202,10 @@ export default function LoginScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <YStack mb="$4" paddingHorizontal="$8" width="100%">
+        {router.canDismiss() && <BackButton />}
+      </YStack>
+
       <YStack flex={1} bg="$background" items="center">
         <ScrollView
           bounces={false}
@@ -205,8 +217,6 @@ export default function LoginScreen() {
           paddingTop={Math.max(insets.top, 24)}
           paddingBottom={Math.max(insets.bottom + 20, 24)}
         >
-          <YStack mb="$4">{router.canDismiss() && <BackButton />}</YStack>
-
           <YStack mb="$6" gap="$3">
             <Text
               fontSize={30}
@@ -400,7 +410,13 @@ export default function LoginScreen() {
                 backgroundColor="$backgroundStrong"
                 borderWidth={1}
                 borderColor="$borderColor"
-                icon={<Image  objectFit="contain" height={isTablet ? 24 : 20} src={require('assets/icons/icons8-google-100.png')} />}
+                icon={
+                  <Image
+                    objectFit="contain"
+                    height={isTablet ? 24 : 20}
+                    src={require("assets/icons/icons8-google-100.png")}
+                  />
+                }
                 onPress={() => handleOIDCLogin("google")}
               />
             </XStack>

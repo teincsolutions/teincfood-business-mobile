@@ -200,28 +200,6 @@ export default function RoleScreen() {
           >
             CREATE ACCOUNT
           </Button>
-          <Button
-            variant="ghost"
-            height="$12"
-            mt="$2"
-            $lg={{ height: "$12" }}
-            onPress={() => router.push({ pathname: "/(auth)/role" })}
-          >
-            <Text
-              fontSize="$5"
-              color="$primary"
-              fontWeight="600"
-              fontFamily="$body"
-            >
-              Signing up as{" "}
-              {selectedRole === "seller"
-                ? "Seller"
-                : selectedRole === "rider"
-                  ? "Rider"
-                  : "Fleet Manager"}{" "}
-              · Switch Role
-            </Text>
-          </Button>
         </YStack>
       </YStack>
     </YStack>

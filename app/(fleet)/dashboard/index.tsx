@@ -138,10 +138,10 @@ export default function FleetDashboardScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  {dashboard?.todayDeliveries || 0}
+                  {riders.length}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Today's Deliveries
+                  Total Riders
                 </Text>
               </YStack>
             </YStack>
@@ -228,14 +228,14 @@ export default function FleetDashboardScreen() {
                     )}
                   </XStack>
                 </YStack>
-                <YStack alignItems="flex-end">
-                  <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                    {rider.totalDeliveries}
-                  </Text>
-                  <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                    deliveries
-                  </Text>
-                </YStack>
+              <YStack alignItems="flex-end">
+                <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$green10">
+                  GHS {rider.totalEarnings.toFixed(2)}
+                </Text>
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  earnings
+                </Text>
+              </YStack>
               </XStack>
             </Card>
           ))}
@@ -255,11 +255,11 @@ export default function FleetDashboardScreen() {
           )}
         </YStack>
 
-        {/* Active Deliveries */}
+        {/* Fleet Performance Summary */}
         {dashboard?.activeDeliveries > 0 && (
           <YStack gap="$3">
             <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
-              Active Deliveries
+              Fleet Activity
             </Text>
             <Card padding="$4" bordered backgroundColor="$blue2">
               <XStack gap="$3" alignItems="center">
@@ -275,10 +275,10 @@ export default function FleetDashboardScreen() {
                 </YStack>
                 <YStack flex={1}>
                   <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                    {dashboard.activeDeliveries} Active Deliveries
+                    {dashboard.activeDeliveries} Active Riders
                   </Text>
                   <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                    Riders are on their way to deliver orders
+                    Riders are currently on delivery
                   </Text>
                 </YStack>
               </XStack>

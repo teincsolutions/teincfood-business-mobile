@@ -14,7 +14,10 @@ export default function SignupScreen() {
   const insets = useSafeAreaInsets();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { role } = useLocalSearchParams<{ role?: string }>();
-  const selectedRole = role === "seller" || role === "rider" ? role : "seller";
+  const selectedRole =
+    role === "seller" || role === "rider" || role === "fleet_manager"
+      ? role
+      : "seller";
   const signupMutation = useSignupMutation();
 
   const [form, setForm] = useState({
@@ -91,8 +94,12 @@ export default function SignupScreen() {
 
       if (selectedRole === "seller") {
         router.replace("/(seller)/");
-      } else {
+      } else if (selectedRole === "rider") {
         router.replace("/(rider)/");
+      } else if (selectedRole === "fleet_manager") {
+        router.replace("/(fleet)/");
+      } else {
+        router.replace("/(auth)/onboarding");
       }
     } catch (err: any) {
       setError(err?.message || "Failed to create account. Please try again.");
@@ -104,7 +111,17 @@ export default function SignupScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <YStack flex={1} bg="$background" items="center">
+      <YStack
+        paddingTop={Math.max(insets.top, 24)}
+        paddingBottom={Math.max(insets.bottom + 20, 24)}
+        flex={1}
+        bg="$background"
+        items="center"
+      >
+        <YStack mb="$4" paddingHorizontal="$8" width="100%">
+          {router.canDismiss() && <BackButton />}
+        </YStack>
+
         <ScrollView
           bounces={false}
           showsVerticalScrollIndicator={false}
@@ -113,13 +130,7 @@ export default function SignupScreen() {
           width="100%"
           maxW={"$media.sm"}
           paddingHorizontal={"$8"}
-          paddingTop={Math.max(insets.top, 24)}
-          paddingBottom={Math.max(insets.bottom + 20, 24)}
         >
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
-
           <YStack mb="$7" gap="$3">
             <Text
               fontSize={30}
@@ -192,7 +203,12 @@ export default function SignupScreen() {
           </YStack>
 
           <YStack mt="$7" gap="$4">
-            <Button loading={signupMutation.isPending} onPress={handleSignup}>
+            <Button
+              variant="primary"
+              width="100%"
+              loading={signupMutation.isPending}
+              onPress={handleSignup}
+            >
               CREATE ACCOUNT
             </Button>
 
@@ -201,6 +217,7 @@ export default function SignupScreen() {
             </Text>
             <Button
               variant="outlined"
+              width="100%"
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/login",
@@ -221,8 +238,13 @@ export default function SignupScreen() {
                 fontWeight="600"
                 fontFamily="$body"
               >
-                Signing up as {selectedRole === "seller" ? "Seller" : "Rider"} ·
-                Switch Role
+                Signing up as{" "}
+                {selectedRole === "seller"
+                  ? "Seller"
+                  : selectedRole === "rider"
+                    ? "Rider"
+                    : "Fleet Manager"}{" "}
+                · Switch Role
               </Text>
             </Button>
           </YStack>

@@ -44,7 +44,9 @@ export default function OnboardingScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
-  const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding);
+  const completeOnboarding = useOnboardingStore(
+    (state) => state.completeOnboarding,
+  );
 
   const handleNext = () => {
     if (activeIndex >= SLIDES.length - 1) {
@@ -87,97 +89,97 @@ export default function OnboardingScreen() {
           style={{ flex: 1, width: windowWidth }}
           contentContainerStyle={{ width: windowWidth * SLIDES.length }}
         >
-            {SLIDES.map((slide) => (
-              <YStack
-                key={slide.key}
-                width={windowWidth}
-                flex={1}
-                alignItems="center"
-              >
-                <YStack
-                  width={windowWidth}
-                  height={windowWidth * 1.1}
-                  alignItems="center"
-                  justifyContent="center"
-                  backgroundColor="$backgroundStrong"
-                  overflow="hidden"
-                >
-                  <Image
-                    source={slide.image}
-                    width="100%"
-                    height="100%"
-                    objectFit="cover"
-                  />
-                </YStack>
-
-                <YStack
-                  width="100%"
-                  paddingHorizontal="$6"
-                  paddingTop="$6"
-                  items="center"
-                  gap="$3"
-                >
-                  <Text
-                    fontSize="$8"
-                    fontWeight="800"
-                    fontFamily="$heading"
-                    color="$color"
-                    ta="center"
-                  >
-                    {slide.title}
-                  </Text>
-                  <Text
-                    fontSize="$5"
-                    color="$colorSecondary"
-                    fontFamily="$body"
-                    ta="center"
-                    mt="$1"
-                    lineHeight={24}
-                  >
-                    {slide.subtitle}
-                  </Text>
-                </YStack>
-              </YStack>
-            ))}
-          </ScrollView>
-
-          <YStack
-            px="$5"
-            paddingBottom={Math.max(insets.bottom + 14, 22)}
-            gap="$4"
-          >
-            <XStack jc="center" gap="$2">
-              {SLIDES.map((_, index) => (
-                <YStack
-                  key={index}
-                  h={8}
-                  w={activeIndex === index ? 24 : 8}
-                  bg={activeIndex === index ? "$primary" : "$colorDisabled"}
-                  br={4}
-                  animation="bouncy"
-                />
-              ))}
-            </XStack>
-
-            <Button variant="primary" onPress={handleNext}>
-              {activeIndex === SLIDES.length - 1 ? "GET STARTED" : "NEXT"}
-            </Button>
-
-            <Button
-              variant="ghost"
-              height={36}
-              backgroundColor="transparent"
-              onPress={() => {
-                completeOnboarding();
-                router.push("/(auth)/role");
-              }}
+          {SLIDES.map((slide) => (
+            <YStack
+              key={slide.key}
+              width={windowWidth}
+              flex={1}
+              alignItems="center"
             >
-              <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">
-                Skip
-              </Text>
-            </Button>
-          </YStack>
-        </>
+              <YStack
+                width={windowWidth}
+                height={windowWidth * 1.1}
+                alignItems="center"
+                justifyContent="center"
+                backgroundColor="$backgroundStrong"
+                overflow="hidden"
+              >
+                <Image
+                  source={slide.image}
+                  width="100%"
+                  height="100%"
+                  objectFit="cover"
+                />
+              </YStack>
+
+              <YStack
+                width="100%"
+                paddingHorizontal="$6"
+                paddingTop="$6"
+                items="center"
+                gap="$3"
+              >
+                <Text
+                  fontSize="$8"
+                  fontWeight="800"
+                  fontFamily="$heading"
+                  color="$color"
+                  ta="center"
+                >
+                  {slide.title}
+                </Text>
+                <Text
+                  fontSize="$5"
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                  ta="center"
+                  mt="$1"
+                  lineHeight={24}
+                >
+                  {slide.subtitle}
+                </Text>
+              </YStack>
+            </YStack>
+          ))}
+        </ScrollView>
+
+        <YStack
+          px="$5"
+          paddingBottom={Math.max(insets.bottom + 14, 22)}
+          gap="$4"
+        >
+          <XStack jc="center" gap="$2">
+            {SLIDES.map((_, index) => (
+              <YStack
+                key={index}
+                h={8}
+                w={activeIndex === index ? 24 : 8}
+                bg={activeIndex === index ? "$primary" : "$colorDisabled"}
+                br={4}
+                animation="bouncy"
+              />
+            ))}
+          </XStack>
+
+          <Button variant="primary" width="100%" onPress={handleNext}>
+            {activeIndex === SLIDES.length - 1 ? "GET STARTED" : "NEXT"}
+          </Button>
+
+          <Button
+            variant="ghost"
+            width="100%"
+            backgroundColor="transparent"
+            onPress={() => {
+              completeOnboarding();
+              router.push("/(auth)/role");
+            }}
+          >
+            <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">
+              Skip
+            </Text>
+          </Button>
+        </YStack>
+      </>
     </YStack>
   );
 }
