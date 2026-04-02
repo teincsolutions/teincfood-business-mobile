@@ -38,12 +38,12 @@ export default function RiderProfile() {
           {/* Profile Header */}
           <Card padding="$4" bordered>
             <XStack gap="$4" alignItems="center">
-              <Avatar circular size="$8">
+              <Avatar circular size="$10">
                 <Avatar.Image
                   src={user?.avatarUrl}
                 />
-                <Avatar.Fallback backgroundColor="$primary">
-                  <Text color="$background" fontWeight="bold" fontSize="$6">
+                <Avatar.Fallback items="center" justify="center" backgroundColor="$primary">
+                  <Text color="$background" fontWeight="bold" fontSize="$8">
                     {user?.fullName?.charAt(0) || 'R'}
                   </Text>
                 </Avatar.Fallback>

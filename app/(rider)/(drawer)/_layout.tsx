@@ -3,7 +3,15 @@ import { useState } from "react";
 import { Drawer } from "expo-router/drawer";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme, YStack, XStack, Text, Avatar, Separator, Button } from "tamagui";
+import {
+  useTheme,
+  YStack,
+  XStack,
+  Text,
+  Avatar,
+  Separator,
+  Button,
+} from "tamagui";
 import {
   Home,
   Truck,
@@ -18,7 +26,10 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer";
+import {
+  DrawerContentScrollView,
+  DrawerItemList,
+} from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -41,14 +52,20 @@ function CustomDrawerContent(props: any) {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* User Profile Section */}
-      <YStack padding="$4" paddingTop={insets.top + 24} backgroundColor="$primary">
+      <YStack
+        padding="$4"
+        paddingTop={insets.top + 24}
+        backgroundColor="$primary"
+      >
         <XStack gap="$3" alignItems="center">
-          <Avatar circular size="$5">
-            <Avatar.Image
-              src={user?.avatarUrl}
-            />
-            <Avatar.Fallback backgroundColor="$gray8">
-              <Text color="white" fontWeight="bold">
+          <Avatar circular size="$10">
+            <Avatar.Image src={user?.avatarUrl} />
+            <Avatar.Fallback
+              items="center"
+              justify="center"
+              backgroundColor="$color.gray50"
+            >
+              <Text color="$color" fontWeight="bold" fontSize="$8">
                 {user?.fullName?.charAt(0) || "R"}
               </Text>
             </Avatar.Fallback>
@@ -90,7 +107,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(rider)/home")}
             icon={<Home size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Home</Text>
+            <Text flex={1} fontSize="$4">
+              Home
+            </Text>
           </Button>
 
           <Separator marginVertical="$2" />
@@ -107,7 +126,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(rider)/deliveries")}
             icon={<Truck size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Deliveries</Text>
+            <Text flex={1} fontSize="$4">
+              Deliveries
+            </Text>
           </Button>
 
           {/* Earnings */}
@@ -122,7 +143,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(rider)/earnings")}
             icon={<DollarSign size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Earnings</Text>
+            <Text flex={1} fontSize="$4">
+              Earnings
+            </Text>
           </Button>
 
           <Separator marginVertical="$2" />
@@ -139,7 +162,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(communication)")}
             icon={<MessageSquare size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Messages</Text>
+            <Text flex={1} fontSize="$4">
+              Messages
+            </Text>
           </Button>
 
           {/* Notifications */}
@@ -154,7 +179,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(shared)/notifications")}
             icon={<Bell size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Notifications</Text>
+            <Text flex={1} fontSize="$4">
+              Notifications
+            </Text>
           </Button>
 
           {/* Settings */}
@@ -169,7 +196,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(rider)/settings")}
             icon={<Settings size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Settings</Text>
+            <Text flex={1} fontSize="$4">
+              Settings
+            </Text>
           </Button>
 
           {/* Profile */}
@@ -184,7 +213,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => router.push("/(rider)/profile")}
             icon={<User size={20} color={theme.color.val} />}
           >
-            <Text flex={1} fontSize="$4">Profile</Text>
+            <Text flex={1} fontSize="$4">
+              Profile
+            </Text>
           </Button>
 
           <Separator marginVertical="$2" />
@@ -201,7 +232,9 @@ function CustomDrawerContent(props: any) {
             onPress={() => setShowLogoutDialog(true)}
             icon={<LogOut size={20} color="$red10" />}
           >
-            <Text flex={1} fontSize="$4" color="$red10">Logout</Text>
+            <Text flex={1} fontSize="$4" color="$red10">
+              Logout
+            </Text>
           </Button>
         </YStack>
       </DrawerContentScrollView>
@@ -270,16 +303,13 @@ export default function RiderDrawerLayout() {
           overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
         }}
       >
-
         {/* Home */}
         <Drawer.Screen
           name="home/index"
           options={{
             title: "Home",
             headerShown: false,
-            drawerIcon: ({ color, size }) => (
-              <Home color={color} size={size} />
-            ),
+            drawerIcon: ({ color, size }) => <Home color={color} size={size} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
@@ -326,9 +356,7 @@ export default function RiderDrawerLayout() {
           name="profile/index"
           options={{
             title: "Profile",
-            drawerIcon: ({ color, size }) => (
-              <User color={color} size={size} />
-            ),
+            drawerIcon: ({ color, size }) => <User color={color} size={size} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

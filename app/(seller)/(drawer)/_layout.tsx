@@ -61,10 +61,14 @@ function CustomDrawerContent(props: any) {
         backgroundColor="$primary"
       >
         <XStack gap="$3" alignItems="center">
-          <Avatar circular size="$5">
+          <Avatar circular size="$10">
             <Avatar.Image src={user?.avatarUrl} />
-            <Avatar.Fallback backgroundColor="$gray8">
-              <Text color="white" fontWeight="bold">
+            <Avatar.Fallback
+              items="center"
+              justify="center"
+              backgroundColor="$color.gray50"
+            >
+              <Text color="$color" fontWeight="bold" fontSize="$8">
                 {user?.fullName?.charAt(0) || "S"}
               </Text>
             </Avatar.Fallback>

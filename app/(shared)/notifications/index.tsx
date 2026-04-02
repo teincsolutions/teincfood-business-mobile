@@ -13,7 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useNotificationStore } from "@/stores/notification.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 
 /**
  * Notifications Screen
@@ -82,15 +82,7 @@ export default function NotificationsScreen() {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <Button
-            variant="outline"
-            width={44}
-            height={44}
-            borderRadius={22}
-            paddingHorizontal={0}
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} />}
-          />
+           <BackButton />
           <Text fontSize="$7" fontWeight="bold">
             Notifications
           </Text>
