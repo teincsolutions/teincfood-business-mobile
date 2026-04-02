@@ -1,11 +1,25 @@
 // @ts-nocheck
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { YStack, XStack, Text, Card, Button, Separator, Avatar } from 'tamagui';
-import { MapPin, Navigation, Clock, Package, Phone, MessageCircle, User, DollarSign, Truck } from '@tamagui/lucide-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDeliveryDetailQuery, useUpdateDeliveryStatusMutation } from '@/hooks/rider.hooks';
-import type { RiderDeliveryDetail } from '@/models/rider.model';
+import { ScrollView, TouchableOpacity, Linking, Platform } from "react-native";
+import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
+import {
+  MapPin,
+  Navigation,
+  Clock,
+  Package,
+  Phone,
+  MessageCircle,
+  User,
+  DollarSign,
+  Truck,
+} from "@tamagui/lucide-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  useDeliveryDetailQuery,
+  useUpdateDeliveryStatusMutation,
+} from "@/hooks/rider.hooks";
+import type { RiderDeliveryDetail } from "@/models/rider.model";
+import { Button } from "@/components/ui";
 
 /**
  * Rider Delivery Details Screen
@@ -21,23 +35,66 @@ export default function RiderDeliveryDetails() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned': return '#FFA500';
-      case 'picked_up': return '#3498db';
-      case 'delivering': return '#f39c12';
-      case 'delivered': return '#27ae60';
-      default: return '#95a5a6';
+      case "assigned":
+        return "#FFA500";
+      case "picked_up":
+        return "#3498db";
+      case "delivering":
+        return "#f39c12";
+      case "delivered":
+        return "#27ae60";
+      default:
+        return "#95a5a6";
     }
   };
 
-  const handleStatusUpdate = (newStatus: RiderDeliveryDetail['status']) => {
+  const handleStatusUpdate = (newStatus: RiderDeliveryDetail["status"]) => {
     if (id) {
       updateStatus.mutate({ deliveryId: id as string, status: newStatus });
     }
   };
 
+  const handleCall = (phoneNumber: string) => {
+    const url =
+      Platform.OS === "ios" ? `telprompt:${phoneNumber}` : `tel:${phoneNumber}`;
+    Linking.openURL(url);
+  };
+
+  const handleNavigateToPickup = () => {
+    if (!delivery) return;
+    const locationData = {
+      name: delivery.pickup.name,
+      address: delivery.pickup.address,
+      phone: delivery.pickup.phone,
+      lat: delivery.pickup.lat,
+      lng: delivery.pickup.lng,
+    };
+    const encodedLocation = encodeURIComponent(JSON.stringify(locationData));
+    router.push(`/(rider)/navigate/${encodedLocation}`);
+  };
+
+  const handleNavigateToDropoff = () => {
+    if (!delivery) return;
+    const locationData = {
+      name: delivery.dropoff.name,
+      address: delivery.dropoff.address,
+      phone: delivery.dropoff.phone,
+      lat: delivery.dropoff.lat,
+      lng: delivery.dropoff.lng,
+      notes: delivery.dropoff.notes,
+    };
+    const encodedLocation = encodeURIComponent(JSON.stringify(locationData));
+    router.push(`/(rider)/navigate/${encodedLocation}`);
+  };
+
   if (!delivery) {
     return (
-      <YStack flex={1} backgroundColor="$background" justifyContent="center" alignItems="center">
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        justifyContent="center"
+        alignItems="center"
+      >
         <Text>Loading...</Text>
       </YStack>
     );
@@ -55,7 +112,9 @@ export default function RiderDeliveryDetails() {
         backgroundColor="$background"
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Text fontSize="$4" color="$primary">← Back</Text>
+          <Text fontSize="$4" color="$primary">
+            ← Back
+          </Text>
         </TouchableOpacity>
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Delivery Details
@@ -67,7 +126,7 @@ export default function RiderDeliveryDetails() {
           borderRadius="$10"
         >
           <Text color="white" fontSize="$2" textTransform="capitalize">
-            {delivery.status.replace('_', ' ')}
+            {delivery.status.replace("_", " ")}
           </Text>
         </YStack>
       </XStack>
@@ -78,17 +137,27 @@ export default function RiderDeliveryDetails() {
           <Card padding="$4" bordered>
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$5" fontWeight="bold">{delivery.orderId}</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  {delivery.orderId}
+                </Text>
                 <XStack gap="$2" alignItems="center">
                   <Truck size={16} color="$colorMuted" />
-                  <Text fontSize="$3" color="$colorMuted">{delivery.distance}</Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    {delivery.distance}
+                  </Text>
                 </XStack>
               </XStack>
               <Separator />
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
                 <Text fontSize="$3">ETA: {delivery.estimatedTime}</Text>
-                <Text flex={1} textAlign="right" fontSize="$5" fontWeight="bold" color="#27ae60">
+                <Text
+                  flex={1}
+                  textAlign="right"
+                  fontSize="$5"
+                  fontWeight="bold"
+                  color="#27ae60"
+                >
                   +GHS {delivery.earnings.toFixed(2)}
                 </Text>
               </XStack>
@@ -98,17 +167,25 @@ export default function RiderDeliveryDetails() {
           {/* Customer Info */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Customer</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Customer
+              </Text>
               <Separator />
               <XStack gap="$3" alignItems="center">
-                <Avatar circular size="$5">
-                  <Avatar.Fallback backgroundColor="$primary">
-                    <User size={20} color="white" />
+                <Avatar circular size="$10">
+                  <Avatar.Fallback
+                    items="center"
+                    justify="center"
+                    backgroundColor="$primary"
+                  >
+                    <User size="$6" color="white" />
                   </Avatar.Fallback>
                 </Avatar>
                 <YStack flex={1}>
                   <Text fontWeight="bold">{delivery.customer.name}</Text>
-                  <Text fontSize="$3" color="$colorMuted">{delivery.customer.phone}</Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    {delivery.customer.phone}
+                  </Text>
                 </YStack>
               </XStack>
               <XStack gap="$3">
@@ -116,7 +193,7 @@ export default function RiderDeliveryDetails() {
                   flex={1}
                   variant="outline"
                   icon={<Phone size={18} />}
-                  onPress={() => {}}
+                  onPress={() => handleCall(delivery.customer.phone)}
                 >
                   Call
                 </Button>
@@ -124,7 +201,11 @@ export default function RiderDeliveryDetails() {
                   flex={1}
                   variant="outline"
                   icon={<MessageCircle size={18} />}
-                  onPress={() => router.push(`/(communication)/chat/${delivery.customer.phone}`)}
+                  onPress={() =>
+                    router.push(
+                      `/(communication)/chat/${delivery.customer.phone}`,
+                    )
+                  }
                 >
                   Message
                 </Button>
@@ -137,18 +218,23 @@ export default function RiderDeliveryDetails() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <MapPin size={20} color="$primary" />
-                <Text fontSize="$5" fontWeight="bold">Pickup Location</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Pickup Location
+                </Text>
               </XStack>
               <Separator />
               <YStack gap="$2">
                 <Text fontWeight="bold">{delivery.pickup.name}</Text>
                 <Text color="$colorMuted">{delivery.pickup.address}</Text>
-                <Text color="$colorMuted" fontSize="$3">{delivery.pickup.phone}</Text>
+                <Text color="$colorMuted" fontSize="$3">
+                  {delivery.pickup.phone}
+                </Text>
               </YStack>
               <Button
-                variant="outline"
+                variant="outlined"
                 icon={<Navigation size={18} />}
-                onPress={() => {}}
+                onPress={handleNavigateToPickup}
+                width={"100%"}
               >
                 Navigate to Pickup
               </Button>
@@ -160,22 +246,31 @@ export default function RiderDeliveryDetails() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Navigation size={20} color="#27ae60" />
-                <Text fontSize="$5" fontWeight="bold">Dropoff Location</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Dropoff Location
+                </Text>
               </XStack>
               <Separator />
               <YStack gap="$2">
                 <Text fontWeight="bold">{delivery.dropoff.name}</Text>
                 <Text color="$colorMuted">{delivery.dropoff.address}</Text>
                 {delivery.dropoff.notes && (
-                  <YStack backgroundColor="$yellow2" padding="$2" borderRadius="$2">
-                    <Text fontSize="$3" color="$orange10">Note: {delivery.dropoff.notes}</Text>
+                  <YStack
+                    backgroundColor="$yellow2"
+                    padding="$2"
+                    borderRadius="$2"
+                  >
+                    <Text fontSize="$3" color="$orange10">
+                      Note: {delivery.dropoff.notes}
+                    </Text>
                   </YStack>
                 )}
               </YStack>
               <Button
                 backgroundColor="$primary"
+                width={"100%"}
                 icon={<Navigation size={18} />}
-                onPress={() => {}}
+                onPress={handleNavigateToDropoff}
               >
                 Navigate to Dropoff
               </Button>
@@ -187,16 +282,26 @@ export default function RiderDeliveryDetails() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Package size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Order Items</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Order Items
+                </Text>
               </XStack>
               <Separator />
               {delivery.items.map((item, index) => (
-                <XStack key={index} justifyContent="space-between" alignItems="center">
+                <XStack
+                  key={index}
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
                   <YStack>
                     <Text fontWeight="bold">{item.name}</Text>
-                    <Text fontSize="$2" color="$colorMuted">Qty: {item.quantity}</Text>
+                    <Text fontSize="$2" color="$colorMuted">
+                      Qty: {item.quantity}
+                    </Text>
                   </YStack>
-                  <Text fontWeight="bold">GHS {(item.price * item.quantity).toFixed(2)}</Text>
+                  <Text fontWeight="bold">
+                    GHS {(item.price * item.quantity).toFixed(2)}
+                  </Text>
                 </XStack>
               ))}
               <Separator />
@@ -209,8 +314,12 @@ export default function RiderDeliveryDetails() {
                 <Text>GHS {delivery.deliveryFee.toFixed(2)}</Text>
               </XStack>
               <XStack justifyContent="space-between">
-                <Text fontWeight="bold" color="#27ae60">Your Earnings</Text>
-                <Text fontWeight="bold" color="#27ae60">GHS {delivery.earnings.toFixed(2)}</Text>
+                <Text fontWeight="bold" color="#27ae60">
+                  Your Earnings
+                </Text>
+                <Text fontWeight="bold" color="#27ae60">
+                  GHS {delivery.earnings.toFixed(2)}
+                </Text>
               </XStack>
             </YStack>
           </Card>
@@ -218,7 +327,9 @@ export default function RiderDeliveryDetails() {
           {/* Delivery Timeline */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Delivery Timeline</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Delivery Timeline
+              </Text>
               <Separator />
               <XStack gap="$3" alignItems="center">
                 <YStack
@@ -229,20 +340,8 @@ export default function RiderDeliveryDetails() {
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Order Accepted</Text>
-                  <Text fontSize="$2" color="$colorMuted">{delivery.acceptedAt}</Text>
-                </YStack>
-              </XStack>
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={12}
-                  height={12}
-                  borderRadius="$10"
-                  backgroundColor={delivery.pickedUpAt ? '#3498db' : '$gray8'}
-                />
-                <YStack flex={1}>
-                  <Text fontWeight="bold">Picked Up</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.pickedUpAt || 'Pending'}
+                    {delivery.acceptedAt}
                   </Text>
                 </YStack>
               </XStack>
@@ -251,12 +350,26 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.deliveredAt ? '#27ae60' : '$gray8'}
+                  backgroundColor={delivery.pickedUpAt ? "#3498db" : "$gray8"}
+                />
+                <YStack flex={1}>
+                  <Text fontWeight="bold">Picked Up</Text>
+                  <Text fontSize="$2" color="$colorMuted">
+                    {delivery.pickedUpAt || "Pending"}
+                  </Text>
+                </YStack>
+              </XStack>
+              <XStack gap="$3" alignItems="center">
+                <YStack
+                  width={12}
+                  height={12}
+                  borderRadius="$10"
+                  backgroundColor={delivery.deliveredAt ? "#27ae60" : "$gray8"}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.deliveredAt || 'Pending'}
+                    {delivery.deliveredAt || "Pending"}
                   </Text>
                 </YStack>
               </XStack>
@@ -265,34 +378,35 @@ export default function RiderDeliveryDetails() {
 
           {/* Action Buttons */}
           <YStack gap="$3">
-            {delivery.status === 'assigned' && (
+            {delivery.status === "assigned" && (
               <Button
                 size="$5"
                 backgroundColor="$primary"
-                onPress={() => handleStatusUpdate('picked_up')}
+                onPress={() => handleStatusUpdate("picked_up")}
               >
                 Confirm Pickup
               </Button>
             )}
-            {delivery.status === 'picked_up' && (
+            {delivery.status === "picked_up" && (
               <Button
                 size="$5"
+                width={"100%"}
                 backgroundColor="#f39c12"
-                onPress={() => handleStatusUpdate('delivering')}
+                onPress={() => handleStatusUpdate("delivering")}
               >
                 Start Delivery
               </Button>
             )}
-            {delivery.status === 'delivering' && (
+            {delivery.status === "delivering" && (
               <Button
                 size="$5"
                 backgroundColor="#27ae60"
-                onPress={() => handleStatusUpdate('delivered')}
+                onPress={() => handleStatusUpdate("delivered")}
               >
                 Complete Delivery
               </Button>
             )}
-            {delivery.status === 'delivered' && (
+            {delivery.status === "delivered" && (
               <Card padding="$4" bordered backgroundColor="$green2">
                 <YStack alignItems="center" gap="$2">
                   <Text fontSize="$6">✓</Text>

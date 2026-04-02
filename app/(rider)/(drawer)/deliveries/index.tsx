@@ -108,7 +108,6 @@ export default function RiderDeliveries() {
                   </Text>
                   <Button
                     variant="ghost"
-                    height={36}
                     width="auto"
                     paddingHorizontal="$3"
                     onPress={() => router.push(`/(rider)/deliveries/${delivery.id}`)}

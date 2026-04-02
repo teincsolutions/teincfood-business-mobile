@@ -177,9 +177,10 @@ export default function RoleScreen() {
           </Card>
         </YStack>
 
-        <YStack mt="auto" gap="$3">
+        <YStack mt="$4" gap="$8">
           <Button
             variant="primary"
+            width={"100%"}
             onPress={handleLogin}
             disabled={!selectedRole}
             opacity={selectedRole ? 1 : 0.5}
@@ -188,6 +189,7 @@ export default function RoleScreen() {
           </Button>
           <Button
             variant="outline"
+            width={"100%"} 
             onPress={handleSignup}
             disabled={!selectedRole}
             opacity={selectedRole ? 1 : 0.5}

@@ -25,6 +25,7 @@ import { useResponsive } from "@/utils/responsive";
  * Custom Drawer Content for Rider
  */
 function CustomDrawerContent(props: any) {
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -40,7 +41,7 @@ function CustomDrawerContent(props: any) {
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* User Profile Section */}
-      <YStack padding="$4" paddingTop="$6" backgroundColor="$primary">
+      <YStack padding="$4" paddingTop={insets.top + 24} backgroundColor="$primary">
         <XStack gap="$3" alignItems="center">
           <Avatar circular size="$5">
             <Avatar.Image
