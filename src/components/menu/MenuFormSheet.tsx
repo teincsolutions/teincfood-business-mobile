@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   YStack,
@@ -14,7 +14,6 @@ import {
 } from 'tamagui';
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
-import { AppAlertDialog } from '@/components/ui/AlertDialog';
 import type { MenuItem, MenuItemForm, Variant, Extra } from '@/services/menu.service';
 import {
   MENU_CATEGORIES,
@@ -74,7 +73,6 @@ export function MenuFormSheet({
   onCategorySheetOpenChange,
 }: MenuFormSheetProps) {
   const theme = useTheme();
-  const [showImagePickerDialog, setShowImagePickerDialog] = useState(false);
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
@@ -84,16 +82,18 @@ export function MenuFormSheet({
   };
 
   const pickFromGallery = async () => {
-    setShowImagePickerDialog(false);
-    
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
+      Alert.alert(
+        "Permission Required",
+        "Media library permission is needed to select photos."
+      );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -106,16 +106,18 @@ export function MenuFormSheet({
   };
 
   const takePhoto = async () => {
-    setShowImagePickerDialog(false);
-    
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     
     if (status !== 'granted') {
+      Alert.alert(
+        "Permission Required",
+        "Camera permission is needed to take photos."
+      );
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -128,7 +130,20 @@ export function MenuFormSheet({
   };
 
   const pickImage = () => {
-    setShowImagePickerDialog(true);
+    Alert.alert("Add Image", "Choose an option", [
+      {
+        text: "Take Photo",
+        onPress: takePhoto,
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: pickFromGallery,
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
   };
 
   const removeImage = (index: number) => {
@@ -149,6 +164,7 @@ export function MenuFormSheet({
       >
         <Sheet.Overlay
           animation="lazy"
+          style={{ zIndex: 999 }}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
           backgroundColor="rgba(0,0,0,0.6)"
@@ -586,18 +602,6 @@ export function MenuFormSheet({
         </Sheet.Frame>
       </Sheet>
 
-      {/* ── Image Picker Dialog ──────────────────────────────────── */}
-      <AppAlertDialog
-        open={showImagePickerDialog}
-        onOpenChange={setShowImagePickerDialog}
-        title="Add Image"
-        description="Choose how you want to add an image"
-        icon={Camera}
-        confirmText="Gallery"
-        cancelText="Camera"
-        onConfirm={pickFromGallery}
-        onCancel={takePhoto}
-      />
     </>
   );
 }

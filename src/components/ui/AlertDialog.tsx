@@ -28,9 +28,11 @@ export function AppAlertDialog({
   isDestructive = false,
 }: AppAlertDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog  open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay
+        zIndex={1000}
+        style={{ zIndex: 1000 }}
           key="overlay"
           animation="quick"
           opacity={0.5}

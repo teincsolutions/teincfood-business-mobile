@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, Alert } from "react-native";
+import { ScrollView, Alert, Platform } from "react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { FormInput, Button, BackButton } from "@/components/ui";
 import {
@@ -11,6 +12,7 @@ import {
   User,
   Mail,
   Phone,
+  Image as ImageIcon,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +30,71 @@ export default function EditProfile() {
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const requestPermissions = async (useCamera: boolean) => {
+    if (useCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Camera permission is needed to take photos."
+        );
+        return false;
+      }
+    } else {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Media library permission is needed to select photos."
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const pickImage = async (useCamera: boolean) => {
+    const hasPermission = await requestPermissions(useCamera);
+    if (!hasPermission) return;
+
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    };
+
+    let result;
+    if (useCamera) {
+      result = await ImagePicker.launchCameraAsync(options);
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    }
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const handleChangePhoto = () => {
+    Alert.alert("Change Profile Photo", "Choose an option", [
+      {
+        text: "Take Photo",
+        onPress: () => pickImage(true),
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: () => pickImage(false),
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
+  };
 
   const handleSave = async () => {
     if (!fullName.trim()) {
@@ -92,7 +159,9 @@ export default function EditProfile() {
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
               <Avatar circular size="$20">
-                <Avatar.Image src={user?.avatarUrl} />
+                <Avatar.Image
+                  src={selectedImage || user?.avatarUrl}
+                />
                 <Avatar.Fallback backgroundColor="$primary">
                   <User size={32} color="$background" />
                 </Avatar.Fallback>
@@ -103,6 +172,7 @@ export default function EditProfile() {
                 height={40}
                 paddingHorizontal="$4"
                 icon={<Camera size={18} />}
+                onPress={handleChangePhoto}
               >
                 Change Photo
               </Button>
