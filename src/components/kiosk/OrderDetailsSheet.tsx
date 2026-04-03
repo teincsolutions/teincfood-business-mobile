@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useResponsive } from '@/utils/responsive';
+import { formatPrice } from '@/utils/currency';
 import type { KioskOrder } from '@/services/mock-data.service';
 
 interface OrderDetailsSheetProps {
@@ -167,7 +168,7 @@ export function OrderDetailsSheet({
                     <Text fontSize="$4">{item.name}</Text>
                   </XStack>
                   <Text fontSize="$4" color="$colorMuted">
-                    GHS {(item.price * item.quantity).toFixed(2)}
+                    {formatPrice(item.price * item.quantity, order.currency)}
                   </Text>
                 </XStack>
               ))}
@@ -180,7 +181,7 @@ export function OrderDetailsSheet({
           <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
             <Text fontSize="$5" fontWeight="bold">Total</Text>
             <Text fontSize="$6" fontWeight="bold" color="$primary">
-              GHS {order.total.toFixed(2)}
+              {formatPrice(order.total, order.currency)}
             </Text>
           </XStack>
 

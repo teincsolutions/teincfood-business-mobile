@@ -91,7 +91,7 @@ export default function SelectBusinessScreen() {
               <XStack gap="$3" alignItems="center">
                 <Avatar circular size="$5">
                   <Avatar.Image src={business.logoUrl} />
-                  <Avatar.Fallback backgroundColor="$gray8">
+                  <Avatar.Fallback backgroundColor="$gray800">
                     <Text color="white" fontWeight="bold">
                       {business.name?.charAt(0) || "B"}
                     </Text>

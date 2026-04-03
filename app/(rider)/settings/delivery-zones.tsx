@@ -79,7 +79,7 @@ export default function DeliveryZones() {
                 width={40}
                 height={40}
                 borderRadius="$10"
-                backgroundColor={zone.enabled ? "$green10" : "$gray8"}
+                backgroundColor={zone.enabled ? "$green10" : "$gray800"}
                 alignItems="center"
                 justifyContent="center"
               >

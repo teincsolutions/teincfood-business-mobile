@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
+import { formatPrice } from "@/utils/currency";
 import {
   YStack,
   XStack,
@@ -157,7 +158,7 @@ export default function SellerDashboard() {
                 </Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">
-                GHS {metrics.todayRevenue.toFixed(2)}
+                {formatPrice(metrics.todayRevenue)}
               </Text>
             </YStack>
           </Card>
@@ -268,7 +269,7 @@ export default function SellerDashboard() {
                   <YStack>
                     <Text fontWeight="bold">{order.orderNumber}</Text>
                     <Text fontSize="$3" color="$colorMuted">
-                      {order.items} items • GHS {order.total.toFixed(2)}
+                      {order.items} items • {formatPrice(order.total)}
                     </Text>
                   </YStack>
                   <XStack gap="$2" alignItems="center">

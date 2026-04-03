@@ -52,6 +52,7 @@ export interface Business {
   address: BusinessAddress;
   phone: string;
   email?: string;
+  currency: string;              // Currency code (e.g., "GHS", "USD")
   operatingHours: OperatingHours[];
   deliverySettings: DeliverySettings;
   paymentSettings: PaymentSettings;

@@ -1,4 +1,5 @@
 import type { FoodAddon, FoodCategory } from '@/models/food.model';
+import { DEFAULT_CURRENCY } from '@/utils/currency';
 
 // ─── Food Categories ───
 export const MOCK_CATEGORIES: FoodCategory[] = [
@@ -7,11 +8,11 @@ export const MOCK_CATEGORIES: FoodCategory[] = [
 
 // ─── Food Addons ───
 export const MOCK_ADDONS: FoodAddon[] = [
-  { id: 'addon-1', name: 'Extra Cheese', price: 2.50 },
-  { id: 'addon-2', name: 'Mushroom', price: 1.50 },
-  { id: 'addon-3', name: 'Bacon', price: 3.00 },
-  { id: 'addon-4', name: 'Jalapeño', price: 1.00 },
-  { id: 'addon-5', name: 'Avocado', price: 2.00 },
+  { id: 'addon-1', name: 'Extra Cheese', price: 2.50, currency: DEFAULT_CURRENCY },
+  { id: 'addon-2', name: 'Mushroom', price: 1.50, currency: DEFAULT_CURRENCY },
+  { id: 'addon-3', name: 'Bacon', price: 3.00, currency: DEFAULT_CURRENCY },
+  { id: 'addon-4', name: 'Jalapeño', price: 1.00, currency: DEFAULT_CURRENCY },
+  { id: 'addon-5', name: 'Avocado', price: 2.00, currency: DEFAULT_CURRENCY },
 ];
 
 // ─── Kiosk Mode Order Data ───
@@ -20,6 +21,7 @@ export interface KioskOrder {
   orderNumber: string;
   items: Array<{ name: string; quantity: number; price: number }>;
   total: number;
+  currency: string;
   customerName: string;
   paymentStatus: 'paid' | 'unpaid';
   paymentMethod: 'mobile_money' | 'card' | 'cash';
@@ -39,6 +41,7 @@ export const MOCK_PENDING_ORDERS: KioskOrder[] = [
       { name: 'Grilled Chicken', quantity: 1, price: 35.00 },
     ],
     total: 85.00,
+    currency: DEFAULT_CURRENCY,
     customerName: 'John Doe',
     paymentStatus: 'paid',
     paymentMethod: 'mobile_money',
@@ -53,6 +56,7 @@ export const MOCK_PENDING_ORDERS: KioskOrder[] = [
       { name: 'Kelewele', quantity: 2, price: 10.00 },
     ],
     total: 65.00,
+    currency: DEFAULT_CURRENCY,
     customerName: 'Jane Smith',
     paymentStatus: 'unpaid',
     paymentMethod: 'cash',
@@ -67,6 +71,7 @@ export const MOCK_PENDING_ORDERS: KioskOrder[] = [
       { name: 'Fried Plantain', quantity: 2, price: 8.00 },
     ],
     total: 76.00,
+    currency: DEFAULT_CURRENCY,
     customerName: 'Kwame Asante',
     paymentStatus: 'paid',
     paymentMethod: 'card',
@@ -83,6 +88,7 @@ export const MOCK_ACTIVE_ORDERS: KioskOrder[] = [
       { name: 'Fufu & Light Soup', quantity: 2, price: 30.00 },
     ],
     total: 60.00,
+    currency: DEFAULT_CURRENCY,
     customerName: 'Abena Mensah',
     paymentStatus: 'paid',
     paymentMethod: 'mobile_money',
@@ -98,6 +104,7 @@ export const MOCK_ACTIVE_ORDERS: KioskOrder[] = [
       { name: 'Fried Fish', quantity: 1, price: 25.00 },
     ],
     total: 47.00,
+    currency: DEFAULT_CURRENCY,
     customerName: 'Kofi Adom',
     paymentStatus: 'paid',
     paymentMethod: 'cash',
@@ -113,7 +120,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   currency?: string;
-  addons?: Array<{ name: string; price: number; currency: string }>;
+  addons?: Array<{ name: string; price: number; currency?: string }>;
 }
 
 export interface SellerOrder {
@@ -152,9 +159,9 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 75.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Jollof Rice', quantity: 2, price: 25.00, currency: 'GHS' },
-      { name: 'Grilled Chicken', quantity: 1, price: 35.00, currency: 'GHS' },
-      { name: 'Kelewele', quantity: 1, price: 10.00, addons: [{ name: 'Extra Pepper', price: 0.50, currency: 'GHS' }] }
+      { name: 'Jollof Rice', quantity: 2, price: 25.00, currency: DEFAULT_CURRENCY },
+      { name: 'Grilled Chicken', quantity: 1, price: 35.00, currency: DEFAULT_CURRENCY },
+      { name: 'Kelewele', quantity: 1, price: 10.00, addons: [{ name: 'Extra Pepper', price: 0.50, currency: DEFAULT_CURRENCY }] }
     ],
     notes: 'Please make it less spicy'
   },
@@ -174,8 +181,8 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 55.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Banku & Tilapia', quantity: 1, price: 45.00, currency: 'GHS' },
-      { name: 'Kelewele', quantity: 2, price: 10.00, currency: 'GHS' }
+      { name: 'Banku & Tilapia', quantity: 1, price: 45.00, currency: DEFAULT_CURRENCY },
+      { name: 'Kelewele', quantity: 2, price: 10.00, currency: DEFAULT_CURRENCY }
     ]
   },
   { 
@@ -194,9 +201,9 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 110.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Waakye', quantity: 2, price: 20.00, currency: 'GHS', addons: [{ name: 'Extra Wele', price: 5.00, currency: 'GHS' }] },
-      { name: 'Fried Plantain', quantity: 2, price: 8.00, currency: 'GHS' },
-      { name: 'Fried Fish', quantity: 1, price: 25.00, currency: 'GHS' }
+      { name: 'Waakye', quantity: 2, price: 20.00, currency: DEFAULT_CURRENCY, addons: [{ name: 'Extra Wele', price: 5.00, currency: DEFAULT_CURRENCY }] },
+      { name: 'Fried Plantain', quantity: 2, price: 8.00, currency: DEFAULT_CURRENCY },
+      { name: 'Fried Fish', quantity: 1, price: 25.00, currency: DEFAULT_CURRENCY }
     ],
     notes: 'Call when arriving'
   },
@@ -216,7 +223,7 @@ export const MOCK_SELLER_ORDERS: SellerOrder[] = [
     subtotal: 25.00,
     deliveryFee: 10.00,
     orderItems: [
-      { name: 'Fufu & Light Soup', quantity: 1, price: 30.00, currency: 'GHS' }
+      { name: 'Fufu & Light Soup', quantity: 1, price: 30.00, currency: DEFAULT_CURRENCY }
     ]
   },
 ];

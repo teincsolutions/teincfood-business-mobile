@@ -103,7 +103,9 @@ export default function KioskMode() {
   const toggleAutoRefresh = useKioskStore((state) => state.toggleAutoRefresh);
 
   // Security
-  const isBiometricEnabled = useSecurityStore((state) => state.isBiometricEnabled);
+  const isBiometricEnabled = useSecurityStore(
+    (state) => state.isBiometricEnabled,
+  );
 
   // Dialog state
   const [dialog, setDialog] = useState<DialogState>(defaultDialogState);
@@ -116,31 +118,34 @@ export default function KioskMode() {
   useEffect(() => {
     if (!isBiometricEnabled) return;
 
-    const unsubscribe = navigation.addListener("beforeRemove", async (e: any) => {
-      // Prevent default navigation
-      e.preventDefault();
+    const unsubscribe = navigation.addListener(
+      "beforeRemove",
+      async (e: any) => {
+        // Prevent default navigation
+        e.preventDefault();
 
-      // Authenticate before allowing navigation
-      setIsAuthenticating(true);
-      try {
-        const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: "Verify identity to exit Kiosk Mode",
-          fallbackLabel: "Use Passcode",
-          cancelLabel: "Cancel",
-          disableDeviceFallback: false,
-        });
+        // Authenticate before allowing navigation
+        setIsAuthenticating(true);
+        try {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Verify identity to exit Kiosk Mode",
+            fallbackLabel: "Use Passcode",
+            cancelLabel: "Cancel",
+            disableDeviceFallback: false,
+          });
 
-        if (result.success) {
-          deactivateKeepAwake();
-          // Allow the navigation to proceed
-          navigation.dispatch(e.data.action);
+          if (result.success) {
+            deactivateKeepAwake();
+            // Allow the navigation to proceed
+            navigation.dispatch(e.data.action);
+          }
+        } catch (err) {
+          console.error("Biometric auth error:", err);
+        } finally {
+          setIsAuthenticating(false);
         }
-      } catch (err) {
-        console.error("Biometric auth error:", err);
-      } finally {
-        setIsAuthenticating(false);
-      }
-    });
+      },
+    );
 
     return unsubscribe;
   }, [navigation, isBiometricEnabled]);
@@ -368,6 +373,7 @@ export default function KioskMode() {
           <Button
             size="$4"
             height="$6"
+            $lg={{ height: "$6", width: "$6" }}
             onPress={toggleSound}
             icon={({ size, color }) =>
               soundEnabled ? (
@@ -395,6 +401,7 @@ export default function KioskMode() {
           <Button
             width="$6"
             height="$8"
+            $lg={{ height: "$8", width: "$8" }}
             rounded="$full"
             onPress={() => refetch()}
             disabled={isRefetching}

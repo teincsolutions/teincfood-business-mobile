@@ -3,6 +3,7 @@ export interface FoodItem {
   name: string;
   description: string;
   price: number;
+  currency: string;
   imageUrl: string;
   category: FoodCategory;
   chefId: string;
@@ -22,12 +23,14 @@ export interface FoodSizeOption {
   id: string;
   label: string;
   price: number;
+  currency: string;
 }
 
 export interface FoodAddon {
   id: string;
   name: string;
   price: number;
+  currency: string;
   imageUrl?: string;
 }
 

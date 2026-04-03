@@ -82,7 +82,7 @@ const INITIAL_OPERATIONAL_DOCS: BusinessDoc[] = [
 const DOC_STATUS_COLOR: Record<DocStatus, string> = {
   not_uploaded: "#95a5a6",
   pending: "#f39c12",
-  verified: "#27ae60",
+  verified: "$success",
   rejected: "#e74c3c",
 };
 
@@ -287,7 +287,7 @@ export default function BusinessDetailScreen() {
   const getDocStatusIcon = (status: DocStatus) => {
     switch (status) {
       case "verified":
-        return <Check size={16} color="#27ae60" />;
+        return <Check size={16} color="$success" />;
       case "pending":
         return <Clock size={16} color="#f39c12" />;
       case "rejected":

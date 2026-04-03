@@ -8,6 +8,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { formatPrice } from "@/utils/currency";
 import type { KioskOrder } from "@/services/mock-data.service";
 
 interface PendingOrderCardProps {
@@ -66,7 +67,7 @@ export function PendingOrderCard({
                 {item.quantity}x {item.name}
               </Text>
               <Text fontSize="$3" color="$colorMuted">
-                GHS {(item.price * item.quantity).toFixed(2)}
+                {formatPrice(item.price * item.quantity, order.currency)}
               </Text>
             </XStack>
           ))}
@@ -85,7 +86,7 @@ export function PendingOrderCard({
 
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$5" fontWeight="bold">
-            GHS {order.total.toFixed(2)}
+            {formatPrice(order.total, order.currency)}
           </Text>
           <XStack gap="$2">
             <Button

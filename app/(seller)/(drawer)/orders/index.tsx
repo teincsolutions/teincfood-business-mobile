@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MOCK_SELLER_ORDERS } from '@/services/mock-data.service';
 import { useResponsive } from '@/utils/responsive';
+import { formatPrice, DEFAULT_CURRENCY } from '@/utils/currency';
 /**
  * Seller Orders Screen
  */
@@ -115,7 +116,7 @@ export default function SellerOrders() {
                       </XStack>
                       <Separator />
                       <XStack justifyContent="space-between" alignItems="center">
-                        <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                        <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                         <Button 
                           variant="outlined" 
                           width="auto" 
@@ -165,7 +166,7 @@ export default function SellerOrders() {
                           </XStack>
                           <Separator />
                           <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                             <Button 
                               variant="outlined" 
                               width="auto" 
@@ -212,7 +213,7 @@ export default function SellerOrders() {
                           </XStack>
                           <Separator />
                           <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                             <Button 
                               variant="outlined" 
                               width="auto" 
@@ -262,7 +263,7 @@ export default function SellerOrders() {
                           </XStack>
                           <Separator />
                           <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                             <Button 
                               variant="outlined" 
                               width="auto" 
@@ -309,7 +310,7 @@ export default function SellerOrders() {
                           </XStack>
                           <Separator />
                           <XStack justifyContent="space-between" alignItems="center">
-                            <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                            <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                             <Button 
                               variant="outlined" 
                               width="auto" 
@@ -357,7 +358,7 @@ export default function SellerOrders() {
                     </XStack>
                     <Separator />
                     <XStack justifyContent="space-between" alignItems="center">
-                      <Text fontWeight="bold">{order.currency?? 'GHS'} {order.total.toFixed(2)}</Text>
+                      <Text fontWeight="bold">{formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}</Text>
                       <Button 
                         variant="outlined" 
                         width="auto" 

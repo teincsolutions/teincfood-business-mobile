@@ -191,7 +191,7 @@ export default function NavigationSettings() {
                   size="$6"
                   checked={autoStart}
                   onCheckedChange={setAutoStart}
-                  backgroundColor={autoStart ? "$primary" : "$gray8"}
+                  backgroundColor={autoStart ? "$primary" : "$gray800"}
                 >
                   <Switch.Thumb backgroundColor="white" />
                 </Switch>

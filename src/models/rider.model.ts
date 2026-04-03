@@ -5,6 +5,7 @@ export interface RiderMetrics {
   todayDeliveries: number;
   activeDelivery: RiderActiveDelivery | null;
   availableDeliveries: number;
+  currency: string;
 }
 
 export interface RiderActiveDelivery {
@@ -23,6 +24,7 @@ export interface RiderDelivery {
   dropoff: string;
   status: 'assigned' | 'picked_up' | 'delivering' | 'delivered';
   earnings: number;
+  currency: string;
 }
 
 export interface RiderDeliveryDetail {
@@ -36,6 +38,7 @@ export interface RiderDeliveryDetail {
   orderTotal: number;
   deliveryFee: number;
   earnings: number;
+  currency: string;
   distance: string;
   estimatedTime: string;
   actualTime: string | null;
@@ -66,6 +69,7 @@ export interface DeliveryItem {
   name: string;
   quantity: number;
   price: number;
+  currency: string;
 }
 
 export interface RiderEarnings {
@@ -74,6 +78,7 @@ export interface RiderEarnings {
   thisMonth: number;
   total: number;
   pendingPayout: number;
+  currency: string;
 }
 
 export interface EarningsBreakdown {
@@ -81,6 +86,7 @@ export interface EarningsBreakdown {
   tipsReceived: number;
   bonuses: number;
   totalThisWeek: number;
+  currency: string;
 }
 
 export interface RiderTransaction {
@@ -89,6 +95,7 @@ export interface RiderTransaction {
   amount: number;
   date: string;
   type: 'delivery' | 'bonus' | 'tip';
+  currency: string;
 }
 
 export interface RiderStatistics {
@@ -96,6 +103,7 @@ export interface RiderStatistics {
   acceptanceRate: number;
   averageRating: number;
   totalEarnings: number;
+  currency: string;
 }
 
 export interface VehicleInfo {

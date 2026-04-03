@@ -48,7 +48,7 @@ const buildInitialDocs = (role: string): DocItem[] =>
 const STATUS_COLOR: Record<DocStatus, string> = {
   not_uploaded: '#95a5a6',
   pending: '#f39c12',
-  verified: '#27ae60',
+  verified: '$success',
   rejected: '#e74c3c',
 };
 
@@ -69,7 +69,7 @@ export default function Documents() {
 
   const getStatusIcon = (status: DocStatus) => {
     switch (status) {
-      case 'verified': return <Check size={16} color="#27ae60" />;
+      case 'verified': return <Check size={16} color="$success" />;
       case 'pending': return <Clock size={16} color="#f39c12" />;
       case 'rejected': return <AlertCircle size={16} color="#e74c3c" />;
       default: return <FileText size={16} color="#95a5a6" />;

@@ -216,7 +216,7 @@ export default function OperatingHoursSettings() {
                           borderRadius="$10"
                           borderWidth={1.5}
                           backgroundColor={isOpen ? "$green3" : "$red3"}
-                          borderColor={isOpen ? "$green8" : "$red8"}
+                          borderColor={isOpen ? "$success" : "$error"}
                         >
                           {isOpen ? (
                             <CheckCircle size={14} color="$green10" />

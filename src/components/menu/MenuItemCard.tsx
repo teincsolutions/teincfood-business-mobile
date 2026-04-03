@@ -16,7 +16,7 @@ import {
   EyeOff,
 } from '@tamagui/lucide-icons';
 import type { MenuItem } from '@/services/menu.service';
-import { toGHS } from '@/services/menu.service';
+import { formatPrice } from '@/utils/currency';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -65,7 +65,7 @@ export function MenuItemCard({
               </Text>
             </YStack>
             <Text fontSize="$4" fontWeight="800" fontFamily="$heading" color="$primary">
-              GHS {toGHS(item.priceMinor)}
+              {formatPrice(item.priceMinor / 100)}
             </Text>
           </XStack>
 

@@ -55,6 +55,7 @@ export interface FleetRider {
   status: RiderFleetStatus;
   totalDeliveries: number;
   totalEarnings: number;
+  currency: string;
   rating: number;
   joinedAt: string;
   lastActiveAt?: string;
@@ -70,6 +71,7 @@ export interface FleetEarnings {
   fleetCommission: number;
   riderPayouts: number;
   averagePerDelivery: number;
+  currency: string;
   topRiders: {
     riderId: string;
     riderName: string;

@@ -83,7 +83,7 @@ function CustomDrawerContent(props: any) {
                 width={8}
                 height={8}
                 borderRadius="$10"
-                backgroundColor={user?.isOnline ? "$green10" : "$gray8"}
+                backgroundColor={user?.isOnline ? "$green10" : "$gray800"}
               />
               <Text color="white" opacity={0.8} fontSize="$2">
                 {user?.isOnline ? "Online" : "Offline"}

@@ -171,7 +171,7 @@ export default function RiderMap() {
                 </XStack>
 
                 <XStack gap="$2" alignItems="center">
-                  <Navigation size={16} color="#27ae60" />
+                  <Navigation size={16} color="$success" />
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorMuted">Dropoff</Text>
                     <Text fontSize="$3">{selectedDelivery.dropoff.name}</Text>
@@ -183,7 +183,7 @@ export default function RiderMap() {
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
                 <Text fontSize="$3">ETA: {selectedDelivery.estimatedTime}</Text>
-                <Text flex={1} textAlign="right" fontSize="$5" fontWeight="bold" color="#27ae60">
+                <Text flex={1} textAlign="right" fontSize="$5" fontWeight="bold" color="$success">
                   +GHS {selectedDelivery.earnings.toFixed(2)}
                 </Text>
               </XStack>

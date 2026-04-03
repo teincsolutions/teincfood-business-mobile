@@ -19,9 +19,9 @@ import {
   MENU_CATEGORIES,
   DIETARY_TAGS,
   EMPTY_FORM,
-  toGHS,
   toMinor,
 } from '@/services/menu.service';
+import { formatPrice } from '@/utils/currency';
 
 interface MenuFormSheetProps {
   open: boolean;
@@ -204,7 +204,7 @@ export function MenuFormSheet({
                     onChangeText={(v) => updateFormField('description', v)}
                   />
                   <FormInput
-                    label="Base Price (GHS)"
+                    label="Base Price"
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     value={form.price}
@@ -397,7 +397,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {v.label} — GHS {toGHS(v.priceMinor)}
+                          {v.label} — {formatPrice(v.priceMinor / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveVariant(v.id)}>
@@ -431,7 +431,7 @@ export function MenuFormSheet({
                         fontFamily="$body"
                         fontSize="$3"
                         color="$color"
-                        placeholder="Price (GHS)"
+                        placeholder="Price"
                         placeholderTextColor="$color.gray900"
                         keyboardType="decimal-pad"
                         value={variantPrice}
@@ -472,7 +472,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {e.label} — GHS {toGHS(e.priceMinor)}
+                          {e.label} — {formatPrice(e.priceMinor / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveExtra(e.id)}>
@@ -506,7 +506,7 @@ export function MenuFormSheet({
                         fontFamily="$body"
                         fontSize="$3"
                         color="$color"
-                        placeholder="Price (GHS)"
+                        placeholder="Price"
                         placeholderTextColor="$color.gray900"
                         keyboardType="decimal-pad"
                         value={extraPrice}

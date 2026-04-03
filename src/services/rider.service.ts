@@ -56,6 +56,7 @@ export async function fetchActiveDelivery(): Promise<RiderDelivery | null> {
       dropoff: MOCK_ACTIVE_DELIVERY.dropoff,
       status: MOCK_ACTIVE_DELIVERY.status,
       earnings: 12.50, // Default earnings
+      currency: MOCK_RIDER_EARNINGS.currency || 'GHS',
     };
     setTimeout(() => resolve(activeDelivery), SIMULATED_DELAY);
   });
@@ -135,11 +136,12 @@ export async function requestPayout(amount: number): Promise<{ success: boolean;
   // TODO: Replace with actual API call
   // return api.post<{ success: boolean; message: string }>('/v1/rider/payout', { amount });
   return new Promise((resolve) => {
+    const { formatPrice, DEFAULT_CURRENCY } = require('@/utils/currency');
     setTimeout(
       () =>
         resolve({
           success: true,
-          message: `Payout of GHS ${amount.toFixed(2)} requested successfully`,
+          message: `Payout of ${formatPrice(amount, MOCK_RIDER_EARNINGS.currency || DEFAULT_CURRENCY)} requested successfully`,
         }),
       SIMULATED_DELAY
     );

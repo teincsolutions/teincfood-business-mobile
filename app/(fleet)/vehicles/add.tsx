@@ -165,9 +165,9 @@ export default function AddVehicleScreen() {
                   iconAfter={Car}
                   borderRadius="$4"
                   backgroundColor="$background"
-                  borderColor={errors.vehicleType ? "$red8" : "$borderColor"}
+                  borderColor={errors.vehicleType ? "$error" : "$borderColor"}
                   focusStyle={{
-                    borderColor: errors.vehicleType ? "$red8" : "$primary",
+                    borderColor: errors.vehicleType ? "$error" : "$primary",
                   }}
                 >
                   <Select.Value placeholder="Select vehicle type" />

@@ -28631,7 +28631,7 @@
     "themes": {
       "dark": {
         "orange": "#FF7622",
-        "orangeLight": "#FFF4ED",
+        "orangeLight": "#fff2ea",
         "orangeDark": "#E56A1E",
         "orangeMuted": "rgba(255, 118, 34, 0.15)",
         "navy": "#1E1E2E",
@@ -28658,6 +28658,7 @@
         "transparent": "transparent",
         "background": "#121218",
         "backgroundStrong": "#0D0D12",
+        "backgroundOrange": "#2A1A0F",
         "backgroundSoft": "#1C1C24",
         "backgroundHover": "#1C1C24",
         "backgroundPress": "#24242E",
@@ -28692,7 +28693,7 @@
       },
       "light": {
         "orange": "#FF7622",
-        "orangeLight": "#FFF4ED",
+        "orangeLight": "#fff2ea",
         "orangeDark": "#E56A1E",
         "orangeMuted": "rgba(255, 118, 34, 0.15)",
         "navy": "#1E1E2E",
@@ -28718,6 +28719,7 @@
         "starOrange": "#FF9633",
         "transparent": "transparent",
         "background": "#FFFFFF",
+        "backgroundOrange": "#fff2ea",
         "backgroundStrong": "#F9F9F9",
         "backgroundSoft": "#F6F6F6",
         "backgroundHover": "#F9F9F9",
@@ -28730,7 +28732,7 @@
         "colorDisabled": "#D1D3D9",
         "colorPlaceholder": "#A0A5BA",
         "primary": "#FF7622",
-        "primaryLight": "#FFF4ED",
+        "primaryLight": "#fff2ea",
         "primaryDark": "#E56A1E",
         "primaryMuted": "rgba(255, 118, 34, 0.15)",
         "borderColor": "#EDEDED",
@@ -28762,7 +28764,7 @@
           "isVar": true,
           "key": "$orangeLight",
           "name": "c-orangeLight",
-          "val": "#FFF4ED",
+          "val": "#fff2ea",
           "variable": ""
         },
         "orangeDark": {
@@ -29770,7 +29772,7 @@
         "isVar": true,
         "key": "$orangeLight",
         "name": "c-orangeLight",
-        "val": "#FFF4ED",
+        "val": "#fff2ea",
         "variable": ""
       },
       "$color.orangeMuted": {

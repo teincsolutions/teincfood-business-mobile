@@ -98,7 +98,7 @@ export default function NavigationScreen() {
       case "delivering":
         return "#f39c12";
       case "delivered":
-        return "#27ae60";
+        return "$success";
       default:
         return "#95a5a6";
     }
@@ -310,7 +310,7 @@ export default function NavigationScreen() {
                 Earnings
               </Text>
             </XStack>
-            <Text fontWeight="bold" fontSize="$4" color="#27ae60">
+            <Text fontWeight="bold" fontSize="$4" color="$success">
               +GHS {orderInfo.earnings.toFixed(2)}
             </Text>
           </YStack>

@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { useState } from "react";
 import { ScrollView, TouchableOpacity, Linking, Platform } from "react-native";
-import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Avatar, Sheet } from "tamagui";
 import {
   MapPin,
   Navigation,
@@ -11,6 +12,9 @@ import {
   User,
   DollarSign,
   Truck,
+  Filter,
+  X,
+  Check,
 } from "@tamagui/lucide-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,7 +23,8 @@ import {
   useUpdateDeliveryStatusMutation,
 } from "@/hooks/rider.hooks";
 import type { RiderDeliveryDetail } from "@/models/rider.model";
-import { Button } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
+import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
 
 /**
  * Rider Delivery Details Screen
@@ -33,6 +38,11 @@ export default function RiderDeliveryDetails() {
   const { data: delivery, isLoading } = useDeliveryDetailQuery(id as string);
   const updateStatus = useUpdateDeliveryStatusMutation();
 
+  // Filter state
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "assigned":
@@ -42,7 +52,7 @@ export default function RiderDeliveryDetails() {
       case "delivering":
         return "#f39c12";
       case "delivered":
-        return "#27ae60";
+        return "$success";
       default:
         return "#95a5a6";
     }
@@ -112,24 +122,31 @@ export default function RiderDeliveryDetails() {
         alignItems="center"
         backgroundColor="$background"
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text fontSize="$4" color="$primary">
-            ← Back
-          </Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Delivery Details
         </Text>
-        <YStack
-          backgroundColor={getStatusColor(delivery.status)}
-          paddingHorizontal="$3"
-          paddingVertical="$1"
-          borderRadius="$10"
-        >
-          <Text color="white" fontSize="$2" textTransform="capitalize">
-            {delivery.status.replace("_", " ")}
-          </Text>
-        </YStack>
+        <XStack gap="$2" alignItems="center">
+          <TouchableOpacity onPress={() => setFilterSheetOpen(true)}>
+            <YStack
+              backgroundColor="$gray3"
+              padding="$2"
+              borderRadius="$3"
+            >
+              <Filter size={20} color="$color" />
+            </YStack>
+          </TouchableOpacity>
+          <YStack
+            backgroundColor={getStatusColor(delivery.status)}
+            paddingHorizontal="$3"
+            paddingVertical="$1"
+            borderRadius="$10"
+          >
+            <Text color="white" fontSize="$2" textTransform="capitalize">
+              {delivery.status.replace("_", " ")}
+            </Text>
+          </YStack>
+        </XStack>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -157,9 +174,9 @@ export default function RiderDeliveryDetails() {
                   textAlign="right"
                   fontSize="$5"
                   fontWeight="bold"
-                  color="#27ae60"
+                  color="$success"
                 >
-                  +GHS {delivery.earnings.toFixed(2)}
+                  +{delivery.currency} {delivery.earnings.toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
@@ -246,7 +263,7 @@ export default function RiderDeliveryDetails() {
           <Card padding="$4" bordered backgroundColor="$blue2">
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
-                <Navigation size={20} color="#27ae60" />
+                <Navigation size={20} color="$success" />
                 <Text fontSize="$5" fontWeight="bold">
                   Dropoff Location
                 </Text>
@@ -301,25 +318,25 @@ export default function RiderDeliveryDetails() {
                     </Text>
                   </YStack>
                   <Text fontWeight="bold">
-                    GHS {(item.price * item.quantity).toFixed(2)}
+                    {formatPrice(item.price * item.quantity, item.currency || DEFAULT_CURRENCY)}
                   </Text>
                 </XStack>
               ))}
               <Separator />
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Order Total</Text>
-                <Text>GHS {delivery.orderTotal.toFixed(2)}</Text>
+                <Text>{formatPrice(delivery.orderTotal, delivery.currency || DEFAULT_CURRENCY)}</Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Delivery Fee</Text>
-                <Text>GHS {delivery.deliveryFee.toFixed(2)}</Text>
+                <Text>{formatPrice(delivery.deliveryFee, delivery.currency || DEFAULT_CURRENCY)}</Text>
               </XStack>
               <XStack justifyContent="space-between">
-                <Text fontWeight="bold" color="#27ae60">
+                <Text fontWeight="bold" color="$success">
                   Your Earnings
                 </Text>
-                <Text fontWeight="bold" color="#27ae60">
-                  GHS {delivery.earnings.toFixed(2)}
+                <Text fontWeight="bold" color="$success">
+                  {formatPrice(delivery.earnings, delivery.currency || DEFAULT_CURRENCY)}
                 </Text>
               </XStack>
             </YStack>
@@ -337,7 +354,7 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor="#27ae60"
+                  backgroundColor="$success"
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Order Accepted</Text>
@@ -351,7 +368,7 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.pickedUpAt ? "#3498db" : "$gray8"}
+                  backgroundColor={delivery.pickedUpAt ? "#3498db" : "$gray800"}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Picked Up</Text>
@@ -365,7 +382,7 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.deliveredAt ? "#27ae60" : "$gray8"}
+                  backgroundColor={delivery.deliveredAt ? "$success" : "$gray800"}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
@@ -401,7 +418,7 @@ export default function RiderDeliveryDetails() {
             {delivery.status === "delivering" && (
               <Button
                 size="$5"
-                backgroundColor="#27ae60"
+                backgroundColor="$success"
                 onPress={() => handleStatusUpdate("delivered")}
               >
                 Complete Delivery
@@ -411,11 +428,11 @@ export default function RiderDeliveryDetails() {
               <Card padding="$4" bordered backgroundColor="$green2">
                 <YStack alignItems="center" gap="$2">
                   <Text fontSize="$6">✓</Text>
-                  <Text fontSize="$5" fontWeight="bold" color="#27ae60">
+                  <Text fontSize="$5" fontWeight="bold" color="$success">
                     Delivery Completed!
                   </Text>
                   <Text color="$colorMuted">
-                    You earned GHS {delivery.earnings.toFixed(2)}
+                    You earned {formatPrice(delivery.earnings, delivery.currency || DEFAULT_CURRENCY)}
                   </Text>
                 </YStack>
               </Card>
@@ -423,6 +440,219 @@ export default function RiderDeliveryDetails() {
           </YStack>
         </YStack>
       </ScrollView>
+
+      {/* Filter Bottom Sheet */}
+      <Sheet
+        modal
+        open={filterSheetOpen}
+        onOpenChange={setFilterSheetOpen}
+        snapPoints={[60]}
+        dismissOnSnapToBottom
+        zIndex={100_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+
+          {/* Header */}
+          <XStack
+            justifyContent="space-between"
+            alignItems="center"
+            paddingHorizontal="$5"
+            paddingVertical="$4"
+          >
+            <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
+              Filter Options
+            </Text>
+            <TouchableOpacity onPress={() => setFilterSheetOpen(false)}>
+              <X size={24} color="$color" />
+            </TouchableOpacity>
+          </XStack>
+
+          <Separator />
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <YStack padding="$5" gap="$5" paddingBottom="$8">
+              {/* Status Filter */}
+              <YStack gap="$3">
+                <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                  Delivery Status
+                </Text>
+                <XStack gap="$2" flexWrap="wrap">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "assigned", label: "Assigned" },
+                    { value: "picked_up", label: "Picked Up" },
+                    { value: "delivering", label: "Delivering" },
+                    { value: "delivered", label: "Delivered" },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      onPress={() => setStatusFilter(option.value)}
+                    >
+                      <YStack
+                        paddingHorizontal="$4"
+                        paddingVertical="$2"
+                        borderRadius="$4"
+                        borderWidth={1}
+                        borderColor={
+                          statusFilter === option.value ? "$primary" : "$borderColor"
+                        }
+                        backgroundColor={
+                          statusFilter === option.value ? "$primary" : "$background"
+                        }
+                      >
+                        <Text
+                          color={statusFilter === option.value ? "white" : "$color"}
+                          fontWeight="600"
+                        >
+                          {option.label}
+                        </Text>
+                      </YStack>
+                    </TouchableOpacity>
+                  ))}
+                </XStack>
+              </YStack>
+
+              <Separator />
+
+              {/* Date Filter */}
+              <YStack gap="$3">
+                <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                  Date Range
+                </Text>
+                <XStack gap="$2" flexWrap="wrap">
+                  {[
+                    { value: "all", label: "All Time" },
+                    { value: "today", label: "Today" },
+                    { value: "week", label: "This Week" },
+                    { value: "month", label: "This Month" },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      onPress={() => setDateFilter(option.value)}
+                    >
+                      <YStack
+                        paddingHorizontal="$4"
+                        paddingVertical="$2"
+                        borderRadius="$4"
+                        borderWidth={1}
+                        borderColor={
+                          dateFilter === option.value ? "$primary" : "$borderColor"
+                        }
+                        backgroundColor={
+                          dateFilter === option.value ? "$primary" : "$background"
+                        }
+                      >
+                        <Text
+                          color={dateFilter === option.value ? "white" : "$color"}
+                          fontWeight="600"
+                        >
+                          {option.label}
+                        </Text>
+                      </YStack>
+                    </TouchableOpacity>
+                  ))}
+                </XStack>
+              </YStack>
+
+              <Separator />
+
+              {/* Earnings Filter */}
+              <YStack gap="$3">
+                <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                  Earnings Range
+                </Text>
+                <XStack gap="$2" flexWrap="wrap">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "high", label: `High (>${formatPrice(10, DEFAULT_CURRENCY)})` },
+                    { value: "medium", label: `Medium (${formatPrice(5, DEFAULT_CURRENCY)}-10)` },
+                    { value: "low", label: `Low (<${formatPrice(5, DEFAULT_CURRENCY)})` },
+                  ].map((option) => (
+                    <TouchableOpacity key={option.value}>
+                      <YStack
+                        paddingHorizontal="$4"
+                        paddingVertical="$2"
+                        borderRadius="$4"
+                        borderWidth={1}
+                        borderColor="$borderColor"
+                        backgroundColor="$background"
+                      >
+                        <Text color="$color" fontWeight="600">
+                          {option.label}
+                        </Text>
+                      </YStack>
+                    </TouchableOpacity>
+                  ))}
+                </XStack>
+              </YStack>
+
+              <Separator />
+
+              {/* Distance Filter */}
+              <YStack gap="$3">
+                <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                  Distance
+                </Text>
+                <XStack gap="$2" flexWrap="wrap">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "near", label: "Near (<5km)" },
+                    { value: "medium", label: "Medium (5-10km)" },
+                    { value: "far", label: "Far (>10km)" },
+                  ].map((option) => (
+                    <TouchableOpacity key={option.value}>
+                      <YStack
+                        paddingHorizontal="$4"
+                        paddingVertical="$2"
+                        borderRadius="$4"
+                        borderWidth={1}
+                        borderColor="$borderColor"
+                        backgroundColor="$background"
+                      >
+                        <Text color="$color" fontWeight="600">
+                          {option.label}
+                        </Text>
+                      </YStack>
+                    </TouchableOpacity>
+                  ))}
+                </XStack>
+              </YStack>
+
+              {/* Action Buttons */}
+              <YStack gap="$3" marginTop="$4">
+                <Button
+                  variant="outline"
+                  width="100%"
+                  onPress={() => {
+                    setStatusFilter("all");
+                    setDateFilter("all");
+                  }}
+                >
+                  Reset Filters
+                </Button>
+                <Button
+                  variant="primary"
+                  width="100%"
+                  onPress={() => setFilterSheetOpen(false)}
+                >
+                  Apply Filters
+                </Button>
+              </YStack>
+            </YStack>
+          </ScrollView>
+        </Sheet.Frame>
+      </Sheet>
     </YStack>
   );
 }

@@ -59,7 +59,7 @@ export default function NotificationsScreen() {
         return "$primary";
       case "delivery":
       case "delivered":
-        return "#27ae60";
+        return "$success";
       case "promo":
         return "#f1c40f";
       default:

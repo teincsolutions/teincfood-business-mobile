@@ -3,6 +3,7 @@ import { Card, Text, XStack, YStack, Separator } from 'tamagui';
 import { Truck, FileText } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { formatPrice } from '@/utils/currency';
 import type { KioskOrder } from '@/services/mock-data.service';
 
 interface ReadyOrderCardProps {
@@ -44,7 +45,7 @@ export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrd
           {order.items.map((item, index) => (
             <XStack key={index} justifyContent="space-between">
               <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-              <Text fontSize="$3" color="$colorMuted">GHS {(item.price * item.quantity).toFixed(2)}</Text>
+              <Text fontSize="$3" color="$colorMuted">{formatPrice(item.price * item.quantity, order.currency)}</Text>
             </XStack>
           ))}
         </YStack>
@@ -52,7 +53,7 @@ export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrd
         <Separator />
 
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold">GHS {order.total.toFixed(2)}</Text>
+          <Text fontSize="$5" fontWeight="bold">{formatPrice(order.total, order.currency)}</Text>
           <Button
             height="$12"
             $lg={{ height: "$12" }}

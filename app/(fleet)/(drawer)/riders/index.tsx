@@ -125,7 +125,7 @@ export default function FleetRidersScreen() {
               <XStack gap="$3" alignItems="center">
                 <Avatar circular size="$5">
                   <Avatar.Image src={rider.riderAvatarUrl} />
-                  <Avatar.Fallback backgroundColor="$gray8">
+                  <Avatar.Fallback backgroundColor="$gray800">
                     <Text color="white" fontWeight="bold">
                       {rider.riderName?.charAt(0) || "R"}
                     </Text>

@@ -20,6 +20,7 @@ export interface Order {
   deliveryFee: number;
   discount: number;
   total: number;
+  currency: string;
   estimatedDeliveryTime?: string;
   deliveryPerson?: DeliveryPerson;
   placedAt: string;

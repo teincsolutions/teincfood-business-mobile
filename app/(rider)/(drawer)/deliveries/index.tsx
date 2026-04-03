@@ -23,7 +23,7 @@ export default function RiderDeliveries() {
     switch (status) {
       case 'picked_up': return '#3498db';
       case 'delivering': return '#f39c12';
-      case 'delivered': return '#27ae60';
+      case 'delivered': return '$success';
       default: return '#95a5a6';
     }
   };
@@ -93,7 +93,7 @@ export default function RiderDeliveries() {
                     </Text>
                   </XStack>
                   <XStack gap="$2" alignItems="center">
-                    <Truck size={14} color="#27ae60" />
+                    <Truck size={14} color="$success" />
                     <Text fontSize="$3" fontFamily="$body" color="$color">
                       Dropoff: {delivery.dropoff}
                     </Text>
@@ -103,8 +103,8 @@ export default function RiderDeliveries() {
                 <Separator />
 
                 <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="#27ae60">
-                    +GHS {delivery.earnings.toFixed(2)}
+                  <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$success">
+                    +{delivery.currency} {delivery.earnings.toFixed(2)}
                   </Text>
                   <Button
                     variant="ghost"

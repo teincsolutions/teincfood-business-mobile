@@ -111,7 +111,7 @@ export default function PaymentSettings() {
                 <Switch
                   checked={acceptCash}
                   onCheckedChange={setAcceptCash}
-                  backgroundColor={acceptCash ? '$green10' : '$gray8'}
+                  backgroundColor={acceptCash ? '$green10' : '$gray800'}
                 >
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
@@ -129,7 +129,7 @@ export default function PaymentSettings() {
                 <Switch
                   checked={acceptMobileMoney}
                   onCheckedChange={setAcceptMobileMoney}
-                  backgroundColor={acceptMobileMoney ? '$green10' : '$gray8'}
+                  backgroundColor={acceptMobileMoney ? '$green10' : '$gray800'}
                 >
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
@@ -147,7 +147,7 @@ export default function PaymentSettings() {
                 <Switch
                   checked={acceptCard}
                   onCheckedChange={setAcceptCard}
-                  backgroundColor={acceptCard ? '$green10' : '$gray8'}
+                  backgroundColor={acceptCard ? '$green10' : '$gray800'}
                 >
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>

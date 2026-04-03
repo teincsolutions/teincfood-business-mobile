@@ -178,8 +178,8 @@ export default function AddBusinessScreen() {
                   iconAfter={Building}
                   borderRadius="$4"
                   backgroundColor="$background"
-                  borderColor={errors.type ? "$red8" : "$borderColor"}
-                  focusStyle={{ borderColor: errors.type ? "$red8" : "$primary" }}
+                  borderColor={errors.type ? "$error" : "$borderColor"}
+                  focusStyle={{ borderColor: errors.type ? "$error" : "$primary" }}
                 >
                   <Select.Value placeholder="Select business type" />
                 </Select.Trigger>

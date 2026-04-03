@@ -156,7 +156,7 @@ export function SessionsSheet({ open, onOpenChange }: SessionsSheetProps) {
                       backgroundColor={session.isCurrent ? '$green2' : '$backgroundSoft'}
                       borderRadius="$4"
                       borderWidth={1}
-                      borderColor={session.isCurrent ? '$green8' : '$borderColor'}
+                      borderColor={session.isCurrent ? '$success' : '$borderColor'}
                       gap="$3"
                     >
                       {/* Device Icon */}

@@ -89,7 +89,7 @@ export default function RiderDetailScreen() {
           <YStack alignItems="center" gap="$3">
             <Avatar circular size="$8">
               <Avatar.Image src={rider.riderAvatarUrl} />
-              <Avatar.Fallback backgroundColor="$gray8">
+              <Avatar.Fallback backgroundColor="$gray800">
                 <Text color="white" fontWeight="bold" fontSize="$6">
                   {rider.riderName?.charAt(0) || "R"}
                 </Text>

@@ -1,4 +1,5 @@
 import type { FoodCategory, FoodAddon } from '@/models/food.model';
+import { formatPrice, DEFAULT_CURRENCY } from '@/utils/currency';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -129,10 +130,6 @@ let menuItems: MenuItem[] = [
 ];
 
 // ─── Utility Functions ───────────────────────────────────────────────────────
-
-export function toGHS(minor: number): string {
-  return (minor / 100).toFixed(2);
-}
 
 export function toMinor(ghsStr: string): number {
   const n = parseFloat(ghsStr);

@@ -79,7 +79,7 @@ export default function RiderSettings() {
               <Switch
                 checked={isOnline}
                 onCheckedChange={setIsOnline}
-                backgroundColor={isOnline ? "$green10" : "$gray8"}
+                backgroundColor={isOnline ? "$green10" : "$gray800"}
               >
                 <Switch.Thumb backgroundColor="$background" />
               </Switch>

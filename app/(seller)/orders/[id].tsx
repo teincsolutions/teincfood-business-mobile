@@ -14,6 +14,7 @@ import {
 import { SellerOrder } from "@/services/mock-data.service";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
 import {
   useSellerOrderQuery,
   useStartPreparingOrderMutation,
@@ -318,7 +319,7 @@ export default function OrderDetails() {
                         </Text>
                       </YStack>
                       <Text fontSize="$4" fontWeight="600">
-                        GHS {(item.price * item.quantity).toFixed(2)}
+                        {formatPrice(item.price * item.quantity, item.currency || DEFAULT_CURRENCY)}
                       </Text>
                     </XStack>
                     {item.addons && item.addons.length > 0 && (
@@ -328,12 +329,12 @@ export default function OrderDetails() {
                             key={addonIndex}
                             justifyContent="space-between"
                           >
-                            <Text fontSize="$3" color="$colorMuted">
-                              + {addon.name}
-                            </Text>
-                            <Text fontSize="$3" color="$colorMuted">
-                              GHS {addon.price.toFixed(2)}
-                            </Text>
+                              <Text fontSize="$3" color="$colorMuted">
+                                {formatPrice(addon.price, addon.currency || DEFAULT_CURRENCY)}
+                              </Text>
+                              <Text fontSize="$3" color="$colorMuted">
+                                {formatPrice(addon.price, addon.currency || DEFAULT_CURRENCY)}
+                              </Text>
                           </XStack>
                         ))}
                       </YStack>
@@ -391,13 +392,13 @@ export default function OrderDetails() {
                 {order.subtotal !== undefined && (
                   <XStack justifyContent="space-between">
                     <Text color="$colorMuted">Subtotal</Text>
-                    <Text>GHS {order.subtotal.toFixed(2)}</Text>
+                    <Text>{formatPrice(order.subtotal, order.currency || DEFAULT_CURRENCY)}</Text>
                   </XStack>
                 )}
                 {order.deliveryFee !== undefined && (
                   <XStack justifyContent="space-between">
                     <Text color="$colorMuted">Delivery Fee</Text>
-                    <Text>GHS {order.deliveryFee.toFixed(2)}</Text>
+                    <Text>{formatPrice(order.deliveryFee, order.currency || DEFAULT_CURRENCY)}</Text>
                   </XStack>
                 )}
                 <Separator />
@@ -406,7 +407,7 @@ export default function OrderDetails() {
                     Total
                   </Text>
                   <Text fontSize="$5" fontWeight="bold" color="$info">
-                    GHS {order.total.toFixed(2)}
+                    {formatPrice(order.total, order.currency || DEFAULT_CURRENCY)}
                   </Text>
                 </XStack>
               </YStack>
