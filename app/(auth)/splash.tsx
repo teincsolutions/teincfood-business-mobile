@@ -338,7 +338,7 @@ export default function SplashScreen() {
           <YStack
             width={120}
             height={120}
-            borderRadius={30}
+            borderRadius={60}
             bg="$white"
             items="center"
             jc="center"
@@ -351,8 +351,8 @@ export default function SplashScreen() {
             <Image
               source={require('../../assets/icon.png')}
               style={{
-                width: 80,
-                height: 80,
+                width: 120,
+                height: 120,
                 resizeMode: 'contain',
               }}
             />
@@ -444,7 +444,7 @@ export default function SplashScreen() {
 
             {/* Status message */}
             <Text
-              fontSize={13}
+              fontSize="$10"
               color="$white"
               opacity={0.75}
               fontFamily="$body"
