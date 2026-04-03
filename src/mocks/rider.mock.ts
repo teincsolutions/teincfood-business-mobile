@@ -1,4 +1,4 @@
-import type {
+  import type {
   RiderMetrics,
   RiderActiveDelivery,
   RiderDelivery,
@@ -136,14 +136,14 @@ export const VEHICLE_TYPES = [
 
 // ─── Delivery Zones ───
 export const MOCK_DELIVERY_ZONES: DeliveryZone[] = [
-  { id: '1', name: 'Greater Accra', enabled: true, radius: '15 km', deliveries: 45 },
-  { id: '2', name: 'Tema', enabled: true, radius: '10 km', deliveries: 32 },
-  { id: '3', name: 'Kasoa', enabled: false, radius: '12 km', deliveries: 18 },
-  { id: '4', name: 'Madina', enabled: true, radius: '8 km', deliveries: 28 },
-  { id: '5', name: 'East Legon', enabled: true, radius: '5 km', deliveries: 22 },
-  { id: '6', name: 'Achimota', enabled: false, radius: '10 km', deliveries: 15 },
-  { id: '7', name: 'Dansoman', enabled: false, radius: '12 km', deliveries: 12 },
-  { id: '8', name: 'Spintex', enabled: true, radius: '8 km', deliveries: 20 },
+  { id: '1', name: 'Greater Accra', enabled: true, radius: '15 km', deliveries: 45, latitude: 5.5600, longitude: -0.2050 },
+  { id: '2', name: 'Tema', enabled: true, radius: '10 km', deliveries: 32, latitude: 5.6698, longitude: -0.0166 },
+  { id: '3', name: 'Kasoa', enabled: false, radius: '12 km', deliveries: 18, latitude: 5.5560, longitude: -0.4190 },
+  { id: '4', name: 'Madina', enabled: true, radius: '8 km', deliveries: 28, latitude: 5.6727, longitude: -0.1679 },
+  { id: '5', name: 'East Legon', enabled: true, radius: '5 km', deliveries: 22, latitude: 5.6364, longitude: -0.1585 },
+  { id: '6', name: 'Achimota', enabled: false, radius: '10 km', deliveries: 15, latitude: 5.6190, longitude: -0.2290 },
+  { id: '7', name: 'Dansoman', enabled: false, radius: '12 km', deliveries: 12, latitude: 5.5420, longitude: -0.2420 },
+  { id: '8', name: 'Spintex', enabled: true, radius: '8 km', deliveries: 20, latitude: 5.6350, longitude: -0.1050 },
 ];
 
 // ─── Navigation Settings ───

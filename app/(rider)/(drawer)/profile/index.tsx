@@ -1,10 +1,21 @@
 // @ts-nocheck
-import { YStack, Text, Card, Button, XStack, Separator, Avatar } from 'tamagui';
-import { User, Mail, Phone, Truck, LogOut, HelpCircle, FileText, Shield, Palette } from '@tamagui/lucide-icons';
-import { ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/stores/auth.store';
-import { useRiderStatisticsQuery } from '@/hooks/rider.hooks';
+import { YStack, Text, Card, XStack, Separator, Avatar } from "tamagui";
+import {
+  User,
+  Mail,
+  Phone,
+  Truck,
+  LogOut,
+  HelpCircle,
+  FileText,
+  Shield,
+  Palette,
+} from "@tamagui/lucide-icons";
+import { ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "@/stores/auth.store";
+import { useRiderStatisticsQuery } from "@/hooks/rider.hooks";
+import { Button } from "@/components/ui";
 
 /**
  * Rider Profile Screen
@@ -19,16 +30,46 @@ export default function RiderProfile() {
 
   const handleLogout = () => {
     clearAuth();
-    router.replace('/(auth)/login');
+    router.replace("/(auth)/login");
   };
 
   const profileItems = [
-    { icon: User, label: 'Edit Profile', description: 'Update your personal information', route: '/(shared)/profile/edit' },
-    { icon: FileText, label: 'Documents', description: 'Upload ID, license, insurance', route: '/(shared)/profile/documents' },
-    { icon: Shield, label: 'Security', description: 'Password, biometrics, 2FA', route: '/(shared)/profile/security' },
-    { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
-    { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/(shared)/profile/privacy-policy' },
-    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(shared)/profile/help' },
+    {
+      icon: User,
+      label: "Edit Profile",
+      description: "Update your personal information",
+      route: "/(shared)/profile/edit",
+    },
+    {
+      icon: FileText,
+      label: "Documents",
+      description: "Upload ID, license, insurance",
+      route: "/(shared)/profile/documents",
+    },
+    {
+      icon: Shield,
+      label: "Security",
+      description: "Password, biometrics, 2FA",
+      route: "/(shared)/profile/security",
+    },
+    {
+      icon: FileText,
+      label: "Terms of Service",
+      description: "Read our terms",
+      route: "/(shared)/profile/terms",
+    },
+    {
+      icon: Shield,
+      label: "Privacy Policy",
+      description: "How we handle your data",
+      route: "/(shared)/profile/privacy-policy",
+    },
+    {
+      icon: HelpCircle,
+      label: "Help & Support",
+      description: "Get help with the app",
+      route: "/(shared)/profile/help",
+    },
   ];
 
   return (
@@ -39,34 +80,36 @@ export default function RiderProfile() {
           <Card padding="$4" bordered>
             <XStack gap="$4" alignItems="center">
               <Avatar circular size="$10">
-                <Avatar.Image
-                  src={user?.avatarUrl}
-                />
-                <Avatar.Fallback items="center" justify="center" backgroundColor="$primary">
+                <Avatar.Image src={user?.avatarUrl} />
+                <Avatar.Fallback
+                  items="center"
+                  justify="center"
+                  backgroundColor="$primary"
+                >
                   <Text color="$background" fontWeight="bold" fontSize="$8">
-                    {user?.fullName?.charAt(0) || 'R'}
+                    {user?.fullName?.charAt(0) || "R"}
                   </Text>
                 </Avatar.Fallback>
               </Avatar>
               <YStack flex={1} gap="$1">
                 <Text fontSize="$6" fontWeight="bold">
-                  {user?.fullName || 'Rider'}
+                  {user?.fullName || "Rider"}
                 </Text>
                 <Text color="$colorMuted" fontSize="$3">
-                  {user?.email || 'rider@example.com'}
+                  {user?.email || "rider@example.com"}
                 </Text>
                 <Text color="$colorMuted" fontSize="$3">
-                  {user?.phone || '+233 XX XXX XXXX'}
+                  {user?.phone || "+233 XX XXX XXXX"}
                 </Text>
                 <XStack gap="$2" alignItems="center" marginTop="$1">
                   <YStack
                     width={8}
                     height={8}
                     borderRadius="$10"
-                    backgroundColor={user?.isOnline ? '$green10' : '$gray8'}
+                    backgroundColor={user?.isOnline ? "$green10" : "$gray8"}
                   />
                   <Text color="$colorMuted" fontSize="$2">
-                    {user?.isOnline ? 'Online' : 'Offline'}
+                    {user?.isOnline ? "Online" : "Offline"}
                   </Text>
                 </XStack>
               </YStack>
@@ -105,19 +148,27 @@ export default function RiderProfile() {
               <Separator />
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Total Deliveries</Text>
-                <Text fontWeight="bold">{statistics?.totalDeliveries || 156}</Text>
+                <Text fontWeight="bold">
+                  {statistics?.totalDeliveries || 156}
+                </Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Acceptance Rate</Text>
-                <Text fontWeight="bold">{statistics?.acceptanceRate || 94}%</Text>
+                <Text fontWeight="bold">
+                  {statistics?.acceptanceRate || 94}%
+                </Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Average Rating</Text>
-                <Text fontWeight="bold">{statistics?.averageRating || 4.8} ★</Text>
+                <Text fontWeight="bold">
+                  {statistics?.averageRating || 4.8} ★
+                </Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Total Earnings</Text>
-                <Text fontWeight="bold">GHS {statistics?.totalEarnings?.toFixed(2) || '5,680.00'}</Text>
+                <Text fontWeight="bold">
+                  GHS {statistics?.totalEarnings?.toFixed(2) || "5,680.00"}
+                </Text>
               </XStack>
             </YStack>
           </Card>
@@ -139,7 +190,9 @@ export default function RiderProfile() {
                     <item.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
                       <Text fontWeight="bold">{item.label}</Text>
-                      <Text color="$colorMuted" fontSize="$2">{item.description}</Text>
+                      <Text color="$colorMuted" fontSize="$2">
+                        {item.description}
+                      </Text>
                     </YStack>
                   </Button>
                   {index < profileItems.length - 1 && <Separator />}
@@ -151,17 +204,20 @@ export default function RiderProfile() {
           {/* Logout */}
           <Card padding="$4" bordered>
             <Button
-              backgroundColor="$red10"
+              variant="dangerOutline"
+              width="100%"
               onPress={handleLogout}
-              icon={<LogOut size={18} color="$background" />}
+              icon={<LogOut size={18} color="$error" />}
             >
-              <Text color="$background" fontWeight="bold">Logout</Text>
+              Logout
             </Button>
           </Card>
 
           {/* App Version */}
           <YStack alignItems="center" padding="$4">
-            <Text color="$colorMuted" fontSize="$2">TeincFoodBusiness v1.0.0</Text>
+            <Text color="$colorMuted" fontSize="$2">
+              TeincFoodBusiness v1.0.0
+            </Text>
           </YStack>
         </YStack>
       </ScrollView>

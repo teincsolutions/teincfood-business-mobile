@@ -293,7 +293,8 @@ export default function RiderDrawerLayout() {
           },
           headerLeft: () => (
             <Menu
-              size="$10"
+              size="$8"
+              marginStart="$2"
               color={theme.color.val}
               onPress={() => navigation.toggleDrawer()}
             />

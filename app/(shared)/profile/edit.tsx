@@ -75,8 +75,8 @@ export default function EditProfile() {
         </XStack>
         <Button
           variant="primary"
-          width="auto"
-          height={40}
+          height="$10"
+          $lg={{ height: "$10" }}
           paddingHorizontal="$4"
           loading={isSaving}
           onPress={handleSave}
@@ -91,7 +91,7 @@ export default function EditProfile() {
           {/* Profile Photo */}
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
-              <Avatar circular size="$10">
+              <Avatar circular size="$20">
                 <Avatar.Image src={user?.avatarUrl} />
                 <Avatar.Fallback backgroundColor="$primary">
                   <User size={32} color="$background" />
@@ -145,7 +145,12 @@ export default function EditProfile() {
           </Card>
 
           {/* Save Button */}
-          <Button variant="primary" loading={isSaving} onPress={handleSave}>
+          <Button
+            variant="primary"
+            width="100%"
+            loading={isSaving}
+            onPress={handleSave}
+          >
             Save Changes
           </Button>
         </YStack>

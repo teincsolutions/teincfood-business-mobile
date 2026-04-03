@@ -1,12 +1,30 @@
 // @ts-nocheck
-import { ScrollView, TouchableOpacity, FlatList, ListRenderItem } from "react-native";
+import {
+  ScrollView,
+  TouchableOpacity,
+  FlatList,
+  ListRenderItem,
+  Platform,
+} from "react-native";
 import { YStack, XStack, Text, Card, Separator, Switch, Input } from "tamagui";
-import { MapPin, Check, Save, Navigation, ArrowLeft, Search } from "@tamagui/lucide-icons";
+import {
+  MapPin,
+  Check,
+  Save,
+  Navigation,
+  ArrowLeft,
+  Search,
+} from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useMemo, useCallback } from "react";
-import { Button } from "@/components/ui";
-import { useDeliveryZonesQuery, useUpdateDeliveryZonesMutation, useToggleDeliveryZoneMutation } from "@/hooks/rider.hooks";
+import { useState, useMemo, useCallback, useRef } from "react";
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
+import { BackButton, Button } from "@/components/ui";
+import {
+  useDeliveryZonesQuery,
+  useUpdateDeliveryZonesMutation,
+  useToggleDeliveryZoneMutation,
+} from "@/hooks/rider.hooks";
 import type { DeliveryZone } from "@/models/rider.model";
 
 /**
@@ -29,9 +47,12 @@ export default function DeliveryZones() {
     return zones.filter((zone) => zone.name.toLowerCase().includes(query));
   }, [zones, searchQuery]);
 
-  const handleToggleZone = useCallback((zoneId: string, currentEnabled: boolean) => {
-    toggleZone.mutate({ zoneId, enabled: !currentEnabled });
-  }, [toggleZone]);
+  const handleToggleZone = useCallback(
+    (zoneId: string, currentEnabled: boolean) => {
+      toggleZone.mutate({ zoneId, enabled: !currentEnabled });
+    },
+    [toggleZone],
+  );
 
   const handleSave = () => {
     router.back();
@@ -39,56 +60,62 @@ export default function DeliveryZones() {
 
   const enabledZones = zones.filter((z) => z.enabled).length;
 
-  const renderItem: ListRenderItem<DeliveryZone> = useCallback(({ item: zone, index }) => (
-    <YStack>
-      <TouchableOpacity onPress={() => handleToggleZone(zone.id, zone.enabled)}>
-        <XStack
-          padding="$3"
-          borderRadius="$4"
-          backgroundColor={zone.enabled ? "$green2" : "$gray2"}
-          justifyContent="space-between"
-          alignItems="center"
+  const renderItem: ListRenderItem<DeliveryZone> = useCallback(
+    ({ item: zone, index }) => (
+      <YStack>
+        <TouchableOpacity
+          activeOpacity={0.5}
+          onPress={() => handleToggleZone(zone.id, zone.enabled)}
         >
-          <XStack gap="$3" alignItems="center" flex={1}>
-            <YStack
-              width={40}
-              height={40}
-              borderRadius="$10"
-              backgroundColor={zone.enabled ? "$green10" : "$gray8"}
-              alignItems="center"
-              justifyContent="center"
-            >
-              {zone.enabled ? (
-                <Check size={20} color="white" />
-              ) : (
-                <MapPin size={20} color="white" />
-              )}
-            </YStack>
-            <YStack flex={1}>
-              <Text fontWeight="bold">{zone.name}</Text>
-              <XStack gap="$2" alignItems="center">
-                <Text fontSize="$2" color="$colorMuted">
-                  Radius: {zone.radius}
-                </Text>
-                <Text fontSize="$2" color="$colorMuted">
-                  • {zone.deliveries} deliveries
-                </Text>
-              </XStack>
-            </YStack>
-          </XStack>
-          <Switch
-            size="$6"
-            checked={zone.enabled}
-            onCheckedChange={() => handleToggleZone(zone.id, zone.enabled)}
-            backgroundColor={zone.enabled ? "$color.green" : "$color.gray900"}
+          <XStack
+            padding="$3"
+            borderRadius="$4"
+            backgroundColor={zone.enabled ? "$green2" : "$gray2"}
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Switch.Thumb backgroundColor="white" />
-          </Switch>
-        </XStack>
-      </TouchableOpacity>
-      {index < filteredZones.length - 1 && <Separator marginTop="$2" />}
-    </YStack>
-  ), [filteredZones.length, handleToggleZone]);
+            <XStack gap="$3" alignItems="center" flex={1}>
+              <YStack
+                width={40}
+                height={40}
+                borderRadius="$10"
+                backgroundColor={zone.enabled ? "$green10" : "$gray8"}
+                alignItems="center"
+                justifyContent="center"
+              >
+                {zone.enabled ? (
+                  <Check size={20} color="$color" />
+                ) : (
+                  <MapPin size={20} color="$color" />
+                )}
+              </YStack>
+              <YStack flex={1}>
+                <Text fontWeight="bold">{zone.name}</Text>
+                <XStack gap="$2" alignItems="center">
+                  <Text fontSize="$2" color="$colorMuted">
+                    Radius: {zone.radius}
+                  </Text>
+                  <Text fontSize="$2" color="$colorMuted">
+                    • {zone.deliveries} deliveries
+                  </Text>
+                </XStack>
+              </YStack>
+            </XStack>
+            <Switch
+              size="$6"
+              checked={zone.enabled}
+              onCheckedChange={() => handleToggleZone(zone.id, zone.enabled)}
+              backgroundColor={zone.enabled ? "$color.green" : "$color.gray900"}
+            >
+              <Switch.Thumb backgroundColor="white" />
+            </Switch>
+          </XStack>
+        </TouchableOpacity>
+        {index < filteredZones.length - 1 && <Separator marginTop="$2" />}
+      </YStack>
+    ),
+    [filteredZones.length, handleToggleZone],
+  );
 
   const keyExtractor = useCallback((item: DeliveryZone) => item.id, []);
 
@@ -103,23 +130,21 @@ export default function DeliveryZones() {
         alignItems="center"
         backgroundColor="$background"
       >
-        <Button
-          variant="outline"
-          width={44}
-          height={44}
-          borderRadius={22}
-          paddingHorizontal={0}
-          onPress={() => router.back()}
-          icon={<ArrowLeft size={20} />}
-        />
+        <BackButton />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Delivery Zones
         </Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text fontSize="$4" color="$primary" fontWeight="bold">
-            Save
-          </Text>
-        </TouchableOpacity>
+        <Button
+          variant="primary"
+          height="$10"
+          $lg={{ height: "$10" }}
+          paddingHorizontal="$4"
+          onPress={handleSave}
+          loading={isLoading}
+          icon={<Save size={18} color="white" />}
+        >
+          Save
+        </Button>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -140,30 +165,92 @@ export default function DeliveryZones() {
             </YStack>
           </Card>
 
-          {/* Map Placeholder */}
+          {/* Map with Delivery Zone Markers */}
           <Card padding="$4" bordered>
             <YStack gap="$3" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
                 Coverage Map
               </Text>
               <YStack
-                height={200}
+                height={300}
                 width="100%"
-                backgroundColor="$gray3"
                 borderRadius="$4"
-                alignItems="center"
-                justifyContent="center"
+                overflow="hidden"
               >
-                <Navigation size={48} color="$colorMuted" />
-                <Text color="$colorMuted" marginTop="$2">
-                  Interactive map coming soon
-                </Text>
+                <MapView
+                  style={{ flex: 1 }}
+                  provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+                  initialRegion={{
+                    latitude: 5.6037,
+                    longitude: -0.1870,
+                    latitudeDelta: 0.5,
+                    longitudeDelta: 0.5,
+                  }}
+                >
+                  {zones.map((zone) => {
+                    const radiusInMeters = parseInt(zone.radius) * 1000;
+                    return (
+                      <Marker
+                        key={zone.id}
+                        coordinate={{
+                          latitude: zone.latitude,
+                          longitude: zone.longitude,
+                        }}
+                        title={zone.name}
+                        description={`${zone.radius} • ${zone.deliveries} deliveries`}
+                        pinColor={zone.enabled ? '#22c55e' : '#9ca3af'}
+                      />
+                    );
+                  })}
+                  {zones.map((zone) => {
+                    const radiusInMeters = parseInt(zone.radius) * 1000;
+                    return (
+                      <Circle
+                        key={`circle-${zone.id}`}
+                        center={{
+                          latitude: zone.latitude,
+                          longitude: zone.longitude,
+                        }}
+                        radius={radiusInMeters}
+                        strokeColor={zone.enabled ? '#22c55e' : '#9ca3af'}
+                        strokeWidth={2}
+                        fillColor={
+                          zone.enabled ? 'rgba(34, 197, 94, 0.15)' : 'rgba(156, 163, 175, 0.1)'
+                        }
+                      />
+                    );
+                  })}
+                </MapView>
               </YStack>
+              <XStack gap="$2" alignItems="center" flexWrap="wrap" justifyContent="center">
+                <XStack gap="$1" alignItems="center">
+                  <YStack
+                    width={12}
+                    height={12}
+                    borderRadius="$10"
+                    backgroundColor="$green500"
+                  />
+                  <Text fontSize="$2" color="$colorMuted">
+                    Enabled
+                  </Text>
+                </XStack>
+                <XStack gap="$1" alignItems="center">
+                  <YStack
+                    width={12}
+                    height={12}
+                    borderRadius="$10"
+                    backgroundColor="$gray500"
+                  />
+                  <Text fontSize="$2" color="$colorMuted">
+                    Disabled
+                  </Text>
+                </XStack>
+              </XStack>
             </YStack>
           </Card>
 
           {/* Search Input */}
-          <XStack position="relative" alignItems="center" >
+          <XStack position="relative" alignItems="center">
             <XStack position="absolute" left="$3" zIndex={1}>
               <Search size={20} color="$colorMuted" />
             </XStack>
@@ -184,7 +271,8 @@ export default function DeliveryZones() {
                   Available Zones
                 </Text>
                 <Text fontSize="$3" color="$colorMuted">
-                  {filteredZones.length} {filteredZones.length === 1 ? "zone" : "zones"}
+                  {filteredZones.length}{" "}
+                  {filteredZones.length === 1 ? "zone" : "zones"}
                 </Text>
               </XStack>
               <Separator />
@@ -231,8 +319,8 @@ export default function DeliveryZones() {
 
           {/* Save Button */}
           <Button
-            size="$5"
-            backgroundColor="$primary"
+            variant="primary"
+            width="100%"
             icon={<Save size={18} />}
             onPress={handleSave}
           >

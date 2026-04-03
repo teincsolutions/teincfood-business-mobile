@@ -113,6 +113,8 @@ export interface DeliveryZone {
   enabled: boolean;
   radius: string;
   deliveries: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface NavigationSettings {

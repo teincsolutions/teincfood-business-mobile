@@ -5,8 +5,11 @@ import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import { Save, Check, ArrowLeft } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, FormInput } from "@/components/ui";
-import { useVehicleInfoQuery, useUpdateVehicleInfoMutation } from "@/hooks/rider.hooks";
+import { BackButton, Button, FormInput } from "@/components/ui";
+import {
+  useVehicleInfoQuery,
+  useUpdateVehicleInfoMutation,
+} from "@/hooks/rider.hooks";
 import { VEHICLE_TYPES, MOCK_VEHICLE_INFO } from "@/mocks/rider.mock";
 
 /**
@@ -20,11 +23,21 @@ export default function VehicleInfo() {
   const { data: vehicleInfo, isLoading } = useVehicleInfoQuery();
   const updateVehicle = useUpdateVehicleInfoMutation();
 
-  const [vehicleType, setVehicleType] = useState(vehicleInfo?.type || MOCK_VEHICLE_INFO.type);
-  const [plateNumber, setPlateNumber] = useState(vehicleInfo?.plateNumber || MOCK_VEHICLE_INFO.plateNumber);
-  const [vehicleColor, setVehicleColor] = useState(vehicleInfo?.color || MOCK_VEHICLE_INFO.color);
-  const [vehicleBrand, setVehicleBrand] = useState(vehicleInfo?.brand || MOCK_VEHICLE_INFO.brand);
-  const [vehicleModel, setVehicleModel] = useState(vehicleInfo?.model || MOCK_VEHICLE_INFO.model);
+  const [vehicleType, setVehicleType] = useState(
+    vehicleInfo?.type || MOCK_VEHICLE_INFO.type,
+  );
+  const [plateNumber, setPlateNumber] = useState(
+    vehicleInfo?.plateNumber || MOCK_VEHICLE_INFO.plateNumber,
+  );
+  const [vehicleColor, setVehicleColor] = useState(
+    vehicleInfo?.color || MOCK_VEHICLE_INFO.color,
+  );
+  const [vehicleBrand, setVehicleBrand] = useState(
+    vehicleInfo?.brand || MOCK_VEHICLE_INFO.brand,
+  );
+  const [vehicleModel, setVehicleModel] = useState(
+    vehicleInfo?.model || MOCK_VEHICLE_INFO.model,
+  );
 
   const [errors, setErrors] = useState<{
     plateNumber?: string;
@@ -57,7 +70,7 @@ export default function VehicleInfo() {
       },
       {
         onSuccess: () => router.back(),
-      }
+      },
     );
   };
 
@@ -72,23 +85,19 @@ export default function VehicleInfo() {
         alignItems="center"
         backgroundColor="$background"
       >
-        <Button
-          variant="outline"
-          width={44}
-          height={44}
-          borderRadius={22}
-          paddingHorizontal={0}
-          onPress={() => router.back()}
-          icon={<ArrowLeft size={20} />}
-        />
+        <BackButton />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Vehicle Information
         </Text>
-        <Pressable onPress={handleSave} disabled={updateVehicle.isPending}>
-          <Text fontSize="$4" color="$primary" fontWeight="bold">
-            {updateVehicle.isPending ? "Saving..." : "Save"}
-          </Text>
-        </Pressable>
+        <Button
+          height="$10"
+          $lg={{ height: "$10" }}
+          variant="primary"
+          onPress={handleSave}
+          disabled={updateVehicle.isPending}
+        >
+          {updateVehicle.isPending ? "Saving..." : "Save"}
+        </Button>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -207,7 +216,9 @@ export default function VehicleInfo() {
                   borderRadius="$10"
                 >
                   <Text color="white" fontSize="$2" fontWeight="bold">
-                    {vehicleInfo?.verificationStatus === 'verified' ? 'Verified' : 'Pending'}
+                    {vehicleInfo?.verificationStatus === "verified"
+                      ? "Verified"
+                      : "Pending"}
                   </Text>
                 </YStack>
               </XStack>
@@ -220,7 +231,8 @@ export default function VehicleInfo() {
           {/* Save Button */}
           <Button
             size="$5"
-            backgroundColor="$primary"
+            width="100%"
+            variant="primary"
             icon={<Save size={18} />}
             onPress={handleSave}
             disabled={updateVehicle.isPending}
