@@ -117,10 +117,8 @@ export function RiderSelectionSheet({
 
                   {/* Phone */}
                   <Button
-                    size="$3"
-                    circular
-                    backgroundColor="$backgroundSoft"
-                    icon={<Phone size={16} color="$colorMuted" />}
+                    variant="outline"
+                    icon={({size, color}) => <Phone size={size} color={color} />}
                   />
                 </XStack>
               </Card>

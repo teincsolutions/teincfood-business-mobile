@@ -324,10 +324,12 @@ export default function SplashScreen() {
         borderRadius={80}
         bg="$white"
         opacity={0.08}
+        items="center"
+        jc="center"
       />
 
       {/* Main content */}
-      <YStack flex={1} items="center" jc="center" gap="$6" padding="$6">
+      <YStack flex={1} items="center" jc="center" marginTop="$24" gap="$6" padding="$6">
         {/* Logo */}
         <Animated.View
           style={{
