@@ -107,7 +107,7 @@ export default function DeliveryZones() {
               onCheckedChange={() => handleToggleZone(zone.id, zone.enabled)}
               backgroundColor={zone.enabled ? "$color.green" : "$color.gray900"}
             >
-              <Switch.Thumb backgroundColor="white" />
+              <Switch.Thumb backgroundColor="$white" />
             </Switch>
           </XStack>
         </TouchableOpacity>

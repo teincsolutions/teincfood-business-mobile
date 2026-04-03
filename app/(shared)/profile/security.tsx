@@ -227,11 +227,12 @@ export default function Security() {
                       </YStack>
                     </XStack>
                     <Switch
+                     size="$6"
                       checked={option.value}
                       onCheckedChange={option.onToggle}
-                      backgroundColor={option.value ? "$primary" : "$gray8"}
+                      backgroundColor={option.value ? "$primary" : "$gray200"}
                     >
-                      <Switch.Thumb backgroundColor="white" />
+                      <Switch.Thumb backgroundColor="$background" borderWidth={1} borderColor="$gray200" />
                     </Switch>
                   </XStack>
                   {index < securityOptions.length - 1 && <Separator />}

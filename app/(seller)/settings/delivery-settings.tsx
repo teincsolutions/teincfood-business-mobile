@@ -174,7 +174,7 @@ export default function DeliverySettings() {
                 <Switch
                   checked={deliveryEnabled}
                   onCheckedChange={setDeliveryEnabled}
-                  backgroundColor={deliveryEnabled ? "$green10" : "$gray8"}
+                  backgroundColor={deliveryEnabled ? "$green10" : "$gray800"}
                 >
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
