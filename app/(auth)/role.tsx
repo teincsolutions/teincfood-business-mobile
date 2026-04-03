@@ -127,7 +127,7 @@ export default function RoleScreen() {
                     width: 28,
                     height: 28,
                     tintColor:
-                      selectedRole === "rider" ? "white" : "#9CA3AF" /* $colorMuted */,
+                      selectedRole === "rider" ? "white" : "#71717A" /* $colorMuted */,
                   }}
                 />
               </YStack>

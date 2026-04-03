@@ -1,14 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Avatar,
-  Separator,
-} from "tamagui";
+import { Image, ScrollView } from "react-native";
+import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Car,
@@ -29,7 +22,9 @@ export default function FleetVehiclesScreen() {
   const insets = useSafeAreaInsets();
   const { vehicles, riders } = useFleetStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "motorcycle" | "car" | "bicycle" | "van">("all");
+  const [filterType, setFilterType] = useState<
+    "all" | "motorcycle" | "car" | "bicycle" | "van"
+  >("all");
 
   const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch =
@@ -46,13 +41,31 @@ export default function FleetVehiclesScreen() {
   const getVehicleIcon = (type: string) => {
     switch (type) {
       case "motorcycle":
-        return <Bike size={20} color="$colorMuted" />;
+        return (
+          <Image
+            source={require("assets/icons/delivery-bike.png")}
+            style={{
+              width: 20,
+              height: 20,
+              tintColor: "#71717A" /* $colorMuted */,
+            }}
+          />
+        );
       case "car":
       case "van":
       case "truck":
         return <Car size={20} color="$colorMuted" />;
       default:
-        return <Car size={20} color="$colorMuted" />;
+        return (
+          <Image
+            source={require("assets/icons/delivery-bike.png")}
+            style={{
+              width: 20,
+              height: 20,
+              tintColor: "#71717A" /* $colorMuted */,
+            }}
+          />
+        );
     }
   };
 
@@ -71,7 +84,12 @@ export default function FleetVehiclesScreen() {
       <YStack padding="$4" gap="$4">
         {/* Header */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Vehicles
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -87,13 +105,14 @@ export default function FleetVehiclesScreen() {
                 placeholder="Search vehicles..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                paddingLeft="$4"
+                paddingStart="$8"
               />
-              <YStack position="absolute" left="$3" top="$3">
+              <YStack position="absolute" left="$3" top="$5">
                 <Search size={20} color="$colorMuted" />
               </YStack>
             </YStack>
             <Button
+              variant="outline"
               icon={Plus}
               onPress={() => router.push("/(fleet)/vehicles/add")}
             >
@@ -116,28 +135,34 @@ export default function FleetVehiclesScreen() {
                 variant={filterType === "motorcycle" ? "primary" : "outline"}
                 onPress={() => setFilterType("motorcycle")}
               >
-                Motorcycle ({vehicles.filter((v) => v.vehicleType === "motorcycle").length})
+                Motorcycle (
+                {vehicles.filter((v) => v.vehicleType === "motorcycle").length})
               </Button>
               <Button
                 size="$2"
                 variant={filterType === "car" ? "primary" : "outline"}
                 onPress={() => setFilterType("car")}
               >
-                Car ({vehicles.filter((v) => v.vehicleType === "car").length || "0"})
+                Car (
+                {vehicles.filter((v) => v.vehicleType === "car").length || "0"})
               </Button>
               <Button
                 size="$2"
                 variant={filterType === "van" ? "primary" : "outline"}
                 onPress={() => setFilterType("van")}
               >
-                Van ({vehicles.filter((v) => v.vehicleType === "van").length || "0"})
+                Van (
+                {vehicles.filter((v) => v.vehicleType === "van").length || "0"})
               </Button>
               <Button
                 size="$2"
                 variant={filterType === "bicycle" ? "primary" : "outline"}
                 onPress={() => setFilterType("bicycle")}
               >
-                Bicycle ({vehicles.filter((v) => v.vehicleType === "bicycle").length || "0"})
+                Bicycle (
+                {vehicles.filter((v) => v.vehicleType === "bicycle").length ||
+                  "0"}
+                )
               </Button>
             </XStack>
           </ScrollView>
@@ -160,7 +185,9 @@ export default function FleetVehiclesScreen() {
                     width={56}
                     height={56}
                     borderRadius="$4"
-                    backgroundColor={vehicle.isActive ? "$primaryLight" : "$backgroundSoft"}
+                    backgroundColor={
+                      vehicle.isActive ? "$primaryLight" : "$backgroundSoft"
+                    }
                     alignItems="center"
                     justifyContent="center"
                   >
@@ -169,18 +196,26 @@ export default function FleetVehiclesScreen() {
 
                   <YStack flex={1} gap="$1">
                     <XStack justifyContent="space-between" alignItems="center">
-                      <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
+                      <Text
+                        fontSize="$5"
+                        fontWeight="600"
+                        fontFamily="$heading"
+                      >
                         {vehicle.plateNumber}
                       </Text>
                       <YStack
                         paddingHorizontal="$2"
                         paddingVertical="$1"
                         borderRadius="$2"
-                        backgroundColor={vehicle.isActive ? "$success" : "$backgroundSoft"}
+                        backgroundColor={
+                          vehicle.isActive ? "$success" : "$backgroundSoft"
+                        }
                       >
                         <Text
                           fontSize="$2"
-                          color={vehicle.isActive ? "$success" : "$colorSecondary"}
+                          color={
+                            vehicle.isActive ? "$white" : "$colorSecondary"
+                          }
                           fontFamily="$body"
                         >
                           {vehicle.isActive ? "Active" : "Inactive"}
@@ -188,20 +223,38 @@ export default function FleetVehiclesScreen() {
                       </YStack>
                     </XStack>
 
-                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                      {vehicle.brand} {vehicle.model} {vehicle.year && `(${vehicle.year})`}
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      {vehicle.brand} {vehicle.model}{" "}
+                      {vehicle.year && `(${vehicle.year})`}
                     </Text>
 
                     <XStack gap="$3" alignItems="center">
-                      <Text fontSize="$2" color="$colorMuted" textTransform="capitalize" fontFamily="$body">
+                      <Text
+                        fontSize="$2"
+                        color="$colorMuted"
+                        textTransform="capitalize"
+                        fontFamily="$body"
+                      >
                         {vehicle.vehicleType}
                       </Text>
                       {vehicle.color && (
                         <>
-                          <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                          <Text
+                            fontSize="$2"
+                            color="$colorMuted"
+                            fontFamily="$body"
+                          >
                             •
                           </Text>
-                          <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                          <Text
+                            fontSize="$2"
+                            color="$colorMuted"
+                            fontFamily="$body"
+                          >
                             {vehicle.color}
                           </Text>
                         </>
@@ -211,7 +264,11 @@ export default function FleetVehiclesScreen() {
                     {assignedRider && (
                       <XStack gap="$2" alignItems="center" marginTop="$1">
                         <User size={14} color="$colorMuted" />
-                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                        <Text
+                          fontSize="$2"
+                          color="$colorSecondary"
+                          fontFamily="$body"
+                        >
                           Assigned to: {assignedRider.riderName}
                         </Text>
                       </XStack>
@@ -236,12 +293,22 @@ export default function FleetVehiclesScreen() {
             <Card padding="$6" bordered>
               <YStack alignItems="center" gap="$3">
                 <Car size={48} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="600" textAlign="center" fontFamily="$heading">
+                <Text
+                  fontSize="$5"
+                  fontWeight="600"
+                  textAlign="center"
+                  fontFamily="$heading"
+                >
                   {searchQuery || filterType !== "all"
                     ? "No vehicles found"
                     : "No vehicles yet"}
                 </Text>
-                <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+                <Text
+                  fontSize="$4"
+                  color="$colorSecondary"
+                  textAlign="center"
+                  fontFamily="$body"
+                >
                   {searchQuery || filterType !== "all"
                     ? "Try adjusting your search or filter"
                     : "Add your first vehicle to get started"}
