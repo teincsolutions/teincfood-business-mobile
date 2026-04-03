@@ -28,6 +28,7 @@ import {
   Building,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { useSecurityStore } from "@/stores/security.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   DrawerContentScrollView,
@@ -315,6 +316,7 @@ export default function SellerDrawerLayout() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = Boolean(user && accessToken);
+  const isBiometricEnabled = useSecurityStore((state) => state.isBiometricEnabled);
   const { isTablet, isLandscape } = useResponsive();
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -332,32 +334,40 @@ export default function SellerDrawerLayout() {
     <>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={({ navigation }) => ({
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: theme.background.val,
-          },
-           headerLeft: () => (
-            <Menu
-               size="$8"
-              marginStart="$2"
-              color={theme.color.val}
-              onPress={() => navigation.toggleDrawer()}
-            />
-          ),
-          headerTintColor: theme.color.val,
-          headerTitleStyle: {
-            fontFamily: "Sen_600SemiBold",
-            fontSize: "$10",
-          },
-          drawerStyle: {
-            backgroundColor: theme.background.val,
-            width: isTablet ? 300 : 280,
-          },
-          sceneStyle: { backgroundColor: theme.background.val },
-          drawerType: usePermanentDrawer ? "permanent" : "front",
-          overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
-        })}
+        screenOptions={({ navigation, route }) => {
+          const isKioskScreen = route.name === "dashboard/kiosk";
+          const shouldHideMenu = isKioskScreen && isBiometricEnabled;
+
+          return {
+            headerShown: true,
+            headerStyle: {
+              backgroundColor: theme.background.val,
+            },
+            headerLeft: shouldHideMenu
+              ? () => null
+              : () => (
+                  <Menu
+                    size="$8"
+                    marginStart="$2"
+                    color={theme.color.val}
+                    onPress={() => navigation.toggleDrawer()}
+                  />
+                ),
+            headerTintColor: theme.color.val,
+            headerTitleStyle: {
+              fontFamily: "Sen_600SemiBold",
+              fontSize: "$10",
+            },
+            drawerStyle: {
+              backgroundColor: theme.background.val,
+              width: isTablet ? 300 : 280,
+            },
+            sceneStyle: { backgroundColor: theme.background.val },
+            drawerType: usePermanentDrawer ? "permanent" : "front",
+            overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
+            swipeEnabled: !shouldHideMenu,
+          };
+        }}
       >
         {/* Dashboard */}
         <Drawer.Screen

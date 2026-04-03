@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, Platform } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
 import {
   Shield,
@@ -9,16 +9,25 @@ import {
   Key,
   Smartphone,
   Check,
+  AlertTriangle,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as LocalAuthentication from "expo-local-authentication";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { useSecurityStore } from "@/stores/security.store";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 
 export default function Security() {
   const insets = useSafeAreaInsets();
   const [isSaving, setIsSaving] = useState(false);
+  const [isTogglingBiometric, setIsTogglingBiometric] = useState(false);
+  const [biometricError, setBiometricError] = useState<string | null>(null);
 
-  // Security toggles
-  const [biometricEnabled, setBiometricEnabled] = useState(true);
+  // Security store
+  const biometricEnabled = useSecurityStore((s) => s.isBiometricEnabled);
+  const setBiometricEnabled = useSecurityStore((s) => s.setBiometricEnabled);
+
+  // Local UI state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [loginNotifications, setLoginNotifications] = useState(true);
 
@@ -59,13 +68,54 @@ export default function Security() {
     }, 1500);
   };
 
+  const handleBiometricToggle = async () => {
+    setBiometricError(null);
+    setIsTogglingBiometric(true);
+
+    try {
+      // Check if device supports biometric authentication
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        setBiometricError("This device does not support biometric authentication.");
+        setIsTogglingBiometric(false);
+        return;
+      }
+
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        setBiometricError("No biometric credentials are enrolled on this device.");
+        setIsTogglingBiometric(false);
+        return;
+      }
+
+      // Verify identity before changing the setting
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: biometricEnabled
+          ? "Verify identity to disable biometric lock"
+          : "Verify identity to enable biometric lock",
+        fallbackLabel: "Use Passcode",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        setBiometricEnabled(!biometricEnabled);
+      }
+    } catch (err) {
+      setBiometricError("An error occurred. Please try again.");
+    } finally {
+      setIsTogglingBiometric(false);
+    }
+  };
+
   const securityOptions = [
     {
       icon: Fingerprint,
       label: "Biometric Login",
       description: "Use fingerprint or face ID to login",
       value: biometricEnabled,
-      onToggle: setBiometricEnabled,
+      onToggle: handleBiometricToggle,
+      disabled: isTogglingBiometric,
     },
     {
       icon: Key,
@@ -240,6 +290,20 @@ export default function Security() {
               ))}
             </YStack>
           </Card>
+
+          {/* Biometric Error */}
+          {biometricError && (
+            <Card padding="$4" bordered borderColor="$red10" backgroundColor="$red2">
+              <XStack gap="$3" alignItems="center">
+                <AlertTriangle size={20} color="$red10" />
+                <YStack flex={1}>
+                  <Text fontSize="$3" color="$red10">
+                    {biometricError}
+                  </Text>
+                </YStack>
+              </XStack>
+            </Card>
+          )}
 
           {/* Active Sessions */}
           <Card padding="$4" bordered>

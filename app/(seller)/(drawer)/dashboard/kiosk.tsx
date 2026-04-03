@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ScrollView, Modal, FlatList } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import {
   YStack,
   XStack,
@@ -43,7 +43,10 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useKioskStore } from "@/stores/kiosk.store";
+import { useSecurityStore } from "@/stores/security.store";
 import * as Haptics from "expo-haptics";
+import * as LocalAuthentication from "expo-local-authentication";
+import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import type { KioskOrder } from "@/services/mock-data.service";
 import type { AvailableRider } from "@/services/kiosk.service";
 import {
@@ -85,9 +88,13 @@ const defaultDialogState: DialogState = {
  */
 export default function KioskMode() {
   const router = useRouter();
+  const navigation = useNavigation();
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const { isLargeTablet, isTablet } = useResponsive();
+
+  // Keep screen awake while in kiosk mode
+  useKeepAwake();
 
   // UI preferences
   const soundEnabled = useKioskStore((state) => state.soundEnabled);
@@ -95,8 +102,48 @@ export default function KioskMode() {
   const toggleSound = useKioskStore((state) => state.toggleSound);
   const toggleAutoRefresh = useKioskStore((state) => state.toggleAutoRefresh);
 
+  // Security
+  const isBiometricEnabled = useSecurityStore((state) => state.isBiometricEnabled);
+
   // Dialog state
   const [dialog, setDialog] = useState<DialogState>(defaultDialogState);
+
+  // Biometric exit state
+  const [showBiometricExit, setShowBiometricExit] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  // Intercept navigation away from kiosk mode (e.g., via drawer menu)
+  useEffect(() => {
+    if (!isBiometricEnabled) return;
+
+    const unsubscribe = navigation.addListener("beforeRemove", async (e: any) => {
+      // Prevent default navigation
+      e.preventDefault();
+
+      // Authenticate before allowing navigation
+      setIsAuthenticating(true);
+      try {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: "Verify identity to exit Kiosk Mode",
+          fallbackLabel: "Use Passcode",
+          cancelLabel: "Cancel",
+          disableDeviceFallback: false,
+        });
+
+        if (result.success) {
+          deactivateKeepAwake();
+          // Allow the navigation to proceed
+          navigation.dispatch(e.data.action);
+        }
+      } catch (err) {
+        console.error("Biometric auth error:", err);
+      } finally {
+        setIsAuthenticating(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isBiometricEnabled]);
 
   // Rider selection sheet
   const [showRiderSheet, setShowRiderSheet] = useState(false);
@@ -237,6 +284,38 @@ export default function KioskMode() {
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     return diffMins;
+  };
+
+  const handleExitKiosk = async () => {
+    if (!isBiometricEnabled) {
+      // No biometric required, exit directly
+      deactivateKeepAwake();
+      router.back();
+      return;
+    }
+
+    // Biometric is enabled - require verification before exiting
+    setShowBiometricExit(true);
+    setIsAuthenticating(true);
+
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Verify identity to exit Kiosk Mode",
+        fallbackLabel: "Use Passcode",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        deactivateKeepAwake();
+        router.back();
+      }
+    } catch (err) {
+      console.error("Biometric auth error:", err);
+    } finally {
+      setIsAuthenticating(false);
+      setShowBiometricExit(false);
+    }
   };
 
   const getPaymentIcon = (method: string) => {
@@ -706,11 +785,17 @@ export default function KioskMode() {
         borderTopColor="$borderColor"
         justifyContent="center"
       >
-        <Button flex={1} variant="outlined" onPress={() => router.back()}>
+        <Button
+          flex={1}
+          variant="outlined"
+          onPress={handleExitKiosk}
+          loading={isAuthenticating}
+          disabled={isAuthenticating}
+        >
           <XStack gap="$2" alignItems="center">
             <LogOut size={18} />
             <Text fontFamily="$body" fontWeight="700" color="$color">
-              Exit Kiosk Mode
+              {isAuthenticating ? "Verifying..." : "Exit Kiosk Mode"}
             </Text>
           </XStack>
         </Button>
