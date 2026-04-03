@@ -195,7 +195,7 @@ function CustomDrawerContent(props: any) {
             gap="$3"
             padding="$3"
             paddingLeft="$4"
-            onPress={() => router.push("/(shared)/profile")}
+            onPress={() => router.push("/(fleet)/(drawer)/profile")}
             icon={<User size={20} color={theme.color.val} />}
             justifyContent="flex-start"
           >

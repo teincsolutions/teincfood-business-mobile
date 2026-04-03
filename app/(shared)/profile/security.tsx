@@ -1,66 +1,83 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { YStack, XStack, Text, Card, Button, Separator, Switch, Input } from 'tamagui';
-import { Shield, Lock, Fingerprint, Key, Smartphone, ChevronRight, Eye, EyeOff, Check } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { ScrollView } from "react-native";
+import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
+import {
+  Shield,
+  Lock,
+  Fingerprint,
+  Key,
+  Smartphone,
+  Check,
+} from "@tamagui/lucide-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BackButton, Button, FormInput } from "@/components/ui";
 
-/**
- * Security Settings Screen
- */
 export default function Security() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Security settings
+  // Security toggles
   const [biometricEnabled, setBiometricEnabled] = useState(true);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [loginNotifications, setLoginNotifications] = useState(true);
 
   // Password form
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const next: Record<string, string> = {};
+    if (!currentPassword.trim()) {
+      next.currentPassword = "Current password is required";
+    }
+    if (!newPassword.trim()) {
+      next.newPassword = "New password is required";
+    } else if (newPassword.length < 8) {
+      next.newPassword = "Password must be at least 8 characters";
+    }
+    if (!confirmPassword.trim()) {
+      next.confirmPassword = "Please confirm your new password";
+    } else if (newPassword && newPassword !== confirmPassword) {
+      next.confirmPassword = "Passwords do not match";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handlePasswordChange = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      return;
-    }
+    if (!validate()) return;
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setErrors({});
     }, 1500);
   };
 
   const securityOptions = [
     {
       icon: Fingerprint,
-      label: 'Biometric Login',
-      description: 'Use fingerprint or face ID to login',
+      label: "Biometric Login",
+      description: "Use fingerprint or face ID to login",
       value: biometricEnabled,
       onToggle: setBiometricEnabled,
     },
     {
       icon: Key,
-      label: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security',
+      label: "Two-Factor Authentication",
+      description: "Add an extra layer of security",
       value: twoFactorEnabled,
       onToggle: setTwoFactorEnabled,
     },
     {
       icon: Smartphone,
-      label: 'Login Notifications',
-      description: 'Get notified of new logins',
+      label: "Login Notifications",
+      description: "Get notified of new logins",
       value: loginNotifications,
       onToggle: setLoginNotifications,
     },
@@ -71,19 +88,16 @@ export default function Security() {
       {/* Header */}
       <XStack
         paddingHorizontal="$4"
-        paddingTop={insets.top + 12}
+        paddingTop={Math.max(insets.top + 8, 24)}
         paddingBottom="$3"
-        justifyContent="space-between"
         alignItems="center"
+        gap="$3"
         backgroundColor="$background"
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text fontSize="$4" color="$primary">← Back</Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Security
         </Text>
-        <YStack width={50} />
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -102,96 +116,78 @@ export default function Security() {
                 <Shield size={24} color="white" />
               </YStack>
               <YStack flex={1}>
-                <Text fontSize="$5" fontWeight="bold">Account Protected</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Account Protected
+                </Text>
                 <Text fontSize="$3" color="$colorMuted">
                   Your account security is good
                 </Text>
               </YStack>
-              <Check size={24} color="#27ae60" />
+              <Check size={24} color="$green10" />
             </XStack>
           </Card>
 
           {/* Change Password */}
           <Card padding="$4" bordered>
-            <YStack gap="$3">
+            <YStack gap="$4">
               <XStack gap="$2" alignItems="center">
                 <Lock size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Change Password</Text>
+                <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                  Change Password
+                </Text>
               </XStack>
               <Separator />
 
-              <YStack gap="$2">
-                <Text fontWeight="bold">Current Password</Text>
-                <XStack position="relative">
-                  <Input
-                    flex={1}
-                    size="$4"
-                    placeholder="Enter current password"
-                    value={currentPassword}
-                    onChangeText={setCurrentPassword}
-                    secureTextEntry={!showCurrentPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-                    style={{ position: 'absolute', right: 12, top: 12 }}
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff size={20} color="$colorMuted" />
-                    ) : (
-                      <Eye size={20} color="$colorMuted" />
-                    )}
-                  </TouchableOpacity>
-                </XStack>
-              </YStack>
+              <FormInput
+                label="Current Password"
+                placeholder="Enter current password"
+                isPassword
+                value={currentPassword}
+                onChangeText={(text) => {
+                  setCurrentPassword(text);
+                  if (errors.currentPassword) {
+                    setErrors((prev) => ({ ...prev, currentPassword: "" }));
+                  }
+                }}
+                error={errors.currentPassword}
+              />
 
-              <YStack gap="$2">
-                <Text fontWeight="bold">New Password</Text>
-                <XStack position="relative">
-                  <Input
-                    flex={1}
-                    size="$4"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    secureTextEntry={!showNewPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowNewPassword(!showNewPassword)}
-                    style={{ position: 'absolute', right: 12, top: 12 }}
-                  >
-                    {showNewPassword ? (
-                      <EyeOff size={20} color="$colorMuted" />
-                    ) : (
-                      <Eye size={20} color="$colorMuted" />
-                    )}
-                  </TouchableOpacity>
-                </XStack>
-              </YStack>
+              <FormInput
+                label="New Password"
+                placeholder="Enter new password"
+                isPassword
+                value={newPassword}
+                onChangeText={(text) => {
+                  setNewPassword(text);
+                  if (errors.newPassword) {
+                    setErrors((prev) => ({ ...prev, newPassword: "" }));
+                  }
+                }}
+                error={errors.newPassword}
+              />
 
-              <YStack gap="$2">
-                <Text fontWeight="bold">Confirm New Password</Text>
-                <Input
-                  size="$4"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                />
-              </YStack>
-
-              {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                <Text fontSize="$2" color="$red10">
-                  Passwords do not match
-                </Text>
-              )}
+              <FormInput
+                label="Confirm New Password"
+                placeholder="Confirm new password"
+                isPassword
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  if (errors.confirmPassword) {
+                    setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                  }
+                }}
+                error={errors.confirmPassword}
+              />
 
               <Button
-                backgroundColor="$primary"
+                variant="primary"
+                width="100%"
                 onPress={handlePasswordChange}
-                disabled={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || isSaving}
-                opacity={!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword ? 0.5 : 1}
+                loading={isSaving}
+                disabled={isSaving}
               >
-                {isSaving ? 'Updating...' : 'Update Password'}
+                Update Password
               </Button>
             </YStack>
           </Card>
@@ -199,7 +195,9 @@ export default function Security() {
           {/* Security Options */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Security Options</Text>
+              <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                Security Options
+              </Text>
               <Separator />
               {securityOptions.map((option, index) => (
                 <YStack key={index}>
@@ -220,14 +218,18 @@ export default function Security() {
                         <option.icon size={20} color="$colorMuted" />
                       </YStack>
                       <YStack flex={1}>
-                        <Text fontWeight="bold">{option.label}</Text>
-                        <Text fontSize="$2" color="$colorMuted">{option.description}</Text>
+                        <Text fontWeight="bold" fontFamily="$heading">
+                          {option.label}
+                        </Text>
+                        <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                          {option.description}
+                        </Text>
                       </YStack>
                     </XStack>
                     <Switch
                       checked={option.value}
                       onCheckedChange={option.onToggle}
-                      backgroundColor={option.value ? '$primary' : '$gray8'}
+                      backgroundColor={option.value ? "$primary" : "$gray8"}
                     >
                       <Switch.Thumb backgroundColor="white" />
                     </Switch>
@@ -241,21 +243,38 @@ export default function Security() {
           {/* Active Sessions */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Active Sessions</Text>
+              <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
+                Active Sessions
+              </Text>
               <Separator />
-              <XStack justifyContent="space-between" alignItems="center" paddingVertical="$2">
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                paddingVertical="$2"
+              >
                 <XStack gap="$3" alignItems="center">
                   <Smartphone size={20} color="$colorMuted" />
                   <YStack>
-                    <Text fontWeight="bold">This Device</Text>
-                    <Text fontSize="$2" color="$colorMuted">iPhone 15 Pro • Accra, Ghana</Text>
+                    <Text fontWeight="bold" fontFamily="$heading">
+                      This Device
+                    </Text>
+                    <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                      iPhone 15 Pro • Accra, Ghana
+                    </Text>
                   </YStack>
                 </XStack>
-                <YStack backgroundColor="$green10" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2">
-                  <Text color="white" fontSize="$1">Current</Text>
+                <YStack
+                  backgroundColor="$green10"
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius="$2"
+                >
+                  <Text color="white" fontSize="$1" fontFamily="$body">
+                    Current
+                  </Text>
                 </YStack>
               </XStack>
-              <Button variant="outlined" size="$3">
+              <Button variant="outline">
                 View All Sessions
               </Button>
             </YStack>
@@ -264,12 +283,14 @@ export default function Security() {
           {/* Danger Zone */}
           <Card padding="$4" bordered borderColor="$red10">
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold" color="$red10">Danger Zone</Text>
+              <Text fontSize="$5" fontWeight="bold" color="$red10" fontFamily="$heading">
+                Danger Zone
+              </Text>
               <Separator />
-              <Button variant="outlined" borderColor="$red10" color="$red10">
+              <Button variant="dangerOutline">
                 Deactivate Account
               </Button>
-              <Text fontSize="$2" color="$colorMuted">
+              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
                 Temporarily disable your account. You can reactivate anytime.
               </Text>
             </YStack>

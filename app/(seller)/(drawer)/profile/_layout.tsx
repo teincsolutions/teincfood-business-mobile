@@ -1,7 +1,5 @@
-import { Stack } from 'expo-router';
+import SharedProfile from "app/(shared)/profile";
 
 export default function ProfileLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }} />
-  );
+  return <SharedProfile />;
 }

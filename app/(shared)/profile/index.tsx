@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth.store';
 /**
  * Seller Profile Screen
  */
-export default function SellerProfile() {
+export default function SharedProfile() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);

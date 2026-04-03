@@ -17,9 +17,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validation } from "@/utils/validation";
+
 import { useFleetStore } from "@/stores/fleet.store";
-import { Car, Hash, Palette, Calendar } from "@tamagui/lucide-icons";
+import { Car, Hash, Palette, Calendar, Save } from "@tamagui/lucide-icons";
 
 export default function AddVehicleScreen() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function AddVehicleScreen() {
       newErrors.vehicleType = "Vehicle type is required";
     }
 
-    if (!validation.isNotEmpty(form.plateNumber)) {
+    if (!form.plateNumber.trim()) {
       newErrors.plateNumber = "Plate number is required";
     }
 
@@ -89,7 +89,9 @@ export default function AddVehicleScreen() {
 
       router.back();
     } catch (err: any) {
-      setErrors({ form: err?.message || "Failed to add vehicle. Please try again." });
+      setErrors({
+        form: err?.message || "Failed to add vehicle. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -101,19 +103,41 @@ export default function AddVehicleScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        style={{ flex: 1 }}
+        flex={1}
+        paddingTop={Math.max(insets.top + 8, 24)}
+        paddingBottom={Math.max(insets.bottom + 20, 24)}
         backgroundColor="$background"
-        contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom + 20, 24),
-        }}
       >
-        <YStack padding="$4" gap="$4" $gtSm={{ padding: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
-          <YStack mb="$4">
+        <YStack
+          padding="$4"
+          gap="$4"
+          $gtSm={{ padding: "$6", maxWidth: 600 }}
+          alignSelf="center"
+          width="100%"
+        >
+          <XStack mb="$4" justifyContent="space-between" alignItems="center">
             <BackButton />
-          </YStack>
+            <Button
+              variant="primary"
+              height="$10"
+              $lg={{ height: "$10" }}
+              paddingHorizontal="$4"
+              onPress={handleAddVehicle}
+              loading={isLoading}
+              icon={<Save size={18} color="white" />}
+            >
+              Save
+            </Button>
+          </XStack>
 
           <YStack gap="$2">
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color" $gtSm={{ fontSize: "$10" }}>
+            <Text
+              fontSize="$8"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+              $gtSm={{ fontSize: "$10" }}
+            >
               Add Vehicle
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -123,7 +147,13 @@ export default function AddVehicleScreen() {
 
           <Form onSubmit={handleAddVehicle} gap="$4">
             <YStack gap="$2">
-              <Label htmlFor="vehicleType" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+              <Label
+                htmlFor="vehicleType"
+                fontSize="$4"
+                fontWeight="500"
+                fontFamily="$body"
+                color="$color"
+              >
                 Vehicle Type *
               </Label>
               <Select
@@ -136,18 +166,15 @@ export default function AddVehicleScreen() {
                   borderRadius="$4"
                   backgroundColor="$background"
                   borderColor={errors.vehicleType ? "$red8" : "$borderColor"}
-                  focusStyle={{ borderColor: errors.vehicleType ? "$red8" : "$primary" }}
+                  focusStyle={{
+                    borderColor: errors.vehicleType ? "$red8" : "$primary",
+                  }}
                 >
                   <Select.Value placeholder="Select vehicle type" />
                 </Select.Trigger>
 
                 <Adapt when="maxSm" platform="touch">
-                  <Sheet
-                    native
-                    modal
-                    dismissOnSnapToBottom
-                    animation="medium"
-                  >
+                  <Sheet native modal dismissOnSnapToBottom animation="medium">
                     <Sheet.Frame>
                       <Sheet.ScrollView>
                         <Adapt.Contents />
@@ -181,7 +208,9 @@ export default function AddVehicleScreen() {
                     borderColor="$borderColor"
                   >
                     <Select.Group>
-                      <Select.Label fontWeight="700">Vehicle Types</Select.Label>
+                      <Select.Label fontWeight="700">
+                        Vehicle Types
+                      </Select.Label>
                       <Select.Item index={0} value="motorcycle">
                         <Select.ItemText>Motorcycle</Select.ItemText>
                       </Select.Item>
@@ -230,7 +259,13 @@ export default function AddVehicleScreen() {
             />
 
             <YStack gap="$2">
-              <Label htmlFor="brand" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+              <Label
+                htmlFor="brand"
+                fontSize="$4"
+                fontWeight="500"
+                fontFamily="$body"
+                color="$color"
+              >
                 Brand
               </Label>
               <XStack position="relative" alignItems="center">
@@ -249,7 +284,13 @@ export default function AddVehicleScreen() {
             </YStack>
 
             <YStack gap="$2">
-              <Label htmlFor="model" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+              <Label
+                htmlFor="model"
+                fontSize="$4"
+                fontWeight="500"
+                fontFamily="$body"
+                color="$color"
+              >
                 Model
               </Label>
               <XStack position="relative" alignItems="center">
@@ -269,7 +310,13 @@ export default function AddVehicleScreen() {
 
             <XStack gap="$3" $gtSm={{ gap: "$4" }}>
               <YStack flex={1} gap="$2">
-                <Label htmlFor="color" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+                <Label
+                  htmlFor="color"
+                  fontSize="$4"
+                  fontWeight="500"
+                  fontFamily="$body"
+                  color="$color"
+                >
                   Color
                 </Label>
                 <XStack position="relative" alignItems="center">
@@ -287,7 +334,13 @@ export default function AddVehicleScreen() {
                 </XStack>
               </YStack>
               <YStack flex={1} gap="$2">
-                <Label htmlFor="year" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+                <Label
+                  htmlFor="year"
+                  fontSize="$4"
+                  fontWeight="500"
+                  fontFamily="$body"
+                  color="$color"
+                >
                   Year
                 </Label>
                 <XStack position="relative" alignItems="center">
@@ -317,7 +370,8 @@ export default function AddVehicleScreen() {
 
             <YStack gap="$3" mt="$4">
               <Button
-                size="$5"
+                variant="primary"
+                width="100%"
                 onPress={handleAddVehicle}
                 disabled={isLoading}
                 opacity={isLoading ? 0.7 : 1}
@@ -326,8 +380,8 @@ export default function AddVehicleScreen() {
               </Button>
 
               <Button
-                variant="outlined"
-                size="$5"
+                variant="outline"
+                width="100%"
                 onPress={() => router.back()}
                 disabled={isLoading}
               >
