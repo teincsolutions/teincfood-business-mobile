@@ -4,6 +4,7 @@ import { YStack, XStack, Text, Card, Separator } from 'tamagui';
 import { FileText, Scale, Shield, AlertTriangle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackButton } from '@/components/ui';
 
 /**
  * Terms of Service Screen
@@ -23,9 +24,7 @@ export default function TermsOfService() {
         alignItems="center"
         backgroundColor="$background"
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text fontSize="$4" color="$primary">← Back</Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Terms of Service
         </Text>

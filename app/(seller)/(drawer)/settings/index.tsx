@@ -92,7 +92,7 @@ export default function SellerSettings() {
           {/* Settings Menu */}
           <Card padding="$2" bordered>
             {settingsItems.map((item, index) => (
-              <YStack key={item.route}>
+              <YStack key={item.label}>
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => item.onPress ? item.onPress() : router.push(item.route)}

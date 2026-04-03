@@ -24,7 +24,6 @@ export default function SharedProfile() {
     { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
     { icon: FileText, label: 'Terms of Service', description: 'Read our terms', route: '/(shared)/profile/terms' },
     { icon: Shield, label: 'Privacy Policy', description: 'How we handle your data', route: '/(shared)/profile/privacy-policy' },
-    { icon: HelpCircle, label: 'Help & Support', description: 'Get help with the app', route: '/(seller)/help' },
   ];
 
   return (
