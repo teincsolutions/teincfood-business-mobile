@@ -5,16 +5,21 @@ import { ScrollView, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import {
-  ArrowLeft,
   Phone,
   MapPin,
   Clock,
   CreditCard,
   FileText,
 } from "@tamagui/lucide-icons";
-import { MOCK_SELLER_ORDERS, SellerOrder } from "@/services/mock-data.service";
+import { SellerOrder } from "@/services/mock-data.service";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import {
+  useSellerOrderQuery,
+  useStartPreparingOrderMutation,
+  useMarkOrderReadyMutation,
+  useMarkOrderDeliveredMutation,
+} from "@/hooks/seller.hooks";
 /**
  * Order Details Screen
  */
@@ -23,11 +28,11 @@ export default function OrderDetails() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const order = MOCK_SELLER_ORDERS.find((o) => o.id === id) as
-    | SellerOrder
-    | undefined;
+  const { data, isLoading, error } = useSellerOrderQuery(id as string);
+  const startPreparingMutation = useStartPreparingOrderMutation();
+  const markReadyMutation = useMarkOrderReadyMutation();
+  const markDeliveredMutation = useMarkOrderDeliveredMutation();
 
-  const [orderStatus, setOrderStatus] = useState<string>(order?.status || "pending");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
@@ -35,12 +40,16 @@ export default function OrderDetails() {
     action: () => void;
   } | null>(null);
 
+  const order = data?.order;
+
   const handleStartPreparing = () => {
     setConfirmAction({
       title: "Start Preparing",
       message: "Are you sure you want to start preparing this order?",
       action: () => {
-        setOrderStatus("preparing");
+        if (order?.id) {
+          startPreparingMutation.mutate(order.id);
+        }
         setShowConfirmDialog(false);
       },
     });
@@ -52,7 +61,9 @@ export default function OrderDetails() {
       title: "Mark as Ready",
       message: "Are you sure this order is ready for pickup/delivery?",
       action: () => {
-        setOrderStatus("ready");
+        if (order?.id) {
+          markReadyMutation.mutate(order.id);
+        }
         setShowConfirmDialog(false);
       },
     });
@@ -64,7 +75,9 @@ export default function OrderDetails() {
       title: "Mark as Delivered",
       message: "Are you sure this order has been delivered?",
       action: () => {
-        setOrderStatus("delivered");
+        if (order?.id) {
+          markDeliveredMutation.mutate(order.id);
+        }
         setShowConfirmDialog(false);
       },
     });
@@ -77,7 +90,23 @@ export default function OrderDetails() {
     }
   };
 
-  if (!order) {
+  if (isLoading) {
+    return (
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        justifyContent="center"
+        alignItems="center"
+        padding="$4"
+      >
+        <Text fontSize="$5" color="$colorMuted">
+          Loading order...
+        </Text>
+      </YStack>
+    );
+  }
+
+  if (error || !order) {
     return (
       <YStack
         flex={1}
@@ -163,7 +192,7 @@ export default function OrderDetails() {
           paddingHorizontal="$3"
           paddingVertical="$1"
           borderRadius="$2"
-          backgroundColor={getStatusColor(orderStatus)}
+          backgroundColor={getStatusColor(order.status)}
         >
           <Text
             color="$background"
@@ -171,7 +200,7 @@ export default function OrderDetails() {
             textTransform="capitalize"
             fontWeight="600"
           >
-            {orderStatus}
+            {order.status}
           </Text>
         </YStack>
       </XStack>
@@ -401,19 +430,19 @@ export default function OrderDetails() {
           )}
 
           {/* Action Buttons */}
-          {orderStatus !== "delivered" && (
+          {order.status !== "delivered" && (
             <YStack gap="$3" marginTop="$2">
-              {orderStatus === "pending" && (
+              {order.status === "pending" && (
                 <Button variant="info" width="100%" onPress={handleStartPreparing}>
                   Start Preparing
                 </Button>
               )}
-              {orderStatus === "preparing" && (
+              {order.status === "preparing" && (
                 <Button variant="success" width="100%" onPress={handleMarkReady}>
                   Mark as Ready
                 </Button>
               )}
-              {orderStatus === "ready" && (
+              {order.status === "ready" && (
                 <Button variant="primary" width="100%" onPress={handleMarkDelivered}>
                   Mark as Delivered
                 </Button>

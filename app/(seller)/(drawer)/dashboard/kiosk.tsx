@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Modal, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState } from "react";
+import { ScrollView, Modal, FlatList } from "react-native";
+import { useRouter } from "expo-router";
 import {
   YStack,
   XStack,
@@ -10,10 +10,17 @@ import {
   Separator,
   Switch,
   useTheme,
-} from 'tamagui';
-import { Badge } from '@/components/ui/Badge';
-import { AppAlertDialog } from '@/components/ui/AlertDialog';
-import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard, RiderSelectionSheet, OrderDetailsSheet } from '@/components/kiosk';
+  Spinner,
+} from "tamagui";
+import { Badge } from "@/components/ui/Badge";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import {
+  PendingOrderCard,
+  PreparingOrderCard,
+  ReadyOrderCard,
+  RiderSelectionSheet,
+  OrderDetailsSheet,
+} from "@/components/kiosk";
 import {
   Clock,
   CheckCircle,
@@ -33,12 +40,12 @@ import {
   Car,
   Navigation,
   X,
-} from '@tamagui/lucide-icons';
-import { useAuthStore } from '@/stores/auth.store';
-import { useKioskStore } from '@/stores/kiosk.store';
-import * as Haptics from 'expo-haptics';
-import type { KioskOrder } from '@/services/mock-data.service';
-import type { AvailableRider } from '@/services/kiosk.service';
+} from "@tamagui/lucide-icons";
+import { useAuthStore } from "@/stores/auth.store";
+import { useKioskStore } from "@/stores/kiosk.store";
+import * as Haptics from "expo-haptics";
+import type { KioskOrder } from "@/services/mock-data.service";
+import type { AvailableRider } from "@/services/kiosk.service";
 import {
   useKioskOrdersQuery,
   useAcceptKioskOrderMutation,
@@ -46,9 +53,9 @@ import {
   useMarkKioskOrderReadyMutation,
   useAssignRiderMutation,
   useAvailableRidersQuery,
-} from '@/hooks/kiosk.hooks';
-import { useResponsive } from '@/utils/responsive';
-import { Button } from '@/components/ui';
+} from "@/hooks/kiosk.hooks";
+import { useResponsive } from "@/utils/responsive";
+import { Button } from "@/components/ui";
 
 interface DialogState {
   open: boolean;
@@ -63,10 +70,10 @@ interface DialogState {
 
 const defaultDialogState: DialogState = {
   open: false,
-  title: '',
-  description: '',
-  confirmText: 'OK',
-  cancelText: 'Cancel',
+  title: "",
+  description: "",
+  confirmText: "OK",
+  cancelText: "Cancel",
   onConfirm: () => {},
   icon: undefined,
   isDestructive: false,
@@ -94,7 +101,7 @@ export default function KioskMode() {
   // Rider selection sheet
   const [showRiderSheet, setShowRiderSheet] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  
+
   // Order details sheet
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<KioskOrder | null>(null);
@@ -111,18 +118,18 @@ export default function KioskMode() {
   const preparingOrders = data?.preparingOrders ?? [];
   const readyOrders = data?.readyOrders ?? [];
 
-  const playSound = (type: 'success' | 'alert' | 'error') => {
+  const playSound = (type: "success" | "alert" | "error") => {
     if (!soundEnabled) return;
     console.log(`Playing ${type} sound`);
   };
 
-  const triggerHaptic = (style: 'light' | 'medium' | 'heavy') => {
+  const triggerHaptic = (style: "light" | "medium" | "heavy") => {
     Haptics.impactAsync(
-      style === 'light'
+      style === "light"
         ? Haptics.ImpactFeedbackStyle.Light
-        : style === 'medium'
-        ? Haptics.ImpactFeedbackStyle.Medium
-        : Haptics.ImpactFeedbackStyle.Heavy
+        : style === "medium"
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Heavy,
     );
   };
 
@@ -132,13 +139,13 @@ export default function KioskMode() {
 
     setDialog({
       open: true,
-      title: 'Accept Order',
+      title: "Accept Order",
       description: `Are you sure you want to accept ${order.orderNumber}?`,
-      confirmText: 'Accept',
-      cancelText: 'Cancel',
+      confirmText: "Accept",
+      cancelText: "Cancel",
       onConfirm: () => {
-        triggerHaptic('medium');
-        playSound('success');
+        triggerHaptic("medium");
+        playSound("success");
         acceptOrder.mutate(orderId);
         setDialog(defaultDialogState);
       },
@@ -148,18 +155,18 @@ export default function KioskMode() {
   };
 
   const handleRejectOrder = (orderId: string) => {
-    triggerHaptic('heavy');
-    playSound('error');
+    triggerHaptic("heavy");
+    playSound("error");
 
     const order = pendingOrders.find((o) => o.id === orderId);
     if (!order) return;
 
     setDialog({
       open: true,
-      title: 'Reject Order',
-      description: 'Are you sure you want to reject this order?',
-      confirmText: 'Reject',
-      cancelText: 'Cancel',
+      title: "Reject Order",
+      description: "Are you sure you want to reject this order?",
+      confirmText: "Reject",
+      cancelText: "Cancel",
       onConfirm: () => {
         rejectOrder.mutate(orderId);
         setDialog(defaultDialogState);
@@ -170,17 +177,17 @@ export default function KioskMode() {
   };
 
   const handleMarkReady = (orderId: string) => {
-    triggerHaptic('medium');
+    triggerHaptic("medium");
 
     const order = preparingOrders.find((o) => o.id === orderId);
     if (!order) return;
 
     setDialog({
       open: true,
-      title: 'Mark as Ready',
+      title: "Mark as Ready",
       description: `Is ${order.orderNumber} ready for pickup?`,
-      confirmText: 'Mark Ready',
-      cancelText: 'Cancel',
+      confirmText: "Mark Ready",
+      cancelText: "Cancel",
       onConfirm: () => {
         markReady.mutate(orderId);
         setDialog(defaultDialogState);
@@ -207,13 +214,13 @@ export default function KioskMode() {
 
     setDialog({
       open: true,
-      title: 'Assign Rider',
-      description: `Are you sure you want to assign this order to ${rider?.name ?? 'rider'}?`,
-      confirmText: 'Assign',
-      cancelText: 'Cancel',
+      title: "Assign Rider",
+      description: `Are you sure you want to assign this order to ${rider?.name ?? "rider"}?`,
+      confirmText: "Assign",
+      cancelText: "Cancel",
       onConfirm: () => {
-        triggerHaptic('medium');
-        playSound('success');
+        triggerHaptic("medium");
+        playSound("success");
         assignRider.mutate({ orderId: selectedOrderId, riderId });
         setShowRiderSheet(false);
         setSelectedOrderId(null);
@@ -234,11 +241,11 @@ export default function KioskMode() {
 
   const getPaymentIcon = (method: string) => {
     switch (method) {
-      case 'mobile_money':
+      case "mobile_money":
         return <DollarSign size={16} />;
-      case 'card':
+      case "card":
         return <CreditCard size={16} />;
-      case 'cash':
+      case "cash":
         return <Banknote size={16} />;
       default:
         return <DollarSign size={16} />;
@@ -247,16 +254,17 @@ export default function KioskMode() {
 
   const getVehicleIcon = (type: string) => {
     switch (type) {
-      case 'motorcycle':
+      case "motorcycle":
         return <Bike size={18} />;
-      case 'car':
+      case "car":
         return <Car size={18} />;
       default:
         return <Bike size={18} />;
     }
   };
 
-  const totalActive = pendingOrders.length + preparingOrders.length + readyOrders.length;
+  const totalActive =
+    pendingOrders.length + preparingOrders.length + readyOrders.length;
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -272,38 +280,52 @@ export default function KioskMode() {
             Kiosk Mode
           </Text>
           <Text color="$background" opacity={0.8} fontSize="$3">
-            {pendingOrders.length} pending • {preparingOrders.length} preparing • {readyOrders.length} ready
+            {pendingOrders.length} pending • {preparingOrders.length} preparing
+            • {readyOrders.length} ready
           </Text>
         </YStack>
 
         <XStack gap="$3" alignItems="center">
           <Button
-            size="$3"
-            circular
-            backgroundColor="$whiteAlpha"
+            size="$4"
+            height="$6"
             onPress={toggleSound}
-            icon={soundEnabled ? <Volume2 size={18} color="$background" /> : <VolumeX size={18} color="$background" />}
+            icon={({ size, color }) =>
+              soundEnabled ? (
+                <Volume2 size={size} color={color} />
+              ) : (
+                <VolumeX size={size} color={color} />
+              )
+            }
           />
 
           <XStack gap="$2" alignItems="center">
-            <Text color="$background" fontSize="$2">Auto</Text>
+            <Text color="$background" fontSize="$4">
+              Auto
+            </Text>
             <Switch
-              size="$2"
+              size="$6"
               checked={autoRefresh}
               onCheckedChange={toggleAutoRefresh}
-              backgroundColor={autoRefresh ? '$green10' : '$gray8'}
+              backgroundColor={autoRefresh ? "$success" : "$gray800"}
             >
               <Switch.Thumb backgroundColor="$background" />
             </Switch>
           </XStack>
 
           <Button
-            size="$3"
-            circular
-            backgroundColor="$whiteAlpha"
+            width="$6"
+            height="$8"
+            rounded="$full"
             onPress={() => refetch()}
             disabled={isRefetching}
-            icon={<RefreshCw size={18} color="$background" />}
+            icon={({ size, color }) =>
+              isRefetching ? (
+                <Spinner size="small" color={color} />
+              ) : (
+                <RefreshCw size={18} color={color} />
+              )
+            }
           />
         </XStack>
       </XStack>
@@ -316,17 +338,27 @@ export default function KioskMode() {
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack gap="$2" alignItems="center">
                   <Clock size={18} color="$primary" />
-                  <Text fontSize="$5" fontWeight="bold">Pending Orders</Text>
+                  <Text fontSize="$5" fontWeight="bold">
+                    Pending Orders
+                  </Text>
                 </XStack>
                 <Badge backgroundColor="$orangeLight" size="$3">
-                  <Text color="$primary" fontWeight="bold">{pendingOrders.length}</Text>
+                  <Text color="$primary" fontWeight="bold">
+                    {pendingOrders.length}
+                  </Text>
                 </Badge>
               </XStack>
 
               {pendingOrders.length === 0 ? (
-                <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                <Card
+                  padding="$6"
+                  alignItems="center"
+                  backgroundColor="$backgroundSoft"
+                >
                   <CheckCircle size={48} color="$success" />
-                  <Text marginTop="$2" color="$colorMuted">No pending orders</Text>
+                  <Text marginTop="$2" color="$colorMuted">
+                    No pending orders
+                  </Text>
                 </Card>
               ) : (
                 pendingOrders.map((order) => (
@@ -349,27 +381,37 @@ export default function KioskMode() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack gap="$2" alignItems="center">
                       <Utensils size={18} color="$info" />
-                      <Text fontSize="$5" fontWeight="bold">Preparing</Text>
+                      <Text fontSize="$5" fontWeight="bold">
+                        Preparing
+                      </Text>
                     </XStack>
                     <Badge backgroundColor="$blue2" size="$3">
-                      <Text color="$info" fontWeight="bold">{preparingOrders.length}</Text>
+                      <Text color="$info" fontWeight="bold">
+                        {preparingOrders.length}
+                      </Text>
                     </Badge>
                   </XStack>
 
                   {preparingOrders.length === 0 ? (
-                    <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                    <Card
+                      padding="$6"
+                      alignItems="center"
+                      backgroundColor="$backgroundSoft"
+                    >
                       <Utensils size={48} color="$colorMuted" />
-                      <Text marginTop="$2" color="$colorMuted">No orders being prepared</Text>
+                      <Text marginTop="$2" color="$colorMuted">
+                        No orders being prepared
+                      </Text>
                     </Card>
                   ) : (
-                  preparingOrders.map((order) => (
-                    <PreparingOrderCard
-                      key={order.id}
-                      order={order}
-                      onMarkReady={handleMarkReady}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))
+                    preparingOrders.map((order) => (
+                      <PreparingOrderCard
+                        key={order.id}
+                        order={order}
+                        onMarkReady={handleMarkReady}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))
                   )}
                 </YStack>
 
@@ -377,17 +419,27 @@ export default function KioskMode() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack gap="$2" alignItems="center">
                       <Truck size={18} color="$success" />
-                      <Text fontSize="$5" fontWeight="bold">Ready for Pickup</Text>
+                      <Text fontSize="$5" fontWeight="bold">
+                        Ready for Pickup
+                      </Text>
                     </XStack>
                     <Badge backgroundColor="$green2" size="$3">
-                      <Text color="$success" fontWeight="bold">{readyOrders.length}</Text>
+                      <Text color="$success" fontWeight="bold">
+                        {readyOrders.length}
+                      </Text>
                     </Badge>
                   </XStack>
 
                   {readyOrders.length === 0 ? (
-                    <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                    <Card
+                      padding="$6"
+                      alignItems="center"
+                      backgroundColor="$backgroundSoft"
+                    >
                       <Truck size={48} color="$colorMuted" />
-                      <Text marginTop="$2" color="$colorMuted">No orders ready</Text>
+                      <Text marginTop="$2" color="$colorMuted">
+                        No orders ready
+                      </Text>
                     </Card>
                   ) : (
                     readyOrders.map((order) => (
@@ -408,27 +460,37 @@ export default function KioskMode() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack gap="$2" alignItems="center">
                       <Utensils size={18} color="$info" />
-                      <Text fontSize="$5" fontWeight="bold">Preparing</Text>
+                      <Text fontSize="$5" fontWeight="bold">
+                        Preparing
+                      </Text>
                     </XStack>
                     <Badge backgroundColor="$blue2" size="$3">
-                      <Text color="$info" fontWeight="bold">{preparingOrders.length}</Text>
+                      <Text color="$info" fontWeight="bold">
+                        {preparingOrders.length}
+                      </Text>
                     </Badge>
                   </XStack>
 
                   {preparingOrders.length === 0 ? (
-                    <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                    <Card
+                      padding="$6"
+                      alignItems="center"
+                      backgroundColor="$backgroundSoft"
+                    >
                       <Utensils size={48} color="$colorMuted" />
-                      <Text marginTop="$2" color="$colorMuted">No orders being prepared</Text>
+                      <Text marginTop="$2" color="$colorMuted">
+                        No orders being prepared
+                      </Text>
                     </Card>
                   ) : (
-                preparingOrders.map((order) => (
-                  <PreparingOrderCard
-                    key={order.id}
-                    order={order}
-                    onMarkReady={handleMarkReady}
-                    onViewDetails={handleViewDetails}
-                  />
-                ))
+                    preparingOrders.map((order) => (
+                      <PreparingOrderCard
+                        key={order.id}
+                        order={order}
+                        onMarkReady={handleMarkReady}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))
                   )}
                 </YStack>
 
@@ -436,17 +498,27 @@ export default function KioskMode() {
                   <XStack justifyContent="space-between" alignItems="center">
                     <XStack gap="$2" alignItems="center">
                       <Truck size={18} color="$success" />
-                      <Text fontSize="$5" fontWeight="bold">Ready for Pickup</Text>
+                      <Text fontSize="$5" fontWeight="bold">
+                        Ready for Pickup
+                      </Text>
                     </XStack>
                     <Badge backgroundColor="$green2" size="$3">
-                      <Text color="$success" fontWeight="bold">{readyOrders.length}</Text>
+                      <Text color="$success" fontWeight="bold">
+                        {readyOrders.length}
+                      </Text>
                     </Badge>
                   </XStack>
 
                   {readyOrders.length === 0 ? (
-                    <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                    <Card
+                      padding="$6"
+                      alignItems="center"
+                      backgroundColor="$backgroundSoft"
+                    >
                       <Truck size={48} color="$colorMuted" />
-                      <Text marginTop="$2" color="$colorMuted">No orders ready</Text>
+                      <Text marginTop="$2" color="$colorMuted">
+                        No orders ready
+                      </Text>
                     </Card>
                   ) : (
                     readyOrders.map((order) => (
@@ -469,17 +541,27 @@ export default function KioskMode() {
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack gap="$2" alignItems="center">
                   <Clock size={18} color="$primary" />
-                  <Text fontSize="$5" fontWeight="bold">Pending Orders</Text>
+                  <Text fontSize="$5" fontWeight="bold">
+                    Pending Orders
+                  </Text>
                 </XStack>
                 <Badge backgroundColor="$orangeLight" size="$3">
-                  <Text color="$primary" fontWeight="bold">{pendingOrders.length}</Text>
+                  <Text color="$primary" fontWeight="bold">
+                    {pendingOrders.length}
+                  </Text>
                 </Badge>
               </XStack>
 
               {pendingOrders.length === 0 ? (
-                <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                <Card
+                  padding="$6"
+                  alignItems="center"
+                  backgroundColor="$backgroundSoft"
+                >
                   <CheckCircle size={48} color="$success" />
-                  <Text marginTop="$2" color="$colorMuted">No pending orders</Text>
+                  <Text marginTop="$2" color="$colorMuted">
+                    No pending orders
+                  </Text>
                 </Card>
               ) : (
                 pendingOrders.map((order) => (
@@ -500,17 +582,27 @@ export default function KioskMode() {
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack gap="$2" alignItems="center">
                   <Utensils size={18} color="$info" />
-                  <Text fontSize="$5" fontWeight="bold">Preparing</Text>
+                  <Text fontSize="$5" fontWeight="bold">
+                    Preparing
+                  </Text>
                 </XStack>
                 <Badge backgroundColor="$blue2" size="$3">
-                  <Text color="$info" fontWeight="bold">{preparingOrders.length}</Text>
+                  <Text color="$info" fontWeight="bold">
+                    {preparingOrders.length}
+                  </Text>
                 </Badge>
               </XStack>
 
               {preparingOrders.length === 0 ? (
-                <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                <Card
+                  padding="$6"
+                  alignItems="center"
+                  backgroundColor="$backgroundSoft"
+                >
                   <Utensils size={48} color="$colorMuted" />
-                  <Text marginTop="$2" color="$colorMuted">No orders being prepared</Text>
+                  <Text marginTop="$2" color="$colorMuted">
+                    No orders being prepared
+                  </Text>
                 </Card>
               ) : (
                 preparingOrders.map((order) => (
@@ -529,17 +621,27 @@ export default function KioskMode() {
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack gap="$2" alignItems="center">
                   <Truck size={18} color="$success" />
-                  <Text fontSize="$5" fontWeight="bold">Ready for Pickup</Text>
+                  <Text fontSize="$5" fontWeight="bold">
+                    Ready for Pickup
+                  </Text>
                 </XStack>
                 <Badge backgroundColor="$green2" size="$3">
-                  <Text color="$success" fontWeight="bold">{readyOrders.length}</Text>
+                  <Text color="$success" fontWeight="bold">
+                    {readyOrders.length}
+                  </Text>
                 </Badge>
               </XStack>
 
               {readyOrders.length === 0 ? (
-                <Card padding="$6" alignItems="center" backgroundColor="$backgroundSoft">
+                <Card
+                  padding="$6"
+                  alignItems="center"
+                  backgroundColor="$backgroundSoft"
+                >
                   <Truck size={48} color="$colorMuted" />
-                  <Text marginTop="$2" color="$colorMuted">No orders ready</Text>
+                  <Text marginTop="$2" color="$colorMuted">
+                    No orders ready
+                  </Text>
                 </Card>
               ) : (
                 readyOrders.map((order) => (
@@ -559,8 +661,12 @@ export default function KioskMode() {
         <XStack padding="$4" gap="$3">
           <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$primary">{totalActive}</Text>
-              <Text fontSize="$3" color="$colorMuted">Total Active</Text>
+              <Text fontSize="$7" fontWeight="bold" color="$primary">
+                {totalActive}
+              </Text>
+              <Text fontSize="$3" color="$colorMuted">
+                Total Active
+              </Text>
             </YStack>
           </Card>
 
@@ -569,20 +675,26 @@ export default function KioskMode() {
               <Text fontSize="$7" fontWeight="bold" color="$info">
                 {preparingOrders.reduce((sum, o) => sum + o.estimatedTime, 0)}m
               </Text>
-              <Text fontSize="$3" color="$colorMuted">Total ETA</Text>
+              <Text fontSize="$3" color="$colorMuted">
+                Total ETA
+              </Text>
             </YStack>
           </Card>
 
           <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
               <Text fontSize="$7" fontWeight="bold" color="$color.starOrange">
-                GHS {[...pendingOrders, ...preparingOrders, ...readyOrders].reduce((sum, o) => sum + o.total, 0).toFixed(0)}
+                GHS{" "}
+                {[...pendingOrders, ...preparingOrders, ...readyOrders]
+                  .reduce((sum, o) => sum + o.total, 0)
+                  .toFixed(0)}
               </Text>
-              <Text fontSize="$3" color="$colorMuted">Total Value</Text>
+              <Text fontSize="$3" color="$colorMuted">
+                Total Value
+              </Text>
             </YStack>
           </Card>
         </XStack>
-
       </ScrollView>
 
       {/* Footer - Exit Kiosk Mode */}
@@ -594,14 +706,12 @@ export default function KioskMode() {
         borderTopColor="$borderColor"
         justifyContent="center"
       >
-        <Button
-          flex={1}
-          variant="outlined"
-          onPress={() => router.back()}
-        >
+        <Button flex={1} variant="outlined" onPress={() => router.back()}>
           <XStack gap="$2" alignItems="center">
             <LogOut size={18} />
-            <Text fontFamily="$body" fontWeight="700" color="$color">Exit Kiosk Mode</Text>
+            <Text fontFamily="$body" fontWeight="700" color="$color">
+              Exit Kiosk Mode
+            </Text>
           </XStack>
         </Button>
       </XStack>
