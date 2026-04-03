@@ -28646,7 +28646,14 @@
         "black": "#000000",
         "red": "#FF3B30",
         "green": "#34C759",
+        "greenLight": "#E5F9EC",
+        "greenDark": "#28A745",
         "blue": "#007AFF",
+        "blueLight": "#E5F0FF",
+        "blueDark": "#0051A8",
+        "yellow": "#FFD60A",
+        "yellowLight": "#FFF9E5",
+        "yellowDark": "#E6C200",
         "starOrange": "#FF9633",
         "transparent": "transparent",
         "background": "#121218",
@@ -28670,9 +28677,14 @@
         "borderColorFocus": "#FF7622",
         "error": "#FF453A",
         "success": "#30D158",
+        "successDark": "#28A745",
         "successMuted": "rgba(48, 209, 88, 0.15)",
         "info": "#0A84FF",
+        "infoDark": "#0051A8",
         "infoMuted": "rgba(10, 132, 255, 0.15)",
+        "warning": "#FFD60A",
+        "warningDark": "#E6C200",
+        "warningMuted": "rgba(255, 214, 10, 0.15)",
         "star": "#FF9633",
         "shadowColor": "rgba(0, 0, 0, 0.3)",
         "shadowColorStrong": "rgba(0, 0, 0, 0.5)",
@@ -28695,7 +28707,14 @@
         "black": "#000000",
         "red": "#FF3B30",
         "green": "#34C759",
+        "greenLight": "#E5F9EC",
+        "greenDark": "#28A745",
         "blue": "#007AFF",
+        "blueLight": "#E5F0FF",
+        "blueDark": "#0051A8",
+        "yellow": "#FFD60A",
+        "yellowLight": "#FFF9E5",
+        "yellowDark": "#E6C200",
         "starOrange": "#FF9633",
         "transparent": "transparent",
         "background": "#FFFFFF",
@@ -28722,6 +28741,8 @@
         "successMuted": "rgba(52, 199, 89, 0.15)",
         "info": "#007AFF",
         "infoMuted": "rgba(0, 122, 255, 0.12)",
+        "warning": "#FFD60A",
+        "warningMuted": "rgba(255, 204, 0, 0.15)",
         "star": "#FF9633",
         "shadowColor": "rgba(0, 0, 0, 0.06)",
         "shadowColorStrong": "rgba(0, 0, 0, 0.12)",
@@ -28842,11 +28863,60 @@
           "val": "#34C759",
           "variable": ""
         },
+        "greenLight": {
+          "isVar": true,
+          "key": "$greenLight",
+          "name": "c-greenLight",
+          "val": "#E5F9EC",
+          "variable": ""
+        },
+        "greenDark": {
+          "isVar": true,
+          "key": "$greenDark",
+          "name": "c-greenDark",
+          "val": "#28A745",
+          "variable": ""
+        },
         "blue": {
           "isVar": true,
           "key": "$blue",
           "name": "c-blue",
           "val": "#007AFF",
+          "variable": ""
+        },
+        "blueLight": {
+          "isVar": true,
+          "key": "$blueLight",
+          "name": "c-blueLight",
+          "val": "#E5F0FF",
+          "variable": ""
+        },
+        "blueDark": {
+          "isVar": true,
+          "key": "$blueDark",
+          "name": "c-blueDark",
+          "val": "#0051A8",
+          "variable": ""
+        },
+        "yellow": {
+          "isVar": true,
+          "key": "$yellow",
+          "name": "c-yellow",
+          "val": "#FFD60A",
+          "variable": ""
+        },
+        "yellowLight": {
+          "isVar": true,
+          "key": "$yellowLight",
+          "name": "c-yellowLight",
+          "val": "#FFF9E5",
+          "variable": ""
+        },
+        "yellowDark": {
+          "isVar": true,
+          "key": "$yellowDark",
+          "name": "c-yellowDark",
+          "val": "#E6C200",
           "variable": ""
         },
         "starOrange": {
@@ -29451,6 +29521,20 @@
         "val": "#007AFF",
         "variable": ""
       },
+      "$color.blueDark": {
+        "isVar": true,
+        "key": "$blueDark",
+        "name": "c-blueDark",
+        "val": "#0051A8",
+        "variable": ""
+      },
+      "$color.blueLight": {
+        "isVar": true,
+        "key": "$blueLight",
+        "name": "c-blueLight",
+        "val": "#E5F0FF",
+        "variable": ""
+      },
       "$color.gray100": {
         "isVar": true,
         "key": "$gray100",
@@ -29505,6 +29589,20 @@
         "key": "$green",
         "name": "c-green",
         "val": "#34C759",
+        "variable": ""
+      },
+      "$color.greenDark": {
+        "isVar": true,
+        "key": "$greenDark",
+        "name": "c-greenDark",
+        "val": "#28A745",
+        "variable": ""
+      },
+      "$color.greenLight": {
+        "isVar": true,
+        "key": "$greenLight",
+        "name": "c-greenLight",
+        "val": "#E5F9EC",
         "variable": ""
       },
       "$color.navy": {
@@ -29568,6 +29666,27 @@
         "key": "$white",
         "name": "c-white",
         "val": "#FFFFFF",
+        "variable": ""
+      },
+      "$color.yellow": {
+        "isVar": true,
+        "key": "$yellow",
+        "name": "c-yellow",
+        "val": "#FFD60A",
+        "variable": ""
+      },
+      "$color.yellowDark": {
+        "isVar": true,
+        "key": "$yellowDark",
+        "name": "c-yellowDark",
+        "val": "#E6C200",
+        "variable": ""
+      },
+      "$color.yellowLight": {
+        "isVar": true,
+        "key": "$yellowLight",
+        "name": "c-yellowLight",
+        "val": "#FFF9E5",
         "variable": ""
       },
       "$media.lg": {

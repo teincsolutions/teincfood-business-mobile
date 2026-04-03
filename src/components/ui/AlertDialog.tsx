@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { AlertDialog, Button, XStack, YStack, Text } from 'tamagui';
-import { LucideIcon } from '@tamagui/lucide-icons';
+import { AlertDialog, Button, XStack, YStack, Text } from "tamagui";
+import { LucideIcon } from "@tamagui/lucide-icons";
 
 interface AppAlertDialogProps {
   open: boolean;
@@ -20,8 +20,8 @@ export function AppAlertDialog({
   onOpenChange,
   title,
   description,
-  confirmText = 'OK',
-  cancelText = 'Cancel',
+  confirmText = "OK",
+  cancelText = "Cancel",
   onConfirm,
   onCancel,
   icon: Icon,
@@ -41,7 +41,7 @@ export function AppAlertDialog({
         <AlertDialog.Content
           key="content"
           animation={[
-            'quick',
+            "quick",
             {
               opacity: {
                 overshootClamping: true,
@@ -65,28 +65,30 @@ export function AppAlertDialog({
         >
           <YStack gap="$2" alignItems="center" textAlign="center">
             {Icon && (
-              <YStack 
-                backgroundColor={isDestructive ? 'rgba(255,59,48,0.1)' : 'rgba(255,118,34,0.1)'} 
-                padding="$4" 
-                borderRadius="$full" 
+              <YStack
+                backgroundColor={
+                  isDestructive ? "rgba(255,59,48,0.1)" : "rgba(255,118,34,0.1)"
+                }
+                padding="$4"
+                borderRadius="$full"
                 marginBottom="$2"
               >
-                <Icon size={32} color={isDestructive ? '$red' : '$primary'} />
+                <Icon size={32} color={isDestructive ? "$red" : "$primary"} />
               </YStack>
             )}
-            <AlertDialog.Title 
-              fontSize="$6" 
-              fontWeight="800" 
-              fontFamily="$heading" 
+            <AlertDialog.Title
+              fontSize="$6"
+              fontWeight="800"
+              fontFamily="$heading"
               color="$color"
               textAlign="center"
             >
               {title}
             </AlertDialog.Title>
-            <AlertDialog.Description 
-              fontSize="$4" 
-              color="$colorSecondary" 
-              fontFamily="$body" 
+            <AlertDialog.Description
+              fontSize="$4"
+              color="$colorSecondary"
+              fontFamily="$body"
               textAlign="center"
               lineHeight={22}
             >
@@ -96,10 +98,10 @@ export function AppAlertDialog({
 
           <XStack gap="$3" marginTop="$4">
             <AlertDialog.Cancel asChild>
-              <Button 
-                flex={1} 
-                height={50} 
-                variant="outlined" 
+              <Button
+                flex={1}
+                height={50}
+                variant="outlined"
                 borderColor="$borderColor"
                 fontFamily="$body"
                 fontWeight="700"
@@ -108,15 +110,16 @@ export function AppAlertDialog({
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <Button 
-                flex={1} 
-                height={50} 
-                backgroundColor={isDestructive ? '$red' : '$primary'}
+              <Button
+                flex={1}
+                height={50}
+                color="$white"
+                backgroundColor={isDestructive ? "$red" : "$primary"}
                 onPress={onConfirm}
                 fontFamily="$body"
                 fontWeight="700"
               >
-                <Text color="white">{confirmText}</Text>
+                {confirmText}
               </Button>
             </AlertDialog.Action>
           </XStack>

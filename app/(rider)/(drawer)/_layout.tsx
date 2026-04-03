@@ -362,7 +362,7 @@ export default function RiderDrawerLayout() {
 
         {/* Profile */}
         <Drawer.Screen
-          name="profile/index"
+          name="profile"
           options={{
             title: "Profile",
             drawerIcon: ({ color, size }) => <User color={color} size={size} />,

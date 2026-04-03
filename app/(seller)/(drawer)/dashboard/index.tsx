@@ -103,7 +103,7 @@ export default function SellerDashboard() {
           hasCompletedKyc={user?.hasCompletedKyc}
         />
 
-        {/* Header */}}
+        {/* Header */}
         <XStack justifyContent="space-between" alignItems="center">
           <YStack>
             <Text fontSize="$4" color="$colorMuted">

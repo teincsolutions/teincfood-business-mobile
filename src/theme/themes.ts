@@ -34,6 +34,8 @@ export const lightTheme = {
   successMuted: "rgba(52, 199, 89, 0.15)",
   info: tokens.color.blue,
   infoMuted: "rgba(0, 122, 255, 0.12)",
+  warning: tokens.color.yellow,
+  warningMuted: "rgba(255, 204, 0, 0.15)",
   star: tokens.color.starOrange,
 
   shadowColor: "rgba(0, 0, 0, 0.06)",
@@ -66,9 +68,14 @@ export const darkTheme = {
 
   error: "#FF453A",
   success: "#30D158",
+  successDark: tokens.color.greenDark,
   successMuted: "rgba(48, 209, 88, 0.15)",
   info: "#0A84FF",
+  infoDark: tokens.color.blueDark,
   infoMuted: "rgba(10, 132, 255, 0.15)",
+  warning: "#FFD60A",
+  warningDark: tokens.color.yellowDark,
+  warningMuted: "rgba(255, 214, 10, 0.15)",
   star: tokens.color.starOrange,
 
   shadowColor: "rgba(0, 0, 0, 0.3)",

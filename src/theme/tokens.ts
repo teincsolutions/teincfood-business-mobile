@@ -1,3 +1,4 @@
+import { green } from "react-native-reanimated/lib/typescript/Colors";
 import { createTokens } from "tamagui";
 
 export const tokens = createTokens({
@@ -23,7 +24,14 @@ export const tokens = createTokens({
     // ─── Semantic ───
     red: "#FF3B30",
     green: "#34C759",
+    greenLight: "#E5F9EC",
+    greenDark: "#28A745",
     blue: "#007AFF",
+    blueLight: "#E5F0FF",
+    blueDark: "#0051A8",
+    yellow: "#FFD60A",
+    yellowLight: "#FFF9E5",
+    yellowDark: "#E6C200",
     starOrange: "#FF9633",
 
     // ─── Transparent ───

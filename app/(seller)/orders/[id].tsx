@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { YStack, Text, Card, XStack, Separator } from "tamagui";
-import { ScrollView } from "react-native";
+import { ScrollView, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useState } from "react";
 import {
   ArrowLeft,
   Phone,
@@ -13,6 +14,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { MOCK_SELLER_ORDERS, SellerOrder } from "@/services/mock-data.service";
 import { BackButton, Button } from "@/components/ui";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 /**
  * Order Details Screen
  */
@@ -24,6 +26,56 @@ export default function OrderDetails() {
   const order = MOCK_SELLER_ORDERS.find((o) => o.id === id) as
     | SellerOrder
     | undefined;
+
+  const [orderStatus, setOrderStatus] = useState<string>(order?.status || "pending");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    action: () => void;
+  } | null>(null);
+
+  const handleStartPreparing = () => {
+    setConfirmAction({
+      title: "Start Preparing",
+      message: "Are you sure you want to start preparing this order?",
+      action: () => {
+        setOrderStatus("preparing");
+        setShowConfirmDialog(false);
+      },
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleMarkReady = () => {
+    setConfirmAction({
+      title: "Mark as Ready",
+      message: "Are you sure this order is ready for pickup/delivery?",
+      action: () => {
+        setOrderStatus("ready");
+        setShowConfirmDialog(false);
+      },
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleMarkDelivered = () => {
+    setConfirmAction({
+      title: "Mark as Delivered",
+      message: "Are you sure this order has been delivered?",
+      action: () => {
+        setOrderStatus("delivered");
+        setShowConfirmDialog(false);
+      },
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleCallCustomer = () => {
+    if (order?.customerPhone) {
+      Linking.openURL(`tel:${order.customerPhone}`);
+    }
+  };
 
   if (!order) {
     return (
@@ -111,7 +163,7 @@ export default function OrderDetails() {
           paddingHorizontal="$3"
           paddingVertical="$1"
           borderRadius="$2"
-          backgroundColor={getStatusColor(order.status)}
+          backgroundColor={getStatusColor(orderStatus)}
         >
           <Text
             color="$background"
@@ -119,7 +171,7 @@ export default function OrderDetails() {
             textTransform="capitalize"
             fontWeight="600"
           >
-            {order.status}
+            {orderStatus}
           </Text>
         </YStack>
       </XStack>
@@ -208,7 +260,7 @@ export default function OrderDetails() {
                     <Text fontSize="$2" color="$colorMuted">
                       Estimated Delivery
                     </Text>
-                    <Text fontSize="$4" fontWeight="500" color="$green9">
+                    <Text fontSize="$4" fontWeight="500" color="$success">
                       {formatDate(order.estimatedDelivery)}
                     </Text>
                   </YStack>
@@ -290,14 +342,14 @@ export default function OrderDetails() {
                   paddingVertical="$1"
                   borderRadius="$2"
                   backgroundColor={
-                    order.paymentStatus === "paid" ? "$green2" : "$yellow2"
+                    order.paymentStatus === "paid" ? "$success" : "$starOrange"
                   }
                 >
                   <Text
                     fontSize="$2"
                     fontWeight="600"
                     color={
-                      order.paymentStatus === "paid" ? "$green9" : "$yellow9"
+                      order.paymentStatus === "paid" ? "$white" : "$color"
                     }
                     textTransform="capitalize"
                   >
@@ -324,7 +376,7 @@ export default function OrderDetails() {
                   <Text fontSize="$5" fontWeight="bold">
                     Total
                   </Text>
-                  <Text fontSize="$5" fontWeight="bold" color="$blue9">
+                  <Text fontSize="$5" fontWeight="bold" color="$info">
                     GHS {order.total.toFixed(2)}
                   </Text>
                 </XStack>
@@ -349,25 +401,25 @@ export default function OrderDetails() {
           )}
 
           {/* Action Buttons */}
-          {order.status !== "delivered" && (
+          {orderStatus !== "delivered" && (
             <YStack gap="$3" marginTop="$2">
-              {order.status === "pending" && (
-                <Button size="$4" backgroundColor="$blue9">
+              {orderStatus === "pending" && (
+                <Button variant="info" width="100%" onPress={handleStartPreparing}>
                   Start Preparing
                 </Button>
               )}
-              {order.status === "preparing" && (
-                <Button size="$4" backgroundColor="$green9">
+              {orderStatus === "preparing" && (
+                <Button variant="success" width="100%" onPress={handleMarkReady}>
                   Mark as Ready
                 </Button>
               )}
-              {order.status === "ready" && (
-                <Button size="$4" backgroundColor="$gray9">
+              {orderStatus === "ready" && (
+                <Button variant="primary" width="100%" onPress={handleMarkDelivered}>
                   Mark as Delivered
                 </Button>
               )}
               {order.customerPhone && (
-                <Button variant="outlined" icon={<Phone size={18} />}>
+                <Button variant="outline" width="100%" icon={<Phone size={18} />} onPress={handleCallCustomer}>
                   Call Customer
                 </Button>
               )}
@@ -375,6 +427,16 @@ export default function OrderDetails() {
           )}
         </YStack>
       </ScrollView>
+
+      {/* Confirmation Dialog */}
+      <AppAlertDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title={confirmAction?.title || ""}
+        description={confirmAction?.message || ""}
+        confirmText="Confirm"
+        onConfirm={() => confirmAction?.action()}
+      />
     </YStack>
   );
 }

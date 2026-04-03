@@ -355,6 +355,18 @@ export default function FleetDrawerLayout() {
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
+
+        {/* Profile */}
+        <Drawer.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            drawerIcon: ({ color, size }) => (
+              <User color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
       </Drawer>
 
       <AppAlertDialog

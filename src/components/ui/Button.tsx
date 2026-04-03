@@ -34,6 +34,31 @@ const StyledButton = styled(TamaguiButton, {
           backgroundColor: "$primaryDark",
         },
       },
+      info: {
+        backgroundColor: "$info",
+        color: "$white",
+        borderWidth: 0,
+        pressStyle: {
+          backgroundColor: "$infoDark",
+        },
+      },
+      success: {
+        backgroundColor: "$success",
+        color: "$white",
+        borderWidth: 0,
+        pressStyle: {
+          backgroundColor: "$successDark",
+        },
+      },
+      warning: {
+        backgroundColor: "$yellow",
+        color: "$white",
+        borderWidth: 0,
+        pressStyle: {
+          backgroundColor: "$yellowDark",
+        },
+      },
+
       outline: {
         backgroundColor: "transparent",
         borderWidth: 1,
