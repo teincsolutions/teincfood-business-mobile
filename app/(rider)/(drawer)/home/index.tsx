@@ -1,16 +1,9 @@
 // @ts-nocheck
-import { useState, useCallback } from 'react';
-import { MOCK_RIDER_METRICS } from '@/mocks/rider.mock';
-import { ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Separator,
-  Switch,
-} from 'tamagui';
+import { useState, useCallback } from "react";
+import { MOCK_RIDER_METRICS } from "@/mocks/rider.mock";
+import { ScrollView, RefreshControl } from "react-native";
+import { useRouter, useNavigation } from "expo-router";
+import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
 import {
   DollarSign,
   Package,
@@ -21,17 +14,18 @@ import {
   ChevronRight,
   Menu,
   RefreshCw,
-} from '@tamagui/lucide-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
-import { useAuthStore } from '@/stores/auth.store';
-import { ServiceStatusBanner } from '@/components/ui';
+} from "@tamagui/lucide-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth.store";
+import { ServiceStatusBanner } from "@/components/ui";
 import {
   useRiderMetricsQuery,
   useActiveDeliveryQuery,
   useUpdateOnlineStatusMutation,
-} from '@/hooks/rider.hooks';
-import { MOCK_RECENT_DELIVERIES } from '@/mocks/rider.mock';
+} from "@/hooks/rider.hooks";
+import { MOCK_RECENT_DELIVERIES } from "@/mocks/rider.mock";
+import { useResponsive } from "@/utils/responsive";
 
 /**
  * Rider Home Screen
@@ -41,6 +35,7 @@ export default function RiderHome() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { isTablet } = useResponsive();
   const user = useAuthStore((state) => state.user);
   const [isOnline, setIsOnline] = useState(user?.isOnline ?? false);
 
@@ -60,10 +55,14 @@ export default function RiderHome() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return '$success';
-      case 'picked_up': return '$info';
-      case 'assigned': return '$primary';
-      default: return '$colorMuted';
+      case "delivered":
+        return "$success";
+      case "picked_up":
+        return "$info";
+      case "assigned":
+        return "$primary";
+      default:
+        return "$colorMuted";
     }
   };
 
@@ -73,7 +72,7 @@ export default function RiderHome() {
       refreshControl={
         <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
       }
-     contentContainerStyle={{ backgroundColor: '$background' }}
+      contentContainerStyle={{ backgroundColor: "$background" }}
     >
       <YStack
         paddingHorizontal="$4"
@@ -82,24 +81,21 @@ export default function RiderHome() {
         gap="$4"
         backgroundColor="$background"
       >
-        {/* Service Status */}
-        <ServiceStatusBanner
-          status={user?.serviceStatus}
-          hasCompletedKyc={user?.hasCompletedKyc}
-        />
-
-        {/* Header */}}
+      
         <XStack justifyContent="space-between" alignItems="center">
           <XStack gap="$3" alignItems="center">
-            <TouchableOpacity onPress={() => navigation.openDrawer()}>
-              <Menu size={24} color="$color" />
-            </TouchableOpacity>
+            <Button
+              variant="ghost"
+              size="$3"
+              onPress={() => navigation.openDrawer()}
+              icon={<Menu size={24} color="$color" />}
+            />
             <YStack>
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Welcome back,
               </Text>
               <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
-                {user?.fullName || 'Rider'}
+                {user?.fullName || "Rider"}
               </Text>
             </YStack>
           </XStack>
@@ -109,27 +105,34 @@ export default function RiderHome() {
                 width={10}
                 height={10}
                 borderRadius={5}
-                backgroundColor={isOnline ? '$success' : '$colorMuted'}
+                backgroundColor={isOnline ? "$success" : "$colorMuted"}
               />
               <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
-                {isOnline ? 'Online' : 'Offline'}
+                {isOnline ? "Online" : "Offline"}
               </Text>
             </XStack>
             <Switch
-              size="$5"
+              size="$8"
               checked={isOnline}
               onCheckedChange={setIsOnline}
-              backgroundColor={isOnline ? '$success' : '$colorMuted'}
+              backgroundColor={isOnline ? "$success" : "$colorMuted"}
             >
               <Switch.Thumb animation="quick" backgroundColor="white" />
             </Switch>
-            <TouchableOpacity
-              onPress={() => router.push('/(shared)/notifications')}
-            >
-              <Bell size={22} />
-            </TouchableOpacity>
+            <Button
+              variant="ghost"
+              size="$3"
+              onPress={() => router.push("/(shared)/notifications")}
+              icon={<Bell size={22} color="$color" />}
+            />
           </XStack>
         </XStack>
+
+        {/* Service Status */}
+          <ServiceStatusBanner
+            status={user?.serviceStatus}
+            hasCompletedKyc={user?.hasCompletedKyc}
+          />
 
         {/* Online Status Card */}
         {!isOnline && (
@@ -138,7 +141,11 @@ export default function RiderHome() {
               <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
                 You're Offline
               </Text>
-              <Text color="$colorSecondary" textAlign="center" fontFamily="$body">
+              <Text
+                color="$colorSecondary"
+                textAlign="center"
+                fontFamily="$body"
+              >
                 Go online to start receiving delivery requests
               </Text>
               <Button
@@ -156,14 +163,18 @@ export default function RiderHome() {
         {/* Earnings Summary */}
         <Card padding="$4" bordered>
           <YStack gap="$3">
-            <Text fontSize="$5" fontWeight="bold">Today's Summary</Text>
+            <Text fontSize="$5" fontWeight="bold">
+              Today's Summary
+            </Text>
             <XStack gap="$4">
               <YStack flex={1} alignItems="center" gap="$1">
                 <DollarSign size={24} color="$success" />
                 <Text fontSize="$7" fontWeight="bold">
                   GHS {metrics.todayEarnings.toFixed(2)}
                 </Text>
-                <Text fontSize="$3" color="$colorMuted">Earnings</Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Earnings
+                </Text>
               </YStack>
               <Separator vertical />
               <YStack flex={1} alignItems="center" gap="$1">
@@ -171,7 +182,9 @@ export default function RiderHome() {
                 <Text fontSize="$7" fontWeight="bold">
                   {metrics.todayDeliveries}
                 </Text>
-                <Text fontSize="$3" color="$colorMuted">Deliveries</Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Deliveries
+                </Text>
               </YStack>
             </XStack>
           </YStack>
@@ -182,7 +195,9 @@ export default function RiderHome() {
           <Card padding="$4" bordered backgroundColor="$primaryLight">
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$5" fontWeight="bold">Active Delivery</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Active Delivery
+                </Text>
                 <YStack
                   backgroundColor={getStatusColor(activeDelivery.status)}
                   paddingHorizontal="$2"
@@ -190,7 +205,7 @@ export default function RiderHome() {
                   borderRadius="$2"
                 >
                   <Text fontSize="$2" color="white" textTransform="capitalize">
-                    {activeDelivery.status.replace('_', ' ')}
+                    {activeDelivery.status.replace("_", " ")}
                   </Text>
                 </YStack>
               </XStack>
@@ -215,7 +230,7 @@ export default function RiderHome() {
                   flex={1}
                   variant="primary"
                   height={48}
-                  onPress={() => router.push('/(rider)/deliveries')}
+                  onPress={() => router.push("/(rider)/deliveries")}
                 >
                   Navigate
                 </Button>
@@ -223,7 +238,7 @@ export default function RiderHome() {
                   flex={1}
                   variant="outline"
                   height={48}
-                  onPress={() => router.push('/(rider)/deliveries')}
+                  onPress={() => router.push("/(rider)/deliveries")}
                 >
                   View Details
                 </Button>
@@ -236,22 +251,24 @@ export default function RiderHome() {
         {isOnline && !activeDelivery && (
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Quick Actions</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Quick Actions
+              </Text>
               <XStack gap="$3">
                 <Button
-                variant="primary"
-                height={48}
-                onPress={() => router.push('/(rider)/deliveries')}
-              >
-                Available ({metrics.availableDeliveries})
-              </Button>
-              <Button
-                variant="outline"
-                height={48}
-                onPress={() => router.push('/(rider)/earnings')}
-              >
-                Earnings
-              </Button>
+                  variant="primary"
+                  height={48}
+                  onPress={() => router.push("/(rider)/deliveries")}
+                >
+                  Available ({metrics.availableDeliveries})
+                </Button>
+                <Button
+                  variant="outline"
+                  height={48}
+                  onPress={() => router.push("/(rider)/earnings")}
+                >
+                  Earnings
+                </Button>
               </XStack>
             </YStack>
           </Card>
@@ -261,18 +278,20 @@ export default function RiderHome() {
         <Card padding="$4" bordered>
           <YStack gap="$3">
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$5" fontWeight="bold">Recent Deliveries</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Recent Deliveries
+              </Text>
               <Button
                 variant="ghost"
                 height={36}
                 width="auto"
                 paddingHorizontal="$3"
-                onPress={() => router.push('/(rider)/deliveries')}
+                onPress={() => router.push("/(rider)/deliveries")}
               >
                 View All
               </Button>
             </XStack>
-            
+
             <Separator />
 
             {recentDeliveries.map((delivery, index) => (
@@ -301,7 +320,9 @@ export default function RiderHome() {
         {isOnline && (
           <Card padding="$4" bordered>
             <YStack gap="$3" alignItems="center">
-              <Text fontSize="$5" fontWeight="bold">Delivery Map</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Delivery Map
+              </Text>
               <YStack
                 height={200}
                 width="100%"
@@ -318,7 +339,7 @@ export default function RiderHome() {
               <Button
                 variant="outline"
                 height={48}
-                onPress={() => router.push('/(rider)/map')}
+                onPress={() => router.push("/(rider)/map")}
               >
                 Open Full Map
               </Button>

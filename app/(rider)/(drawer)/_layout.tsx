@@ -23,6 +23,7 @@ import {
   LogOut,
   MapPin,
   MessageSquare,
+  Menu,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -285,11 +286,18 @@ export default function RiderDrawerLayout() {
     <>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
+        screenOptions={({navigation}) => ({
           headerShown: true,
           headerStyle: {
             backgroundColor: theme.background.val,
           },
+          headerLeft: () => (
+            <Menu
+              size="$10"
+              color={theme.color.val}
+              onPress={() => navigation.toggleDrawer()}
+            />
+          ),
           headerTintColor: theme.color.val,
           headerTitleStyle: {
             fontFamily: "Sen_600SemiBold",
@@ -301,7 +309,7 @@ export default function RiderDrawerLayout() {
           sceneStyle: { backgroundColor: theme.background.val },
           drawerType: usePermanentDrawer ? "permanent" : "front",
           overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
-        }}
+        })}
       >
         {/* Home */}
         <Drawer.Screen
@@ -309,7 +317,7 @@ export default function RiderDrawerLayout() {
           options={{
             title: "Home",
             headerShown: false,
-            drawerIcon: ({ color, size }) => <Home color={color} size={size} />,
+            drawerIcon: ({ color, size }) => <Home color={color} size={24} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

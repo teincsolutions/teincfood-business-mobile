@@ -3,14 +3,7 @@ import { useState } from "react";
 import { Drawer } from "expo-router/drawer";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  useTheme,
-  YStack,
-  XStack,
-  Text,
-  Avatar,
-  Separator,
-} from "tamagui";
+import { useTheme, YStack, XStack, Text, Avatar, Separator } from "tamagui";
 import {
   LayoutDashboard,
   Users,
@@ -21,6 +14,7 @@ import {
   Settings,
   Bell,
   LogOut,
+  Menu,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog, Button } from "@/components/ui";
@@ -65,12 +59,17 @@ function CustomDrawerContent(props: any) {
             </Avatar.Fallback>
           </Avatar>
           <YStack flex={1}>
-          <Text color="white" fontWeight="bold" fontSize="$5" fontFamily="$heading">
-            {user?.fullName || "Fleet Manager"}
-          </Text>
-          <Text color="white" opacity={0.8} fontSize="$3" fontFamily="$body">
-            {user?.email || "fleet@example.com"}
-          </Text>
+            <Text
+              color="white"
+              fontWeight="bold"
+              fontSize="$5"
+              fontFamily="$heading"
+            >
+              {user?.fullName || "Fleet Manager"}
+            </Text>
+            <Text color="white" opacity={0.8} fontSize="$3" fontFamily="$body">
+              {user?.email || "fleet@example.com"}
+            </Text>
           </YStack>
         </XStack>
       </YStack>
@@ -272,11 +271,18 @@ export default function FleetDrawerLayout() {
     <>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
+        screenOptions={({ navigation }) => ({
           headerShown: true,
           headerStyle: {
             backgroundColor: theme.background.val,
           },
+          headerLeft: () => (
+            <Menu
+              size="$10"
+              color={theme.color.val}
+              onPress={() => navigation.toggleDrawer()}
+            />
+          ),
           headerTintColor: theme.color.val,
           headerTitleStyle: {
             fontFamily: "$heading",
@@ -289,7 +295,7 @@ export default function FleetDrawerLayout() {
           sceneStyle: { backgroundColor: theme.background.val },
           drawerType: usePermanentDrawer ? "permanent" : "front",
           overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
-        }}
+        })}
       >
         {/* Dashboard */}
         <Drawer.Screen
@@ -320,9 +326,7 @@ export default function FleetDrawerLayout() {
           name="vehicles/index"
           options={{
             title: "Vehicles",
-            drawerIcon: ({ color, size }) => (
-              <Car color={color} size={size} />
-            ),
+            drawerIcon: ({ color, size }) => <Car color={color} size={size} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

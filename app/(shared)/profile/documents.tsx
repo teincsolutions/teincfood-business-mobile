@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { YStack, XStack, Text, Card, Button, Separator, Progress } from 'tamagui';
+import { YStack, XStack, Text, Card, Separator, Progress } from 'tamagui';
 import { FileText, Check, Clock, AlertCircle, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton } from '@/components/ui';
+import { BackButton, Button } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 
 type DocStatus = 'not_uploaded' | 'pending' | 'verified' | 'rejected';
