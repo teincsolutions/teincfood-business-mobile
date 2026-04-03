@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, Platform } from "react-native";
+import { ScrollView, Platform, Alert } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
 import {
   Shield,
@@ -12,16 +12,19 @@ import {
   AlertTriangle,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import * as LocalAuthentication from "expo-local-authentication";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { useSecurityStore } from "@/stores/security.store";
-import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { SessionsSheet } from "@/components/security/SessionsSheet";
 
 export default function Security() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isTogglingBiometric, setIsTogglingBiometric] = useState(false);
   const [biometricError, setBiometricError] = useState<string | null>(null);
+  const [sessionsSheetOpen, setSessionsSheetOpen] = useState(false);
 
   // Security store
   const biometricEnabled = useSecurityStore((s) => s.isBiometricEnabled);
@@ -66,6 +69,39 @@ export default function Security() {
       setConfirmPassword("");
       setErrors({});
     }, 1500);
+  };
+
+  const handleViewAllSessions = () => {
+    setSessionsSheetOpen(true);
+  };
+
+  const handleDeactivateAccount = () => {
+    Alert.alert(
+      "Deactivate Account",
+      "Are you sure you want to deactivate your account? You can reactivate it anytime by logging in again.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Deactivate",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Account Deactivated",
+              "Your account has been deactivated. You can reactivate it by logging in again.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => router.replace("/(auth)/login"),
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleBiometricToggle = async () => {
@@ -339,7 +375,7 @@ export default function Security() {
                   </Text>
                 </YStack>
               </XStack>
-              <Button variant="outline">
+              <Button variant="outline" onPress={handleViewAllSessions}>
                 View All Sessions
               </Button>
             </YStack>
@@ -352,7 +388,7 @@ export default function Security() {
                 Danger Zone
               </Text>
               <Separator />
-              <Button variant="dangerOutline">
+              <Button variant="dangerOutline" onPress={handleDeactivateAccount}>
                 Deactivate Account
               </Button>
               <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
@@ -362,6 +398,12 @@ export default function Security() {
           </Card>
         </YStack>
       </ScrollView>
+
+      {/* Sessions Bottom Sheet */}
+      <SessionsSheet
+        open={sessionsSheetOpen}
+        onOpenChange={setSessionsSheetOpen}
+      />
     </YStack>
   );
 }
