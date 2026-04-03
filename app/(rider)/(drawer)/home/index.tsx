@@ -60,10 +60,10 @@ export default function RiderHome() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return '#27ae60';
-      case 'picked_up': return '#3498db';
-      case 'assigned': return '#FFA500';
-      default: return '#95a5a6';
+      case 'delivered': return '$success';
+      case 'picked_up': return '$info';
+      case 'assigned': return '$primary';
+      default: return '$colorMuted';
     }
   };
 
@@ -109,7 +109,7 @@ export default function RiderHome() {
                 width={10}
                 height={10}
                 borderRadius={5}
-                backgroundColor={isOnline ? '#27ae60' : '#95a5a6'}
+                backgroundColor={isOnline ? '$success' : '$colorMuted'}
               />
               <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
                 {isOnline ? 'Online' : 'Offline'}
@@ -119,7 +119,7 @@ export default function RiderHome() {
               size="$5"
               checked={isOnline}
               onCheckedChange={setIsOnline}
-              backgroundColor={isOnline ? '#27ae60' : '$gray8'}
+              backgroundColor={isOnline ? '$success' : '$colorMuted'}
             >
               <Switch.Thumb animation="quick" backgroundColor="white" />
             </Switch>
@@ -159,7 +159,7 @@ export default function RiderHome() {
             <Text fontSize="$5" fontWeight="bold">Today's Summary</Text>
             <XStack gap="$4">
               <YStack flex={1} alignItems="center" gap="$1">
-                <DollarSign size={24} color="#27ae60" />
+                <DollarSign size={24} color="$success" />
                 <Text fontSize="$7" fontWeight="bold">
                   GHS {metrics.todayEarnings.toFixed(2)}
                 </Text>
@@ -201,7 +201,7 @@ export default function RiderHome() {
                   <Text fontSize="$3">Pickup: {activeDelivery.pickup}</Text>
                 </XStack>
                 <XStack gap="$2" alignItems="center">
-                  <Navigation size={16} color="#27ae60" />
+                  <Navigation size={16} color="$success" />
                   <Text fontSize="$3">Dropoff: {activeDelivery.dropoff}</Text>
                 </XStack>
                 <XStack gap="$2" alignItems="center">
@@ -285,7 +285,7 @@ export default function RiderHome() {
                     </Text>
                   </YStack>
                   <XStack gap="$2" alignItems="center">
-                    <Text fontWeight="bold" color="#27ae60">
+                    <Text fontWeight="bold" color="$success">
                       +GHS {delivery.earnings.toFixed(2)}
                     </Text>
                     <ChevronRight size={16} color="$colorMuted" />
