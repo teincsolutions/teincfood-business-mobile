@@ -18,6 +18,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
+import { formatPrice } from "@/utils/currency";
 
 export default function FleetDashboardScreen() {
   const router = useRouter();
@@ -123,7 +124,7 @@ export default function FleetDashboardScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  GHS {dashboard?.todayEarnings?.toFixed(2) || "0.00"}
+                  {formatPrice(dashboard?.todayEarnings || 0)}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Today's Earnings
@@ -261,7 +262,7 @@ export default function FleetDashboardScreen() {
                     fontFamily="$heading"
                     color="$success"
                   >
-                    GHS {rider.totalEarnings.toFixed(2)}
+                    {formatPrice(rider.totalEarnings)}
                   </Text>
                   <Text
                     fontSize="$2"
@@ -352,7 +353,7 @@ export default function FleetDashboardScreen() {
                   This Week
                 </Text>
                 <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  GHS {dashboard?.weekEarnings?.toFixed(2) || "0.00"}
+                  {formatPrice(dashboard?.weekEarnings || 0)}
                 </Text>
               </XStack>
               <Separator />
@@ -361,7 +362,7 @@ export default function FleetDashboardScreen() {
                   This Month
                 </Text>
                 <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  GHS {dashboard?.monthEarnings?.toFixed(2) || "0.00"}
+                  {formatPrice(dashboard?.monthEarnings || 0)}
                 </Text>
               </XStack>
               <Separator />

@@ -21,6 +21,7 @@ import {
 import { useFleetStore } from "@/stores/fleet.store";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
+import { formatPrice } from "@/utils/currency";
 
 export default function FleetEarningsScreen() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function FleetEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "today" ? "solid" : "outlined"}
+            variant={selectedPeriod === "today" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("today")}
           >
             Today
@@ -89,7 +90,7 @@ export default function FleetEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "week" ? "solid" : "outlined"}
+            variant={selectedPeriod === "week" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("week")}
           >
             This Week
@@ -97,7 +98,7 @@ export default function FleetEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "month" ? "solid" : "outlined"}
+            variant={selectedPeriod === "month" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("month")}
           >
             This Month
@@ -122,7 +123,7 @@ export default function FleetEarningsScreen() {
                 Total Earnings
               </Text>
               <Text fontSize="$10" fontWeight="bold" color="$primary" fontFamily="$heading">
-                GHS {getEarningsByPeriod().toFixed(2)}
+                {formatPrice(getEarningsByPeriod())}
               </Text>
             </YStack>
             <XStack gap="$6">
@@ -156,7 +157,7 @@ export default function FleetEarningsScreen() {
                 Fleet Commission
               </Text>
               <Text fontSize="$5" fontWeight="600" color="$success" fontFamily="$heading">
-                GHS {(getEarningsByPeriod() * 0.15).toFixed(2)}
+                {formatPrice(getEarningsByPeriod() * 0.15)}
               </Text>
             </XStack>
             <Separator />
@@ -165,7 +166,7 @@ export default function FleetEarningsScreen() {
                 Rider Payouts
               </Text>
               <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                GHS {(getEarningsByPeriod() * 0.85).toFixed(2)}
+                {formatPrice(getEarningsByPeriod() * 0.85)}
               </Text>
             </XStack>
           </YStack>
@@ -220,7 +221,7 @@ export default function FleetEarningsScreen() {
                 </YStack>
                 <YStack alignItems="flex-end">
                   <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
-                    GHS {rider.totalEarnings.toFixed(2)}
+                    {formatPrice(rider.totalEarnings)}
                   </Text>
                   <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
                     Rating: {rider.rating.toFixed(1)}
@@ -254,7 +255,7 @@ export default function FleetEarningsScreen() {
                   Gross Earnings
                 </Text>
                 <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  GHS {getEarningsByPeriod().toFixed(2)}
+                  {formatPrice(getEarningsByPeriod())}
                 </Text>
               </XStack>
               <Separator />
@@ -263,7 +264,7 @@ export default function FleetEarningsScreen() {
                   Fleet Commission (15%)
                 </Text>
                 <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
-                  + GHS {(getEarningsByPeriod() * 0.15).toFixed(2)}
+                  + {formatPrice(getEarningsByPeriod() * 0.15)}
                 </Text>
               </XStack>
               <Separator />
@@ -272,7 +273,7 @@ export default function FleetEarningsScreen() {
                   Rider Payouts (85%)
                 </Text>
                 <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  GHS {(getEarningsByPeriod() * 0.85).toFixed(2)}
+                  {formatPrice(getEarningsByPeriod() * 0.85)}
                 </Text>
               </XStack>
             </YStack>

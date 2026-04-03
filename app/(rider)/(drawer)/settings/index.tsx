@@ -49,12 +49,6 @@ export default function RiderSettings() {
       description: "Preferred maps app",
       route: "/(rider)/settings/navigation",
     },
-    {
-      label: "Theme",
-      description: "Light, dark, or system",
-      icon: Palette,
-      route: "/(shared)/profile/theme",
-    }
   ];
 
   return (

@@ -18,6 +18,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
+import { formatPrice } from "@/utils/currency";
 
 export default function RiderEarningsScreen() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "today" ? "solid" : "outlined"}
+            variant={selectedPeriod === "today" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("today")}
           >
             Today
@@ -71,7 +72,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "week" ? "solid" : "outlined"}
+            variant={selectedPeriod === "week" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("week")}
           >
             This Week
@@ -79,7 +80,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "month" ? "solid" : "outlined"}
+            variant={selectedPeriod === "month" ? "primary" : "outline"}
             onPress={() => setSelectedPeriod("month")}
           >
             This Month
@@ -97,14 +98,14 @@ export default function RiderEarningsScreen() {
               alignItems="center"
               justifyContent="center"
             >
-              <DollarSign size={32} color="white" />
+              <DollarSign size={32} color="$color" />
             </YStack>
             <YStack alignItems="center">
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Total Earnings
               </Text>
               <Text fontSize="$10" fontWeight="bold" color="$green10" fontFamily="$heading">
-                GHS {currentData.amount.toFixed(2)}
+                {formatPrice(currentData.amount)}
               </Text>
             </YStack>
             <XStack gap="$6">
@@ -234,7 +235,7 @@ export default function RiderEarningsScreen() {
                 </XStack>
                 <YStack alignItems="flex-end">
                   <Text fontSize="$4" fontWeight="600" color="$green10" fontFamily="$heading">
-                    + GHS {earning.amount.toFixed(2)}
+                    + {formatPrice(earning.amount)}
                   </Text>
                   <YStack
                     paddingHorizontal="$2"

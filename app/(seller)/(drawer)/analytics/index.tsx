@@ -2,6 +2,7 @@
 import { YStack, Text, Card, XStack, Separator } from 'tamagui';
 import { TrendingUp, DollarSign, ShoppingBag, Star, Clock } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
+import { formatPrice } from '@/utils/currency';
 
 /**
  * Seller Analytics Screen
@@ -35,7 +36,7 @@ export default function SellerAnalytics() {
                   <DollarSign size={20} color="$green10" />
                   <Text fontSize="$3" color="$colorMuted">Total Revenue</Text>
                 </XStack>
-                <Text fontSize="$7" fontWeight="bold">GHS {metrics.totalRevenue.toFixed(2)}</Text>
+                <Text fontSize="$7" fontWeight="bold">{formatPrice(metrics.totalRevenue)}</Text>
               </YStack>
             </Card>
 
@@ -55,7 +56,7 @@ export default function SellerAnalytics() {
                   <TrendingUp size={20} color="$yellow10" />
                   <Text fontSize="$3" color="$colorMuted">Avg Order Value</Text>
                 </XStack>
-                <Text fontSize="$7" fontWeight="bold">GHS {metrics.averageOrderValue.toFixed(2)}</Text>
+                <Text fontSize="$7" fontWeight="bold">{formatPrice(metrics.averageOrderValue)}</Text>
               </YStack>
             </Card>
 
@@ -90,7 +91,7 @@ export default function SellerAnalytics() {
                 <XStack key={index} justifyContent="space-between" alignItems="center">
                   <Text color="$colorMuted">{item.period}</Text>
                   <YStack alignItems="flex-end">
-                    <Text fontWeight="bold">GHS {item.revenue.toFixed(2)}</Text>
+                    <Text fontWeight="bold">{formatPrice(item.revenue)}</Text>
                     <Text fontSize="$2" color="$colorMuted">{item.orders} orders</Text>
                   </YStack>
                 </XStack>
