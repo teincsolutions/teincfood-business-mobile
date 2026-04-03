@@ -138,7 +138,7 @@ export default function OrderDetails() {
   return (
     <YStack
       flex={1}
-      paddingTop={Math.max(insets.top + 12, 24)}
+      paddingTop={Math.max(insets.top + 8, 24)}
       paddingBottom={insets.bottom + 16}
       backgroundColor="$background"
     >
