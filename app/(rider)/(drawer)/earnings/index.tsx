@@ -18,28 +18,45 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
-import { formatPrice } from "@/utils/currency";
+import {
+  useRiderEarningsQuery,
+  useEarningsBreakdownQuery,
+  useRecentTransactionsQuery,
+} from "@/hooks/rider.hooks";
 
 export default function RiderEarningsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedPeriod, setSelectedPeriod] = useState<"today" | "week" | "month">("today");
 
-  const earningsData = {
-    today: { amount: 45.5, deliveries: 8 },
-    week: { amount: 320.0, deliveries: 52 },
-    month: { amount: 1250.0, deliveries: 198 },
+  // TanStack Query hooks
+  const { data: earningsData } = useRiderEarningsQuery();
+  const { data: breakdownData } = useEarningsBreakdownQuery();
+  const { data: transactionsData = [] } = useRecentTransactionsQuery();
+
+  // Use query data or fallback to defaults
+  const earnings = earningsData ?? {
+    totalEarnings: 0,
+    totalDeliveries: 0,
+    currency: 'GHS',
+    period: { today: 0, week: 0, month: 0 },
   };
 
-  const currentData = earningsData[selectedPeriod];
+  const breakdown = breakdownData ?? {
+    baseEarnings: 0,
+    tips: 0,
+    bonuses: 0,
+    deductions: 0,
+  };
 
-  const recentEarnings = [
-    { id: "1", orderId: "ORD-12345", amount: 8.5, time: "2 hours ago", status: "completed" },
-    { id: "2", orderId: "ORD-12344", amount: 12.0, time: "4 hours ago", status: "completed" },
-    { id: "3", orderId: "ORD-12343", amount: 6.5, time: "6 hours ago", status: "completed" },
-    { id: "4", orderId: "ORD-12342", amount: 15.0, time: "8 hours ago", status: "completed" },
-    { id: "5", orderId: "ORD-12341", amount: 9.0, time: "10 hours ago", status: "completed" },
-  ];
+  const currentEarnings = selectedPeriod === 'today' 
+    ? earnings.period.today 
+    : selectedPeriod === 'week' 
+      ? earnings.period.week 
+      : earnings.period.month;
+
+  const currentDeliveries = earnings.totalDeliveries;
+  const avgPerDelivery = currentDeliveries > 0 ? currentEarnings / currentDeliveries : 0;
 
   return (
     <ScrollView
@@ -64,7 +81,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "today" ? "primary" : "outline"}
+            variant={selectedPeriod === "today" ? "solid" : "outlined"}
             onPress={() => setSelectedPeriod("today")}
           >
             Today
@@ -72,7 +89,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "week" ? "primary" : "outline"}
+            variant={selectedPeriod === "week" ? "solid" : "outlined"}
             onPress={() => setSelectedPeriod("week")}
           >
             This Week
@@ -80,7 +97,7 @@ export default function RiderEarningsScreen() {
           <Button
             flex={1}
             size="$3"
-            variant={selectedPeriod === "month" ? "primary" : "outline"}
+            variant={selectedPeriod === "month" ? "solid" : "outlined"}
             onPress={() => setSelectedPeriod("month")}
           >
             This Month
@@ -98,20 +115,20 @@ export default function RiderEarningsScreen() {
               alignItems="center"
               justifyContent="center"
             >
-              <DollarSign size={32} color="$color" />
+              <DollarSign size={32} color="white" />
             </YStack>
             <YStack alignItems="center">
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Total Earnings
               </Text>
               <Text fontSize="$10" fontWeight="bold" color="$green10" fontFamily="$heading">
-                {formatPrice(currentData.amount)}
+                {earnings.currency} {currentEarnings.toFixed(2)}
               </Text>
             </YStack>
             <XStack gap="$6">
               <YStack alignItems="center">
                 <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                  {currentData.deliveries}
+                  {currentDeliveries}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Deliveries
@@ -119,9 +136,7 @@ export default function RiderEarningsScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                  {currentData.deliveries > 0
-                    ? (currentData.amount / currentData.deliveries).toFixed(2)
-                    : "0.00"}
+                  {avgPerDelivery.toFixed(2)}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Avg per delivery
@@ -139,7 +154,7 @@ export default function RiderEarningsScreen() {
                 Pending Payout
               </Text>
               <Text fontSize="$5" fontWeight="600" color="$orange10" fontFamily="$heading">
-                GHS {currentData.amount.toFixed(2)}
+                {earnings.currency} {currentEarnings.toFixed(2)}
               </Text>
             </XStack>
             <Separator />
@@ -210,8 +225,8 @@ export default function RiderEarningsScreen() {
             </Button>
           </XStack>
 
-          {recentEarnings.map((earning) => (
-            <Card key={earning.id} padding="$3" bordered>
+          {transactionsData.map((transaction) => (
+            <Card key={transaction.id} padding="$3" bordered>
               <XStack justifyContent="space-between" alignItems="center">
                 <XStack gap="$3" alignItems="center">
                   <YStack
@@ -226,16 +241,16 @@ export default function RiderEarningsScreen() {
                   </YStack>
                   <YStack>
                     <Text fontSize="$4" fontWeight="500" fontFamily="$heading">
-                      {earning.orderId}
+                      {transaction.orderId}
                     </Text>
                     <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                      {earning.time}
+                      {transaction.time}
                     </Text>
                   </YStack>
                 </XStack>
                 <YStack alignItems="flex-end">
                   <Text fontSize="$4" fontWeight="600" color="$green10" fontFamily="$heading">
-                    + {formatPrice(earning.amount)}
+                    + {earnings.currency} {transaction.amount.toFixed(2)}
                   </Text>
                   <YStack
                     paddingHorizontal="$2"
@@ -244,7 +259,7 @@ export default function RiderEarningsScreen() {
                     backgroundColor="$green2"
                   >
                     <Text fontSize="$2" color="$green10" fontFamily="$body">
-                      Completed
+                      {transaction.status}
                     </Text>
                   </YStack>
                 </YStack>

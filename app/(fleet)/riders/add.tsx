@@ -36,7 +36,7 @@ export default function AddRiderScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const availableVehicles = vehicles.filter(
-    (v) => v.isActive && !v.assignedRiderId
+    (v) => v.isActive && !v.assignedRiderId,
   );
 
   const updateField = (key: string, value: string) => {
@@ -109,7 +109,9 @@ export default function AddRiderScreen() {
         router.replace("/(fleet)/riders");
       }
     } catch (err: any) {
-      setErrors({ form: err?.message || "Failed to invite rider. Please try again." });
+      setErrors({
+        form: err?.message || "Failed to invite rider. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -120,188 +122,218 @@ export default function AddRiderScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView
-        style={{ flex: 1 }}
+      <YStack
+        flex={1}
         backgroundColor="$background"
-        contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom + 20, 24),
-          paddingTop: Math.max(insets.top + 8, 24),
-        }}
+        paddingBottom={Math.max(insets.bottom + 20, 24)}
+        paddingTop={Math.max(insets.top + 8, 24)}
       >
-        <YStack padding="$4" gap="$4" $gtSm={{ padding: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
+        <XStack
+          paddingHorizontal="$4"
+          justify={"space-between"}
+          mb="$4"
+          alignItems="center"
+        >
+          <BackButton />
+        </XStack>
 
-          <YStack gap="$2">
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color" $gtSm={{ fontSize: "$10" }}>
-              Invite Rider
-            </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Send an invitation to a new rider to join your fleet
-            </Text>
-          </YStack>
-
-          <Form onSubmit={handleInvite} gap="$4">
-            <FormInput
-              label="Full Name"
-              placeholder="John Doe"
-              value={form.fullName}
-              onChangeText={(value) => updateField("fullName", value)}
-              icon={<User size={20} color="$colorMuted" />}
-              error={errors.fullName}
-              required
-            />
-
-            <FormInput
-              label="Email"
-              placeholder="rider@example.com"
-              value={form.email}
-              onChangeText={(value) => updateField("email", value)}
-              icon={<Mail size={20} color="$colorMuted" />}
-              error={errors.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              required
-            />
-
-            <FormInput
-              label="Phone Number"
-              placeholder="+233 24 000 0000"
-              value={form.phone}
-              onChangeText={(value) => updateField("phone", value)}
-              icon={<Phone size={20} color="$colorMuted" />}
-              error={errors.phone}
-              keyboardType="phone-pad"
-              required
-            />
-
+        <ScrollView backgroundColor="$background" padding="$4">
+          <YStack
+            gap="$4"
+            $gtSm={{ padding: "$6", maxWidth: 600 }}
+            alignSelf="center"
+            width="100%"
+          >
             <YStack gap="$2">
-              <Label htmlFor="vehicleId" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
-                Assign Vehicle (Optional)
-              </Label>
-              <Select
-                value={form.vehicleId}
-                onValueChange={(value) => updateField("vehicleId", value)}
-                disablePreventBodyScroll
+              <Text
+                fontSize="$8"
+                fontWeight="bold"
+                fontFamily="$heading"
+                color="$color"
+                $gtSm={{ fontSize: "$10" }}
               >
-                <Select.Trigger
-                  iconAfter={Car}
-                  borderRadius="$4"
-                  backgroundColor="$background"
-                >
-                  <Select.Value placeholder="Select a vehicle" />
-                </Select.Trigger>
-
-                <Adapt when="maxSm" platform="touch">
-                  <Sheet
-                    native
-                    modal
-                    dismissOnSnapToBottom
-                    animation="medium"
-                  >
-                    <Sheet.Frame>
-                      <Sheet.ScrollView>
-                        <Adapt.Contents />
-                      </Sheet.ScrollView>
-                    </Sheet.Frame>
-                    <Sheet.Overlay
-                      bg="$shadowColor"
-                      animation="lazy"
-                      enterStyle={{ opacity: 0 }}
-                      exitStyle={{ opacity: 0 }}
-                    />
-                  </Sheet>
-                </Adapt>
-
-                <Select.Content>
-                  <Select.ScrollUpButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Car size={20} />
-                  </Select.ScrollUpButton>
-
-                  <Select.Viewport
-                    minW={200}
-                    bg="$background"
-                    borderRadius="$4"
-                    borderWidth={1}
-                    borderColor="$borderColor"
-                  >
-                    <Select.Group>
-                      <Select.Label fontWeight="700">Available Vehicles</Select.Label>
-                      {availableVehicles.map((vehicle, i) => (
-                        <Select.Item
-                          key={vehicle.id}
-                          value={vehicle.id}
-                          index={i}
-                        >
-                          <Select.ItemText>
-                            {vehicle.plateNumber} - {vehicle.vehicleType}
-                          </Select.ItemText>
-                        </Select.Item>
-                      ))}
-                      {availableVehicles.length === 0 && (
-                        <Select.Item value="none" index={0}>
-                          <Select.ItemText>
-                            No vehicles available
-                          </Select.ItemText>
-                        </Select.Item>
-                      )}
-                    </Select.Group>
-                  </Select.Viewport>
-
-                  <Select.ScrollDownButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Car size={20} />
-                  </Select.ScrollDownButton>
-                </Select.Content>
-              </Select>
-              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
-                You can assign a vehicle later if needed
+                Invite Rider
+              </Text>
+              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                Send an invitation to a new rider to join your fleet
               </Text>
             </YStack>
 
-            {errors.form ? (
-              <Card padding="$3" backgroundColor="$red2" borderColor="$red6">
-                <Text color="$red10" fontSize="$3" fontFamily="$body">
-                  {errors.form}
+            <Form onSubmit={handleInvite} gap="$4">
+              <FormInput
+                label="Full Name"
+                placeholder="John Doe"
+                value={form.fullName}
+                onChangeText={(value) => updateField("fullName", value)}
+                icon={<User size={20} color="$colorMuted" />}
+                error={errors.fullName}
+                required
+              />
+
+              <FormInput
+                label="Email"
+                placeholder="rider@example.com"
+                value={form.email}
+                onChangeText={(value) => updateField("email", value)}
+                icon={<Mail size={20} color="$colorMuted" />}
+                error={errors.email}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                required
+              />
+
+              <FormInput
+                label="Phone Number"
+                placeholder="+233 24 000 0000"
+                value={form.phone}
+                onChangeText={(value) => updateField("phone", value)}
+                icon={<Phone size={20} color="$colorMuted" />}
+                error={errors.phone}
+                keyboardType="phone-pad"
+                required
+              />
+
+              <YStack gap="$2">
+                <Label
+                  htmlFor="vehicleId"
+                  fontSize="$4"
+                  fontWeight="500"
+                  fontFamily="$body"
+                  color="$color"
+                >
+                  Assign Vehicle (Optional)
+                </Label>
+                <Select
+                  value={form.vehicleId}
+                  onValueChange={(value) => updateField("vehicleId", value)}
+                  disablePreventBodyScroll
+                >
+                  <Select.Trigger
+                    iconAfter={Car}
+                    borderRadius="$4"
+                    backgroundColor="$background"
+                  >
+                    <Select.Value placeholder="Select a vehicle" />
+                  </Select.Trigger>
+
+                  <Adapt when="maxSm" platform="touch">
+                    <Sheet
+                      native
+                      modal
+                      dismissOnSnapToBottom
+                      animation="medium"
+                    >
+                      <Sheet.Frame>
+                        <Sheet.ScrollView>
+                          <Adapt.Contents />
+                        </Sheet.ScrollView>
+                      </Sheet.Frame>
+                      <Sheet.Overlay
+                        bg="$shadowColor"
+                        animation="lazy"
+                        enterStyle={{ opacity: 0 }}
+                        exitStyle={{ opacity: 0 }}
+                      />
+                    </Sheet>
+                  </Adapt>
+
+                  <Select.Content>
+                    <Select.ScrollUpButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    >
+                      <Car size={20} />
+                    </Select.ScrollUpButton>
+
+                    <Select.Viewport
+                      minW={200}
+                      bg="$background"
+                      borderRadius="$4"
+                      borderWidth={1}
+                      borderColor="$borderColor"
+                    >
+                      <Select.Group>
+                        <Select.Label fontWeight="700">
+                          Available Vehicles
+                        </Select.Label>
+                        {availableVehicles.map((vehicle, i) => (
+                          <Select.Item
+                            key={vehicle.id}
+                            value={vehicle.id}
+                            index={i}
+                          >
+                            <Select.ItemText>
+                              {vehicle.plateNumber} - {vehicle.vehicleType}
+                            </Select.ItemText>
+                          </Select.Item>
+                        ))}
+                        {availableVehicles.length === 0 && (
+                          <Select.Item value="none" index={0}>
+                            <Select.ItemText>
+                              No vehicles available
+                            </Select.ItemText>
+                          </Select.Item>
+                        )}
+                      </Select.Group>
+                    </Select.Viewport>
+
+                    <Select.ScrollDownButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    >
+                      <Car size={20} />
+                    </Select.ScrollDownButton>
+                  </Select.Content>
+                </Select>
+                <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                  You can assign a vehicle later if needed
                 </Text>
-              </Card>
-            ) : null}
+              </YStack>
 
-            <YStack gap="$3" mt="$4">
-              <Button
-                size="$5"
-                onPress={handleInvite}
-                disabled={isLoading}
-                opacity={isLoading ? 0.7 : 1}
-              >
-                {isLoading ? "Sending Invitation..." : "Send Invitation"}
-              </Button>
+              {errors.form ? (
+                <Card padding="$3" backgroundColor="$red2" borderColor="$red6">
+                  <Text color="$red10" fontSize="$3" fontFamily="$body">
+                    {errors.form}
+                  </Text>
+                </Card>
+              ) : null}
 
-              <Button
-                variant="outlined"
-                width="100%"
-                size="$5"
-                onPress={() => navigation.canGoBack() ? router.back() : router.replace("/(fleet)/riders")}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-            </YStack>
-          </Form>
-        </YStack>
-      </ScrollView>
+              <YStack gap="$3" mt="$4">
+                <Button
+                  size="$5"
+                  variant="primary"
+                  width="100%"
+                  onPress={handleInvite}
+                  disabled={isLoading}
+                  opacity={isLoading ? 0.7 : 1}
+                >
+                  {isLoading ? "Sending Invitation..." : "Send Invitation"}
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  width="100%"
+                  size="$5"
+                  onPress={() =>
+                    navigation.canGoBack()
+                      ? router.back()
+                      : router.replace("/(fleet)/riders")
+                  }
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+              </YStack>
+            </Form>
+          </YStack>
+        </ScrollView>
+      </YStack>
     </KeyboardAvoidingView>
   );
 }

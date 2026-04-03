@@ -3,24 +3,24 @@ import { YStack, Text, Card, XStack, Separator } from 'tamagui';
 import { TrendingUp, DollarSign, ShoppingBag, Star, Clock } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
 import { formatPrice } from '@/utils/currency';
+import { useSellerAnalyticsQuery } from '@/hooks/seller-analytics.hooks';
 
 /**
  * Seller Analytics Screen
  */
 export default function SellerAnalytics() {
-  const metrics = {
-    totalRevenue: 12500.00,
-    totalOrders: 156,
-    averageOrderValue: 80.13,
-    averageRating: 4.8,
-    peakHour: '12:00 PM - 2:00 PM',
+  const { data } = useSellerAnalyticsQuery();
+
+  const metrics = data?.metrics ?? {
+    totalRevenue: 0,
+    totalOrders: 0,
+    averageOrderValue: 0,
+    averageRating: 0,
+    peakHour: 'N/A',
   };
 
-  const recentPerformance = [
-    { period: 'Today', revenue: 850.00, orders: 12 },
-    { period: 'This Week', revenue: 4200.00, orders: 58 },
-    { period: 'This Month', revenue: 12500.00, orders: 156 },
-  ];
+  const recentPerformance = data?.recentPerformance ?? [];
+  const topSellingItems = data?.topSellingItems ?? [];
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -104,18 +104,12 @@ export default function SellerAnalytics() {
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold">Top Selling Items</Text>
               <Separator />
-              <XStack justifyContent="space-between">
-                <Text>1. Jollof Rice</Text>
-                <Text fontWeight="bold">45 sold</Text>
-              </XStack>
-              <XStack justifyContent="space-between">
-                <Text>2. Banku & Tilapia</Text>
-                <Text fontWeight="bold">32 sold</Text>
-              </XStack>
-              <XStack justifyContent="space-between">
-                <Text>3. Grilled Chicken</Text>
-                <Text fontWeight="bold">28 sold</Text>
-              </XStack>
+              {topSellingItems.map((item, index) => (
+                <XStack key={index} justifyContent="space-between">
+                  <Text>{index + 1}. {item.name}</Text>
+                  <Text fontWeight="bold">{item.sold} sold</Text>
+                </XStack>
+              ))}
             </YStack>
           </Card>
         </YStack>

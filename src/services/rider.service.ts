@@ -10,6 +10,7 @@ import type {
   VehicleInfo,
   DeliveryZone,
   NavigationSettings,
+  NavigationApp,
 } from '@/models/rider.model';
 import {
   MOCK_RIDER_METRICS,
@@ -243,5 +244,61 @@ export async function updateOnlineStatus(isOnline: boolean): Promise<{ success: 
   // return api.post<{ success: boolean }>('/v1/rider/online-status', { isOnline });
   return new Promise((resolve) => {
     setTimeout(() => resolve({ success: true }), SIMULATED_DELAY);
+  });
+}
+
+// ─── Navigation Apps ───
+
+const MOCK_NAVIGATION_APPS: NavigationApp[] = [
+  {
+    id: 'google_maps',
+    name: 'Google Maps',
+    description: 'Most popular navigation app',
+    icon: '🗺️',
+    installed: true,
+  },
+  {
+    id: 'apple_maps',
+    name: 'Apple Maps',
+    description: 'Built-in iOS navigation',
+    icon: '🍎',
+    installed: true,
+  },
+  {
+    id: 'waze',
+    name: 'Waze',
+    description: 'Community-based traffic alerts',
+    icon: '🚗',
+    installed: false,
+  },
+];
+
+export async function fetchNavigationApps(): Promise<NavigationApp[]> {
+  // TODO: Replace with actual API call
+  // return api.get<NavigationApp[]>('/v1/rider/navigation-apps');
+  return new Promise((resolve) => {
+    setTimeout(() => resolve([...MOCK_NAVIGATION_APPS]), SIMULATED_DELAY);
+  });
+}
+
+// ─── Vehicle Types ───
+
+export interface VehicleTypeOption {
+  value: string;
+  label: string;
+}
+
+const MOCK_VEHICLE_TYPES: VehicleTypeOption[] = [
+  { value: 'motorcycle', label: 'Motorcycle' },
+  { value: 'bicycle', label: 'Bicycle' },
+  { value: 'scooter', label: 'Scooter' },
+  { value: 'car', label: 'Car' },
+];
+
+export async function fetchVehicleTypes(): Promise<VehicleTypeOption[]> {
+  // TODO: Replace with actual API call
+  // return api.get<VehicleTypeOption[]>('/v1/rider/vehicle-types');
+  return new Promise((resolve) => {
+    setTimeout(() => resolve([...MOCK_VEHICLE_TYPES]), SIMULATED_DELAY);
   });
 }

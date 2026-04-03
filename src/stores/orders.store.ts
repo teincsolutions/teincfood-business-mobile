@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
 import type { Order } from '@/models/order.model';
-import { MOCK_ORDERS } from '@/mocks/orders.mock';
 
 interface OrdersState {
   orders: Order[];
@@ -13,12 +12,13 @@ interface OrdersState {
   removeOrder: (orderId: string) => void;
   getActiveOrders: () => Order[];
   getCompletedOrders: () => Order[];
+  setOrders: (orders: Order[]) => void;
 }
 
 export const useOrdersStore = create<OrdersState>()(
   persist(
     (set, get) => ({
-      orders: MOCK_ORDERS, // Pre-seeded with mock data
+      orders: [],
 
       addOrder: (order) => {
         set((state) => ({
@@ -50,6 +50,10 @@ export const useOrdersStore = create<OrdersState>()(
         return get().orders.filter(
           (o) => ['delivered', 'cancelled'].includes(o.status)
         );
+      },
+
+      setOrders: (orders) => {
+        set({ orders });
       },
     }),
     {

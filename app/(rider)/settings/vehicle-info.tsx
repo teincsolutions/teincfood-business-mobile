@@ -9,8 +9,8 @@ import { BackButton, Button, FormInput } from "@/components/ui";
 import {
   useVehicleInfoQuery,
   useUpdateVehicleInfoMutation,
+  useVehicleTypesQuery,
 } from "@/hooks/rider.hooks";
-import { VEHICLE_TYPES, MOCK_VEHICLE_INFO } from "@/mocks/rider.mock";
 
 /**
  * Rider Vehicle Information Screen
@@ -22,21 +22,22 @@ export default function VehicleInfo() {
   // TanStack Query hooks
   const { data: vehicleInfo, isLoading } = useVehicleInfoQuery();
   const updateVehicle = useUpdateVehicleInfoMutation();
+  const { data: vehicleTypes = [] } = useVehicleTypesQuery();
 
   const [vehicleType, setVehicleType] = useState(
-    vehicleInfo?.type || MOCK_VEHICLE_INFO.type,
+    vehicleInfo?.type || 'motorcycle',
   );
   const [plateNumber, setPlateNumber] = useState(
-    vehicleInfo?.plateNumber || MOCK_VEHICLE_INFO.plateNumber,
+    vehicleInfo?.plateNumber || '',
   );
   const [vehicleColor, setVehicleColor] = useState(
-    vehicleInfo?.color || MOCK_VEHICLE_INFO.color,
+    vehicleInfo?.color || '',
   );
   const [vehicleBrand, setVehicleBrand] = useState(
-    vehicleInfo?.brand || MOCK_VEHICLE_INFO.brand,
+    vehicleInfo?.brand || '',
   );
   const [vehicleModel, setVehicleModel] = useState(
-    vehicleInfo?.model || MOCK_VEHICLE_INFO.model,
+    vehicleInfo?.model || '',
   );
 
   const [errors, setErrors] = useState<{
@@ -105,7 +106,7 @@ export default function VehicleInfo() {
           {/* Vehicle Type */}
           <Card padding="$4" bordered>
             <YStack gap="$2">
-              {VEHICLE_TYPES.map((type) => (
+              {vehicleTypes.map((type) => (
                 <Pressable
                   key={type.value}
                   onPress={() => setVehicleType(type.value)}

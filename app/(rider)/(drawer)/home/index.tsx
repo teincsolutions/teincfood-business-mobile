@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { useState, useCallback } from "react";
-import { MOCK_RIDER_METRICS } from "@/mocks/rider.mock";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
@@ -23,8 +22,8 @@ import {
   useRiderMetricsQuery,
   useActiveDeliveryQuery,
   useUpdateOnlineStatusMutation,
+  useRiderDeliveriesQuery,
 } from "@/hooks/rider.hooks";
-import { MOCK_RECENT_DELIVERIES } from "@/mocks/rider.mock";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -44,10 +43,18 @@ export default function RiderHome() {
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
-  // Use query data or fallback to mock data
-  const metrics = metricsData ?? MOCK_RIDER_METRICS;
+  // Use query data or fallback to defaults
+  const metrics = metricsData ?? {
+    todayEarnings: 0,
+    todayDeliveries: 0,
+    availableDeliveries: 0,
+    totalDeliveries: 0,
+  };
   const activeDelivery = activeDeliveryData ?? null;
-  const recentDeliveries = MOCK_RECENT_DELIVERIES;
+
+  // Get recent deliveries from the deliveries query
+  const { data: deliveriesData = [] } = useRiderDeliveriesQuery();
+  const recentDeliveries = deliveriesData.filter(d => d.status === 'delivered').slice(0, 5);
 
   const onRefresh = useCallback(async () => {
     await refetch();

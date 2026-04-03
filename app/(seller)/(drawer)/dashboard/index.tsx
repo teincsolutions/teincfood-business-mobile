@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { formatPrice } from "@/utils/currency";
@@ -27,6 +27,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
+import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
 
 /**
  * Seller Dashboard Screen
@@ -38,44 +39,24 @@ export default function SellerDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
 
-  // Mock data - will be replaced with API calls
-  const metrics = {
-    todayOrders: 24,
-    todayRevenue: 1250.0,
-    pendingOrders: 5,
-    averageRating: 4.8,
-    activeOrders: 3,
+  // TanStack Query hooks
+  const { data, isLoading, refetch } = useSellerDashboardQuery();
+
+  // Use query data or fallback to defaults
+  const metrics = data?.metrics ?? {
+    todayOrders: 0,
+    todayRevenue: 0,
+    pendingOrders: 0,
+    averageRating: 0,
+    activeOrders: 0,
   };
+  const recentOrders = data?.recentOrders ?? [];
 
-  const recentOrders = [
-    {
-      id: "1",
-      orderNumber: "#ORD-001",
-      status: "pending",
-      items: 3,
-      total: 45.0,
-    },
-    {
-      id: "2",
-      orderNumber: "#ORD-002",
-      status: "preparing",
-      items: 2,
-      total: 32.5,
-    },
-    {
-      id: "3",
-      orderNumber: "#ORD-003",
-      status: "ready",
-      items: 4,
-      total: 67.0,
-    },
-  ];
-
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
+    await refetch();
+    setIsRefreshing(false);
+  }, [refetch]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

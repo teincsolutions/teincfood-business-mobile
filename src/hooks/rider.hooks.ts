@@ -10,6 +10,7 @@ import type {
   VehicleInfo,
   DeliveryZone,
   NavigationSettings,
+  NavigationApp,
 } from '@/models/rider.model';
 import * as riderService from '@/services/rider.service';
 
@@ -27,6 +28,7 @@ const RIDER_KEYS = {
   vehicleInfo: () => [...RIDER_KEYS.all, 'vehicle'] as const,
   deliveryZones: () => [...RIDER_KEYS.all, 'zones'] as const,
   navigationSettings: () => [...RIDER_KEYS.all, 'navigation'] as const,
+  navigationApps: () => [...RIDER_KEYS.all, 'navigation-apps'] as const,
 };
 
 // ─── Metrics & Dashboard Hooks ───
@@ -221,6 +223,28 @@ export function useUpdateOnlineStatusMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
     },
+  });
+}
+
+// ─── Navigation Apps Hooks ───
+
+export function useNavigationAppsQuery(enabled = true) {
+  return useQuery({
+    queryKey: RIDER_KEYS.navigationApps(),
+    queryFn: () => riderService.fetchNavigationApps(),
+    enabled,
+    staleTime: Infinity, // Navigation apps list doesn't change often
+  });
+}
+
+// ─── Vehicle Types Hooks ───
+
+export function useVehicleTypesQuery(enabled = true) {
+  return useQuery({
+    queryKey: [...RIDER_KEYS.all, 'vehicle-types'],
+    queryFn: () => riderService.fetchVehicleTypes(),
+    enabled,
+    staleTime: Infinity, // Vehicle types list doesn't change often
   });
 }
 

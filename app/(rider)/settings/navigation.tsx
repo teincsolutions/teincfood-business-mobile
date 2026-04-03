@@ -16,8 +16,8 @@ import { Button } from "@/components/ui";
 import {
   useNavigationSettingsQuery,
   useUpdateNavigationSettingsMutation,
+  useNavigationAppsQuery,
 } from "@/hooks/rider.hooks";
-import { MOCK_NAVIGATION_APPS } from "@/mocks/rider.mock";
 
 /**
  * Rider Navigation Settings Screen
@@ -29,6 +29,7 @@ export default function NavigationSettings() {
   // TanStack Query hooks
   const { data: settings, isLoading } = useNavigationSettingsQuery();
   const updateSettings = useUpdateNavigationSettingsMutation();
+  const { data: navigationApps = [] } = useNavigationAppsQuery();
 
   const [selectedApp, setSelectedApp] = useState(
     settings?.selectedApp || "google_maps",
@@ -38,8 +39,6 @@ export default function NavigationSettings() {
   const [avoidHighways, setAvoidHighways] = useState(
     settings?.avoidHighways ?? false,
   );
-
-  const navigationApps = MOCK_NAVIGATION_APPS;
 
   const handleSave = () => {
     updateSettings.mutate(

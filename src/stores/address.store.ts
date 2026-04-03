@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
 import type { Address } from '@/models/user.model';
-import { MOCK_ADDRESSES } from '@/mocks/users.mock';
 
 interface AddressState {
   addresses: Address[];
@@ -12,12 +11,13 @@ interface AddressState {
   updateAddress: (id: string, updates: Partial<Address>) => void;
   removeAddress: (id: string) => void;
   setDefaultAddress: (id: string) => void;
+  setAddresses: (addresses: Address[]) => void;
 }
 
 export const useAddressStore = create<AddressState>()(
   persist(
     (set) => ({
-      addresses: MOCK_ADDRESSES,
+      addresses: [],
 
       addAddress: (address) => {
         set((state) => ({
@@ -46,6 +46,10 @@ export const useAddressStore = create<AddressState>()(
             isDefault: a.id === id,
           })),
         }));
+      },
+
+      setAddresses: (addresses) => {
+        set({ addresses });
       },
     }),
     {

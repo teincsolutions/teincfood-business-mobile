@@ -102,295 +102,303 @@ export default function AddVehicleScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView
+      <YStack
         flex={1}
-        paddingTop={Math.max(insets.top + 8, 24)}
-        paddingBottom={Math.max(insets.bottom + 20, 24)}
         backgroundColor="$background"
+        paddingTop={Math.max(insets.top + 8, 24)}
       >
-        <YStack
-          padding="$4"
-          gap="$4"
-          $gtSm={{ padding: "$6", maxWidth: 600 }}
-          alignSelf="center"
-          width="100%"
+        <XStack mb="$4" paddingHorizontal="$4" justifyContent="space-between" alignItems="center">
+          <BackButton />
+          <Button
+            variant="primary"
+            height="$10"
+            $lg={{ height: "$10" }}
+            paddingHorizontal="$4"
+            onPress={handleAddVehicle}
+            loading={isLoading}
+            icon={<Save size={18} color="white" />}
+          >
+            Save
+          </Button>
+        </XStack>
+        <ScrollView
+          backgroundColor="$background"
+          paddingBottom={Math.max(insets.bottom + 24, 24)}
         >
-          <XStack mb="$4" justifyContent="space-between" alignItems="center">
-            <BackButton />
-            <Button
-              variant="primary"
-              height="$10"
-              $lg={{ height: "$10" }}
-              paddingHorizontal="$4"
-              onPress={handleAddVehicle}
-              loading={isLoading}
-              icon={<Save size={18} color="white" />}
-            >
-              Save
-            </Button>
-          </XStack>
-
-          <YStack gap="$2">
-            <Text
-              fontSize="$8"
-              fontWeight="bold"
-              fontFamily="$heading"
-              color="$color"
-              $gtSm={{ fontSize: "$10" }}
-            >
-              Add Vehicle
-            </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Add a new vehicle to your fleet
-            </Text>
-          </YStack>
-
-          <Form onSubmit={handleAddVehicle} gap="$4">
+          <YStack
+            padding="$4"
+            gap="$4"
+            $gtSm={{ padding: "$6", maxWidth: 600 }}
+            alignSelf="center"
+            width="100%"
+          >
             <YStack gap="$2">
-              <Label
-                htmlFor="vehicleType"
-                fontSize="$4"
-                fontWeight="500"
-                fontFamily="$body"
+              <Text
+                fontSize="$8"
+                fontWeight="bold"
+                fontFamily="$heading"
                 color="$color"
+                $gtSm={{ fontSize: "$10" }}
               >
-                Vehicle Type *
-              </Label>
-              <Select
-                value={form.vehicleType}
-                onValueChange={(value) => updateField("vehicleType", value)}
-                disablePreventBodyScroll
-              >
-                <Select.Trigger
-                  iconAfter={Car}
-                  borderRadius="$4"
-                  backgroundColor="$background"
-                  borderColor={errors.vehicleType ? "$error" : "$borderColor"}
-                  focusStyle={{
-                    borderColor: errors.vehicleType ? "$error" : "$primary",
-                  }}
+                Add Vehicle
+              </Text>
+              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                Add a new vehicle to your fleet
+              </Text>
+            </YStack>
+
+            <Form onSubmit={handleAddVehicle} gap="$4">
+              <YStack gap="$2">
+                <Label
+                  htmlFor="vehicleType"
+                  fontSize="$4"
+                  fontWeight="500"
+                  fontFamily="$body"
+                  color="$color"
                 >
-                  <Select.Value placeholder="Select vehicle type" />
-                </Select.Trigger>
-
-                <Adapt when="maxSm" platform="touch">
-                  <Sheet native modal dismissOnSnapToBottom animation="medium">
-                    <Sheet.Frame>
-                      <Sheet.ScrollView>
-                        <Adapt.Contents />
-                      </Sheet.ScrollView>
-                    </Sheet.Frame>
-                    <Sheet.Overlay
-                      bg="$shadowColor"
-                      animation="lazy"
-                      enterStyle={{ opacity: 0 }}
-                      exitStyle={{ opacity: 0 }}
-                    />
-                  </Sheet>
-                </Adapt>
-
-                <Select.Content>
-                  <Select.ScrollUpButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Car size={20} />
-                  </Select.ScrollUpButton>
-
-                  <Select.Viewport
-                    minW={200}
-                    bg="$background"
+                  Vehicle Type *
+                </Label>
+                <Select
+                  value={form.vehicleType}
+                  onValueChange={(value) => updateField("vehicleType", value)}
+                  disablePreventBodyScroll
+                >
+                  <Select.Trigger
+                    iconAfter={Car}
                     borderRadius="$4"
-                    borderWidth={1}
-                    borderColor="$borderColor"
+                    backgroundColor="$background"
+                    borderColor={errors.vehicleType ? "$error" : "$borderColor"}
+                    focusStyle={{
+                      borderColor: errors.vehicleType ? "$error" : "$primary",
+                    }}
                   >
-                    <Select.Group>
-                      <Select.Label fontWeight="700">
-                        Vehicle Types
-                      </Select.Label>
-                      <Select.Item index={0} value="motorcycle">
-                        <Select.ItemText>Motorcycle</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={1} value="car">
-                        <Select.ItemText>Car</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={2} value="van">
-                        <Select.ItemText>Van</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={3} value="bicycle">
-                        <Select.ItemText>Bicycle</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={4} value="truck">
-                        <Select.ItemText>Truck</Select.ItemText>
-                      </Select.Item>
-                    </Select.Group>
-                  </Select.Viewport>
+                    <Select.Value placeholder="Select vehicle type" />
+                  </Select.Trigger>
 
-                  <Select.ScrollDownButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Car size={20} />
-                  </Select.ScrollDownButton>
-                </Select.Content>
-              </Select>
-              {errors.vehicleType && (
-                <Text fontSize="$2" color="$red10" fontFamily="$body">
-                  {errors.vehicleType}
-                </Text>
-              )}
-            </YStack>
+                  <Adapt when="maxSm" platform="touch">
+                    <Sheet
+                      native
+                      modal
+                      dismissOnSnapToBottom
+                      animation="medium"
+                    >
+                      <Sheet.Frame>
+                        <Sheet.ScrollView>
+                          <Adapt.Contents />
+                        </Sheet.ScrollView>
+                      </Sheet.Frame>
+                      <Sheet.Overlay
+                        bg="$shadowColor"
+                        animation="lazy"
+                        enterStyle={{ opacity: 0 }}
+                        exitStyle={{ opacity: 0 }}
+                      />
+                    </Sheet>
+                  </Adapt>
 
-            <FormInput
-              label="Plate Number"
-              placeholder="GR-1234-20"
-              value={form.plateNumber}
-              onChangeText={(value) => updateField("plateNumber", value)}
-              icon={<Hash size={20} color="$colorMuted" />}
-              error={errors.plateNumber}
-              autoCapitalize="characters"
-              required
-            />
+                  <Select.Content>
+                    <Select.ScrollUpButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    >
+                      <Car size={20} />
+                    </Select.ScrollUpButton>
 
-            <YStack gap="$2">
-              <Label
-                htmlFor="brand"
-                fontSize="$4"
-                fontWeight="500"
-                fontFamily="$body"
-                color="$color"
-              >
-                Brand
-              </Label>
-              <XStack position="relative" alignItems="center">
-                <TamaguiInput
-                  flex={1}
-                  id="brand"
-                  placeholder="Toyota, Honda, Yamaha..."
-                  value={form.brand}
-                  onChangeText={(value) => updateField("brand", value)}
-                  paddingLeft="$10"
-                />
-                <YStack position="absolute" left="$3">
-                  <Car size={20} color="$colorMuted" />
-                </YStack>
-              </XStack>
-            </YStack>
+                    <Select.Viewport
+                      minW={200}
+                      bg="$background"
+                      borderRadius="$4"
+                      borderWidth={1}
+                      borderColor="$borderColor"
+                    >
+                      <Select.Group>
+                        <Select.Label fontWeight="700">
+                          Vehicle Types
+                        </Select.Label>
+                        <Select.Item index={0} value="motorcycle">
+                          <Select.ItemText>Motorcycle</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item index={1} value="car">
+                          <Select.ItemText>Car</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item index={2} value="van">
+                          <Select.ItemText>Van</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item index={3} value="bicycle">
+                          <Select.ItemText>Bicycle</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item index={4} value="truck">
+                          <Select.ItemText>Truck</Select.ItemText>
+                        </Select.Item>
+                      </Select.Group>
+                    </Select.Viewport>
 
-            <YStack gap="$2">
-              <Label
-                htmlFor="model"
-                fontSize="$4"
-                fontWeight="500"
-                fontFamily="$body"
-                color="$color"
-              >
-                Model
-              </Label>
-              <XStack position="relative" alignItems="center">
-                <TamaguiInput
-                  flex={1}
-                  id="model"
-                  placeholder="Corolla, Civic, FZ..."
-                  value={form.model}
-                  onChangeText={(value) => updateField("model", value)}
-                  paddingLeft="$10"
-                />
-                <YStack position="absolute" left="$3">
-                  <Car size={20} color="$colorMuted" />
-                </YStack>
-              </XStack>
-            </YStack>
+                    <Select.ScrollDownButton
+                      items="center"
+                      justify="center"
+                      position="relative"
+                      width="100%"
+                      height="$3"
+                    >
+                      <Car size={20} />
+                    </Select.ScrollDownButton>
+                  </Select.Content>
+                </Select>
+                {errors.vehicleType && (
+                  <Text fontSize="$2" color="$red10" fontFamily="$body">
+                    {errors.vehicleType}
+                  </Text>
+                )}
+              </YStack>
 
-            <XStack gap="$3" $gtSm={{ gap: "$4" }}>
-              <YStack flex={1} gap="$2">
+              <FormInput
+                label="Plate Number"
+                placeholder="GR-1234-20"
+                value={form.plateNumber}
+                onChangeText={(value) => updateField("plateNumber", value)}
+                icon={<Hash size={20} color="$colorMuted" />}
+                error={errors.plateNumber}
+                autoCapitalize="characters"
+                required
+              />
+
+              <YStack gap="$2">
                 <Label
-                  htmlFor="color"
+                  htmlFor="brand"
                   fontSize="$4"
                   fontWeight="500"
                   fontFamily="$body"
                   color="$color"
                 >
-                  Color
+                  Brand
                 </Label>
                 <XStack position="relative" alignItems="center">
                   <TamaguiInput
                     flex={1}
-                    id="color"
-                    placeholder="Red, Blue, Black..."
-                    value={form.color}
-                    onChangeText={(value) => updateField("color", value)}
+                    id="brand"
+                    placeholder="Toyota, Honda, Yamaha..."
+                    value={form.brand}
+                    onChangeText={(value) => updateField("brand", value)}
                     paddingLeft="$10"
                   />
                   <YStack position="absolute" left="$3">
-                    <Palette size={20} color="$colorMuted" />
+                    <Car size={20} color="$colorMuted" />
                   </YStack>
                 </XStack>
               </YStack>
-              <YStack flex={1} gap="$2">
+
+              <YStack gap="$2">
                 <Label
-                  htmlFor="year"
+                  htmlFor="model"
                   fontSize="$4"
                   fontWeight="500"
                   fontFamily="$body"
                   color="$color"
                 >
-                  Year
+                  Model
                 </Label>
                 <XStack position="relative" alignItems="center">
                   <TamaguiInput
                     flex={1}
-                    id="year"
-                    placeholder="2024"
-                    value={form.year}
-                    onChangeText={(value) => updateField("year", value)}
-                    keyboardType="numeric"
+                    id="model"
+                    placeholder="Corolla, Civic, FZ..."
+                    value={form.model}
+                    onChangeText={(value) => updateField("model", value)}
                     paddingLeft="$10"
                   />
                   <YStack position="absolute" left="$3">
-                    <Calendar size={20} color="$colorMuted" />
+                    <Car size={20} color="$colorMuted" />
                   </YStack>
                 </XStack>
               </YStack>
-            </XStack>
 
-            {errors.form ? (
-              <Card padding="$3" backgroundColor="$red2" borderColor="$red6">
-                <Text color="$red10" fontSize="$3" fontFamily="$body">
-                  {errors.form}
-                </Text>
-              </Card>
-            ) : null}
+              <XStack gap="$3" $gtSm={{ gap: "$4" }}>
+                <YStack flex={1} gap="$2">
+                  <Label
+                    htmlFor="color"
+                    fontSize="$4"
+                    fontWeight="500"
+                    fontFamily="$body"
+                    color="$color"
+                  >
+                    Color
+                  </Label>
+                  <XStack position="relative" alignItems="center">
+                    <TamaguiInput
+                      flex={1}
+                      id="color"
+                      placeholder="Red, Blue, Black..."
+                      value={form.color}
+                      onChangeText={(value) => updateField("color", value)}
+                      paddingLeft="$10"
+                    />
+                    <YStack position="absolute" left="$3">
+                      <Palette size={20} color="$colorMuted" />
+                    </YStack>
+                  </XStack>
+                </YStack>
+                <YStack flex={1} gap="$2">
+                  <Label
+                    htmlFor="year"
+                    fontSize="$4"
+                    fontWeight="500"
+                    fontFamily="$body"
+                    color="$color"
+                  >
+                    Year
+                  </Label>
+                  <XStack position="relative" alignItems="center">
+                    <TamaguiInput
+                      flex={1}
+                      id="year"
+                      placeholder="2024"
+                      value={form.year}
+                      onChangeText={(value) => updateField("year", value)}
+                      keyboardType="numeric"
+                      paddingLeft="$10"
+                    />
+                    <YStack position="absolute" left="$3">
+                      <Calendar size={20} color="$colorMuted" />
+                    </YStack>
+                  </XStack>
+                </YStack>
+              </XStack>
 
-            <YStack gap="$3" mt="$4">
-              <Button
-                variant="primary"
-                width="100%"
-                onPress={handleAddVehicle}
-                disabled={isLoading}
-                opacity={isLoading ? 0.7 : 1}
-              >
-                {isLoading ? "Adding Vehicle..." : "Add Vehicle"}
-              </Button>
+              {errors.form ? (
+                <Card padding="$3" backgroundColor="$red2" borderColor="$red6">
+                  <Text color="$red10" fontSize="$3" fontFamily="$body">
+                    {errors.form}
+                  </Text>
+                </Card>
+              ) : null}
 
-              <Button
-                variant="outline"
-                width="100%"
-                onPress={() => router.back()}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-            </YStack>
-          </Form>
-        </YStack>
-      </ScrollView>
+              <YStack gap="$3" mt="$4">
+                <Button
+                  variant="primary"
+                  width="100%"
+                  onPress={handleAddVehicle}
+                  disabled={isLoading}
+                  opacity={isLoading ? 0.7 : 1}
+                >
+                  {isLoading ? "Adding Vehicle..." : "Add Vehicle"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  width="100%"
+                  onPress={() => router.back()}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+              </YStack>
+            </Form>
+          </YStack>
+        </ScrollView>
+      </YStack>
     </KeyboardAvoidingView>
   );
 }
