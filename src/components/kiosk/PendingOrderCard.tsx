@@ -29,7 +29,7 @@ export function PendingOrderCard({
     <Card
       padding="$4"
       bordered
-      backgroundColor="$orangeLight"
+      backgroundColor="$backgroundOrange"
       borderColor="$primary"
       borderWidth={1}
       onPress={() => onViewDetails(order)}

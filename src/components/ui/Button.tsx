@@ -77,6 +77,14 @@ const StyledButton = styled(TamaguiButton, {
           backgroundColor: "$backgroundSoft",
         },
       },
+      danger: {
+        backgroundColor: "$error",
+        color: "$white",
+        borderWidth: 0,
+        pressStyle: {
+          backgroundColor: "$errorDark",
+        },
+      },
       ghost: {
         backgroundColor: "transparent",
         borderWidth: 0,

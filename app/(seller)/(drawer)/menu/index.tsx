@@ -83,6 +83,7 @@ export default function SellerMenu() {
       variants: [...item.variants],
       extras: [...item.extras],
       available: item.available,
+      images: [...(item.images || [])],
     });
     setVariantLabel("");
     setVariantPrice("");
@@ -93,7 +94,7 @@ export default function SellerMenu() {
 
   // ─── Save (add or edit) ────────────────────────────────────────
   const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim()) return;
+    if (!form.name.trim() || !form.price.trim() || form.images.length === 0) return;
 
     const baseData = {
       name: form.name.trim(),
@@ -104,6 +105,7 @@ export default function SellerMenu() {
       variants: form.variants,
       extras: form.extras,
       available: form.available,
+      images: form.images,
     };
 
     if (editingItem) {
@@ -133,7 +135,7 @@ export default function SellerMenu() {
   };
 
   // ─── Form helpers ──────────────────────────────────────────────
-  const isFormValid = form.name.trim() && form.price.trim();
+  const isFormValid = form.name.trim() && form.price.trim() && form.images.length > 0;
 
   const toggleDietaryTag = (tag: string) => {
     setForm((f) => ({

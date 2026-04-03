@@ -7,6 +7,7 @@ import { tokens } from "./tokens";
 
 export const lightTheme = {
   background: tokens.color.white,
+  backgroundOrange: tokens.color.orangeLight,
   backgroundStrong: tokens.color.gray50,
   backgroundSoft: tokens.color.gray100,
   backgroundHover: tokens.color.gray50,
@@ -45,6 +46,7 @@ export const lightTheme = {
 export const darkTheme = {
   background: "#121218",
   backgroundStrong: "#0D0D12",
+  backgroundOrange: "#2A1A0F",
   backgroundSoft: "#1C1C24",
   backgroundHover: "#1C1C24",
   backgroundPress: "#24242E",

@@ -1,13 +1,20 @@
 // @ts-nocheck
-import { YStack, Text, Card, XStack, Separator, Switch } from 'tamagui';
-import { Building, Clock, MapPin, CreditCard, Palette, ChevronRight } from '@tamagui/lucide-icons';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
-import { AppAlertDialog } from '@/components/ui/AlertDialog';
-import { useBusinessStore } from '@/stores/business.store';
+import { YStack, Text, Card, XStack, Separator, Switch, ScrollView } from "tamagui";
+import {
+  Building,
+  Clock,
+  MapPin,
+  CreditCard,
+  Palette,
+  ChevronRight,
+} from "@tamagui/lucide-icons";
+import { TouchableOpacity } from "react-native";
+import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "@/components/ui";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { useBusinessStore } from "@/stores/business.store";
 
 /**
  * Seller Settings Screen
@@ -24,16 +31,41 @@ export default function SellerSettings() {
     if (activeBusiness?.id) {
       router.push(`/(seller)/businesses/${activeBusiness.id}`);
     } else {
-      router.push('/(seller)/businesses');
+      router.push("/(seller)/businesses");
     }
   };
 
   const settingsItems = [
-    { icon: Building, label: 'Business Profile', description: 'Update business name, logo, description', onPress: handleBusinessProfile },
-    { icon: Clock, label: 'Operating Hours', description: 'Set your business hours', route: '/(shared)/settings/operating-hours' },
-    { icon: MapPin, label: 'Delivery Settings', description: 'Delivery radius, fees, minimum order', route: '/(seller)/settings/delivery-settings' },
-    { icon: CreditCard, label: 'Payment Settings', description: 'Bank account, payout schedule', route: '/(seller)/settings/payment-settings' },
-    { icon: Palette, label: 'Theme', description: 'Light, dark, or system', route: '/(shared)/profile/theme' },
+    {
+      icon: Building,
+      label: "Business Profile",
+      description: "Update business name, logo, description",
+      onPress: handleBusinessProfile,
+    },
+    {
+      icon: Clock,
+      label: "Operating Hours",
+      description: "Set your business hours",
+      route: "/(shared)/settings/operating-hours",
+    },
+    {
+      icon: MapPin,
+      label: "Delivery Settings",
+      description: "Delivery radius, fees, minimum order",
+      route: "/(seller)/settings/delivery-settings",
+    },
+    {
+      icon: CreditCard,
+      label: "Payment Settings",
+      description: "Bank account, payout schedule",
+      route: "/(seller)/settings/payment-settings",
+    },
+    {
+      icon: Palette,
+      label: "Theme",
+      description: "Light, dark, or system",
+      route: "/(shared)/profile/theme",
+    },
   ];
 
   return (
@@ -41,7 +73,7 @@ export default function SellerSettings() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack
           paddingHorizontal="$4"
-           paddingTop="$4"
+          paddingTop="$4"
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >
@@ -49,18 +81,25 @@ export default function SellerSettings() {
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$body"
+                  color="$color.white"
+                >
                   Store Status
                 </Text>
                 <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
-                  {isOpen ? 'Your store is open and accepting orders' : 'Your store is closed'}
+                  {isOpen
+                    ? "Your store is open and accepting orders"
+                    : "Your store is closed"}
                 </Text>
               </YStack>
               <Switch
                 size="$5"
                 checked={isOpen}
                 onCheckedChange={setIsOpen}
-                backgroundColor={isOpen ? '$color.green' : '$color.gray600'}
+                backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
               >
                 <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
@@ -71,7 +110,12 @@ export default function SellerSettings() {
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center" gap="$3">
               <YStack flex={1}>
-                <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color.white">
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$body"
+                  color="$color.white"
+                >
                   Order Notifications
                 </Text>
                 <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
@@ -82,7 +126,9 @@ export default function SellerSettings() {
                 size="$5"
                 checked={notificationsEnabled}
                 onCheckedChange={setNotificationsEnabled}
-                backgroundColor={notificationsEnabled ? '$color.orange' : '$color.gray600'}
+                backgroundColor={
+                  notificationsEnabled ? "$color.orange" : "$color.gray600"
+                }
               >
                 <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
@@ -95,7 +141,9 @@ export default function SellerSettings() {
               <YStack key={item.label}>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => item.onPress ? item.onPress() : router.push(item.route)}
+                  onPress={() =>
+                    item.onPress ? item.onPress() : router.push(item.route)
+                  }
                   style={{ paddingHorizontal: 12, paddingVertical: 14 }}
                 >
                   <XStack alignItems="center" gap="$3">
@@ -110,10 +158,19 @@ export default function SellerSettings() {
                       <item.icon size={20} color="$colorSecondary" />
                     </YStack>
                     <YStack flex={1}>
-                      <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                      <Text
+                        fontSize="$4"
+                        fontWeight="700"
+                        fontFamily="$body"
+                        color="$color"
+                      >
                         {item.label}
                       </Text>
-                      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                      <Text
+                        fontSize="$2"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
                         {item.description}
                       </Text>
                     </YStack>
@@ -128,20 +185,24 @@ export default function SellerSettings() {
           </Card>
 
           {/* Danger Zone */}
-          <Card padding="$4" bordered borderColor="$red200">
+          <Card padding="$4" bordered borderColor="$error">
             <YStack gap="$3">
-              <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$red600"
-                textTransform="uppercase" letterSpacing={0.5}>
+              <Text
+                fontSize="$3"
+                fontWeight="700"
+                fontFamily="$body"
+                color="$red600"
+                textTransform="uppercase"
+                letterSpacing={0.5}
+              >
                 Danger Zone
               </Text>
               <Button
-                variant="outline"
-                height={48}
+                variant="danger"
+                width="100%"
                 onPress={() => setShowCloseDialog(true)}
               >
-                <Text fontFamily="$body" fontWeight="700" color="$red600">
-                  Close Store Temporarily
-                </Text>
+                Close Store Temporarily
               </Button>
             </YStack>
           </Card>

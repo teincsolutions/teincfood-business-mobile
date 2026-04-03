@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import {
   YStack,
   XStack,
@@ -11,8 +12,9 @@ import {
   Input as TamaguiInput,
   useTheme,
 } from 'tamagui';
-import { Plus, X, ChevronDown } from '@tamagui/lucide-icons';
+import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
+import { AppAlertDialog } from '@/components/ui/AlertDialog';
 import type { MenuItem, MenuItemForm, Variant, Extra } from '@/services/menu.service';
 import {
   MENU_CATEGORIES,
@@ -72,12 +74,66 @@ export function MenuFormSheet({
   onCategorySheetOpenChange,
 }: MenuFormSheetProps) {
   const theme = useTheme();
+  const [showImagePickerDialog, setShowImagePickerDialog] = useState(false);
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
     value: MenuItemForm[K]
   ) => {
     onFormChange({ ...form, [field]: value });
+  };
+
+  const pickFromGallery = async () => {
+    setShowImagePickerDialog(false);
+    
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const newImages = [...form.images, result.assets[0].uri];
+      updateFormField('images', newImages);
+    }
+  };
+
+  const takePhoto = async () => {
+    setShowImagePickerDialog(false);
+    
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status !== 'granted') {
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const newImages = [...form.images, result.assets[0].uri];
+      updateFormField('images', newImages);
+    }
+  };
+
+  const pickImage = () => {
+    setShowImagePickerDialog(true);
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = form.images.filter((_, i) => i !== index);
+    updateFormField('images', newImages);
   };
 
   return (
@@ -191,6 +247,75 @@ export function MenuFormSheet({
                     <Switch.Thumb animation="quick" backgroundColor="white" />
                   </Switch>
                 </XStack>
+
+                <Separator />
+
+                {/* Images */}
+                <YStack gap="$3">
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                      Images
+                    </Text>
+                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                      At least 1 required
+                    </Text>
+                  </XStack>
+                  
+                  {/* Image preview grid */}
+                  {form.images.length > 0 && (
+                    <XStack gap="$2" flexWrap="wrap">
+                      {form.images.map((uri, index) => (
+                        <YStack key={index} position="relative">
+                          <Image
+                            source={{ uri }}
+                            style={{
+                              width: 80,
+                              height: 80,
+                              borderRadius: 8,
+                            }}
+                          />
+                          <TouchableOpacity
+                            onPress={() => removeImage(index)}
+                            style={{
+                              position: 'absolute',
+                              top: -6,
+                              right: -6,
+                              width: 20,
+                              height: 20,
+                              borderRadius: 10,
+                              backgroundColor: '#ef4444',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <X size={12} color="white" />
+                          </TouchableOpacity>
+                        </YStack>
+                      ))}
+                    </XStack>
+                  )}
+
+                  {/* Add image button */}
+                  <TouchableOpacity
+                    onPress={pickImage}
+                    style={{
+                      height: 100,
+                      borderRadius: 8,
+                      borderWidth: 2,
+                      borderColor: theme.borderColor?.val || '#e5e7eb',
+                      borderStyle: 'dashed',
+                      backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <Camera size={24} color={theme.colorSecondary?.val} />
+                    <Text fontFamily="$body" fontSize="$3" color="$colorSecondary">
+                      {form.images.length === 0 ? 'Add Image' : 'Add Another'}
+                    </Text>
+                  </TouchableOpacity>
+                </YStack>
 
                 <Separator />
 
@@ -460,6 +585,19 @@ export function MenuFormSheet({
           </ScrollView>
         </Sheet.Frame>
       </Sheet>
+
+      {/* ── Image Picker Dialog ──────────────────────────────────── */}
+      <AppAlertDialog
+        open={showImagePickerDialog}
+        onOpenChange={setShowImagePickerDialog}
+        title="Add Image"
+        description="Choose how you want to add an image"
+        icon={Camera}
+        confirmText="Gallery"
+        cancelText="Camera"
+        onConfirm={pickFromGallery}
+        onCancel={takePhoto}
+      />
     </>
   );
 }

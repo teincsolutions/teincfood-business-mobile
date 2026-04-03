@@ -105,6 +105,7 @@ export function AppAlertDialog({
                 borderColor="$borderColor"
                 fontFamily="$body"
                 fontWeight="700"
+                onPress={onCancel}
               >
                 {cancelText}
               </Button>

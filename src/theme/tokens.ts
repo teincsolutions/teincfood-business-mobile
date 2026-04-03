@@ -5,7 +5,7 @@ export const tokens = createTokens({
   color: {
     // ─── Brand / Primary ───
     orange: "#FF7622",
-    orangeLight: "#FFF4ED",
+    orangeLight: "#fff2ea",
     orangeDark: "#E56A1E",
     orangeMuted: "rgba(255, 118, 34, 0.15)",
 

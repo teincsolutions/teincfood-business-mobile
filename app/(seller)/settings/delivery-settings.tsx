@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import {
   YStack,
@@ -102,66 +102,74 @@ export default function DeliverySettings() {
   };
 
   return (
-    <YStack
-      flex={1}
-      paddingTop={Math.max(insets.top + 8, 24)}
-      backgroundColor="$background"
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
     >
-      {/* Header */}
-      <Form onSubmit={handleSave}>
-        <XStack
-          padding="$4"
-          justifyContent="space-between"
-          alignItems="center"
-          backgroundColor="$background"
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-        >
-          <XStack gap="$3" alignItems="center">
-           <BackButton />
-            <Text fontSize="$6" fontWeight="bold">
-              Delivery Settings
-            </Text>
-          </XStack>
-          <Form.Trigger asChild>
-            <Button
-              variant="primary"
-              width={"auto"}
-              height={44}
-              loading={isSaving}
-              icon={<Save size="$4" color="white" />}
-            >
-              Save
-            </Button>
-          </Form.Trigger>
-        </XStack>
-
-        {/* Status banner */}
-        {saveStatus !== "idle" && (
+      <YStack
+        flex={1}
+        paddingTop={Math.max(insets.top + 8, 24)}
+        backgroundColor="$background"
+      >
+        {/* Header */}
+        <Form onSubmit={handleSave} flex={1}>
           <XStack
-            backgroundColor={saveStatus === "success" ? "$green2" : "$red2"}
-            padding="$3"
-            gap="$2"
+            padding="$4"
+            justifyContent="space-between"
             alignItems="center"
+            backgroundColor="$background"
+            borderBottomWidth={1}
+            borderBottomColor="$borderColor"
           >
-            {saveStatus === "success" ? (
-              <CheckCircle size={16} color="$green10" />
-            ) : (
-              <AlertCircle size={16} color="$red10" />
-            )}
-            <Text
-              fontSize="$3"
-              color={saveStatus === "success" ? "$green10" : "$red10"}
-              fontWeight="600"
-            >
-              {saveStatus === "success"
-                ? "Delivery settings saved!"
-                : "Failed to save. Please try again."}
-            </Text>
+            <XStack gap="$3" alignItems="center">
+             <BackButton />
+              <Text fontSize="$6" fontWeight="bold">
+                Delivery Settings
+              </Text>
+            </XStack>
+            <Form.Trigger asChild>
+              <Button
+                variant="primary"
+                width={"auto"}
+                height={44}
+                loading={isSaving}
+                icon={<Save size="$4" color="white" />}
+              >
+                Save
+              </Button>
+            </Form.Trigger>
           </XStack>
-        )}
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 80}>
+
+          {/* Status banner */}
+          {saveStatus !== "idle" && (
+            <XStack
+              backgroundColor={saveStatus === "success" ? "$green2" : "$red2"}
+              padding="$3"
+              gap="$2"
+              alignItems="center"
+            >
+              {saveStatus === "success" ? (
+                <CheckCircle size={16} color="$green10" />
+              ) : (
+                <AlertCircle size={16} color="$red10" />
+              )}
+              <Text
+                fontSize="$3"
+                color={saveStatus === "success" ? "$green10" : "$red10"}
+                fontWeight="600"
+              >
+                {saveStatus === "success"
+                  ? "Delivery settings saved!"
+                  : "Failed to save. Please try again."}
+              </Text>
+            </XStack>
+          )}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
+            <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 80}>
             {/* Delivery Toggle */}
             <Card padding="$4" bordered>
               <XStack justifyContent="space-between" alignItems="center">
@@ -389,13 +397,14 @@ export default function DeliverySettings() {
 
             {/* Footer Save */}
             <Form.Trigger asChild>
-              <Button variant="primary" loading={isSaving}>
+              <Button variant="primary" width="100%" loading={isSaving}>
                 Save Changes
               </Button>
             </Form.Trigger>
           </YStack>
         </ScrollView>
-      </Form>
-    </YStack>
+        </Form>
+      </YStack>
+    </KeyboardAvoidingView>
   );
 }

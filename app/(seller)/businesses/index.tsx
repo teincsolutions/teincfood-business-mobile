@@ -1,12 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-} from "tamagui";
+import { YStack, XStack, Text, Card, ScrollView } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -23,9 +17,12 @@ export default function BusinessesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { businesses, setDefaultBusiness, getDefaultBusiness } = useBusinessStore();
+  const { businesses, setDefaultBusiness, getDefaultBusiness } =
+    useBusinessStore();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "active" | "inactive"
+  >("all");
 
   const filteredBusinesses = businesses.filter((business) => {
     const matchesSearch =
@@ -47,11 +44,10 @@ export default function BusinessesScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingTop: insets.top + 8,
-        paddingBottom: Math.max(insets.bottom + 20, 24),
-      }}
+      flex={1}
+      paddingTop={insets.top + 8}
+      paddingBottom={Math.max(insets.bottom + 20, 24)}
+      backgroundColor="$background"
     >
       <YStack padding="$4" gap="$4">
         {/* Back button */}
@@ -63,7 +59,12 @@ export default function BusinessesScreen() {
 
         {/* Header */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Businesses
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -79,13 +80,14 @@ export default function BusinessesScreen() {
                 placeholder="Search businesses..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                paddingLeft="$4"
+                paddingStart="$10"
               />
-              <YStack position="absolute" left="$3" top="$3">
+              <YStack position="absolute" left="$3" top="$5">
                 <Search size={20} color="$colorMuted" />
               </YStack>
             </YStack>
             <Button
+              variant="outline"
               icon={Plus}
               onPress={() => router.push("/(seller)/businesses/add")}
             >
@@ -97,7 +99,7 @@ export default function BusinessesScreen() {
           <XStack gap="$2">
             <Button
               size="$2"
-              variant={filterStatus === "all" ? "solid" : "outlined"}
+              variant={filterStatus === "all" ? "primary" : "outline"}
               onPress={() => setFilterStatus("all")}
             >
               <Text fontSize="$2" fontFamily="$body">
@@ -106,20 +108,22 @@ export default function BusinessesScreen() {
             </Button>
             <Button
               size="$2"
-              variant={filterStatus === "active" ? "solid" : "outlined"}
+              variant={filterStatus === "active" ? "primary" : "outline"}
               onPress={() => setFilterStatus("active")}
             >
               <Text fontSize="$2" fontFamily="$body">
-                Active ({businesses.filter((b) => b.status === "active").length})
+                Active ({businesses.filter((b) => b.status === "active").length}
+                )
               </Text>
             </Button>
             <Button
               size="$2"
-              variant={filterStatus === "inactive" ? "solid" : "outlined"}
+              variant={filterStatus === "inactive" ? "primary" : "outline"}
               onPress={() => setFilterStatus("inactive")}
             >
               <Text fontSize="$2" fontFamily="$body">
-                Inactive ({businesses.filter((b) => b.status !== "active").length})
+                Inactive (
+                {businesses.filter((b) => b.status !== "active").length})
               </Text>
             </Button>
           </XStack>
@@ -136,7 +140,9 @@ export default function BusinessesScreen() {
                 bordered
                 overflow="hidden"
                 pressStyle={{ scale: 0.99, opacity: 0.9 }}
-                onPress={() => router.push(`/(seller)/businesses/${business.id}`)}
+                onPress={() =>
+                  router.push(`/(seller)/businesses/${business.id}`)
+                }
               >
                 {/* Status accent bar */}
                 <YStack
@@ -158,7 +164,12 @@ export default function BusinessesScreen() {
                   {/* Name + location */}
                   <YStack flex={1} gap="$1" paddingRight="$3">
                     <XStack gap="$2" alignItems="center">
-                      <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                      <Text
+                        fontSize="$5"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                        color="$color"
+                      >
                         {business.name}
                       </Text>
                       {isDefault && (
@@ -166,11 +177,16 @@ export default function BusinessesScreen() {
                           paddingHorizontal="$2"
                           paddingVertical="$1"
                           borderRadius="$10"
-                        backgroundColor="$infoMuted"
+                          backgroundColor="$infoMuted"
                           borderWidth={1}
                           borderColor="$info"
                         >
-                          <Text fontSize="$1" color="$info" fontFamily="$body" fontWeight="600">
+                          <Text
+                            fontSize="$1"
+                            color="$info"
+                            fontFamily="$body"
+                            fontWeight="600"
+                          >
                             DEFAULT
                           </Text>
                         </XStack>
@@ -179,7 +195,9 @@ export default function BusinessesScreen() {
                         paddingHorizontal="$2"
                         paddingVertical="$1"
                         borderRadius="$10"
-                        backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"}
+                        backgroundColor={
+                          isActive ? "$successMuted" : "$backgroundSoft"
+                        }
                         borderWidth={1}
                         borderColor={isActive ? "$success" : "$borderColor"}
                       >
@@ -195,7 +213,12 @@ export default function BusinessesScreen() {
                     </XStack>
                     <XStack gap="$1" alignItems="center">
                       <MapPin size={13} color="$colorMuted" />
-                      <Text fontSize="$3" color="$colorSecondary" numberOfLines={1} fontFamily="$body">
+                      <Text
+                        fontSize="$3"
+                        color="$colorSecondary"
+                        numberOfLines={1}
+                        fontFamily="$body"
+                      >
                         {business.address?.city || "No address"}
                       </Text>
                     </XStack>
@@ -212,7 +235,9 @@ export default function BusinessesScreen() {
                           handleSetDefault(business.id);
                         }}
                       >
-                        <Text fontSize="$2" fontFamily="$body">Set Default</Text>
+                        <Text fontSize="$2" fontFamily="$body">
+                          Set Default
+                        </Text>
                       </Button>
                     )}
                     <ChevronRight size={18} color="$colorMuted" />
@@ -226,18 +251,30 @@ export default function BusinessesScreen() {
             <Card padding="$6" bordered>
               <YStack alignItems="center" gap="$3">
                 <Building size={48} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="600" textAlign="center" fontFamily="$heading">
+                <Text
+                  fontSize="$5"
+                  fontWeight="600"
+                  textAlign="center"
+                  fontFamily="$heading"
+                >
                   {searchQuery || filterStatus !== "all"
                     ? "No businesses found"
                     : "No businesses yet"}
                 </Text>
-                <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+                <Text
+                  fontSize="$4"
+                  color="$colorSecondary"
+                  textAlign="center"
+                  fontFamily="$body"
+                >
                   {searchQuery || filterStatus !== "all"
                     ? "Try adjusting your search or filter"
                     : "Add your first business to get started"}
                 </Text>
                 {!searchQuery && filterStatus === "all" && (
-                  <Button onPress={() => router.push("/(seller)/businesses/add")}>
+                  <Button
+                    onPress={() => router.push("/(seller)/businesses/add")}
+                  >
                     Add Business
                   </Button>
                 )}

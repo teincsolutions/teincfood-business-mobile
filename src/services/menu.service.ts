@@ -24,6 +24,7 @@ export interface MenuItem {
   dietaryTags: string[];
   variants: Variant[];
   extras: Extra[];
+  images: string[];
 }
 
 export interface MenuItemForm {
@@ -35,6 +36,7 @@ export interface MenuItemForm {
   variants: Variant[];
   extras: Extra[];
   available: boolean;
+  images: string[];
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ export const EMPTY_FORM: MenuItemForm = {
   variants: [],
   extras: [],
   available: true,
+  images: [],
 };
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -70,6 +73,7 @@ let menuItems: MenuItem[] = [
       { id: 'v1b', label: 'Large', priceMinor: 3500 },
     ],
     extras: [{ id: 'e1a', label: 'Extra Stew', priceMinor: 500 }],
+    images: ['https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'],
   },
   {
     id: '2',
@@ -81,6 +85,7 @@ let menuItems: MenuItem[] = [
     dietaryTags: ['Halal', 'Gluten-free'],
     variants: [],
     extras: [{ id: 'e2a', label: 'Extra Pepper', priceMinor: 200 }],
+    images: ['https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400'],
   },
   {
     id: '3',
@@ -92,6 +97,7 @@ let menuItems: MenuItem[] = [
     dietaryTags: ['Vegetarian', 'Halal'],
     variants: [],
     extras: [],
+    images: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400'],
   },
   {
     id: '4',
@@ -103,6 +109,7 @@ let menuItems: MenuItem[] = [
     dietaryTags: ['Vegan', 'Gluten-free'],
     variants: [],
     extras: [],
+    images: ['https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400'],
   },
   {
     id: '5',
@@ -117,6 +124,7 @@ let menuItems: MenuItem[] = [
       { id: 'v5b', label: 'Full', priceMinor: 3500 },
     ],
     extras: [{ id: 'e5a', label: 'Extra Sauce', priceMinor: 300 }],
+    images: ['https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400'],
   },
 ];
 
