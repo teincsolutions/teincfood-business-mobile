@@ -6,6 +6,7 @@ export const MOCK_ORDERS: Order[] = [
   {
     id: 'order-1',
     orderNumber: '#ORD-2461',
+    currency: 'USD',
     items: [
       {
         id: 'ci-1',
@@ -53,6 +54,7 @@ export const MOCK_ORDERS: Order[] = [
   {
     id: 'order-2',
     orderNumber: '#ORD-2460',
+    currency: 'USD',
     items: [
       {
         id: 'ci-3',
@@ -83,6 +85,7 @@ export const MOCK_ORDERS: Order[] = [
   {
     id: 'order-3',
     orderNumber: '#ORD-2459',
+    currency: 'USD',
     items: [
       {
         id: 'ci-4',
