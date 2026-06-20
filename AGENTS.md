@@ -20,7 +20,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 ## Phase 0: Foundation ✅ COMPLETE
 
 - [x] Install missing packages (bottom-sheet, polyline, firebase, google-signin, crypto, web-browser, geolib, confirmation-code-field, sonner-native)
-- [x] Update `app.json` — add map, firebase, web-browser plugins; add Paystack extra config
+- [x] Convert `app.json` to dynamic `app.config.js` — env support, maps, firebase, custom plugins, Paystack extra config
 - [x] Create `.env` file with API_URL, WS_URL, Paystack keys, Google OAuth IDs
 - [x] Update `src/utils/constants.ts` — add `WS_BASE_URL`, `CHAT_STORAGE_KEYS`, `CHAT_CONFIG`
 - [x] Port Phoenix WebSocket: `phoenix-socket.service.ts`, `events.service.ts`, `chat.service.ts`, `order-events.service.ts`, `auth-cleanup.service.ts`
