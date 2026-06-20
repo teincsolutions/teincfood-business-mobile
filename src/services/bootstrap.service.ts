@@ -1,11 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
-const BOOTSTRAP_QUERY_KEY = ['bootstrap'];
-
-export function useBootstrapQuery() {
-  return useQuery({
-    queryKey: BOOTSTRAP_QUERY_KEY,
-    queryFn: () => mockBackend.getBootstrap(),
-  });
+export interface BootstrapData {
+  region: string;
+  currency: string;
+  features: {
+    ordering: boolean;
+    payments: boolean;
+    chat: boolean;
+  };
 }
+
+export const bootstrapService = {
+  getBootstrap(): Promise<BootstrapData> {
+    return api.get<{ data: BootstrapData }>('/bootstrap').then(res => res.data);
+  },
+};

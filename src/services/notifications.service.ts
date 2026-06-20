@@ -1,71 +1,57 @@
-import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
-import { subscribeNotificationStream } from './realtime-mock.service';
+import { api } from './api';
 
-const NOTIFICATIONS_QUERY_KEY = ['notifications'];
-
-export function useNotificationsQuery() {
-  return useQuery({
-    queryKey: NOTIFICATIONS_QUERY_KEY,
-    queryFn: () => mockBackend.getNotifications(),
-  });
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  type: string;
+  created_at: string;
 }
 
-export function useMarkNotificationReadMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.markNotificationAsRead(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-    },
-  });
+interface BackendNotification {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  is_read: boolean;
+  inserted_at: string;
 }
 
-export function useMarkAllNotificationsReadMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => mockBackend.markAllNotificationsAsRead(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-    },
-  });
+function mapNotification(backend: BackendNotification): Notification {
+  return {
+    id: backend.id,
+    title: backend.title,
+    message: backend.body,
+    type: backend.type,
+    read: backend.is_read,
+    created_at: backend.inserted_at,
+  };
 }
 
-export function useRemoveNotificationMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.removeNotification(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-    },
-  });
-}
+export const notificationsService = {
+  async getNotifications(): Promise<Notification[]> {
+    const response = await api.get<{ data: { notifications: BackendNotification[] } }>('/notifications');
+    return response.data.notifications.map(mapNotification);
+  },
 
-export function useClearNotificationsMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => mockBackend.clearNotifications(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-    },
-  });
-}
+  async markAsRead(id: string): Promise<{ success: boolean }> {
+    await api.patch(`/notifications/${id}/read`);
+    return { success: true };
+  },
 
-export function useNotificationsSSEStream(enabled = true) {
-  const queryClient = useQueryClient();
+  async markAllAsRead(): Promise<{ success: boolean }> {
+    await api.patch('/notifications/read-all');
+    return { success: true };
+  },
 
-  useEffect(() => {
-    if (!enabled) return;
+  async removeNotification(id: string): Promise<{ success: boolean }> {
+    await api.delete(`/notifications/${id}`);
+    return { success: true };
+  },
 
-    const unsubscribe = subscribeNotificationStream((event) => {
-      if (event.type === 'notification.created') {
-        queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [enabled, queryClient]);
-}
+  async clearAll(): Promise<{ success: boolean }> {
+    await api.delete('/notifications');
+    return { success: true };
+  },
+};

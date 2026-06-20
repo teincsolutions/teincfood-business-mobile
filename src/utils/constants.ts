@@ -3,7 +3,10 @@
  */
 
 /** Base URL for the API — will be swapped per environment */
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+/** WebSocket URL for Phoenix Channels */
+export const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:4000';
 
 /** App metadata */
 export const APP_NAME = 'TeincFoods';
@@ -18,6 +21,23 @@ export const STORAGE_KEYS = {
   THEME_PREFERENCE: 'theme_preference',
   BUSINESS_DATA: 'business_data',
   FLEET_DATA: 'fleet_data',
+} as const;
+
+/** Chat storage keys */
+export const CHAT_STORAGE_KEYS = {
+  MESSAGES: 'chat_messages',
+  OUTBOX: 'chat_outbox',
+} as const;
+
+/** Chat configuration */
+export const CHAT_CONFIG = {
+  HEARTBEAT_INTERVAL_MS: 15_000,
+  HEARTBEAT_TIMEOUT_MS: 10_000,
+  RECONNECT_BASE_DELAY_MS: 1_000,
+  RECONNECT_MAX_DELAY_MS: 30_000,
+  RECONNECT_MAX_ATTEMPTS: 10,
+  TYPING_TIMEOUT_MS: 3_000,
+  MESSAGE_PAGE_SIZE: 50,
 } as const;
 
 /** OTP configuration */

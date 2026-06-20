@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SellerOrder } from '@/services/mock-data.service';
+import type { SellerOrder } from '@/models/seller.model';
 import type { OrderStatus, UpdateOrderStatusResponse, SellerOrderDetailResponse } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
 

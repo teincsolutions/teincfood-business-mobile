@@ -3,7 +3,7 @@
  * Handles seller dashboard metrics and recent orders
  */
 
-import type { SellerOrder } from '@/services/mock-data.service';
+import type { SellerOrder } from '@/models/seller.model';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

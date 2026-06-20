@@ -1,42 +1,35 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { PaymentMethod } from '@/models/user.model';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
-const PAYMENT_METHODS_QUERY_KEY = ['payment-methods'];
+export const paymentService = {
+  listPaymentMethods(): Promise<any> {
+    return api.get<any>('/payments/methods');
+  },
 
-export function usePaymentMethodsQuery() {
-  return useQuery({
-    queryKey: PAYMENT_METHODS_QUERY_KEY,
-    queryFn: () => mockBackend.getPaymentMethods(),
-  });
-}
+  createPaymentMethod(payload: any): Promise<any> {
+    return api.post<any>('/payments/methods', payload);
+  },
 
-export function useAddPaymentMethodMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (paymentMethod: PaymentMethod) => mockBackend.createPaymentMethod(paymentMethod),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
-    },
-  });
-}
+  setupPaymentMethod(payload: any): Promise<any> {
+    return api.post<any>('/payments/methods/paystack', payload);
+  },
 
-export function useRemovePaymentMethodMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.removePaymentMethod(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
-    },
-  });
-}
+  confirmPaymentMethodSetup(payload: any): Promise<any> {
+    return api.post<any>('/payments/methods/paystack/confirm', payload);
+  },
 
-export function useSetDefaultPaymentMethodMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.setDefaultPaymentMethod(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_QUERY_KEY });
-    },
-  });
-}
+  updatePaymentMethod(id: string, payload: any): Promise<any> {
+    return api.patch<any>(`/payments/methods/${id}`, payload);
+  },
+
+  deletePaymentMethod(id: string): Promise<any> {
+    return api.delete<any>(`/payments/methods/${id}`);
+  },
+
+  initiatePayment(payload: any): Promise<any> {
+    return api.post<any>('/payments/initiate', payload);
+  },
+
+  verifyPayment(payload: any): Promise<any> {
+    return api.post<any>('/payments/verify', payload);
+  },
+};

@@ -1,9 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useHomeFeedQuery(category: string) {
-  return useQuery({
-    queryKey: ['home-feed', category],
-    queryFn: () => mockBackend.getHomeFeed(category),
-  });
+  // Buyer-only feature
+  return { data: null, isLoading: false };
 }

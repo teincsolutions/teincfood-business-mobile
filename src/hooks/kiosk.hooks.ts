@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { KioskOrder } from '@/services/mock-data.service';
+import type { KioskOrder } from '@/models/kiosk.model';
 import type {
   KioskOrdersResponse,
   KioskOrderActionResponse,

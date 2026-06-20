@@ -1,5 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export interface PromoValidationRequest {
   code: string;
@@ -14,8 +13,8 @@ export interface PromoValidationResponse {
   message: string;
 }
 
-export function useValidatePromoMutation() {
-  return useMutation({
-    mutationFn: (request: PromoValidationRequest) => mockBackend.validatePromoCode(request),
-  });
-}
+export const promoService = {
+  validatePromo(request: PromoValidationRequest): Promise<PromoValidationResponse> {
+    return api.post<{ data: PromoValidationResponse }>('/promo/validate', request).then(res => res.data);
+  },
+};

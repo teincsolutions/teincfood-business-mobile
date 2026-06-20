@@ -1,61 +1,40 @@
-// @ts-nocheck
 import { api } from './api';
 
-export interface UploadAvatarResponse {
-  avatarUrl: string;
-  message: string;
+export interface UpdateProfilePayload {
+  full_name?: string;
+  phone?: string;
+  avatar_url?: string;
 }
 
 export const profileService = {
-  /**
-   * Upload profile avatar image
-   * @param imageUri - Local image URI from image picker
-   * @returns Promise with the uploaded avatar URL
-   */
-  async uploadAvatar(imageUri: string): Promise<UploadAvatarResponse> {
-    // Create form data for file upload
-    const formData = new FormData();
-    
-    // Extract filename from URI
-    const filename = imageUri.split('/').pop() || 'avatar.jpg';
-    
-    // Determine file type
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : 'image/jpeg';
-    
-    formData.append('avatar', {
-      uri: imageUri,
-      name: filename,
-      type,
-    } as any);
+  async getProfile(): Promise<any> {
+    return api.get<any>('/users/me');
+  },
 
-    const response = await api.post('/v1/users/me/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  async updateProfile(payload: UpdateProfilePayload): Promise<any> {
+    return api.put<any>('/users/me', { user: payload });
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<any> {
+    return api.post('/users/me/password', {
+      current_password: currentPassword,
+      new_password: newPassword,
     });
-
-    return response.data;
   },
 
-  /**
-   * Delete profile avatar
-   */
-  async deleteAvatar(): Promise<{ message: string }> {
-    const response = await api.delete('/v1/users/me/avatar');
-    return response.data;
+  async updateEmail(email: string): Promise<any> {
+    return api.post('/users/me/email', { email });
   },
 
-  /**
-   * Update user profile
-   */
-  async updateProfile(data: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    bio?: string;
-  }): Promise<{ user: any; message: string }> {
-    const response = await api.patch('/v1/users/me', data);
-    return response.data;
+  async verifyEmailChange(code: string): Promise<any> {
+    return api.post('/users/me/email/verify', { code });
+  },
+
+  async updatePhone(phone: string): Promise<any> {
+    return api.post('/users/me/phone', { phone });
+  },
+
+  async verifyPhoneChange(code: string): Promise<any> {
+    return api.post('/users/me/phone/verify', { code });
   },
 };

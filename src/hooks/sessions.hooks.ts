@@ -83,7 +83,7 @@ export function useTerminateAllOtherSessionsMutation() {
       if (previous) {
         queryClient.setQueryData<Session[]>(
           SESSIONS_KEYS.list(),
-          previous.filter((s) => s.isCurrent)
+          previous.filter((s) => s.is_current)
         );
       }
 

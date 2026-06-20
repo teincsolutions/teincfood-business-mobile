@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useResponsive } from '@/utils/responsive';
 import { formatPrice } from '@/utils/currency';
-import type { KioskOrder } from '@/services/mock-data.service';
+import type { KioskOrder } from '@/models/kiosk.model';
 
 interface OrderDetailsSheetProps {
   visible: boolean;

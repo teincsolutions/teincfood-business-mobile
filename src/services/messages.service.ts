@@ -1,26 +1,40 @@
+import { api } from './api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
-import type { EventEnvelope } from './backend-contracts.types';
-import { mockBackend } from './mock-backend.service';
-import { mockChatSocket } from './realtime-mock.service';
+import { chatService } from './chat.service';
 import { useAuthStore } from '@/stores/auth.store';
 
 export function useInboxConversationsQuery() {
   return useQuery({
     queryKey: ['inbox-conversations'],
-    queryFn: () => mockBackend.getInboxConversations(),
+    queryFn: () => api.get<any[]>('/conversations'),
+  });
+}
+
+export function useConversationMessagesQuery(conversationId: string) {
+  return useQuery({
+    queryKey: ['conversation-messages', conversationId],
+    queryFn: () => api.get<any[]>(`/conversations/${conversationId}/messages`),
+    enabled: Boolean(conversationId),
+  });
+}
+
+export function useSupportConversationQuery() {
+  return useQuery({
+    queryKey: ['support-conversation'],
+    queryFn: () => api.post<any>('/conversations/support'),
   });
 }
 
 export function useChatParticipantQuery(userId: string) {
   return useQuery({
     queryKey: ['chat-participant', userId],
-    queryFn: () => mockBackend.getChatParticipant(userId),
+    queryFn: () => api.get<any>(`/users/${userId}`),
     enabled: Boolean(userId),
   });
 }
 
-export function useChatSocket(chatId: string, onEvent: (event: EventEnvelope) => void) {
+export function useChatSocket(chatId: string, onEvent: (event: any) => void) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const userId = useAuthStore((state) => state.user?.id || 'me');
   const queryClient = useQueryClient();
@@ -28,15 +42,17 @@ export function useChatSocket(chatId: string, onEvent: (event: EventEnvelope) =>
   useEffect(() => {
     if (!chatId || !accessToken) return;
 
-    mockChatSocket.connect(accessToken);
-    const unsubscribe = mockChatSocket.subscribe((event) => {
-      if (event.chatId && event.chatId !== chatId) return;
-      onEvent(event);
+    chatService.connect().then(() => {
+      chatService.joinChannel(chatId).catch(() => {});
+    });
+
+    const unsub = chatService.onMessage(chatId, (msg) => {
+      onEvent(msg);
     });
 
     return () => {
-      unsubscribe();
-      mockChatSocket.disconnect();
+      unsub();
+      chatService.leaveChannel(chatId);
     };
   }, [chatId, accessToken, onEvent]);
 
@@ -44,37 +60,27 @@ export function useChatSocket(chatId: string, onEvent: (event: EventEnvelope) =>
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      mockChatSocket.send(
-        {
-          clientMessageId: `cmsg_${Date.now()}`,
-          chatId,
-          text: trimmed,
-        },
-        userId
-      );
+      const localId = `cmsg_${Date.now()}`;
+      chatService.sendMessage(chatId, trimmed, localId).catch(() => {});
+
+      useAuthStore.getState();
     },
-    [chatId, userId]
+    [chatId]
   );
 
   const setTyping = useCallback(
     (isTyping: boolean) => {
-      mockChatSocket.typing(chatId, userId, isTyping);
+      chatService.sendTyping(chatId, isTyping);
     },
-    [chatId, userId]
+    [chatId]
   );
 
   const markAsRead = useCallback(
     async (messageId: string) => {
-      // Mark as read via socket
-      mockChatSocket.markRead(chatId, messageId, userId);
-      
-      // Also mark as read in the backend to update inbox conversations
-      await mockBackend.markChatAsRead(chatId, messageId);
-      
-      // Invalidate the inbox conversations query to refresh the unread count
+      await api.patch(`/conversations/${chatId}/messages/${messageId}/read`);
       queryClient.invalidateQueries({ queryKey: ['inbox-conversations'] });
     },
-    [chatId, userId, queryClient]
+    [chatId, queryClient]
   );
 
   return { sendMessage, setTyping, markAsRead };

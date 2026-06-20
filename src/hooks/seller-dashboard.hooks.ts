@@ -6,7 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as sellerDashboardService from '@/services/seller-dashboard.service';
 import type { SellerDashboardMetrics } from '@/services/seller-dashboard.service';
-import type { SellerOrder } from '@/services/mock-data.service';
+import type { SellerOrder } from '@/models/seller.model';
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 

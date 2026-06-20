@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useTrackOrderQuery(orderId: string) {
   return useQuery({
     queryKey: ['track-order', orderId],
-    queryFn: () => mockBackend.getTrackOrder(orderId),
+    queryFn: () => api.get(`/orders/${orderId}`),
     enabled: Boolean(orderId),
   });
 }

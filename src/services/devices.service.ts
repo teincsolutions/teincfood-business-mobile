@@ -1,15 +1,24 @@
-import { useMutation } from '@tanstack/react-query';
-import type { PushTokenRegistrationRequest } from './backend-contracts.types';
-import { mockBackend } from './mock-backend.service';
+import { Platform } from 'react-native';
+import { api } from './api';
 
-export function useRegisterPushTokenMutation() {
-  return useMutation({
-    mutationFn: (payload: PushTokenRegistrationRequest) => mockBackend.registerPushToken(payload),
-  });
+export interface PushTokenRegistrationRequest {
+  token: string;
+  platform: 'ios' | 'android';
+  provider: 'fcm' | 'apns';
 }
 
-export function useUnregisterPushTokenMutation() {
-  return useMutation({
-    mutationFn: (tokenId: string) => mockBackend.unregisterPushToken(tokenId),
-  });
-}
+export const devicesService = {
+  registerPushToken(token: string): Promise<any> {
+    const isIOS = Platform.OS === 'ios';
+    const payload: PushTokenRegistrationRequest = {
+      token,
+      platform: isIOS ? 'ios' : 'android',
+      provider: 'fcm',
+    };
+    return api.post('/devices/push-token', payload);
+  },
+
+  unregisterPushToken(tokenId: string): Promise<any> {
+    return api.delete(`/devices/push-token/${tokenId}`);
+  },
+};

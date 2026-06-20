@@ -1,9 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useSavedCatalogQuery(savedFoodIds: string[], savedRestaurantIds: string[]) {
-  return useQuery({
-    queryKey: ['saved-catalog', savedFoodIds, savedRestaurantIds],
-    queryFn: () => mockBackend.getSavedCatalog(savedFoodIds, savedRestaurantIds),
-  });
+  // This is buyer-only functionality — stub for now
+  return { data: null, isLoading: false };
 }

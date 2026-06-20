@@ -1,10 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useRestaurantStorefrontQuery(restaurantId: string, query: string) {
-  return useQuery({
-    queryKey: ['restaurant-storefront', restaurantId, query],
-    queryFn: () => mockBackend.getRestaurantStorefront(restaurantId, query),
-    enabled: Boolean(restaurantId),
-  });
+  // Buyer-only feature
+  return { data: null, isLoading: false };
 }

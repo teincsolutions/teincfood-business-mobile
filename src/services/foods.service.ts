@@ -1,10 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useFoodByIdQuery(foodId: string) {
-  return useQuery({
-    queryKey: ['food-by-id', foodId],
-    queryFn: () => mockBackend.getFoodById(foodId),
-    enabled: Boolean(foodId),
-  });
+  // Buyer-only feature
+  return { data: null, isLoading: false };
 }

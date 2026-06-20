@@ -1,10 +1,3 @@
-import type { EventEnvelope } from './backend-contracts.types';
-
-/**
- * Delivery interfaces only.
- * Actual APNs/FCM delivery is intentionally not mocked in-app.
- */
-
 export interface AndroidLiveUpdatePayload {
   type: 'order.live_update';
   orderId: string;
@@ -37,7 +30,7 @@ export const pushDeliveryService = {
     throw new Error('Not implemented in app mock: iOS Live Activity APNs delivery must be handled by backend APNs service.');
   },
 
-  async sendStandardNotification(_event: EventEnvelope): Promise<never> {
+  async sendStandardNotification(_event: any): Promise<never> {
     throw new Error('Not implemented in app mock: standard push delivery must be handled by backend messaging service.');
   },
 };

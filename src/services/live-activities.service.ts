@@ -1,17 +1,11 @@
-import { useMutation } from '@tanstack/react-query';
-import type { LiveActivityRegistrationRequest } from './backend-contracts.types';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
-export function useRegisterIOSLiveActivityMutation() {
-  return useMutation({
-    mutationFn: ({ orderId, payload }: { orderId: string; payload: LiveActivityRegistrationRequest }) =>
-      mockBackend.registerIOSLiveActivity(orderId, payload),
-  });
-}
+export const liveActivitiesService = {
+  registerIOSLiveActivity(orderId: string, payload: any): Promise<any> {
+    return api.post(`/orders/${orderId}/live-activity/ios`, payload);
+  },
 
-export function useUnregisterIOSLiveActivityMutation() {
-  return useMutation({
-    mutationFn: ({ orderId, activityId }: { orderId: string; activityId: string }) =>
-      mockBackend.unregisterIOSLiveActivity(orderId, activityId),
-  });
-}
+  unregisterIOSLiveActivity(orderId: string, activityId: string): Promise<any> {
+    return api.delete(`/orders/${orderId}/live-activity/ios/${activityId}`);
+  },
+};

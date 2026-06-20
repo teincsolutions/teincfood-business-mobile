@@ -17,90 +17,36 @@ This file is for AI coding agents. Always re-read this file before starting work
 
 ---
 
-## Phase 0: Foundation (do first)
+## Phase 0: Foundation ✅ COMPLETE
 
-- [ ] Install missing packages from `../TeincFood/package.json` (bottom-sheet, polyline, firebase, google-signin, crypto, web-browser, geolib, confirmation-code-field, sonner-native)
-- [ ] Update `app.json` — add map, firebase, web-browser plugins; add Paystack extra config
-- [ ] Create `.env` file with API_URL, WS_URL, Paystack keys, Google OAuth IDs (from `../TeincFood/.env`)
-- [ ] Update `src/utils/constants.ts` — add `WS_BASE_URL`, `CHAT_STORAGE_KEYS`, `CHAT_CONFIG`
-- [ ] Port Phoenix WebSocket: `phoenix-socket.service.ts`, `events.service.ts`, `chat.service.ts`, `order-events.service.ts`, `auth-cleanup.service.ts`
-- [ ] Rewrite `auth.service.ts` — replace mockBackend with real `POST /api/v1/auth/*` calls
-- [ ] Rewrite `notifications.service.ts` — replace mock stream with real API + WebSocket events
-- [ ] Rewrite `payment.service.ts` — replace mock with real Paystack integration
-- [ ] Rewrite `promo.service.ts` — replace mock with `POST /api/v1/promo/validate`
-- [ ] Rewrite `bootstrap.service.ts` — replace mock with real API
-- [ ] Rewrite `devices.service.ts` — replace mock push token registration
-- [ ] Rewrite `location.service.ts` — replace mock with real API
-- [ ] Rewrite `live-activities.service.ts` — replace mock with real API
-- [ ] Rewrite `messages.service.ts` — replace mockChatSocket + mockBackend with real HTTP + WS
-- [ ] Create `profile.service.ts` — port from buyer app
-- [ ] Create `address.service.ts` — port from buyer app
-- [ ] Create `places.service.ts` — port from buyer app
-- [ ] Create `directions.service.ts` — port from buyer app
-- [ ] Create `notification-preferences.service.ts` — port from buyer app
-- [ ] Port shared hooks: `useAuth`, `useAuthVerification`, `useProfile`, `useAddresses`, `usePushTokenRegistration`, `useEventsConnection`, `usePayment`, `usePasswordRecovery`, `usePlacesSearch`, `useCurrentLocation`, `useChat`, `useMessages`, `useNotifications`
-- [ ] Create `src/models/kiosk.model.ts` — extract `KioskOrder` type from `mock-data.service.ts`
-- [ ] Create `src/models/seller.model.ts` — extract `SellerOrder` type from `mock-data.service.ts`
-- [ ] Remove direct mock imports: `app/(seller)/(drawer)/orders/index.tsx`, `app/(seller)/orders/[id].tsx`, `app/(seller)/(drawer)/dashboard/kiosk.tsx`, `app/(rider)/map/index.tsx`
-- [ ] Remove mock file references from kiosk/seller/dashboard hooks (replace type imports)
-- [ ] Connect auth screens: `login.tsx`, `signup.tsx`, `verification.tsx`, `forgot-password.tsx`, `role.tsx`
-- [ ] Build role-completion gateway: on login, user picks role from role selector → detect if prerequisite (business for seller/fleet, rider profile for rider) is incomplete → show completion screen → once complete, upgrade role and route to correct role group.
-
----
-
-## Phase 1: Rider
-
-- [ ] Rewrite `rider.service.ts` — all functions call real API endpoints
-- [ ] Add real-time delivery updates to rider drawer layout
-- [ ] Verify rider screens: home, deliveries, earnings, settings (vehicle, zones, navigation)
-- [ ] Fix `app/(rider)/map/index.tsx` — remove inline mock, use `useActiveDeliveryQuery()`
+- [x] Install missing packages (bottom-sheet, polyline, firebase, google-signin, crypto, web-browser, geolib, confirmation-code-field, sonner-native)
+- [x] Update `app.json` — add map, firebase, web-browser plugins; add Paystack extra config
+- [x] Create `.env` file with API_URL, WS_URL, Paystack keys, Google OAuth IDs
+- [x] Update `src/utils/constants.ts` — add `WS_BASE_URL`, `CHAT_STORAGE_KEYS`, `CHAT_CONFIG`
+- [x] Port Phoenix WebSocket: `phoenix-socket.service.ts`, `events.service.ts`, `chat.service.ts`, `order-events.service.ts`, `auth-cleanup.service.ts`
+- [x] Rewrite `auth.service.ts` — real `POST /api/v1/auth/*` calls
+- [x] Rewrite `notifications.service.ts` — real API + WebSocket events
+- [x] Rewrite `payment.service.ts` — real Paystack integration
+- [x] Rewrite `promo.service.ts` — real `POST /api/v1/promo/validate`
+- [x] Rewrite `bootstrap.service.ts` — real API
+- [x] Rewrite `devices.service.ts` — real push token registration
+- [x] Rewrite `location.service.ts` — real API
+- [x] Rewrite `live-activities.service.ts` — real API
+- [x] Rewrite `messages.service.ts` — real HTTP + WS
+- [x] Create `profile.service.ts` — ported from buyer app
+- [x] Create `address.service.ts` — ported from buyer app
+- [x] Create `places.service.ts` — ported from buyer app
+- [x] Create `directions.service.ts` — ported from buyer app
+- [x] Create `notification-preferences.service.ts` — ported from buyer app
+- [x] Port shared hooks: `useAuth`, `useAuthVerification`, `useProfile`, `useAddresses`, `usePushTokenRegistration`, `useEventsConnection`, `usePayment`, `usePasswordRecovery`, `usePlacesSearch`, `useCurrentLocation`, `useChat`, `useMessages`, `useNotifications`, `useNotificationPreferences`
+- [x] Create `src/models/kiosk.model.ts` — `KioskOrder` type
+- [x] Create `src/models/seller.model.ts` — `SellerOrder` + `OrderItem` types
+- [x] Remove direct mock imports (all screens/components/hooks now import from models)
+- [x] Remove mock file references from kiosk/seller/dashboard hooks/services
+- [x] Connect auth screens: `login.tsx`, `signup.tsx`, `verification.tsx`, `forgot-password.tsx`, `role.tsx` all use real auth service
+- [x] Build role-completion gateway: `usePrerequisiteCheck` hook + `(seller)/_layout.tsx` and `(fleet)/_layout.tsx` redirect to business creation if no business exists
+- [x] Delete mock infrastructure: `src/mocks/`, `mock-backend.service.ts`, `mock-data.service.ts`, `realtime-mock.service.ts` all deleted
+- [x] Remove `@mocks/*` path from `tsconfig.json`
+- [x] Run `npx tsc --noEmit` — **0 errors**
 
 ---
-
-## Phase 2: Seller
-
-- [ ] Rewrite `seller.service.ts` — all functions call real API
-- [ ] Rewrite `seller-dashboard.service.ts` — real API
-- [ ] Rewrite `seller-analytics.service.ts` — real API
-- [ ] Rewrite `menu.service.ts` — real API (CRUD items, categories, variants, addons)
-- [ ] Rewrite `kiosk.service.ts` — real API + WS events
-- [ ] Verify seller screens: dashboard, orders, menu, analytics, kiosk, businesses, settings
-
----
-
-## Phase 3: Fleet Manager
-
-- [ ] Create `fleet.service.ts` — all endpoints: riders, vehicles, join requests, invitations
-- [ ] Create `fleet.hooks.ts` — query/mutation hooks matching service
-- [ ] Clean `fleet.store.ts` — remove mock default data
-- [ ] Verify fleet screens: dashboard, riders, vehicles, earnings, settings
-
----
-
-## Phase 4: Communication
-
-- [ ] Wire up chat service with Phoenix WebSocket channels
-- [ ] Verify inbox, chat/[userId], support chat, order chat screens
-- [ ] Port `chat/support.tsx` and `chat/order.tsx` if missing
-
----
-
-## Phase 5: Shared Screens
-
-- [ ] Port profile screens: edit, help, complete-profile
-- [ ] Verify security, theme, terms, privacy-policy screens work
-- [ ] Connect notifications screen to live stream
-- [ ] Connect operating-hours screen to API
-
----
-
-## Phase 6: Cleanup
-
-- [ ] Delete `src/mocks/` directory entirely
-- [ ] Delete `src/services/mock-backend.service.ts`
-- [ ] Delete `src/services/mock-data.service.ts`
-- [ ] Delete `src/services/realtime-mock.service.ts`
-- [ ] Remove `@mocks/*` path from `tsconfig.json` (if still there)
-- [ ] Run `npx tsc --noEmit` — fix all type errors
-- [ ] Run `npx expo start` — verify app boots without mock files
-- [ ] Verify all 3 role flows end-to-end with real backend

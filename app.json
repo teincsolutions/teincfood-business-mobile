@@ -135,13 +135,38 @@
           "launchMode": "most-recent"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      ["@react-native-firebase/app"],
+      [
+        "@react-native-firebase/messaging",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "iosGoogleMapsApiKey": "AIzaSyAynV0Kj00Mp3JkTH9ro5qk7jBW-dkDxeI",
+          "androidGoogleMapsApiKey": "AIzaSyBxq-rNf_MsiWif5znkJ3jSmNpe_AYM_Jw"
+        }
+      ],
+      "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.924722353782-nmk7tji33t5cijds311m8vkvm4dfnc4i"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
+      "paystackCurrency": "GHS",
+      "paystackPublicKey": "pk_live_898f9b046dea9d60c7cfea7d3768b1ae0a175737",
       "eas": {
         "build": {
           "experimental": {

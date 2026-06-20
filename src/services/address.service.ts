@@ -1,54 +1,46 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Address } from '@/models/user.model';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
-const ADDRESSES_QUERY_KEY = ['addresses'];
-
-export function useAddressesQuery(enabled = true) {
-  return useQuery({
-    queryKey: ADDRESSES_QUERY_KEY,
-    queryFn: () => mockBackend.getAddresses(),
-    enabled,
-  });
+export interface Address {
+  id: string;
+  label: string;
+  street: string;
+  apartment?: string;
+  city?: string;
+  post_code?: string;
+  full_address?: string;
+  latitude?: number;
+  longitude?: number;
+  is_default?: boolean;
+  instructions?: string;
+  place_id?: string;
+  user_id?: string;
+  inserted_at?: string;
+  updated_at?: string;
 }
 
-export function useAddAddressMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (address: Address) => mockBackend.createAddress(address),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
-    },
-  });
+interface AddressListResponse {
+  data: Address[];
 }
 
-export function useUpdateAddressMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Address> }) =>
-      mockBackend.updateAddress(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
-    },
-  });
-}
+export const addressService = {
+  async getAddresses() {
+    const response = await api.get<AddressListResponse>('/addresses');
+    return response.data;
+  },
 
-export function useRemoveAddressMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.removeAddress(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
-    },
-  });
-}
+  addAddress(address: Omit<Address, 'id'>): Promise<Address> {
+    return api.post<{ data: Address }>('/addresses', { address }).then(res => res.data);
+  },
 
-export function useSetDefaultAddressMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => mockBackend.setDefaultAddress(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY });
-    },
-  });
-}
+  updateAddress(id: string, updates: Partial<Address>): Promise<Address> {
+    return api.put<{ data: Address }>(`/addresses/${id}`, { address: updates }).then(res => res.data);
+  },
+
+  removeAddress(id: string): Promise<{ success: boolean }> {
+    return api.delete(`/addresses/${id}`).then(() => ({ success: true }));
+  },
+
+  setDefaultAddress(id: string): Promise<{ success: boolean }> {
+    return api.post(`/addresses/${id}/default`).then(() => ({ success: true }));
+  },
+};

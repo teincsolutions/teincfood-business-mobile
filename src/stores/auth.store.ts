@@ -11,6 +11,7 @@ interface AuthState {
   isHydrated: boolean;
 
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   completeKyc: () => void;
@@ -20,16 +21,21 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isHydrated: false,
 
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken }),
 
-      setUser: (user) => set({ user }),
+
+  setAuth: (user, accessToken, refreshToken) =>
+    set({ user, accessToken, refreshToken }),
+
+  setTokens: (accessToken, refreshToken) =>
+    set({ accessToken, refreshToken }),
+
+  setUser: (user) => set({ user }),
 
       updateUser: (updates) =>
         set((state) => ({

@@ -1,9 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { mockBackend } from './mock-backend.service';
+import { api } from './api';
 
 export function useResultsQuery(type: string) {
-  return useQuery({
-    queryKey: ['results', type],
-    queryFn: () => mockBackend.getResults(type),
-  });
+  // Buyer-only feature
+  return { data: null, isLoading: false };
 }
