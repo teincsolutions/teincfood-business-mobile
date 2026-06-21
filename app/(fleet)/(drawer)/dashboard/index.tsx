@@ -81,7 +81,6 @@ export default function FleetDashboardScreen() {
               </Text>
               <XStack gap="$2">
                 <Button
-                  size="$3"
                   variant="primary"
                   onPress={() =>
                     router.push("/(seller)/(drawer)/businesses/add")
@@ -90,7 +89,6 @@ export default function FleetDashboardScreen() {
                   Create Business
                 </Button>
                 <Button
-                  size="$3"
                   variant="outline"
                   onPress={() => setDismissNoBusiness(true)}
                 >

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { FlatList, ScrollView } from "react-native";
+import { FlatList } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRouter, useNavigation } from "expo-router";
-import { Button, Input, BackButton } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 
 export default function BusinessesScreen() {
   const router = useRouter();
@@ -150,12 +150,6 @@ export default function BusinessesScreen() {
 
   const ListHeaderComponent = () => (
     <YStack gap="$4" paddingBottom="$2">
-      {navigation.canGoBack() && (
-        <YStack>
-          <BackButton />
-        </YStack>
-      )}
-
       <YStack gap="$2">
         <Text
           fontSize="$8"
@@ -255,7 +249,7 @@ export default function BusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top + 8}>
+    <YStack flex={1} backgroundColor="$background">
       <FlatList
         data={filteredBusinesses}
         keyExtractor={(item) => item.id}

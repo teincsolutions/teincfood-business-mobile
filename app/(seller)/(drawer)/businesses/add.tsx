@@ -14,7 +14,7 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
-import { BackButton, FormInput, Button } from "@/components/ui";
+import { FormInput, Button } from "@/components/ui";
 
 import { useBusinessStore } from "@/stores/business.store";
 import { Building, MapPin, Phone, Mail, Hash } from "@tamagui/lucide-icons";
@@ -149,10 +149,6 @@ export default function AddBusinessScreen() {
           alignSelf="center"
           width="100%"
         >
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
-
           <YStack gap="$2">
             <Text
               fontSize="$8"
