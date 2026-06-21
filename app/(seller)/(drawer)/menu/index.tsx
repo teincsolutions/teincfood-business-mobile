@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, TouchableOpacity } from "react-native";
+import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -238,49 +238,51 @@ export default function SellerMenu() {
         ))}
       </ScrollView>
 
-      {/* Item count */}
-      <XStack paddingHorizontal="$4" pb="$2">
-        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-          {filtered.length} {filtered.length === 1 ? "item" : "items"}
-        </Text>
-      </XStack>
-
       {/* List */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack
-          paddingHorizontal="$4"
-          paddingBottom={insets.bottom + 16}
-          gap="$3"
-        >
-          {filtered.map((item) => (
-            <MenuItemCard
-              key={item.id}
-              item={item}
-              onEdit={openEdit}
-              onDelete={setDeleteTarget}
-              onToggleAvailability={toggleAvailability}
-            />
-          ))}
-
-          {filtered.length === 0 && (
-            <YStack alignItems="center" paddingVertical="$10" gap="$3">
-              <UtensilsCrossed size={48} color="$colorSecondary" />
-              <Text color="$colorSecondary" fontFamily="$body" fontSize="$4">
-                No items in this category
-              </Text>
-              <Button
-                variant="outlined"
-                height={44}
-                width="auto"
-                paddingHorizontal="$5"
-                onPress={openAdd}
-              >
-                Add First Item
-              </Button>
-            </YStack>
-          )}
-        </YStack>
-      </ScrollView>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <MenuItemCard
+            item={item}
+            onEdit={openEdit}
+            onDelete={setDeleteTarget}
+            onToggleAvailability={toggleAvailability}
+          />
+        )}
+        ListHeaderComponent={
+          <XStack paddingHorizontal="$4" pb="$2">
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              {filtered.length} {filtered.length === 1 ? "item" : "items"}
+            </Text>
+          </XStack>
+        }
+        ListEmptyComponent={
+          <YStack alignItems="center" paddingVertical="$10" gap="$3">
+            <UtensilsCrossed size={48} color="$colorSecondary" />
+            <Text color="$colorSecondary" fontFamily="$body" fontSize="$4">
+              No items in this category
+            </Text>
+            <Button
+              variant="outlined"
+              height={44}
+              width="auto"
+              paddingHorizontal="$5"
+              onPress={openAdd}
+            >
+              Add First Item
+            </Button>
+          </YStack>
+        }
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: insets.bottom + 16,
+        }}
+        initialNumToRender={10}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
+      />
 
       {/* ── Add / Edit Sheet ─────────────────────────────────────── */}
       <MenuFormSheet

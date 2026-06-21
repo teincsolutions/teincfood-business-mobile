@@ -143,17 +143,6 @@ export default function Documents() {
     }
   };
 
-  const handleContinue = () => {
-    completeKyc();
-    if (role === 'seller') {
-      router.replace('/(seller)/');
-    } else if (role === 'fleet_manager') {
-      router.replace('/(fleet)/');
-    } else {
-      router.replace('/(rider)/(drawer)/home');
-    }
-  };
-
   return (
     <YStack flex={1} backgroundColor="$background">
       {/* Header */}

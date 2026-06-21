@@ -12,9 +12,12 @@ import {
   Clock,
   ChevronRight,
   Plus,
+  X,
+  Building,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
@@ -25,6 +28,9 @@ export default function FleetDashboardScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const { dashboard, riders, vehicles } = useFleetStore();
+  const { businesses } = useBusinessStore();
+  const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
+  const hasBusiness = businesses.length > 0;
 
   const onlineRiders = riders.filter((r) => r.status === "active").length;
   const totalVehicles = vehicles.length;
@@ -43,6 +49,33 @@ export default function FleetDashboardScreen() {
           status={user?.serviceStatus}
           hasCompletedKyc={user?.hasCompletedKyc}
         />
+
+        {/* No Business Banner */}
+        {!hasBusiness && !dismissNoBusiness && (
+          <Card padding="$4" bordered backgroundColor="$orangeMuted" borderColor="$orange">
+            <XStack gap="$3" alignItems="center">
+              <YStack flex={1} gap="$2">
+                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                  Create a Business
+                </Text>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  You need a business to manage a fleet. Set one up now.
+                </Text>
+                <XStack gap="$2" marginTop="$1">
+                  <Button size="$3" variant="primary" onPress={() => router.push("/(seller)/(drawer)/businesses/add")}>
+                    Create Business
+                  </Button>
+                  <Button size="$3" variant="outlined" onPress={() => setDismissNoBusiness(true)}>
+                    Skip
+                  </Button>
+                </XStack>
+              </YStack>
+              <XStack position="absolute" top={0} right={0}>
+                <Button circular size="$2" variant="ghost" icon={<X size={16} />} onPress={() => setDismissNoBusiness(true)} />
+              </XStack>
+            </XStack>
+          </Card>
+        )}
 
         {/* Welcome Section */}
         <YStack gap="$2">

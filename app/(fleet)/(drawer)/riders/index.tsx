@@ -141,21 +141,21 @@ export default function FleetRidersScreen() {
             variant={filterStatus === "all" ? "primary" : "outline"}
             onPress={() => setFilterStatus("all")}
           >
-            All ({riders.length || "0"})
-          </Button>
-          <Button
-            size="$2"
-            variant={filterStatus === "active" ? "primary" : "outline"}
-            onPress={() => setFilterStatus("active")}
-          >
-            Online ({riders.filter((r) => r.status === "active").length || "0"})
-          </Button>
-          <Button
-            size="$2"
-            variant={filterStatus === "inactive" ? "primary" : "outline"}
-            onPress={() => setFilterStatus("inactive")}
-          >
-            Offline ({riders.filter((r) => r.status !== "active").length || "0"})
+            All {`(${riders.length || "0"})`}
+            </Button>
+            <Button
+              size="$2"
+              variant={filterStatus === "active" ? "primary" : "outline"}
+              onPress={() => setFilterStatus("active")}
+            >
+              Online {`(${riders.filter((r) => r.status === "active").length || "0"})`}
+            </Button>
+            <Button
+              size="$2"
+              variant={filterStatus === "inactive" ? "primary" : "outline"}
+              onPress={() => setFilterStatus("inactive")}
+            >
+              Offline {`(${riders.filter((r) => r.status !== "active").length || "0"})`}
           </Button>
         </XStack>
       </YStack>

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Menu,
   RefreshCw,
+  X,
+  UserPlus,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
@@ -36,6 +38,7 @@ export default function RiderHome() {
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsive();
   const user = useAuthStore((state) => state.user);
+  const [dismissNoProfile, setDismissNoProfile] = useState(false);
 
   // TanStack Query hooks
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
@@ -143,6 +146,33 @@ export default function RiderHome() {
           status={user?.serviceStatus}
           hasCompletedKyc={user?.hasCompletedKyc}
         />
+
+        {/* No Rider Profile Banner */}
+        {!metricsData && !isLoading && !dismissNoProfile && (
+          <Card padding="$4" bordered backgroundColor="$orangeMuted" borderColor="$orange">
+            <XStack gap="$3" alignItems="center">
+              <YStack flex={1} gap="$2">
+                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                  Complete Your Rider Profile
+                </Text>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  Set up your rider profile to start accepting deliveries.
+                </Text>
+                <XStack gap="$2" marginTop="$1">
+                  <Button size="$3" variant="primary" onPress={() => router.push("/(rider)/settings/profile")}>
+                    Create Profile
+                  </Button>
+                  <Button size="$3" variant="outlined" onPress={() => setDismissNoProfile(true)}>
+                    Skip
+                  </Button>
+                </XStack>
+              </YStack>
+              <XStack position="absolute" top={0} right={0}>
+                <Button circular size="$2" variant="ghost" icon={<X size={16} />} onPress={() => setDismissNoProfile(true)} />
+              </XStack>
+            </XStack>
+          </Card>
+        )}
 
         {/* Online Status Card */}
         {!isOnline ? (

@@ -24,8 +24,10 @@ import {
   ChevronRight,
   Store,
   Package,
+  X,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
 
@@ -38,6 +40,9 @@ export default function SellerDashboard() {
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
+  const { businesses } = useBusinessStore();
+  const hasBusiness = businesses.length > 0;
 
   // TanStack Query hooks
   const { data, isLoading, refetch } = useSellerDashboardQuery();
@@ -84,6 +89,33 @@ export default function SellerDashboard() {
           status={user?.serviceStatus}
           hasCompletedKyc={user?.hasCompletedKyc}
         />
+
+        {/* No Business Banner */}
+        {!hasBusiness && !dismissNoBusiness && (
+          <Card padding="$4" bordered backgroundColor="$orangeMuted" borderColor="$orange">
+            <XStack gap="$3" alignItems="center">
+              <YStack flex={1} gap="$2">
+                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                  Create a Business
+                </Text>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  You need a business to start selling. Set one up now.
+                </Text>
+                <XStack gap="$2" marginTop="$1">
+                  <Button size="$3" variant="primary" onPress={() => router.push("/(seller)/(drawer)/businesses/add")}>
+                    Create Business
+                  </Button>
+                  <Button size="$3" variant="outlined" onPress={() => setDismissNoBusiness(true)}>
+                    Skip
+                  </Button>
+                </XStack>
+              </YStack>
+              <XStack position="absolute" top={0} right={0}>
+                <Button circular size="$2" variant="ghost" icon={<X size={16} />} onPress={() => setDismissNoBusiness(true)} />
+              </XStack>
+            </XStack>
+          </Card>
+        )}
 
         {/* Header */}
         <XStack justifyContent="space-between" alignItems="center">

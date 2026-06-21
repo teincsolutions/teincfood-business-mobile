@@ -429,6 +429,38 @@ export default function SellerDrawerLayout() {
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
+        {/* Businesses */}
+        <Drawer.Screen
+          name="businesses/index"
+          options={{
+            title: "Businesses",
+            drawerIcon: ({ color, size }) => (
+              <Building color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Business Detail */}
+        <Drawer.Screen
+          name="businesses/[id]"
+          options={{
+            title: "Business Details",
+            drawerItemStyle: { display: 'none' },
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Business Add */}
+        <Drawer.Screen
+          name="businesses/add"
+          options={{
+            title: "Add Business",
+            drawerItemStyle: { display: 'none' },
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
         {/* Settings */}
         <Drawer.Screen
           name="settings/index"

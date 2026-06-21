@@ -1,19 +1,5 @@
-import { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
-import { useAuthStore } from '@/stores/auth.store';
-import { useHasBusiness } from '@/hooks/usePrerequisiteCheck';
+import { Stack } from 'expo-router';
 
-export default function RootLayout() {
-  const router = useRouter();
-  const user = useAuthStore((s) => s.user);
-  const { data: hasBusiness, isLoading, isError } = useHasBusiness();
-
-  useEffect(() => {
-    if (isLoading || isError) return;
-    if (user && !hasBusiness) {
-      router.replace('/(seller)/businesses/add');
-    }
-  }, [hasBusiness, isLoading, isError, user, router]);
-
+export default function SellerLayout() {
   return <Stack screenOptions={{ headerShown: false }} />;
 }
