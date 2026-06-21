@@ -302,7 +302,23 @@ export default function RiderHome() {
                   flex={1}
                   variant="primary"
                   height={48}
-                  onPress={() => router.push("/(rider)/deliveries")}
+                  onPress={() => {
+                    if (!activeDelivery.pickup_lat || !activeDelivery.dropoff_lat) {
+                      router.push("/(rider)/deliveries");
+                      return;
+                    }
+                    router.push({
+                      pathname: "/(rider)/map",
+                      params: {
+                        pickupLat: activeDelivery.pickup_lat,
+                        pickupLng: activeDelivery.pickup_lng,
+                        dropoffLat: activeDelivery.dropoff_lat,
+                        dropoffLng: activeDelivery.dropoff_lng,
+                        orderId: activeDelivery.order_id,
+                        orderNumber: activeDelivery.order_number || activeDelivery.order_id,
+                      },
+                    });
+                  }}
                 >
                   Navigate
                 </Button>
@@ -310,7 +326,7 @@ export default function RiderHome() {
                   flex={1}
                   variant="outline"
                   height={48}
-                  onPress={() => router.push("/(rider)/deliveries")}
+                  onPress={() => router.push(`/(rider)/deliveries/${activeDelivery.id}`)}
                 >
                   View Details
                 </Button>

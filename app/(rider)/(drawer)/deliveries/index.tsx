@@ -124,6 +124,10 @@ export default function RiderDeliveries() {
         dropoffLng: order.delivery_lng,
         orderId: order.order_id,
         orderNumber: order.order_number,
+        pickupAddress: order.business_name || order.business_address,
+        dropoffAddress: typeof order.delivery_address === 'string'
+          ? order.delivery_address
+          : order.delivery_address?.formattedAddress || 'Dropoff',
       },
     });
   }, [router]);
@@ -283,7 +287,7 @@ export default function RiderDeliveries() {
           <XStack gap="$2" alignItems="center">
             <MapPin size={14} color="$primary" />
             <Text fontSize="$3" fontFamily="$body" color="$color">
-              Pickup: {delivery.pickup || `${delivery.pickup_lat?.toFixed(4)}, ${delivery.pickup_lng?.toFixed(4)}`}
+              Pickup: {delivery.pickup || 'Pickup location'}
             </Text>
           </XStack>
 
@@ -299,7 +303,7 @@ export default function RiderDeliveries() {
           <XStack gap="$2" alignItems="center">
             <Truck size={14} color="$success" />
             <Text fontSize="$3" fontFamily="$body" color="$color">
-              Dropoff: {delivery.dropoff || `${delivery.dropoff_lat?.toFixed(4)}, ${delivery.dropoff_lng?.toFixed(4)}`}
+              Dropoff: {delivery.dropoff || 'Dropoff location'}
             </Text>
           </XStack>
         </YStack>

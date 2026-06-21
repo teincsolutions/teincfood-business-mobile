@@ -22,7 +22,7 @@ import {
   useDeliveryDetailQuery,
   useUpdateDeliveryStatusMutation,
 } from "@/hooks/useRider";
-import type { RiderDeliveryDetail } from "@/models/rider.model";
+import type { RiderDeliveryDetail } from "@/types/api/rider.api";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
 
@@ -35,7 +35,8 @@ export default function RiderDeliveryDetails() {
   const insets = useSafeAreaInsets();
 
   // TanStack Query hooks
-  const { data: delivery, isLoading } = useDeliveryDetailQuery(id as string);
+  const { data: response, isLoading } = useDeliveryDetailQuery(id as string);
+  const delivery = response?.data ?? null;
   const updateStatus = useUpdateDeliveryStatusMutation();
 
   // Filter state
@@ -58,7 +59,7 @@ export default function RiderDeliveryDetails() {
     }
   };
 
-  const handleStatusUpdate = (newStatus: RiderDeliveryDetail["status"]) => {
+  const handleStatusUpdate = (newStatus: string) => {
     if (id) {
       updateStatus.mutate({ deliveryId: id as string, status: newStatus });
     }
@@ -152,19 +153,19 @@ export default function RiderDeliveryDetails() {
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
                 <Text fontSize="$5" fontWeight="bold">
-                  {delivery.orderId}
+                  {delivery.order_number}
                 </Text>
                 <XStack gap="$2" alignItems="center">
-                  <Truck size={16} color="$colorMuted" />
+                  <Clock size={16} color="$colorMuted" />
                   <Text fontSize="$3" color="$colorMuted">
-                    {delivery.distance}
+                    {delivery.eta_minutes ? `${delivery.eta_minutes} min` : '--'}
                   </Text>
                 </XStack>
               </XStack>
               <Separator />
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
-                <Text fontSize="$3">ETA: {delivery.estimatedTime}</Text>
+                <Text fontSize="$3">ETA: {delivery.eta_minutes ? `${delivery.eta_minutes} min` : 'Calculating...'}</Text>
                 <Text
                   flex={1}
                   textAlign="right"
@@ -172,7 +173,7 @@ export default function RiderDeliveryDetails() {
                   fontWeight="bold"
                   color="$success"
                 >
-                  +{delivery.currency} {delivery.earnings.toFixed(2)}
+                  +{delivery.currency} {((delivery.order_total_minor ?? 0) / 100).toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
@@ -326,7 +327,7 @@ export default function RiderDeliveryDetails() {
                 <Text color="$colorMuted">Order Total</Text>
                 <Text>
                   {formatPrice(
-                    delivery.orderTotal,
+                    (delivery.order_total_minor ?? 0) / 100,
                     delivery.currency || DEFAULT_CURRENCY,
                   )}
                 </Text>
@@ -335,7 +336,7 @@ export default function RiderDeliveryDetails() {
                 <Text color="$colorMuted">Delivery Fee</Text>
                 <Text>
                   {formatPrice(
-                    delivery.deliveryFee,
+                    (delivery.delivery_fee_minor ?? 0) / 100,
                     delivery.currency || DEFAULT_CURRENCY,
                   )}
                 </Text>
@@ -346,7 +347,7 @@ export default function RiderDeliveryDetails() {
                 </Text>
                 <Text fontWeight="bold" color="$success">
                   {formatPrice(
-                    delivery.earnings,
+                    (delivery.order_total_minor ?? 0) / 100,
                     delivery.currency || DEFAULT_CURRENCY,
                   )}
                 </Text>
@@ -366,12 +367,12 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor="$success"
+                  backgroundColor={delivery.status !== 'assigned' ? '$success' : '$gray800'}
                 />
                 <YStack flex={1}>
-                  <Text fontWeight="bold">Order Accepted</Text>
+                  <Text fontWeight="bold">Assigned</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.acceptedAt}
+                    {delivery.inserted_at ? new Date(delivery.inserted_at).toLocaleString() : '--'}
                   </Text>
                 </YStack>
               </XStack>
@@ -380,12 +381,12 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.pickedUpAt ? "#3498db" : "$gray800"}
+                  backgroundColor={['picked_up', 'en_route', 'arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Picked Up</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.pickedUpAt || "Pending"}
+                    {['picked_up', 'en_route', 'arrived', 'delivered'].includes(delivery.status) ? 'Confirmed' : 'Pending'}
                   </Text>
                 </YStack>
               </XStack>
@@ -394,14 +395,12 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={
-                    delivery.deliveredAt ? "$success" : "$gray800"
-                  }
+                  backgroundColor={delivery.status === 'delivered' ? '$success' : '$gray800'}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.deliveredAt || "Pending"}
+                    {delivery.status === 'delivered' ? 'Completed' : 'Pending'}
                   </Text>
                 </YStack>
               </XStack>
@@ -448,7 +447,7 @@ export default function RiderDeliveryDetails() {
                   <Text color="$colorMuted">
                     You earned{" "}
                     {formatPrice(
-                      delivery.earnings,
+                      (delivery.order_total_minor ?? 0) / 100,
                       delivery.currency || DEFAULT_CURRENCY,
                     )}
                   </Text>

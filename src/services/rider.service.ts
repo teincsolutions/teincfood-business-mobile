@@ -4,6 +4,7 @@ import type {
   RiderKycResponse,
   RiderDeliveriesResponse,
   RiderDelivery,
+  RiderDeliveryDetailResponse,
   RiderEarningsResponse,
   RiderVehicleResponse,
   AvailableOrdersResponse,
@@ -70,8 +71,8 @@ export async function fetchActiveDelivery(): Promise<RiderDeliveriesResponse> {
   return api.get<RiderDeliveriesResponse>('/riders/deliveries', { params: { page: 1, page_size: 1 } });
 }
 
-export async function fetchDeliveryDetail(deliveryId: string): Promise<{ data: RiderDelivery }> {
-  return api.get<{ data: RiderDelivery }>(`/deliveries/${deliveryId}`);
+export async function fetchDeliveryDetail(deliveryId: string): Promise<RiderDeliveryDetailResponse> {
+  return api.get<RiderDeliveryDetailResponse>(`/deliveries/${deliveryId}`);
 }
 
 export async function acceptDelivery(orderId: string): Promise<{ data: Record<string, unknown> }> {

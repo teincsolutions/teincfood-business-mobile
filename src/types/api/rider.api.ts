@@ -16,6 +16,7 @@ export interface RiderProfile {
   phone: string;
   license_number: string;
   kyc_status: string;
+  vehicle_type: string | null;
   inserted_at: string;
   updated_at: string;
 }
@@ -40,6 +41,8 @@ export interface RiderDelivery {
   order_id: string;
   order_number: string | null;
   status: string;
+  pickup: string | null;
+  dropoff: string | null;
   pickup_lat: number;
   pickup_lng: number;
   dropoff_lat: number;
@@ -95,4 +98,58 @@ export interface AvailableOrder {
 
 export interface AvailableOrdersResponse {
   data: AvailableOrder[];
+}
+
+// ─── Rider Delivery Detail ───
+
+export interface DeliveryCustomer {
+  name: string | null;
+  phone: string | null;
+}
+
+export interface DeliveryPickupLocation {
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+export interface DeliveryDropoffLocation {
+  name: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  notes: string | null;
+}
+
+export interface DeliveryItem {
+  name: string | null;
+  quantity: number;
+  price: number;
+}
+
+export interface RiderDeliveryDetail {
+  id: string;
+  order_id: string;
+  order_number: string | null;
+  status: string;
+  pickup_lat: number | null;
+  pickup_lng: number | null;
+  dropoff_lat: number | null;
+  dropoff_lng: number | null;
+  eta_minutes: number | null;
+  inserted_at: string;
+  updated_at: string;
+  customer: DeliveryCustomer;
+  pickup: DeliveryPickupLocation;
+  dropoff: DeliveryDropoffLocation;
+  items: DeliveryItem[];
+  order_total_minor: number | null;
+  delivery_fee_minor: number | null;
+  currency: string | null;
+}
+
+export interface RiderDeliveryDetailResponse {
+  data: RiderDeliveryDetail;
 }

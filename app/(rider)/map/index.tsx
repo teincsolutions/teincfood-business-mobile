@@ -1,16 +1,15 @@
 // @ts-nocheck
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
 import {
   MapPin,
   Navigation,
   Clock,
-  Package,
   Phone,
   MessageCircle,
   ArrowLeft,
-  Crosshair,
+  Truck,
 } from '@tamagui/lucide-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +18,7 @@ import * as Location from 'expo-location';
 import polyline from '@mapbox/polyline';
 import { useRiderProfileQuery, useRiderDeliveriesQuery } from '@/hooks/useRider';
 import { useRiderLocationTracking } from '@/hooks/useRiderLocationTracking';
-import { getDirectionsPolyline } from '@/services/directions.service';
+import { getDirectionsPolyline, estimateDurationSeconds } from '@/services/directions.service';
 import { phoenixSocket } from '@/services/phoenix-socket.service';
 
 const ACCRA_REGION = {
@@ -41,10 +40,13 @@ export default function RiderMap() {
     dropoffLng?: string;
     orderId?: string;
     orderNumber?: string;
+    pickupAddress?: string;
+    dropoffAddress?: string;
   }>();
   const mapRef = useRef<MapView>(null);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
+  const [routeEtaSeconds, setRouteEtaSeconds] = useState(null);
   const [riderLocation, setRiderLocation] = useState(null);
   const [initialRegion, setInitialRegion] = useState(ACCRA_REGION);
 
@@ -116,8 +118,8 @@ export default function RiderMap() {
         dropoff_lng: parseFloat(params.dropoffLng),
         status: 'assigned',
         eta_minutes: null,
-        pickup: 'Pickup location',
-        dropoff: 'Dropoff location',
+        pickup: params.pickupAddress || 'Pickup location',
+        dropoff: params.dropoffAddress || 'Dropoff location',
         currency: 'GHS',
         earnings: 0,
       }
@@ -158,25 +160,35 @@ export default function RiderMap() {
       longitude: selectedDelivery.dropoff_lng,
     };
 
+    // Set immediate offline ETA estimate
+    const immediateEta = estimateDurationSeconds(origin, destination);
+    setRouteEtaSeconds(immediateEta);
+
     getDirectionsPolyline({
       orderId: selectedDelivery.order_id,
       origin,
       destination,
-    }).then(({ polyline: encoded }) => {
+    }).then(({ polyline: encoded, durationSeconds, staticDurationSeconds }) => {
+      // Use traffic-aware duration if available, fall back to static, then offline estimate
+      const eta = durationSeconds ?? staticDurationSeconds ?? estimateDurationSeconds(origin, destination);
+      setRouteEtaSeconds(eta);
+
       if (encoded) {
         const decoded = polyline.decode(encoded);
         const coords = decoded.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
         setRouteCoords(coords);
+
+        // Fit after route is decoded + card has rendered
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.fitToCoordinates(
+                [origin, destination, ...coords],
+                { edgePadding: { top: 100, right: 50, bottom: 340, left: 50 }, animated: true },
+              );
+            }
+          }, 300);
       }
     });
-
-    // Fit map to show the full route
-    if (mapRef.current) {
-      mapRef.current.fitToCoordinates(
-        [origin, destination],
-        { edgePadding: { top: 100, right: 50, bottom: 250, left: 50 }, animated: true },
-      );
-    }
   }, [selectedDelivery]);
 
   const getStatusColor = (status) => {
@@ -189,23 +201,33 @@ export default function RiderMap() {
     }
   };
 
-  const fitMarkers = useCallback(() => {
-    if (!mapRef.current || allRouteDeliveries.length === 0) return;
+  const renderRiderMarker = () => {
+    const lat = riderLocation?.latitude ?? profileData?.current_lat ?? null;
+    const lng = riderLocation?.longitude ?? profileData?.current_lng ?? null;
+    if (lat == null || lng == null) return null;
 
-    const coords = allRouteDeliveries.flatMap((d) => [
-      { latitude: d.pickup_lat, longitude: d.pickup_lng },
-      { latitude: d.dropoff_lat, longitude: d.dropoff_lng },
-    ]);
+    const vehicleType = profileData?.vehicle_type;
+    const vehicleColor = vehicleType === 'motorcycle' ? '#f39c12' :
+      vehicleType === 'bicycle' ? '#2ecc71' :
+      vehicleType === 'car' ? '#3498db' : '#95a5a6';
 
-    if (riderLocation) {
-      coords.push(riderLocation);
-    }
-
-    mapRef.current.fitToCoordinates(coords, {
-      edgePadding: { top: 100, right: 50, bottom: 200, left: 50 },
-      animated: true,
-    });
-  }, [allRouteDeliveries, riderLocation]);
+    return (
+      <Marker
+        coordinate={{ latitude: lat, longitude: lng }}
+        title="You"
+        anchor={{ x: 0.5, y: 0.5 }}
+      >
+        <YStack
+          width={40} height={40} borderRadius={20}
+          backgroundColor={vehicleColor}
+          alignItems="center" justifyContent="center"
+          borderWidth={3} borderColor="white"
+        >
+          <Truck size={20} color="white" />
+        </YStack>
+      </Marker>
+    );
+  };
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -218,6 +240,7 @@ export default function RiderMap() {
         showsUserLocation
         showsMyLocationButton
         showsCompass
+        mapPadding={{ top: 60, bottom: selectedDelivery ? 320 : 180, left: 16, right: 16 }}
       >
         {/* Pickup Markers (green) */}
         {allRouteDeliveries.map((delivery) => (
@@ -258,6 +281,9 @@ export default function RiderMap() {
             lineDashPattern={[1]}
           />
         )}
+
+        {/* Rider vehicle marker */}
+        {renderRiderMarker()}
       </MapView>
 
       {/* Top Header Overlay */}
@@ -283,29 +309,6 @@ export default function RiderMap() {
 
         <YStack width={44} />
       </XStack>
-
-      {/* Recenter button — above bottom card */}
-      <YStack
-        position="absolute"
-        bottom={selectedDelivery ? 280 : 180}
-        right="$4"
-        zIndex={100}
-      >
-        <TouchableOpacity onPress={fitMarkers}>
-          <YStack
-            backgroundColor="$background"
-            padding="$3"
-            borderRadius="$10"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.15}
-            shadowRadius={4}
-            elevation={4}
-          >
-            <Crosshair size={22} color="$primary" />
-          </YStack>
-        </TouchableOpacity>
-      </YStack>
 
       {/* Selected Delivery Card */}
       {selectedDelivery ? (
@@ -360,7 +363,7 @@ export default function RiderMap() {
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
                 <Text fontSize="$3" fontFamily="$body">
-                  ETA: {selectedDelivery.eta_minutes ? `${selectedDelivery.eta_minutes} min` : 'Calculating...'}
+                  ETA: {routeEtaSeconds ? `${Math.ceil(routeEtaSeconds / 60)} min` : selectedDelivery.eta_minutes ? `${selectedDelivery.eta_minutes} min` : 'Calculating...'}
                 </Text>
               </XStack>
 
