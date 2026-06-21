@@ -126,7 +126,7 @@ function CustomDrawerContent(props: any) {
             </Text>
           </Button>
 
-          {/* Finance */}
+          {/* Wallet & Billing */}
           <Button
             variant="ghost"
             flexDirection="row"
@@ -139,7 +139,7 @@ function CustomDrawerContent(props: any) {
             justifyContent="flex-start"
           >
             <Text flex={1} fontSize="$4" fontFamily="$body">
-              Finance
+              Wallet & Billing
             </Text>
           </Button>
 

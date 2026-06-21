@@ -149,7 +149,7 @@ function CustomDrawerContent(props: any) {
             </Text>
           </Button>
 
-          {/* Finance */}
+          {/* Wallet & Billing */}
           <Button
             unstyled
             flexDirection="row"
@@ -162,7 +162,7 @@ function CustomDrawerContent(props: any) {
             icon={<DollarSign size={20} color={theme.color.val} />}
           >
             <Text flex={1} fontSize="$4">
-              Finance
+              Wallet & Billing
             </Text>
           </Button>
 

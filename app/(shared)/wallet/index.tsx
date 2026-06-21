@@ -50,10 +50,10 @@ export default function WalletScreen() {
           <BackButton />
           <YStack gap="$1" flex={1}>
             <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-              Finance
+              Wallet & Billing
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Balance, earnings, and billing
+              Balance, transactions, and billing
             </Text>
           </YStack>
         </XStack>

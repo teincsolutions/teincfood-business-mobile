@@ -5,7 +5,7 @@ const googleServicesJson =
 
 module.exports = {
   expo: {
-    name: "TeincFoodBusiness",
+    name: "TF Business",
     slug: "teinc-food-business",
     owner: "teincsolutions",
     version: "1.0.0",
