@@ -46,7 +46,9 @@ function CustomDrawerContent(props: any) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { data: riderProfile, isLoading: profileLoading } = useRiderProfileQuery();
-  const isOnline = riderProfile?.is_online ?? user?.isOnline ?? false;
+  const riderStatus = riderProfile?.status ?? 'offline';
+  const statusLabel = riderStatus === 'available' ? 'Online' : riderStatus === 'busy' ? 'Busy' : 'Offline';
+  const statusColor = riderStatus === 'available' ? '$green10' : riderStatus === 'busy' ? '$yellow10' : '$gray800';
 
   const handleLogout = () => {
     clearAuth();
@@ -91,10 +93,10 @@ function CustomDrawerContent(props: any) {
                     width={8}
                     height={8}
                     borderRadius="$10"
-                    backgroundColor={isOnline ? "$green10" : "$gray800"}
+                    backgroundColor={statusColor}
                   />
                   <Text color="white" opacity={0.8} fontSize="$2">
-                    {isOnline ? "Online" : "Offline"}
+                    {statusLabel}
                   </Text>
                 </>
               )}

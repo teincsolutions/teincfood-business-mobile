@@ -47,7 +47,7 @@ export default function RiderHome() {
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
   // Online status from rider profile (backend source of truth)
-  const isOnline = metricsData?.is_online ?? false;
+  const isOnline = metricsData?.status === 'available';
 
   // Use query data or fallback to defaults
   const metrics = {

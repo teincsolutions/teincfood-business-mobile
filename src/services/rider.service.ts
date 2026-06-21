@@ -28,7 +28,7 @@ export async function deactivateRider(): Promise<{ data: Record<string, unknown>
 }
 
 export async function updateOnlineStatus(isOnline: boolean): Promise<RiderProfileResponse> {
-  return api.patch<RiderProfileResponse>('/riders/profile', { is_online: isOnline });
+  return api.patch<RiderProfileResponse>('/riders/profile', { status: isOnline ? 'available' : 'offline' });
 }
 
 // ─── Rider KYC ───
