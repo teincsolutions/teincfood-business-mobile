@@ -5,7 +5,7 @@ import { Card, Image, Text, XStack, YStack } from 'tamagui';
 import { Clock, Package, Star, Trash2, FileText } from '@tamagui/lucide-icons';
 import { Button } from '@/components/ui';
 import { formatCurrency } from '@/utils/formatCurrency';
-import type { Order } from '@/models/order.model';
+import type { Order } from '@/types/order.model';
 import { RatingModal } from './RatingModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { useCartStore } from '@/stores/cart.store';

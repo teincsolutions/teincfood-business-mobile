@@ -7,7 +7,7 @@
  */
 
 import { Platform } from 'react-native';
-import type { Order } from '@/models/order.model';
+import type { Order } from '@/types/order.model';
 import {
   showProgressNotification,
   dismissProgressNotification,

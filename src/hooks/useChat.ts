@@ -13,7 +13,7 @@ import type {
   ConversationListResponse,
   Conversation,
   ConversationMessage,
-} from '@/models/api';
+} from '@/types/api';
 
 const EMPTY_MESSAGES: StoredMessage[] = [];
 

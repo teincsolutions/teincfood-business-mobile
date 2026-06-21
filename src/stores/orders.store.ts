@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
-import type { Order } from '@/models/order.model';
+import type { Order } from '@/types/order.model';
 
 interface OrdersState {
   orders: Order[];

@@ -3,7 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { AlertTriangle, Clock, ShieldCheck, ShieldOff, FileText } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import type { ServiceStatus } from '@/models/user.model';
+import type { ServiceStatus } from '@/types/user.model';
 
 interface BannerConfig {
   bg: string;

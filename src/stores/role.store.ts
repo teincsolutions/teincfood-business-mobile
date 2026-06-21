@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
-import type { UserRole } from '@/models/user.model';
+import type { UserRole } from '@/types/user.model';
 
 interface RoleState {
   role: UserRole | null;

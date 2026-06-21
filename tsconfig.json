@@ -9,7 +9,6 @@
       "@hooks/*": ["src/hooks/*"],
       "@services/*": ["src/services/*"],
       "@stores/*": ["src/stores/*"],
-      "@models/*": ["src/models/*"],
       "@providers/*": ["src/providers/*"],
       "@theme/*": ["src/theme/*"],
       "@utils/*": ["src/utils/*"]

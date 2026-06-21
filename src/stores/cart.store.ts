@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
-import type { FoodItem as Food, FoodAddon } from '@/models/food.model';
+import type { FoodItem as Food, FoodAddon } from '@/types/food.model';
 
 export interface CartItem {
   cartItemId: string; // Unique id combining foodId, size, and addons e.g., 'f1-14inch-addon1-addon2'

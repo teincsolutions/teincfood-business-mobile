@@ -11,7 +11,7 @@ import type {
   DeliveryZone,
   NavigationSettings,
   NavigationApp,
-} from '@/models/rider.model';
+} from '@/types/rider.model';
 import * as riderService from '@/services/rider.service';
 
 // Query keys

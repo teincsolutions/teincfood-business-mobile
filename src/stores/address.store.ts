@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandStorage } from '@/utils/storage';
-import type { Address } from '@/models/user.model';
+import type { Address } from '@/types/user.model';
 
 interface AddressState {
   addresses: Address[];

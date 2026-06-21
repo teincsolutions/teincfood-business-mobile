@@ -4,7 +4,7 @@ import { Truck, FileText } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/utils/currency';
-import type { KioskOrder } from '@/models/kiosk.model';
+import type { KioskOrder } from '@/types/kiosk.model';
 
 interface ReadyOrderCardProps {
   order: KioskOrder;

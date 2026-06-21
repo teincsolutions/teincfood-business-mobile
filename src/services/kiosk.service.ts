@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { KioskOrder, KioskOrdersResponse } from '@/models/api';
+import type { KioskOrder, KioskOrdersResponse } from '@/types/api';
 
 export async function fetchKioskOrders(): Promise<KioskOrdersResponse> {
   return api.get<KioskOrdersResponse>('/orders');

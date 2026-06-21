@@ -12,7 +12,7 @@ import type {
   TaxRule,
   TaxRuleListResponse,
   TaxRuleResponse,
-} from '@/models/api';
+} from '@/types/api';
 
 // ─── My Businesses ───
 

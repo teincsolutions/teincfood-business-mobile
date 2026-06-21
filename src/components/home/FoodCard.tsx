@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Card, Image, Text, XStack, YStack, Button } from 'tamagui';
 import { Heart, Plus } from '@tamagui/lucide-icons';
-import { Food } from '@/models/food.model';
+import { Food } from '@/types/food.model';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useFavoritesStore } from '@/stores/favorites.store';
 import { AppAlertDialog } from '@/components/ui';

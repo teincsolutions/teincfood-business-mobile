@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { FleetRider, FleetVehicle, FleetDashboard } from '@/models/fleet.model';
+import type { FleetRider, FleetVehicle, FleetDashboard } from '@/types/fleet.model';
 import * as fleetService from '@/services/fleet.service';
 
 const FLEET_KEYS = {

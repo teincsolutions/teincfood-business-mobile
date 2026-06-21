@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { User } from '@/models/user.model';
+import type { User } from '@/types/user.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { useRoleStore } from './role.store';

@@ -4,7 +4,7 @@ import type {
   FleetRidersResponse,
   FleetVehicle,
   FleetVehiclesResponse,
-} from '@/models/api';
+} from '@/types/api';
 
 // ─── Riders ───
 

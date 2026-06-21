@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { profileService } from '@/services/profile.service';
 import { useAuthStore } from '@/stores/auth.store';
-import type { User } from '@/models/user.model';
+import type { User } from '@/types/user.model';
 
 export function useProfileQuery() {
   const setUser = useAuthStore((state) => state.setUser);

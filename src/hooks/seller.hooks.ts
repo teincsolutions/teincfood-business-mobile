@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SellerOrder } from '@/models/seller.model';
+import type { SellerOrder } from '@/types/seller.model';
 import * as sellerService from '@/services/seller.service';
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────

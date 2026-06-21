@@ -8,7 +8,7 @@ import type {
   MenuItemVariant as ApiMenuItemVariant,
   MenuItemAddon as ApiMenuItemAddon,
   CatalogItemRequest,
-} from '@/models/api';
+} from '@/types/api';
 
 // ─── Re-export API types for consumers ───
 

@@ -7,7 +7,7 @@ import type {
   RiderEarningsResponse,
   RiderVehicleResponse,
   PaginationMeta,
-} from '@/models/api';
+} from '@/types/api';
 
 // ─── Rider Profile ───
 

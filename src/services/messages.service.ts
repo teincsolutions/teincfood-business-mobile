@@ -8,7 +8,7 @@ import type {
   ConversationResponse,
   ConversationMessagesResponse,
   ConversationMessage,
-} from '@/models/api';
+} from '@/types/api';
 
 export function useInboxConversationsQuery() {
   return useQuery<ConversationListResponse>({

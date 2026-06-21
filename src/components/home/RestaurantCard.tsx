@@ -2,7 +2,7 @@
 import { useRouter } from 'expo-router';
 import { Card, Image, Text, XStack, YStack } from 'tamagui';
 import { MapPin, Clock, Star, Heart } from '@tamagui/lucide-icons';
-import { User } from '@/models/user.model';
+import { User } from '@/types/user.model';
 import { useFavoritesStore } from '@/stores/favorites.store';
 import { Button } from '@/components/ui';
 

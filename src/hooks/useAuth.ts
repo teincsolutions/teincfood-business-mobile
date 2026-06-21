@@ -6,7 +6,7 @@ import { useLocationStore } from '@/stores/location.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
 import type { AuthApiResponse } from '@/services/auth.service';
-import type { User } from '@/models/user.model';
+import type { User } from '@/types/user.model';
 
 export interface AuthError {
   code?: string;

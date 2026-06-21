@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { FleetManager, FleetVehicle, FleetRider, FleetDashboard } from '@/models/fleet.model';
+import type { FleetManager, FleetVehicle, FleetRider, FleetDashboard } from '@/types/fleet.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 

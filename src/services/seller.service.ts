@@ -3,7 +3,7 @@ import type {
   SellerOrder,
   SellerOrdersResponse,
   SellerOrderDetailResponse,
-} from '@/models/api';
+} from '@/types/api';
 
 // ─── Orders ───
 

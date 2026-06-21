@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Business, BusinessSummary } from '@/models/business.model';
+import type { Business, BusinessSummary } from '@/types/business.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 
