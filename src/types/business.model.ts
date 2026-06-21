@@ -36,7 +36,7 @@ export interface PaymentSettings {
   payoutSchedule: 'daily' | 'weekly' | 'biweekly' | 'monthly';
 }
 
-export type BusinessType = 'restaurant' | 'cafe' | 'bakery' | 'food_truck' | 'cloud_kitchen' | 'catering';
+export type BusinessType = 'merchant' | 'delivery_provider';
 
 export type BusinessStatus = 'active' | 'inactive' | 'pending_verification' | 'suspended';
 

@@ -1,110 +1,152 @@
 // @ts-nocheck
-import { useState } from "react";
-import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { useState, useRef } from "react";
+import { ScrollView, KeyboardAvoidingView, Platform, FlatList, TouchableOpacity } from "react-native";
 import {
   YStack,
   XStack,
   Text,
   Card,
-  Select,
-  Adapt,
-  Sheet,
   Form,
   Label,
+  Spinner,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
-import { FormInput, Button, BackButton } from "@/components/ui";
-
+import { FormInput, Button, BackButton, Input } from "@/components/ui";
 import { useBusinessStore } from "@/stores/business.store";
-import { Building, MapPin, Phone, Mail, Hash } from "@tamagui/lucide-icons";
+import { useRoleStore } from "@/stores/role.store";
+import { Building, MapPin, Phone, Mail, Navigation, Check, Search } from "@tamagui/lucide-icons";
+import { placesService, type PlaceSuggestion, type PlaceDetails } from "@/services/places.service";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 
 export default function AddBusinessScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { addBusiness } = useBusinessStore();
+  const role = useRoleStore((s) => s.role);
+  const businessType = role === 'fleet_manager' ? 'delivery_provider' : 'merchant';
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const [form, setForm] = useState({
     name: "",
-    type: "",
-    address: "",
-    city: "",
     phone: "",
     email: "",
   });
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const { isLocating, getCurrentLocation } = useCurrentLocation();
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear error when user starts typing
     if (errors[key]) {
       setErrors((prev) => ({ ...prev, [key]: "" }));
     }
   };
 
+  const handleSearch = (text: string) => {
+    setPlaceQuery(text);
+    setSelectedPlace(null);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (text.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    setSearching(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const results = await placesService.searchPlaces(text);
+        setSuggestions(results);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
+
+  const handleSelectPlace = async (suggestion: PlaceSuggestion) => {
+    setSuggestions([]);
+    setPlaceQuery(suggestion.description);
+    setLoadingDetails(true);
+
+    try {
+      const details = await placesService.getPlaceDetails(suggestion.placeId);
+      if (details) {
+        setSelectedPlace(details);
+        setErrors((prev) => ({ ...prev, address: "", city: "" }));
+      }
+    } catch {
+      setSelectedPlace({
+        placeId: suggestion.placeId,
+        formattedAddress: suggestion.description,
+        street: suggestion.mainText || suggestion.description,
+        city: "",
+        region: "",
+        postalCode: "",
+        country: "",
+        latitude: 0,
+        longitude: 0,
+      });
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    const place = await getCurrentLocation();
+    if (place) {
+      setSelectedPlace(place);
+      setPlaceQuery(place.formattedAddress);
+      setSuggestions([]);
+      setErrors((prev) => ({ ...prev, address: "", city: "" }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!form.name.trim()) {
-      newErrors.name = "Business name is required";
-    }
-
-    if (!form.type) {
-      newErrors.type = "Business type is required";
-    }
-
-    if (!form.address.trim()) {
-      newErrors.address = "Business address is required";
-    }
-
-    if (!form.city.trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!form.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    }
-
+    if (!form.name.trim()) newErrors.name = "Business name is required";
+    if (!selectedPlace) newErrors.address = "Please select an address";
+    if (!form.phone.trim()) newErrors.phone = "Phone number is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const generateBusinessCode = (name: string, city: string) => {
-    const prefix = name.substring(0, 3).toUpperCase();
-    const cityCode = city.substring(0, 3).toUpperCase();
-    const seq = Math.floor(Math.random() * 900) + 100;
-    return `${prefix}-${cityCode}-${seq}`;
-  };
-
   const handleAddBusiness = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm() || !selectedPlace) return;
 
     setIsLoading(true);
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const businessCode = generateBusinessCode(form.name, form.city);
+      const prefix = form.name.substring(0, 3).toUpperCase();
+      const cityCode = (selectedPlace.city || "ACC").substring(0, 3).toUpperCase();
+      const seq = Math.floor(Math.random() * 900) + 100;
+      const businessCode = `${prefix}-${cityCode}-${seq}`;
 
       const newBusiness = {
         id: `business_${Date.now()}`,
         code: businessCode,
+        type: businessType,
         ownerId: "user_001",
         name: form.name.trim(),
-        type: form.type as any,
         address: {
-          street: form.address.trim(),
-          city: form.city.trim(),
-          region: form.city.trim(),
-          country: "Ghana",
-          latitude: 0,
-          longitude: 0,
-          fullAddress: `${form.address.trim()}, ${form.city.trim()}`,
+          street: selectedPlace.street || selectedPlace.formattedAddress,
+          city: selectedPlace.city || "",
+          region: selectedPlace.region || "",
+          country: selectedPlace.country || "Ghana",
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
+          fullAddress: selectedPlace.formattedAddress,
         },
         phone: form.phone.trim(),
         email: form.email.trim() || undefined,
@@ -118,9 +160,6 @@ export default function AddBusinessScreen() {
       };
 
       addBusiness(newBusiness as any);
-
-      // Navigate to the new business's detail page so the seller can
-      // add a logo, edit details, and upload operational documents immediately
       router.replace(`/(seller)/businesses/${newBusiness.id}`);
     } catch (err: any) {
       setErrors({
@@ -138,6 +177,7 @@ export default function AddBusinessScreen() {
     >
       <ScrollView
         style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
@@ -171,7 +211,7 @@ export default function AddBusinessScreen() {
           <Form onSubmit={handleAddBusiness} gap="$4">
             <FormInput
               label="Business Name"
-              placeholder="My Restaurant"
+              placeholder={businessType === 'delivery_provider' ? 'My Delivery Company' : 'My Restaurant'}
               value={form.name}
               onChangeText={(value) => updateField("name", value)}
               icon={<Building size={20} color="$colorMuted" />}
@@ -179,127 +219,129 @@ export default function AddBusinessScreen() {
               required
             />
 
+            {/* Place Search */}
             <YStack gap="$2">
               <Label
-                htmlFor="businessType"
                 fontSize="$4"
                 fontWeight="500"
                 fontFamily="$body"
                 color="$color"
               >
-                Business Type *
+                Business Address *
               </Label>
-              <Select
-                value={form.type}
-                onValueChange={(value) => updateField("type", value)}
-                disablePreventBodyScroll
+              <XStack gap="$2" alignItems="center">
+                <YStack flex={1} position="relative">
+                  <Input
+                    placeholder="Search for an address or area..."
+                    value={placeQuery}
+                    onChangeText={handleSearch}
+                    paddingStart="$10"
+                    borderColor={errors.address ? "$error" : "$borderColor"}
+                  />
+                  <YStack position="absolute" left="$3" top="$3.5">
+                    <Search size={20} color="$colorMuted" />
+                  </YStack>
+                  {searching && (
+                    <YStack position="absolute" right="$3" top="$3.5">
+                      <Spinner size="small" />
+                    </YStack>
+                  )}
+                </YStack>
+              </XStack>
+
+              <Button
+                variant="outline"
+                icon={<MapPin size={16} />}
+                onPress={handleUseCurrentLocation}
+                disabled={isLocating}
+                opacity={isLocating ? 0.7 : 1}
               >
-                <Select.Trigger
-                  iconAfter={Building}
-                  borderRadius="$4"
+                {isLocating ? "Getting location..." : "Use Current Location"}
+              </Button>
+
+              {/* Suggestions dropdown */}
+              {suggestions.length > 0 && (
+                <Card
+                  bordered
+                  padding="$1"
                   backgroundColor="$background"
-                  borderColor={errors.type ? "$error" : "$borderColor"}
-                  focusStyle={{
-                    borderColor: errors.type ? "$error" : "$primary",
-                  }}
+                  elevation="$6"
                 >
-                  <Select.Value placeholder="Select business type" />
-                </Select.Trigger>
+                  <FlatList
+                    data={suggestions}
+                    keyExtractor={(item) => item.placeId}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => handleSelectPlace(item)}
+                        style={{ paddingHorizontal: 12, paddingVertical: 10 }}
+                      >
+                        <XStack gap="$2" alignItems="center">
+                          <MapPin size={16} color="$colorMuted" />
+                          <YStack flex={1}>
+                            <Text fontSize="$3" fontWeight="500" fontFamily="$body" color="$color">
+                              {item.mainText || item.description}
+                            </Text>
+                            {item.secondaryText && (
+                              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                                {item.secondaryText}
+                              </Text>
+                            )}
+                          </YStack>
+              </XStack>
+              <Button
+                variant="outline"
+                icon={<MapPin size={16} />}
+                onPress={handleUseCurrentLocation}
+                disabled={isLocating}
+                opacity={isLocating ? 0.7 : 1}
+              >
+                {isLocating ? "Getting location..." : "Use Current Location"}
+              </Button>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </Card>
+              )}
 
-                <Adapt when="maxSm" platform="touch">
-                  <Sheet native modal dismissOnSnapToBottom animation="medium">
-                    <Sheet.Frame>
-                      <Sheet.ScrollView>
-                        <Adapt.Contents />
-                      </Sheet.ScrollView>
-                    </Sheet.Frame>
-                    <Sheet.Overlay
-                      bg="$shadowColor"
-                      animation="lazy"
-                      enterStyle={{ opacity: 0 }}
-                      exitStyle={{ opacity: 0 }}
-                    />
-                  </Sheet>
-                </Adapt>
+              {/* Loading details */}
+              {loadingDetails && (
+                <XStack gap="$2" alignItems="center" padding="$2">
+                  <Spinner size="small" />
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    Getting address details...
+                  </Text>
+                </XStack>
+              )}
 
-                <Select.Content>
-                  <Select.ScrollUpButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Building size={20} />
-                  </Select.ScrollUpButton>
+              {/* Selected place confirmation */}
+              {selectedPlace && !loadingDetails && (
+                <Card padding="$3" bordered borderColor="$primary" backgroundColor="$primaryLight">
+                  <XStack gap="$2" alignItems="flex-start">
+                    <Check size={16} color="$primary" style={{ marginTop: 2 }} />
+                    <YStack flex={1} gap="$1">
+                      <Text fontSize="$3" fontWeight="600" fontFamily="$body" color="$primary">
+                        Address Selected
+                      </Text>
+                      <Text fontSize="$3" color="$color" fontFamily="$body">
+                        {selectedPlace.formattedAddress}
+                      </Text>
+                      {selectedPlace.latitude !== 0 && (
+                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                          {selectedPlace.latitude.toFixed(4)}, {selectedPlace.longitude.toFixed(4)}
+                        </Text>
+                      )}
+                    </YStack>
+                  </XStack>
+                </Card>
+              )}
 
-                  <Select.Viewport
-                    minW={200}
-                    bg="$background"
-                    borderRadius="$4"
-                    borderWidth={1}
-                    borderColor="$borderColor"
-                  >
-                    <Select.Group>
-                      <Select.Label fontWeight="700">
-                        Business Types
-                      </Select.Label>
-                      <Select.Item index={0} value="restaurant">
-                        <Select.ItemText>Restaurant</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={1} value="cafe">
-                        <Select.ItemText>Cafe</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={2} value="bakery">
-                        <Select.ItemText>Bakery</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={3} value="food_truck">
-                        <Select.ItemText>Food Truck</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={4} value="cloud_kitchen">
-                        <Select.ItemText>Cloud Kitchen</Select.ItemText>
-                      </Select.Item>
-                      <Select.Item index={5} value="catering">
-                        <Select.ItemText>Catering</Select.ItemText>
-                      </Select.Item>
-                    </Select.Group>
-                  </Select.Viewport>
-
-                  <Select.ScrollDownButton
-                    items="center"
-                    justify="center"
-                    position="relative"
-                    width="100%"
-                    height="$3"
-                  >
-                    <Building size={20} />
-                  </Select.ScrollDownButton>
-                </Select.Content>
-              </Select>
-              {errors.type && (
+              {errors.address && (
                 <Text fontSize="$2" color="$red10" fontFamily="$body">
-                  {errors.type}
+                  {errors.address}
                 </Text>
               )}
             </YStack>
-
-            <FormInput
-              label="Street Address"
-              placeholder="123 Main Street"
-              value={form.address}
-              onChangeText={(value) => updateField("address", value)}
-              icon={<MapPin size={20} color="$colorMuted" />}
-              required
-            />
-
-            <FormInput
-              label="City"
-              placeholder="Accra"
-              value={form.city}
-              onChangeText={(value) => updateField("city", value)}
-              icon={<MapPin size={20} color="$colorMuted" />}
-              required
-            />
 
             <FormInput
               label="Phone Number"
