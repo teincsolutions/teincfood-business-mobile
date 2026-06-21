@@ -95,3 +95,22 @@ This file is for AI coding agents. Always re-read this file before starting work
 - [x] **Chat screen** — uses `useChatStore` for message persistence; removes local mock data; supports both support and conversation-based chats; real WebSocket send
 - [x] **Deleted `useMessages.ts`** — dead code, never imported by any screen
 - [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors
+
+---
+
+## Phase 5: Business Context & API Alignment 🔄 IN PROGRESS
+
+See [detailed plan](.opencode/plans/business-context-plan.md) for full breakdown.
+
+**Top-level checklist:**
+
+- [ ] **Step 1:** Backend — FleetController: support `business_id` for members
+- [ ] **Step 2:** Frontend — `useActiveBusiness` hook
+- [ ] **Step 3:** Frontend — Business selector flow at login
+- [ ] **Step 4:** Frontend — Remove Businesses from drawer → settings
+- [ ] **Step 5:** Frontend — Wire business context into seller APIs
+- [ ] **Step 6:** Frontend — Wire business context into fleet APIs
+- [ ] **Step 7:** Frontend — Wallet service for business finance
+- [ ] **Step 8:** Frontend — Wire settings store toggle to backend
+- [ ] **Step 9:** Frontend — Active business header indicator
+- [ ] **Step 10:** Test & verify — `npx tsc --noEmit` 0 errors
