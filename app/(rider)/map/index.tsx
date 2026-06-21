@@ -26,7 +26,6 @@ import {
   useRiderProfileQuery,
   useRiderDeliveriesQuery,
 } from "@/hooks/useRider";
-import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import {
   getDirectionsPolyline,
   estimateDurationSeconds,
@@ -69,11 +68,7 @@ export default function RiderMap() {
   const { data: profileData } = useRiderProfileQuery();
   const { data: deliveries = [] } = useRiderDeliveriesQuery();
 
-  const isOnline = profileData?.status === "available";
   const riderId = profileData?.id;
-
-  // Live GPS tracking
-  useRiderLocationTracking({ riderId, enabled: isOnline });
 
   // Listen for location updates on the WebSocket channel
   useEffect(() => {

@@ -28,7 +28,6 @@ import {
   useUpdateOnlineStatusMutation,
   useRiderDeliveriesQuery,
 } from "@/hooks/useRider";
-import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -51,12 +50,6 @@ export default function RiderHome() {
 
   // Online status from rider profile (backend source of truth)
   const isOnline = metricsData?.status === 'available';
-
-  // Live GPS tracking — active when rider is online
-  useRiderLocationTracking({
-    riderId: profileData?.id,
-    enabled: isOnline,
-  });
 
   // Use query data or fallback to defaults
   const metrics = {

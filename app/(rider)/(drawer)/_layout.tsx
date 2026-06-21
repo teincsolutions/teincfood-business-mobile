@@ -28,6 +28,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRiderProfileQuery } from "@/hooks/useRider";
+import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   DrawerContentScrollView,
@@ -306,6 +307,10 @@ export default function RiderDrawerLayout() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = Boolean(user && accessToken);
   const { isTablet, isLandscape } = useResponsive();
+
+  const { data: riderProfile } = useRiderProfileQuery();
+  const isOnline = riderProfile?.status === 'available';
+  useRiderLocationTracking({ riderId: riderProfile?.id, enabled: isOnline });
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
