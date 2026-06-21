@@ -1,7 +1,4 @@
-import type { FoodCategory, FoodAddon } from '@/models/food.model';
-import { formatPrice, DEFAULT_CURRENCY } from '@/utils/currency';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { api } from './api';
 
 export interface Variant {
   id: string;
@@ -19,7 +16,7 @@ export interface MenuItem {
   id: string;
   name: string;
   description: string;
-  priceMinor: number; // in pesewas
+  priceMinor: number;
   category: string;
   available: boolean;
   dietaryTags: string[];
@@ -40,12 +37,8 @@ export interface MenuItemForm {
   images: string[];
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 export const MENU_CATEGORIES = ['All', 'Main', 'Snacks', 'Protein', 'Drinks', 'Desserts'];
-
 export const DIETARY_TAGS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Halal'];
-
 export const EMPTY_FORM: MenuItemForm = {
   name: '',
   description: '',
@@ -58,146 +51,85 @@ export const EMPTY_FORM: MenuItemForm = {
   images: [],
 };
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-let menuItems: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Jollof Rice',
-    description: 'Classic West African jollof rice served with stew',
-    priceMinor: 2500,
-    category: 'Main',
-    available: true,
-    dietaryTags: ['Halal'],
-    variants: [
-      { id: 'v1a', label: 'Small', priceMinor: 2000 },
-      { id: 'v1b', label: 'Large', priceMinor: 3500 },
-    ],
-    extras: [{ id: 'e1a', label: 'Extra Stew', priceMinor: 500 }],
-    images: ['https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'],
-  },
-  {
-    id: '2',
-    name: 'Banku & Tilapia',
-    description: 'Fermented corn dough with grilled whole tilapia',
-    priceMinor: 4500,
-    category: 'Main',
-    available: true,
-    dietaryTags: ['Halal', 'Gluten-free'],
-    variants: [],
-    extras: [{ id: 'e2a', label: 'Extra Pepper', priceMinor: 200 }],
-    images: ['https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400'],
-  },
-  {
-    id: '3',
-    name: 'Waakye',
-    description: 'Rice & beans cooked with sorghum leaves',
-    priceMinor: 2000,
-    category: 'Main',
-    available: false,
-    dietaryTags: ['Vegetarian', 'Halal'],
-    variants: [],
-    extras: [],
-    images: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400'],
-  },
-  {
-    id: '4',
-    name: 'Kelewele',
-    description: 'Spiced fried plantain cubes',
-    priceMinor: 1000,
-    category: 'Snacks',
-    available: true,
-    dietaryTags: ['Vegan', 'Gluten-free'],
-    variants: [],
-    extras: [],
-    images: ['https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400'],
-  },
-  {
-    id: '5',
-    name: 'Grilled Chicken',
-    description: 'Whole grilled chicken with marinade',
-    priceMinor: 3500,
-    category: 'Protein',
-    available: true,
-    dietaryTags: ['Halal', 'Gluten-free'],
-    variants: [
-      { id: 'v5a', label: 'Half', priceMinor: 2000 },
-      { id: 'v5b', label: 'Full', priceMinor: 3500 },
-    ],
-    extras: [{ id: 'e5a', label: 'Extra Sauce', priceMinor: 300 }],
-    images: ['https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400'],
-  },
-];
-
-// ─── Utility Functions ───────────────────────────────────────────────────────
-
 export function toMinor(ghsStr: string): number {
   const n = parseFloat(ghsStr);
   return isNaN(n) ? 0 : Math.round(n * 100);
 }
 
-// ─── Mock API Functions ──────────────────────────────────────────────────────
+// ─── Public Menu Endpoints ───
 
-const SIMULATED_DELAY = 300;
-
-export async function fetchMenuItems(): Promise<MenuItem[]> {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve([...menuItems]), SIMULATED_DELAY);
-  });
+export async function fetchBusinessMenu(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/menu`);
 }
 
-export async function createMenuItem(item: Omit<MenuItem, 'id'>): Promise<MenuItem> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newItem: MenuItem = {
-        ...item,
-        id: Date.now().toString(),
-      };
-      menuItems = [newItem, ...menuItems];
-      resolve(newItem);
-    }, SIMULATED_DELAY);
-  });
+export async function fetchBusinessMenuItems(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/menu/items`);
 }
 
-export async function updateMenuItem(
-  id: string,
-  updates: Partial<MenuItem>
-): Promise<MenuItem> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const index = menuItems.findIndex((i) => i.id === id);
-      if (index !== -1) {
-        menuItems[index] = { ...menuItems[index], ...updates };
-        resolve(menuItems[index]);
-      } else {
-        resolve(menuItems[0]);
-      }
-    }, SIMULATED_DELAY);
-  });
+export async function fetchCatalogItems(): Promise<any> {
+  return api.get('/catalog/items');
 }
 
-export async function deleteMenuItem(id: string): Promise<{ success: boolean }> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      menuItems = menuItems.filter((item) => item.id !== id);
-      resolve({ success: true });
-    }, SIMULATED_DELAY);
-  });
+export async function fetchCatalogCategories(): Promise<any> {
+  return api.get('/catalog/categories');
 }
 
-export async function toggleItemAvailability(
-  id: string,
-  available: boolean
-): Promise<MenuItem> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const index = menuItems.findIndex((i) => i.id === id);
-      if (index !== -1) {
-        menuItems[index] = { ...menuItems[index], available };
-        resolve(menuItems[index]);
-      } else {
-        resolve(menuItems[0]);
-      }
-    }, SIMULATED_DELAY);
-  });
+export async function searchCatalogItems(query: string): Promise<any> {
+  return api.get('/catalog/items/search', { params: { q: query } });
+}
+
+export async function fetchCatalogItem(itemId: string): Promise<any> {
+  return api.get(`/catalog/items/${itemId}`);
+}
+
+// ─── Seller Menu Management ───
+
+export async function fetchBusinessCategories(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/menu/categories`);
+}
+
+export async function createBusinessCategory(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/menu/categories`, data);
+}
+
+export async function createBusinessMenuItem(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/menu/items`, data);
+}
+
+export async function updateMenuItem(itemId: string, data: any): Promise<any> {
+  return api.put(`/menu/items/${itemId}`, data);
+}
+
+export async function createItemVariant(itemId: string, data: any): Promise<any> {
+  return api.post(`/menu/items/${itemId}/variants`, data);
+}
+
+export async function deleteItemVariant(itemId: string, variantId: string): Promise<any> {
+  return api.delete(`/menu/items/${itemId}/variants/${variantId}`);
+}
+
+export async function createItemAddon(itemId: string, data: any): Promise<any> {
+  return api.post(`/menu/items/${itemId}/addons`, data);
+}
+
+export async function deleteItemAddon(itemId: string, addonId: string): Promise<any> {
+  return api.delete(`/menu/items/${itemId}/addons/${addonId}`);
+}
+
+// ─── Legacy aliases ───
+
+export async function fetchMenuItems(): Promise<any> {
+  return api.get('/catalog/items');
+}
+
+export async function createMenuItem(item: any): Promise<any> {
+  return api.post('/catalog/items', item);
+}
+
+export async function deleteMenuItem(id: string): Promise<any> {
+  return api.delete(`/menu/items/${id}`);
+}
+
+export async function toggleItemAvailability(id: string, available: boolean): Promise<any> {
+  return api.put(`/menu/items/${id}`, { is_available: available });
 }

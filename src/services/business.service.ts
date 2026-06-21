@@ -1,98 +1,113 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { 
-  Business, 
-  BusinessSummary, 
-  CreateBusinessRequest, 
-  UpdateBusinessRequest 
-} from '@/models/business.model';
 import { api } from './api';
 
-export function generateBusinessCode(name: string, city: string): string {
-  const prefix = name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
-  const cityCode = city.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
-  const sequence = Math.floor(Math.random() * 999) + 1;
-  return `${prefix}-${cityCode}-${sequence.toString().padStart(3, '0')}`;
+// ─── My Businesses ───
+
+export async function fetchMyBusinesses(): Promise<any> {
+  return api.get('/businesses/me');
 }
 
-export const businessService = {
-  async getBusinesses(): Promise<BusinessSummary[]> {
-    return api.get('/v1/seller/businesses');
-  },
-
-  async getBusiness(id: string): Promise<Business> {
-    return api.get(`/v1/seller/businesses/${id}`);
-  },
-
-  async createBusiness(data: CreateBusinessRequest): Promise<Business> {
-    return api.post('/v1/seller/businesses', data);
-  },
-
-  async updateBusiness(id: string, data: UpdateBusinessRequest): Promise<Business> {
-    return api.patch(`/v1/seller/businesses/${id}`, data);
-  },
-
-  async setDefaultBusiness(id: string): Promise<void> {
-    return api.post(`/v1/seller/businesses/${id}/set-default`);
-  },
-
-  async deactivateBusiness(id: string): Promise<void> {
-    return api.post(`/v1/seller/businesses/${id}/deactivate`);
-  },
-};
-
-export function useBusinessesQuery() {
-  return useQuery({
-    queryKey: ['businesses'],
-    queryFn: () => businessService.getBusinesses(),
-  });
+export async function fetchMyMemberships(): Promise<any> {
+  return api.get('/businesses/me/memberships');
 }
 
-export function useBusinessQuery(id: string) {
-  return useQuery({
-    queryKey: ['business', id],
-    queryFn: () => businessService.getBusiness(id),
-    enabled: !!id,
-  });
+// ─── Business CRUD ───
+
+export async function createBusiness(data: any): Promise<any> {
+  return api.post('/businesses', data);
 }
 
-export function useCreateBusinessMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateBusinessRequest) => businessService.createBusiness(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
-    },
-  });
+export async function updateBusiness(businessId: string, data: any): Promise<any> {
+  return api.put(`/businesses/${businessId}`, data);
 }
 
-export function useUpdateBusinessMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateBusinessRequest }) =>
-      businessService.updateBusiness(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
-      queryClient.invalidateQueries({ queryKey: ['business', variables.id] });
-    },
-  });
+// ─── Business KYC ───
+
+export async function submitBusinessKyc(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/kyc`, data);
 }
 
-export function useSetDefaultBusinessMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => businessService.setDefaultBusiness(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
-    },
-  });
+export async function fetchMyKycStatus(): Promise<any> {
+  return api.get('/kyc/status');
 }
 
-export function useDeactivateBusinessMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => businessService.deactivateBusiness(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
-    },
-  });
+// ─── Business Toggle ───
+
+export async function toggleBusinessOpen(businessId: string): Promise<any> {
+  return api.post(`/businesses/${businessId}/toggle-open`);
+}
+
+// ─── Business Members ───
+
+export async function fetchBusinessMembers(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/members`);
+}
+
+export async function addBusinessMember(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/members`, data);
+}
+
+export async function inviteBusinessMember(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/members/invite`, data);
+}
+
+export async function updateBusinessMember(businessId: string, userId: string, data: any): Promise<any> {
+  return api.patch(`/businesses/${businessId}/members/${userId}`, data);
+}
+
+export async function removeBusinessMember(businessId: string, userId: string): Promise<any> {
+  return api.delete(`/businesses/${businessId}/members/${userId}`);
+}
+
+export async function acceptBusinessInvitation(data: any): Promise<any> {
+  return api.post('/businesses/memberships/accept', data);
+}
+
+// ─── Operating Hours ───
+
+export async function fetchOperatingHours(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/operating-hours`);
+}
+
+export async function upsertOperatingHours(businessId: string, data: any): Promise<any> {
+  return api.put(`/businesses/${businessId}/operating-hours`, data);
+}
+
+// ─── Promo Codes (Seller) ───
+
+export async function fetchBusinessPromos(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/promos`);
+}
+
+export async function createBusinessPromo(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/promos`, data);
+}
+
+export async function fetchPromo(promoId: string): Promise<any> {
+  return api.get(`/promos/${promoId}`);
+}
+
+export async function updatePromo(promoId: string, data: any): Promise<any> {
+  return api.put(`/promos/${promoId}`, data);
+}
+
+export async function deletePromo(promoId: string): Promise<any> {
+  return api.delete(`/promos/${promoId}`);
+}
+
+// ─── Tax Rules ───
+
+export async function fetchBusinessTaxRules(businessId: string): Promise<any> {
+  return api.get(`/businesses/${businessId}/tax-rules`);
+}
+
+export async function createBusinessTaxRule(businessId: string, data: any): Promise<any> {
+  return api.post(`/businesses/${businessId}/tax-rules`, data);
+}
+
+export async function updateTaxRule(taxRuleId: string, data: any): Promise<any> {
+  return api.put(`/tax-rules/${taxRuleId}`, data);
+}
+
+export async function deleteTaxRule(taxRuleId: string): Promise<any> {
+  return api.delete(`/tax-rules/${taxRuleId}`);
 }

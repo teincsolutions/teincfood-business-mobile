@@ -1,62 +1,18 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
 import { MapPin, Navigation, Clock, Package, Phone, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRiderDeliveriesQuery } from '@/hooks/rider.hooks';
 
-/**
- * Rider Map Screen - Full map view with delivery locations
- */
 export default function RiderMap() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedDelivery, setSelectedDelivery] = useState(null);
 
-  // Mock delivery data
-  const mockDeliveries = [
-    {
-      id: '1',
-      orderId: '#ORD-001',
-      status: 'picked_up',
-      pickup: {
-        name: 'TeincFoods Restaurant',
-        address: '45 Liberation Road, Accra',
-        lat: 5.5600,
-        lng: -0.2050,
-      },
-      dropoff: {
-        name: 'John Doe',
-        address: '123 Main Street, Accra',
-        lat: 5.5650,
-        lng: -0.2100,
-      },
-      earnings: 12.50,
-      estimatedTime: '15 min',
-      customerPhone: '+233201234567',
-    },
-    {
-      id: '2',
-      orderId: '#ORD-002',
-      status: 'assigned',
-      pickup: {
-        name: 'TeincFoods Restaurant',
-        address: '45 Liberation Road, Accra',
-        lat: 5.5600,
-        lng: -0.2050,
-      },
-      dropoff: {
-        name: 'Jane Smith',
-        address: '456 Oak Avenue, Accra',
-        lat: 5.5550,
-        lng: -0.2000,
-      },
-      earnings: 15.00,
-      estimatedTime: '20 min',
-      customerPhone: '+233209876543',
-    },
-  ];
+  const { data: deliveries = [] } = useRiderDeliveriesQuery();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -86,7 +42,7 @@ export default function RiderMap() {
         </Text>
 
         {/* Delivery Markers Simulation */}
-        {mockDeliveries.map((delivery, index) => (
+        {deliveries.map((delivery, index) => (
           <TouchableOpacity
             key={delivery.id}
             onPress={() => setSelectedDelivery(delivery)}
@@ -129,13 +85,13 @@ export default function RiderMap() {
         </YStack>
         <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
           <Text fontWeight="bold" color="$primary">
-            {mockDeliveries.length} Active
+            {deliveries.length} Active
           </Text>
         </YStack>
       </XStack>
 
       {/* Selected Delivery Card */}
-      {selectedDelivery && (
+      {selectedDelivery ? (
         <YStack
           position="absolute"
           bottom={insets.bottom + 20}
@@ -165,8 +121,7 @@ export default function RiderMap() {
                   <MapPin size={16} color="$primary" />
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorMuted">Pickup</Text>
-                    <Text fontSize="$3">{selectedDelivery.pickup.name}</Text>
-                    <Text fontSize="$2" color="$colorMuted">{selectedDelivery.pickup.address}</Text>
+                    <Text fontSize="$3">{selectedDelivery.pickup}</Text>
                   </YStack>
                 </XStack>
 
@@ -174,8 +129,7 @@ export default function RiderMap() {
                   <Navigation size={16} color="$success" />
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorMuted">Dropoff</Text>
-                    <Text fontSize="$3">{selectedDelivery.dropoff.name}</Text>
-                    <Text fontSize="$2" color="$colorMuted">{selectedDelivery.dropoff.address}</Text>
+                    <Text fontSize="$3">{selectedDelivery.dropoff}</Text>
                   </YStack>
                 </XStack>
               </YStack>
@@ -184,7 +138,7 @@ export default function RiderMap() {
                 <Clock size={16} color="$colorMuted" />
                 <Text fontSize="$3">ETA: {selectedDelivery.estimatedTime}</Text>
                 <Text flex={1} textAlign="right" fontSize="$5" fontWeight="bold" color="$success">
-                  +GHS {selectedDelivery.earnings.toFixed(2)}
+                  +GHS {selectedDelivery.earnings?.toFixed(2) ?? '0.00'}
                 </Text>
               </XStack>
 
@@ -226,10 +180,10 @@ export default function RiderMap() {
             </YStack>
           </Card>
         </YStack>
-      )}
+      ) : null}
 
       {/* Quick Actions */}
-      {!selectedDelivery && (
+      {!selectedDelivery ? (
         <YStack
           position="absolute"
           bottom={insets.bottom + 20}
@@ -259,7 +213,7 @@ export default function RiderMap() {
             </YStack>
           </Card>
         </YStack>
-      )}
+      ) : null}
     </YStack>
   );
 }

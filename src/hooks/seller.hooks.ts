@@ -6,7 +6,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SellerOrder } from '@/models/seller.model';
-import type { OrderStatus, UpdateOrderStatusResponse, SellerOrderDetailResponse } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
@@ -55,18 +54,18 @@ export function useUpdateOrderStatusMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
       sellerService.updateOrderStatus(orderId, status),
 
     onMutate: async ({ orderId, status }) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
 
-      const previous = queryClient.getQueryData<SellerOrderDetailResponse>(
+      const previous = queryClient.getQueryData<any>(
         SELLER_KEYS.order(orderId)
       );
 
       if (previous) {
-        queryClient.setQueryData<SellerOrderDetailResponse>(SELLER_KEYS.order(orderId), {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
           order: { ...previous.order, status },
         });
       }
@@ -99,12 +98,12 @@ export function useStartPreparingOrderMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
 
-      const previous = queryClient.getQueryData<SellerOrderDetailResponse>(
+      const previous = queryClient.getQueryData<any>(
         SELLER_KEYS.order(orderId)
       );
 
       if (previous) {
-        queryClient.setQueryData<SellerOrderDetailResponse>(SELLER_KEYS.order(orderId), {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
           order: { ...previous.order, status: 'preparing' },
         });
       }
@@ -137,12 +136,12 @@ export function useMarkOrderReadyMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
 
-      const previous = queryClient.getQueryData<SellerOrderDetailResponse>(
+      const previous = queryClient.getQueryData<any>(
         SELLER_KEYS.order(orderId)
       );
 
       if (previous) {
-        queryClient.setQueryData<SellerOrderDetailResponse>(SELLER_KEYS.order(orderId), {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
           order: { ...previous.order, status: 'ready' },
         });
       }
@@ -175,12 +174,12 @@ export function useMarkOrderDeliveredMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
 
-      const previous = queryClient.getQueryData<SellerOrderDetailResponse>(
+      const previous = queryClient.getQueryData<any>(
         SELLER_KEYS.order(orderId)
       );
 
       if (previous) {
-        queryClient.setQueryData<SellerOrderDetailResponse>(SELLER_KEYS.order(orderId), {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
           order: { ...previous.order, status: 'delivered' },
         });
       }
@@ -213,12 +212,12 @@ export function useAcceptOrderMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
 
-      const previous = queryClient.getQueryData<SellerOrderDetailResponse>(
+      const previous = queryClient.getQueryData<any>(
         SELLER_KEYS.order(orderId)
       );
 
       if (previous) {
-        queryClient.setQueryData<SellerOrderDetailResponse>(SELLER_KEYS.order(orderId), {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
           order: { ...previous.order, status: 'preparing' },
         });
       }

@@ -1,106 +1,161 @@
 import { api } from './api';
-import type {
-  RiderMetrics,
-  RiderDelivery,
-  RiderDeliveryDetail,
-  RiderEarnings,
-  RiderTransaction,
-  EarningsBreakdown,
-  RiderStatistics,
-  VehicleInfo,
-  DeliveryZone,
-  NavigationSettings,
-  NavigationApp,
-} from '@/models/rider.model';
 
-export async function fetchRiderMetrics(): Promise<RiderMetrics> {
-  return api.get('/v1/rider/metrics');
+// ─── Rider Profile ───
+
+export async function fetchRiderProfile(): Promise<any> {
+  return api.get('/riders/profile');
 }
 
-export async function fetchActiveDelivery(): Promise<RiderDelivery | null> {
-  return api.get('/v1/rider/active-delivery');
+export async function createRiderProfile(data: any): Promise<any> {
+  return api.post('/riders/profile', data);
 }
 
-export async function fetchRiderDeliveries(): Promise<RiderDelivery[]> {
-  return api.get('/v1/rider/deliveries');
+export async function updateRiderProfile(data: any): Promise<any> {
+  return api.patch('/riders/profile', data);
 }
 
-export async function fetchDeliveryDetail(deliveryId: string): Promise<RiderDeliveryDetail> {
-  return api.get(`/v1/rider/deliveries/${deliveryId}`);
+export async function deactivateRider(): Promise<any> {
+  return api.post('/riders/deactivate');
 }
 
-export async function updateDeliveryStatus(
-  deliveryId: string,
-  status: RiderDeliveryDetail['status']
-): Promise<RiderDeliveryDetail> {
-  return api.patch(`/v1/rider/deliveries/${deliveryId}/status`, { status });
+export async function updateOnlineStatus(isOnline: boolean): Promise<any> {
+  return api.patch('/riders/profile', { is_online: isOnline });
 }
 
-export async function acceptDelivery(deliveryId: string): Promise<RiderDelivery> {
-  return api.post(`/v1/rider/deliveries/${deliveryId}/accept`);
+// ─── Rider KYC ───
+
+export async function fetchRiderKycStatus(): Promise<any> {
+  return api.get('/riders/kyc');
 }
 
-export async function fetchRiderEarnings(): Promise<RiderEarnings> {
-  return api.get('/v1/rider/earnings');
+export async function submitRiderKyc(data: any): Promise<any> {
+  return api.post('/riders/kyc', data);
 }
 
-export async function fetchEarningsBreakdown(): Promise<EarningsBreakdown> {
-  return api.get('/v1/rider/earnings/breakdown');
+// ─── Rider Join ───
+
+export async function submitRiderJoinRequest(data: any): Promise<any> {
+  return api.post('/riders/join', data);
 }
 
-export async function fetchRecentTransactions(): Promise<RiderTransaction[]> {
-  return api.get('/v1/rider/transactions');
+// ─── Rider Location ───
+
+export async function updateRiderLocation(latitude: number, longitude: number): Promise<any> {
+  return api.post('/riders/location', { latitude, longitude });
 }
 
-export async function requestPayout(amount: number): Promise<{ success: boolean; message: string }> {
-  return api.post('/v1/rider/payout', { amount });
+// ─── Deliveries ───
+
+export async function fetchRiderDeliveries(): Promise<any> {
+  return api.get('/riders/deliveries');
 }
 
-export async function fetchRiderStatistics(): Promise<RiderStatistics> {
-  return api.get('/v1/rider/statistics');
+export async function fetchActiveDelivery(): Promise<any | null> {
+  return api.get('/riders/deliveries');
 }
 
-export async function fetchVehicleInfo(): Promise<VehicleInfo> {
-  return api.get('/v1/rider/vehicle');
+export async function fetchDeliveryDetail(deliveryId: string): Promise<any> {
+  return api.get(`/deliveries/${deliveryId}`);
 }
 
-export async function updateVehicleInfo(vehicleInfo: Partial<VehicleInfo>): Promise<VehicleInfo> {
-  return api.patch('/v1/rider/vehicle', vehicleInfo);
+export async function acceptDelivery(deliveryId: string): Promise<any> {
+  return api.post('/deliveries/claim', { delivery_id: deliveryId });
 }
 
-export async function fetchDeliveryZones(): Promise<DeliveryZone[]> {
-  return api.get('/v1/rider/zones');
+export async function markDeliveryInTransit(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/in-transit`);
 }
 
-export async function updateDeliveryZones(zones: DeliveryZone[]): Promise<DeliveryZone[]> {
-  return api.put('/v1/rider/zones', { zones });
+export async function markDeliveryArrived(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/arrived`);
 }
 
-export async function toggleDeliveryZone(zoneId: string, enabled: boolean): Promise<DeliveryZone> {
-  return api.patch(`/v1/rider/zones/${zoneId}`, { enabled });
+export async function markDeliveryDelivered(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/delivered`);
 }
 
-export async function fetchNavigationSettings(): Promise<NavigationSettings> {
-  return api.get('/v1/rider/navigation-settings');
+export async function markDeliveryFailed(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/failed`);
 }
 
-export async function updateNavigationSettings(settings: Partial<NavigationSettings>): Promise<NavigationSettings> {
-  return api.patch('/v1/rider/navigation-settings', settings);
+export async function markDeliveryReturned(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/return`);
 }
 
-export async function updateOnlineStatus(isOnline: boolean): Promise<{ success: boolean }> {
-  return api.post('/v1/rider/online-status', { isOnline });
+export async function confirmDeliveryPickup(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/confirm-pickup`);
 }
 
-export async function fetchNavigationApps(): Promise<NavigationApp[]> {
-  return api.get('/v1/rider/navigation-apps');
+export async function confirmDeliveryHandover(deliveryId: string): Promise<any> {
+  return api.post(`/deliveries/${deliveryId}/confirm-handover`);
 }
 
-export interface VehicleTypeOption {
-  value: string;
-  label: string;
+// ─── Earnings ───
+
+export async function fetchRiderEarnings(): Promise<any> {
+  return api.get('/riders/earnings');
 }
 
-export async function fetchVehicleTypes(): Promise<VehicleTypeOption[]> {
-  return api.get('/v1/rider/vehicle-types');
+export async function fetchEarningsBreakdown(): Promise<any> {
+  return api.get('/riders/earnings');
+}
+
+// ─── Wallet ───
+
+export async function fetchWalletBalance(): Promise<any> {
+  return api.get('/wallet/balance');
+}
+
+export async function fetchWalletHistory(): Promise<any> {
+  return api.get('/wallet/history');
+}
+
+// ─── Vehicle ───
+
+export async function fetchVehicleInfo(): Promise<any> {
+  return api.get('/riders/vehicle');
+}
+
+export async function createVehicle(data: any): Promise<any> {
+  return api.post('/riders/vehicles', data);
+}
+
+// ─── Metrics (from profile) ───
+
+export async function fetchRiderMetrics(): Promise<any> {
+  return api.get('/riders/profile');
+}
+
+export async function fetchRiderStatistics(): Promise<any> {
+  return api.get('/riders/profile');
+}
+
+// ─── Placeholder stubs (no backend endpoint yet) ───
+
+export async function fetchDeliveryZones(): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function updateDeliveryZones(zones: any): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function toggleDeliveryZone(zoneId: string, enabled: boolean): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function fetchNavigationSettings(): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function updateNavigationSettings(settings: any): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function fetchNavigationApps(): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
+}
+
+export async function fetchVehicleTypes(): Promise<any> {
+  return Promise.reject(new Error('Not implemented on backend'));
 }

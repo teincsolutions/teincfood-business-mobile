@@ -1,191 +1,73 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { 
-  FleetManager, 
-  FleetVehicle, 
-  FleetRider, 
-  FleetDashboard,
-  FleetEarnings,
-  CreateFleetRequest,
-  UpdateFleetRequest,
-  AddVehicleRequest,
-  UpdateVehicleRequest,
-  InviteRiderRequest 
-} from '@/models/fleet.model';
 import { api } from './api';
 
-export function generateFleetCode(companyName: string): string {
-  const words = companyName.split(' ');
-  const initials = words.slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('');
-  const sequence = Math.floor(Math.random() * 999) + 1;
-  return `FLEET-${initials}-${sequence.toString().padStart(3, '0')}`;
+// ─── Riders ───
+
+export async function fetchFleetRiders(): Promise<any> {
+  return api.get('/business/riders');
 }
 
-export const fleetService = {
-  async getFleet(): Promise<FleetManager> {
-    return api.get('/v1/fleet');
-  },
-
-  async updateFleet(data: UpdateFleetRequest): Promise<FleetManager> {
-    return api.patch('/v1/fleet', data);
-  },
-
-  async getDashboard(): Promise<FleetDashboard> {
-    return api.get('/v1/fleet/dashboard');
-  },
-
-  async getEarnings(period: 'today' | 'week' | 'month' = 'week'): Promise<FleetEarnings> {
-    return api.get(`/v1/fleet/earnings?period=${period}`);
-  },
-
-  async getVehicles(): Promise<FleetVehicle[]> {
-    return api.get('/v1/fleet/vehicles');
-  },
-
-  async getVehicle(id: string): Promise<FleetVehicle> {
-    return api.get(`/v1/fleet/vehicles/${id}`);
-  },
-
-  async addVehicle(data: AddVehicleRequest): Promise<FleetVehicle> {
-    return api.post('/v1/fleet/vehicles', data);
-  },
-
-  async updateVehicle(id: string, data: UpdateVehicleRequest): Promise<FleetVehicle> {
-    return api.patch(`/v1/fleet/vehicles/${id}`, data);
-  },
-
-  async assignRiderToVehicle(vehicleId: string, riderId: string): Promise<void> {
-    return api.post(`/v1/fleet/vehicles/${vehicleId}/assign`, { riderId });
-  },
-
-  async getRiders(): Promise<FleetRider[]> {
-    return api.get('/v1/fleet/riders');
-  },
-
-  async getRider(id: string): Promise<FleetRider> {
-    return api.get(`/v1/fleet/riders/${id}`);
-  },
-
-  async inviteRider(data: InviteRiderRequest): Promise<FleetRider> {
-    return api.post('/v1/fleet/riders/invite', data);
-  },
-
-  async updateRiderStatus(id: string, status: 'active' | 'inactive' | 'suspended'): Promise<void> {
-    return api.patch(`/v1/fleet/riders/${id}/status`, { status });
-  },
-};
-
-export function useFleetQuery() {
-  return useQuery({
-    queryKey: ['fleet'],
-    queryFn: () => fleetService.getFleet(),
-  });
+export async function inviteRider(data: any): Promise<any> {
+  return api.post('/business/riders/invite', data);
 }
 
-export function useFleetDashboardQuery() {
-  return useQuery({
-    queryKey: ['fleet', 'dashboard'],
-    queryFn: () => fleetService.getDashboard(),
-  });
+export async function approveRider(riderId: string): Promise<any> {
+  return api.post(`/business/riders/${riderId}/approve`);
 }
 
-export function useFleetEarningsQuery(period: 'today' | 'week' | 'month' = 'week') {
-  return useQuery({
-    queryKey: ['fleet', 'earnings', period],
-    queryFn: () => fleetService.getEarnings(period),
-  });
+export async function suspendRider(riderId: string): Promise<any> {
+  return api.post(`/business/riders/${riderId}/suspend`);
 }
 
-export function useFleetVehiclesQuery() {
-  return useQuery({
-    queryKey: ['fleet', 'vehicles'],
-    queryFn: () => fleetService.getVehicles(),
-  });
+export async function activateRider(riderId: string): Promise<any> {
+  return api.post(`/business/riders/${riderId}/activate`);
 }
 
-export function useFleetVehicleQuery(id: string) {
-  return useQuery({
-    queryKey: ['fleet', 'vehicles', id],
-    queryFn: () => fleetService.getVehicle(id),
-    enabled: !!id,
-  });
+export async function fetchRiderKyc(riderId: string): Promise<any> {
+  return api.get(`/business/riders/${riderId}/kyc`);
 }
 
-export function useFleetRidersQuery() {
-  return useQuery({
-    queryKey: ['fleet', 'riders'],
-    queryFn: () => fleetService.getRiders(),
-  });
+export async function fetchJoinRequests(): Promise<any> {
+  return api.get('/business/riders/join-requests');
 }
 
-export function useFleetRiderQuery(id: string) {
-  return useQuery({
-    queryKey: ['fleet', 'riders', id],
-    queryFn: () => fleetService.getRider(id),
-    enabled: !!id,
-  });
+export async function approveJoinRequest(requestId: string): Promise<any> {
+  return api.post(`/business/riders/join-requests/${requestId}/approve`);
 }
 
-export function useUpdateFleetMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UpdateFleetRequest) => fleetService.updateFleet(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fleet'] });
-    },
-  });
+export async function rejectJoinRequest(requestId: string): Promise<any> {
+  return api.post(`/business/riders/join-requests/${requestId}/reject`);
 }
 
-export function useAddVehicleMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: AddVehicleRequest) => fleetService.addVehicle(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'vehicles'] });
-    },
-  });
+export async function fetchInvitations(): Promise<any> {
+  return api.get('/business/riders/invitations');
 }
 
-export function useUpdateVehicleMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateVehicleRequest }) =>
-      fleetService.updateVehicle(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'vehicles'] });
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'vehicles', variables.id] });
-    },
-  });
+export async function revokeInvitation(invitationId: string): Promise<any> {
+  return api.post(`/business/riders/invitations/${invitationId}/revoke`);
 }
 
-export function useAssignRiderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ vehicleId, riderId }: { vehicleId: string; riderId: string }) =>
-      fleetService.assignRiderToVehicle(vehicleId, riderId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'vehicles'] });
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'riders'] });
-    },
-  });
+// ─── Vehicles ───
+
+export async function fetchFleetVehicles(): Promise<any> {
+  return api.get('/business/vehicles');
 }
 
-export function useInviteRiderMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: InviteRiderRequest) => fleetService.inviteRider(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'riders'] });
-    },
-  });
+export async function addVehicle(data: any): Promise<any> {
+  return api.post('/business/vehicles', data);
 }
 
-export function useUpdateRiderStatusMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'active' | 'inactive' | 'suspended' }) =>
-      fleetService.updateRiderStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fleet', 'riders'] });
-    },
-  });
+export async function removeVehicle(vehicleId: string): Promise<any> {
+  return api.post(`/business/vehicles/${vehicleId}/remove`);
+}
+
+// ─── Fleet Invitation ───
+
+export async function acceptFleetInvitation(data: any): Promise<any> {
+  return api.post('/fleet/accept-invitation', data);
+}
+
+// ─── Dashboard ───
+
+export async function fetchFleetDashboard(): Promise<any> {
+  return api.get('/business/riders');
 }

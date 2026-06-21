@@ -6,11 +6,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { KioskOrder } from '@/models/kiosk.model';
-import type {
-  KioskOrdersResponse,
-  KioskOrderActionResponse,
-  AvailableRider,
-} from '@/services/kiosk.service';
 import * as kioskService from '@/services/kiosk.service';
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
@@ -64,15 +59,15 @@ export function useAcceptKioskOrderMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
 
-      const previous = queryClient.getQueryData<KioskOrdersResponse>(
+      const previous = queryClient.getQueryData<any>(
         KIOSK_KEYS.orders()
       );
 
       if (previous) {
-        const order = previous.pendingOrders.find((o) => o.id === orderId);
+        const order = previous.pendingOrders.find((o: any) => o.id === orderId);
         if (order) {
-          queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
-            pendingOrders: previous.pendingOrders.filter((o) => o.id !== orderId),
+          queryClient.setQueryData<any>(KIOSK_KEYS.orders(), {
+            pendingOrders: previous.pendingOrders.filter((o: any) => o.id !== orderId),
             preparingOrders: [
               ...previous.preparingOrders,
               { ...order, status: 'preparing' as const, startedAt: new Date().toISOString() },
@@ -109,14 +104,14 @@ export function useRejectKioskOrderMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
 
-      const previous = queryClient.getQueryData<KioskOrdersResponse>(
+      const previous = queryClient.getQueryData<any>(
         KIOSK_KEYS.orders()
       );
 
       if (previous) {
-        queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
+        queryClient.setQueryData<any>(KIOSK_KEYS.orders(), {
           ...previous,
-          pendingOrders: previous.pendingOrders.filter((o) => o.id !== orderId),
+          pendingOrders: previous.pendingOrders.filter((o: any) => o.id !== orderId),
         });
       }
 
@@ -147,16 +142,16 @@ export function useMarkKioskOrderReadyMutation() {
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
 
-      const previous = queryClient.getQueryData<KioskOrdersResponse>(
+      const previous = queryClient.getQueryData<any>(
         KIOSK_KEYS.orders()
       );
 
       if (previous) {
-        const order = previous.preparingOrders.find((o) => o.id === orderId);
+        const order = previous.preparingOrders.find((o: any) => o.id === orderId);
         if (order) {
-          queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
+          queryClient.setQueryData<any>(KIOSK_KEYS.orders(), {
             pendingOrders: previous.pendingOrders,
-            preparingOrders: previous.preparingOrders.filter((o) => o.id !== orderId),
+            preparingOrders: previous.preparingOrders.filter((o: any) => o.id !== orderId),
             readyOrders: [
               ...previous.readyOrders,
               { ...order, status: 'ready' as const },
@@ -193,14 +188,14 @@ export function useAssignRiderMutation() {
     onMutate: async ({ orderId }) => {
       await queryClient.cancelQueries({ queryKey: KIOSK_KEYS.orders() });
 
-      const previous = queryClient.getQueryData<KioskOrdersResponse>(
+      const previous = queryClient.getQueryData<any>(
         KIOSK_KEYS.orders()
       );
 
       if (previous) {
-        queryClient.setQueryData<KioskOrdersResponse>(KIOSK_KEYS.orders(), {
+        queryClient.setQueryData<any>(KIOSK_KEYS.orders(), {
           ...previous,
-          readyOrders: previous.readyOrders.filter((o) => o.id !== orderId),
+          readyOrders: previous.readyOrders.filter((o: any) => o.id !== orderId),
         });
       }
 

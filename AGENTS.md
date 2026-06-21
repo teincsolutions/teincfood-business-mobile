@@ -10,7 +10,8 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **No manual styling** — use only Tamagui components (Button, Input, YStack, XStack, Text, Card, Image, Avatar, Separator, etc.). Never write raw `style={}` props unless the Tamagui component doesn't support the prop.
 - **No service code in UI** — screens call hooks, hooks call services. Never import a service file (`@/services/*`) directly from a screen file.
 - **Role isolation** — screens inside `app/(seller)/`, `app/(rider)/`, `app/(fleet)/` must not import from each other. Only shared code in `src/` crosses role boundaries.
-- **`{var && <Component>}` is dangerous** — If `var` can be `""` or `0` (falsy non-boolean), React renders it as bare text outside `<Text>`, causing "Text strings must be rendered within a <Text> component". The `??` operator only catches `null`/`undefined`, not other falsy values. Always use `Boolean(var)` or explicit comparison before `&&` in conditional rendering.
+- **`{var && <Component>}` is dangerous** — If `var` can be `""` or `0` (falsy non-boolean), React renders it as bare text outside `<Text>`, causing "Text strings must be rendered within a <Text> component". The `??` operator only catches `null`/`undefined`, not other falsy values. Use `var ? <Component /> : null` (ternary) instead of `var && <Component />`.
+- **No manual data mapping** — every backend API resource gets a dedicated service file in `src/services/` with a corresponding model file in `src/models/`. Model types use **snake_case** to match the backend exactly. Never manually remap fields (e.g. `apiUser.full_name || apiUser.fullName`). The service passes raw API shapes; any camelCase conversion happens only at the hook boundary via a mapper function.
 - **Backend first** — before writing a service/hook, check if the endpoint exists in `docs/openapi.json` or look in `../TeincFoodBackend/lib/teinc_food_backend_web/router.ex`. Do not invent endpoints.
 - **Port from buyer app** — for shared hooks/services/screens, check `../TeincFood/src/` first. The buyer app has real implementations of auth, chat, WebSocket, profile, addresses, push tokens, places, etc.
 - **Account upgrade flow** — all users register as `buyer` role by default. Role selection at registration is intent only. On login, user picks a role from a role selector screen. To become `seller`/`fleet_manager`, user must **create a business**. To become `rider`, user must **create a rider profile**. Until they complete one of these, the user is `buyer` and has no access to role-grouped screens. After role selection, detect which prerequisite is incomplete and show the completion screen. Once completed, role upgrades and they enter the correct role group.
@@ -51,3 +52,15 @@ This file is for AI coding agents. Always re-read this file before starting work
 - [x] Run `npx tsc --noEmit` — **0 errors**
 
 ---
+
+## Phase 2: Service & Hook Alignment ✅ COMPLETE
+
+- [x] **`menu.service.ts`** — Fixed all paths (removed `/v1/` prefix), uses `/catalog/items`, `/menu/items/{id}`, removed invalid DELETE, added business-scoped menu endpoints
+- [x] **`kiosk.service.ts`** — Fixed paths, uses `/orders/*` instead of `/v1/seller/kiosk/orders/*`
+- [x] **`fleet.service.ts`** — Fixed `Promise<any>` return types (removed model type imports), added `acceptFleetInvitation` endpoint
+- [x] **`business.service.ts`** — Created with business CRUD, KYC, toggle-open, members (CRUD + invite/accept), operating hours, promo CRUD, tax rules
+- [x] **`rider.hooks.ts`** — Fixed `updateDeliveryStatus` → per-action dispatch, `fetchRecentTransactions` → `fetchWalletHistory`, `requestPayout` → stub, `updateVehicleInfo` → `createVehicle`
+- [x] **`seller.hooks.ts`** — Removed stale type imports (`OrderStatus`, `UpdateOrderStatusResponse`, `SellerOrderDetailResponse`)
+- [x] **`kiosk.hooks.ts`** — Removed stale type imports (`KioskOrdersResponse`, `KioskOrderActionResponse`, `AvailableRider`), fixed implicit `any` callbacks
+- [x] **`useFleet.ts`** — Added `useAcceptFleetInvitationMutation`
+- [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors

@@ -54,7 +54,10 @@ export function useActiveDeliveryQuery(enabled = true) {
 export function useRiderDeliveriesQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.deliveries(),
-    queryFn: () => riderService.fetchRiderDeliveries(),
+    queryFn: async () => {
+      const res = await riderService.fetchRiderDeliveries();
+      return res.data;
+    },
     enabled,
   });
 }
@@ -70,8 +73,20 @@ export function useDeliveryDetailQuery(deliveryId: string, enabled = true) {
 export function useUpdateDeliveryStatusMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ deliveryId, status }: { deliveryId: string; status: RiderDeliveryDetail['status'] }) =>
-      riderService.updateDeliveryStatus(deliveryId, status),
+    mutationFn: ({ deliveryId, action }: { deliveryId: string; action: string }) => {
+      const actions: Record<string, (id: string) => Promise<any>> = {
+        'in-transit': riderService.markDeliveryInTransit,
+        arrived: riderService.markDeliveryArrived,
+        delivered: riderService.markDeliveryDelivered,
+        failed: riderService.markDeliveryFailed,
+        returned: riderService.markDeliveryReturned,
+        'confirm-pickup': riderService.confirmDeliveryPickup,
+        'confirm-handover': riderService.confirmDeliveryHandover,
+      };
+      const fn = actions[action];
+      if (!fn) return Promise.reject(new Error(`Unknown action: ${action}`));
+      return fn(deliveryId);
+    },
     onSuccess: (_, { deliveryId }) => {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveryDetail(deliveryId) });
@@ -112,10 +127,10 @@ export function useEarningsBreakdownQuery(enabled = true) {
   });
 }
 
-export function useRecentTransactionsQuery(enabled = true) {
+export function useWalletHistoryQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.transactions(),
-    queryFn: () => riderService.fetchRecentTransactions(),
+    queryFn: () => riderService.fetchWalletHistory(),
     enabled,
   });
 }
@@ -123,7 +138,8 @@ export function useRecentTransactionsQuery(enabled = true) {
 export function useRequestPayoutMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (amount: number) => riderService.requestPayout(amount),
+    mutationFn: (_amount: number) => Promise.reject(new Error('Payout not implemented on backend')),
+    onError: () => {},
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.earnings() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.transactions() });
@@ -151,11 +167,11 @@ export function useVehicleInfoQuery(enabled = true) {
   });
 }
 
-export function useUpdateVehicleInfoMutation() {
+export function useCreateVehicleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vehicleInfo: Partial<VehicleInfo>) =>
-      riderService.updateVehicleInfo(vehicleInfo),
+    mutationFn: (vehicleInfo: any) =>
+      riderService.createVehicle(vehicleInfo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.vehicleInfo() });
     },
