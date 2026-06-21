@@ -1,6 +1,6 @@
 import { api } from './api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { chatService } from './chat.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type {
@@ -43,23 +43,36 @@ export function useChatParticipantQuery(userId: string) {
 export function useChatSocket(chatId: string, onEvent: (event: any) => void) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const queryClient = useQueryClient();
+  const onEventRef = useRef(onEvent);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  // Keep onEvent ref in sync without triggering effect re-run
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   useEffect(() => {
     if (!chatId || !accessToken) return;
 
+    setJoinError(null);
+
     chatService.connect().then(() => {
-      chatService.joinChannel(chatId).catch(() => {});
+      chatService.joinChannel(chatId).catch((err) => {
+        const reason = err?.message || err?.reason || String(err);
+        console.error('[ChatSocket] Failed to join channel', chatId, reason);
+        setJoinError(reason);
+      });
     });
 
     const unsub = chatService.onMessage(chatId, (msg) => {
-      onEvent(msg);
+      onEventRef.current(msg);
     });
 
     return () => {
       unsub();
       chatService.leaveChannel(chatId);
     };
-  }, [chatId, accessToken, onEvent]);
+  }, [chatId, accessToken]); // removed onEvent from deps — using ref instead
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -86,5 +99,5 @@ export function useChatSocket(chatId: string, onEvent: (event: any) => void) {
     [chatId, queryClient]
   );
 
-  return { sendMessage, setTyping, markAsRead };
+  return { sendMessage, setTyping, markAsRead, joinError };
 }

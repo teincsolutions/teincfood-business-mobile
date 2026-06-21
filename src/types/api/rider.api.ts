@@ -41,6 +41,7 @@ export interface RiderDelivery {
   order_id: string;
   order_number: string | null;
   status: string;
+  pickup_name: string | null;
   pickup: string | null;
   dropoff: string | null;
   pickup_lat: number;

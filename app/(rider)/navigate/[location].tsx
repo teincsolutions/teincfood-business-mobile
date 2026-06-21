@@ -12,12 +12,14 @@ import {
   User,
   ArrowLeft,
   ExternalLink,
+  Truck,
 } from "@tamagui/lucide-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import polyline from "@mapbox/polyline";
 import { useRiderProfileQuery } from "@/hooks/useRider";
+import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { getDirectionsPolyline, estimateDurationSeconds } from "@/services/directions.service";
 import { useResponsive } from "@/utils/responsive";
 
@@ -40,6 +42,12 @@ export default function NavigationScreen() {
   const [etaSeconds, setEtaSeconds] = useState(null);
 
   const { data: profileData } = useRiderProfileQuery();
+
+  const isOnline = profileData?.status === 'available';
+  const riderId = profileData?.id;
+
+  // Live GPS tracking
+  useRiderLocationTracking({ riderId, enabled: isOnline });
 
   const locationData: LocationData | null = locationParam
     ? JSON.parse(decodeURIComponent(locationParam as string))
@@ -137,6 +145,35 @@ export default function NavigationScreen() {
         {routeCoords.length > 0 && (
           <Polyline coordinates={routeCoords} strokeColor="#3498db" strokeWidth={4} />
         )}
+
+        {/* Rider vehicle marker */}
+        {(() => {
+          const lat = riderLat;
+          const lng = riderLng;
+          if (lat == null || lng == null) return null;
+
+          const vehicleType = profileData?.vehicle_type;
+          const vehicleColor = vehicleType === 'motorcycle' ? '#f39c12' :
+            vehicleType === 'bicycle' ? '#2ecc71' :
+            vehicleType === 'car' ? '#3498db' : '#95a5a6';
+
+          return (
+            <Marker
+              coordinate={{ latitude: lat, longitude: lng }}
+              title="You"
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <YStack
+                width={40} height={40} borderRadius={20}
+                backgroundColor={vehicleColor}
+                alignItems="center" justifyContent="center"
+                borderWidth={3} borderColor="white"
+              >
+                <Truck size={20} color="white" />
+              </YStack>
+            </Marker>
+          );
+        })()}
       </MapView>
 
       {/* Header */}

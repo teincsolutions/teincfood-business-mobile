@@ -6,6 +6,7 @@ import { YStack, XStack, Text, Image, Button, useTheme, Sheet, Separator } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Phone, MoreVertical } from '@tamagui/lucide-icons';
 import { BackButton } from '@/components/ui';
+import { AppAlertDialog } from '@/components/ui/AlertDialog';
 import { useAuthStore } from '@/stores/auth.store';
 import { useChatStore } from '@/stores/chat.store';
 import { useChatParticipantQuery, useChatSocket } from '@/services/messages.service';
@@ -62,9 +63,17 @@ export default function ChatScreen() {
   });
 
   // Non-support chats use raw socket
-  const rawSocket = useChatSocket(normalizedUserId || '', onChatEvent);
+  const { sendMessage: rawSendMessage, joinError } = useChatSocket(normalizedUserId || '', onChatEvent);
+  const [chatError, setChatError] = useState<string | null>(null);
 
-  const sendMessage = isSupportChat ? supportChat.sendMessage : rawSocket.sendMessage;
+  // Show error dialog when chat join fails and navigate back
+  useEffect(() => {
+    if (joinError) {
+      setChatError(joinError);
+    }
+  }, [joinError]);
+
+  const sendMessage = isSupportChat ? supportChat.sendMessage : rawSendMessage;
 
   // Store messages for current conversation
   const messagesMap = useChatStore((state) => state.messages);
@@ -288,6 +297,24 @@ export default function ChatScreen() {
             </YStack>
           </Sheet.Frame>
         </Sheet>
+
+        {/* Chat join error dialog */}
+        <AppAlertDialog
+          open={!!chatError}
+          onOpenChange={(open) => {
+            if (!open) {
+              setChatError(null);
+              router.back();
+            }
+          }}
+          title="Chat unavailable"
+          description={chatError || 'You can only chat with users on an active order.'}
+          confirmText="GO BACK"
+          onConfirm={() => {
+            setChatError(null);
+            router.back();
+          }}
+        />
 
       </YStack>
     </KeyboardAvoidingView>
