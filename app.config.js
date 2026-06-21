@@ -163,8 +163,6 @@ module.exports = {
     },
     extra: {
       router: {},
-      paystackCurrency: "GHS",
-      paystackPublicKey: "pk_live_898f9b046dea9d60c7cfea7d3768b1ae0a175737",
       eas: {
         build: {
           experimental: {
