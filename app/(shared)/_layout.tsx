@@ -23,6 +23,8 @@ export default function SharedLayout() {
       <Stack.Screen name="businesses" />
       <Stack.Screen name="businesses/add" />
       <Stack.Screen name="businesses/[id]" />
+      <Stack.Screen name="wallet" />
+      <Stack.Screen name="wallet/transactions" />
     </Stack>
   );
 }

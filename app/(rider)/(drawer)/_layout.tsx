@@ -149,6 +149,23 @@ function CustomDrawerContent(props: any) {
             </Text>
           </Button>
 
+          {/* Finance */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(shared)/wallet")}
+            icon={<DollarSign size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Finance
+            </Text>
+          </Button>
+
           <Separator marginVertical="$2" />
 
           {/* Messages */}

@@ -1,5 +1,18 @@
 import type { PaginationMeta } from './pagination';
 
+export interface WalletBalanceItem {
+  type: 'buyer' | 'business' | 'rider';
+  amount_minor: number;
+  currency: string;
+  business_id?: string;
+}
+
+export interface WalletBalanceResponse {
+  data: {
+    balances: WalletBalanceItem[];
+  };
+}
+
 export interface WalletEntry {
   id: string;
   type: string;
@@ -15,11 +28,4 @@ export interface WalletHistoryResponse {
     entries: WalletEntry[];
   };
   pagination: PaginationMeta;
-}
-
-export interface WalletBalanceResponse {
-  data: {
-    balance_minor: number;
-    currency: string;
-  };
 }
