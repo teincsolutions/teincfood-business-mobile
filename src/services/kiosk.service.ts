@@ -1,7 +1,10 @@
 import { api } from './api';
 import type { KioskOrder, KioskOrdersResponse } from '@/types/api';
 
-export async function fetchKioskOrders(): Promise<KioskOrdersResponse> {
+export async function fetchKioskOrders(businessId?: string): Promise<KioskOrdersResponse> {
+  if (businessId) {
+    return api.get<KioskOrdersResponse>(`/businesses/${businessId}/orders`);
+  }
   return api.get<KioskOrdersResponse>('/orders');
 }
 
@@ -25,8 +28,10 @@ export async function confirmKioskPickup(orderId: string): Promise<{ data: Recor
   return api.post(`/deliveries/${orderId}/confirm-pickup`);
 }
 
-export async function fetchAvailableRiders(): Promise<{ data: Record<string, unknown>[] }> {
-  return api.get('/business/riders');
+export async function fetchAvailableRiders(businessId?: string): Promise<{ data: Record<string, unknown>[] }> {
+  return api.get('/business/riders', {
+    params: { filter: 'available', ...(businessId ? { business_id: businessId } : {}) },
+  });
 }
 
 export async function assignKioskOrderToRider(orderId: string, riderId: string): Promise<{ data: Record<string, unknown> }> {

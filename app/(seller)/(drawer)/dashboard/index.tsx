@@ -32,7 +32,7 @@ export default function SellerDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
-  const { businesses } = useBusinessStore();
+  const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
 
   // TanStack Query hooks
@@ -119,16 +119,10 @@ export default function SellerDashboard() {
                 <Button
                   variant="primary"
                   onPress={() =>
-                    router.push("/(seller)/(drawer)/businesses/add")
+                    router.push("/(seller)/businesses/add")
                   }
                 >
                   Create Business
-                </Button>
-                <Button
-                  variant="outline"
-                  onPress={() => setDismissNoBusiness(true)}
-                >
-                  Skip
                 </Button>
               </XStack>
             </YStack>
@@ -144,6 +138,14 @@ export default function SellerDashboard() {
             <Text fontSize="$6" fontWeight="bold">
               {user?.businessName || user?.fullName || "Seller"}
             </Text>
+            {activeBusiness && (
+              <XStack gap="$1" alignItems="center" marginTop="$1">
+                <Store size={14} color="$colorMuted" />
+                <Text fontSize="$3" color="$colorMuted">
+                  {activeBusiness.name}
+                </Text>
+              </XStack>
+            )}
           </YStack>
           <XStack gap="$2" alignItems="center">
             <Text fontSize="$3">Store {isStoreOpen ? "Open" : "Closed"}</Text>

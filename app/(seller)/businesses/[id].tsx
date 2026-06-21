@@ -14,7 +14,7 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, FormInput } from "@/components/ui";
+import { Button, FormInput, BackButton } from "@/components/ui";
 import { FormTextArea } from "@/components/ui/FormTextArea";
 import { useBusinessStore } from "@/stores/business.store";
 import {
@@ -305,7 +305,10 @@ export default function BusinessDetailScreen() {
       backgroundColor="$background"
       paddingBottom={Math.max(insets.bottom + 20, 24)}
     >
-      <YStack padding="$4" gap="$4">
+      <YStack padding="$4" paddingTop={Math.max(insets.top + 8, 16)} gap="$4">
+        {/* Back button */}
+        <BackButton />
+
         {/* Edit/Save header */}
         <XStack justifyContent="flex-end" alignItems="center">
           {isEditing ? (

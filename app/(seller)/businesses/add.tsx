@@ -14,7 +14,7 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
-import { FormInput, Button } from "@/components/ui";
+import { FormInput, Button, BackButton } from "@/components/ui";
 
 import { useBusinessStore } from "@/stores/business.store";
 import { Building, MapPin, Phone, Mail, Hash } from "@tamagui/lucide-icons";
@@ -144,25 +144,29 @@ export default function AddBusinessScreen() {
       >
         <YStack
           padding="$4"
+          paddingTop={Math.max(insets.top + 8, 16)}
           gap="$4"
           $gtSm={{ padding: "$6", maxWidth: 600 }}
           alignSelf="center"
           width="100%"
         >
-          <YStack gap="$2">
-            <Text
-              fontSize="$8"
-              fontWeight="bold"
-              fontFamily="$heading"
-              color="$color"
-              $gtSm={{ fontSize: "$10" }}
-            >
-              Add Business
-            </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Add a new business location to your account
-            </Text>
-          </YStack>
+          <XStack gap="$2" alignItems="center">
+            <BackButton />
+            <YStack gap="$1" flex={1}>
+              <Text
+                fontSize="$8"
+                fontWeight="bold"
+                fontFamily="$heading"
+                color="$color"
+                $gtSm={{ fontSize: "$10" }}
+              >
+                Add Business
+              </Text>
+              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                Add a new business location to your account
+              </Text>
+            </YStack>
+          </XStack>
 
           <Form onSubmit={handleAddBusiness} gap="$4">
             <FormInput

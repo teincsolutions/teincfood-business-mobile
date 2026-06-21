@@ -11,6 +11,9 @@ import {
   Avatar,
   Separator,
   Button,
+  Select,
+  Adapt,
+  Sheet,
 } from "tamagui";
 import {
   LayoutDashboard,
@@ -26,8 +29,11 @@ import {
   Menu,
   MessageSquare,
   Building,
+  ChevronDown,
+  Check,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
@@ -35,6 +41,8 @@ import {
   DrawerItemList,
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
+import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Custom Drawer Content
@@ -45,7 +53,14 @@ function CustomDrawerContent(props: any) {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const { businesses, activeBusiness, switchBusiness } = useActiveBusiness();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { isTablet } = useResponsive();
+
+  const avatarSize = isTablet ? "$12" : "$10";
+  const avatarTextSize = isTablet ? "$10" : "$8";
+  const nameTextSize = isTablet ? "$6" : "$5";
+  const emailTextSize = isTablet ? "$4" : "$3";
 
   const handleLogout = () => {
     clearAuth();
@@ -62,27 +77,124 @@ function CustomDrawerContent(props: any) {
         backgroundColor="$primary"
       >
         <XStack gap="$3" alignItems="center">
-          <Avatar circular size="$10">
+          <Avatar circular size={avatarSize}>
             <Avatar.Image src={user?.avatarUrl} />
             <Avatar.Fallback
               items="center"
               justify="center"
               backgroundColor="$color.gray50"
             >
-              <Text color="$color" fontWeight="bold" fontSize="$8">
+              <Text color="$color" fontWeight="bold" fontSize={avatarTextSize}>
                 {user?.fullName?.charAt(0) || "S"}
               </Text>
             </Avatar.Fallback>
           </Avatar>
           <YStack flex={1}>
-            <Text color="white" fontWeight="bold" fontSize="$5">
+            <Text color="white" fontWeight="bold" fontSize={nameTextSize}>
               {user?.fullName || "Seller"}
             </Text>
-            <Text color="white" opacity={0.8} fontSize="$3">
+            <Text color="white" opacity={0.8} fontSize={emailTextSize}>
               {user?.email || "seller@example.com"}
             </Text>
           </YStack>
         </XStack>
+        </YStack>
+
+      {/* Business Switcher / Create */}
+      <YStack
+        backgroundColor="$primaryLight"
+        paddingHorizontal="$3"
+        paddingVertical="$3"
+      >
+        {businesses.length > 0 ? (
+          <Select
+            value={activeBusiness?.id ?? ""}
+            onValueChange={switchBusiness}
+            disablePreventBodyScroll
+          >
+            <Select.Trigger
+              width="100%"
+              borderRadius="$4"
+              backgroundColor="$background"
+              borderWidth={1}
+              borderColor="$borderColor"
+              iconAfter={ChevronDown}
+              paddingHorizontal="$3"
+              paddingVertical="$1"
+            >
+              <Select.Value placeholder="Select business" />
+            </Select.Trigger>
+
+            <Adapt when="maxSm" platform="touch">
+              <Sheet native modal dismissOnSnapToBottom animation="medium">
+                <Sheet.Frame>
+                  <Sheet.ScrollView>
+                    <Adapt.Contents />
+                  </Sheet.ScrollView>
+                </Sheet.Frame>
+                <Sheet.Overlay
+                  bg="$shadowColor"
+                  animation="lazy"
+                  enterStyle={{ opacity: 0 }}
+                  exitStyle={{ opacity: 0 }}
+                />
+              </Sheet>
+            </Adapt>
+
+            <Select.Content>
+              <Select.ScrollUpButton
+                items="center"
+                justify="center"
+                position="relative"
+                width="100%"
+                height="$3"
+              >
+                <ChevronDown size={20} />
+              </Select.ScrollUpButton>
+
+              <Select.Viewport
+                minW={200}
+                bg="$background"
+                borderRadius="$4"
+                borderWidth={1}
+                borderColor="$borderColor"
+              >
+                <Select.Group>
+                  <Select.Label fontWeight="700">Switch Business</Select.Label>
+                  {businesses.map((b, i) => (
+                    <Select.Item key={b.id} index={i} value={b.id}>
+                      <Select.ItemText>{b.name}</Select.ItemText>
+                      {activeBusiness?.id === b.id && (
+                        <YStack marginLeft="$2">
+                          <Check size={16} color="$primary" />
+                        </YStack>
+                      )}
+                    </Select.Item>
+                  ))}
+                </Select.Group>
+              </Select.Viewport>
+
+              <Select.ScrollDownButton
+                items="center"
+                justify="center"
+                position="relative"
+                width="100%"
+                height="$3"
+              >
+                <ChevronDown size={20} />
+              </Select.ScrollDownButton>
+            </Select.Content>
+          </Select>
+        ) : (
+          <Button
+            variant="outline"
+            width="100%"
+            icon={<Building size={16} />}
+            onPress={() => router.push("/(seller)/businesses/add")}
+          >
+            Create a Business
+          </Button>
+        )}
       </YStack>
 
       {/* Menu Items */}
@@ -159,23 +271,6 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Menu
-            </Text>
-          </Button>
-
-          {/* Businesses */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/businesses")}
-            icon={<Building size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Businesses
             </Text>
           </Button>
 
@@ -316,7 +411,9 @@ export default function SellerDrawerLayout() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = Boolean(user && accessToken);
-  const isBiometricEnabled = useSecurityStore((state) => state.isBiometricEnabled);
+  const isBiometricEnabled = useSecurityStore(
+    (state) => state.isBiometricEnabled,
+  );
   const { isTablet, isLandscape } = useResponsive();
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -364,7 +461,9 @@ export default function SellerDrawerLayout() {
             },
             sceneStyle: { backgroundColor: theme.background.val },
             drawerType: usePermanentDrawer ? "permanent" : "front",
-            overlayColor: usePermanentDrawer ? "transparent" : "rgba(0,0,0,0.5)",
+            overlayColor: usePermanentDrawer
+              ? "transparent"
+              : "rgba(0,0,0,0.5)",
             swipeEnabled: !shouldHideMenu,
           };
         }}
@@ -425,38 +524,6 @@ export default function SellerDrawerLayout() {
             drawerIcon: ({ color, size }) => (
               <BarChart3 color={color} size={size} />
             ),
-          }}
-          listeners={{ drawerItemPress: handleProtectedRoute }}
-        />
-
-        {/* Businesses */}
-        <Drawer.Screen
-          name="businesses/index"
-          options={{
-            title: "Businesses",
-            drawerIcon: ({ color, size }) => (
-              <Building color={color} size={size} />
-            ),
-          }}
-          listeners={{ drawerItemPress: handleProtectedRoute }}
-        />
-
-        {/* Business Detail */}
-        <Drawer.Screen
-          name="businesses/[id]"
-          options={{
-            title: "Business Details",
-            drawerItemStyle: { display: 'none' },
-          }}
-          listeners={{ drawerItemPress: handleProtectedRoute }}
-        />
-
-        {/* Business Add */}
-        <Drawer.Screen
-          name="businesses/add"
-          options={{
-            title: "Add Business",
-            drawerItemStyle: { display: 'none' },
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

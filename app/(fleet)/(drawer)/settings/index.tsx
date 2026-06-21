@@ -47,6 +47,12 @@ export default function FleetSettingsScreen() {
   const settingsItems = [
     {
       icon: Building,
+      title: "Manage Businesses",
+      description: "View and switch between your businesses",
+      onPress: () => router.push("/(seller)/businesses"),
+    },
+    {
+      icon: Building,
       title: "Fleet Profile",
       description: "Update company information and details",
       onPress: () => router.push("/(fleet)/settings/profile"),

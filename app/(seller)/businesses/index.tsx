@@ -12,7 +12,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRouter, useNavigation } from "expo-router";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, BackButton } from "@/components/ui";
 
 export default function BusinessesScreen() {
   const router = useRouter();
@@ -150,19 +150,22 @@ export default function BusinessesScreen() {
 
   const ListHeaderComponent = () => (
     <YStack gap="$4" paddingBottom="$2">
-      <YStack gap="$2">
-        <Text
-          fontSize="$8"
-          fontWeight="bold"
-          fontFamily="$heading"
-          color="$color"
-        >
-          Businesses
-        </Text>
-        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-          Manage your business locations
-        </Text>
-      </YStack>
+      <XStack gap="$2" alignItems="center">
+        <BackButton />
+        <YStack gap="$1" flex={1}>
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Businesses
+          </Text>
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+            Manage your business locations
+          </Text>
+        </YStack>
+      </XStack>
 
       <YStack gap="$3">
         <XStack gap="$3" alignItems="center">
@@ -257,7 +260,8 @@ export default function BusinessesScreen() {
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          padding: 16,
+          paddingTop: Math.max(insets.top + 8, 16),
           paddingBottom: Math.max(insets.bottom + 20, 24),
           flexGrow: 1,
         }}

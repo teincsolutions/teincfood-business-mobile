@@ -51,6 +51,10 @@ export default function SelectBusinessScreen() {
     router.push("/(seller)/businesses/add");
   };
 
+  const handleManage = () => {
+    router.push("/(seller)/businesses");
+  };
+
   const renderBusiness = ({ item: business }) => (
     <Card
       padding="$4"
@@ -165,16 +169,16 @@ export default function SelectBusinessScreen() {
   );
 
   const ListEmptyComponent = () => (
-    <Card padding="$6" bordered>
+    <Card padding="$6" bordered marginTop="$4">
       <YStack alignItems="center" gap="$3">
-        <Building size={48} color="$colorMuted" />
+        <Building size={64} color="$colorMuted" />
         <Text
-          fontSize="$5"
-          fontWeight="600"
+          fontSize="$6"
+          fontWeight="700"
           textAlign="center"
           fontFamily="$heading"
         >
-          No businesses yet
+          Welcome! Create Your Business
         </Text>
         <Text
           fontSize="$4"
@@ -182,61 +186,83 @@ export default function SelectBusinessScreen() {
           textAlign="center"
           fontFamily="$body"
         >
-          Add your first business to get started
+          You need a business to start selling or managing riders. Add your first business to get started.
         </Text>
       </YStack>
     </Card>
   );
 
-  const ListFooterComponent = () => (
-    <YStack gap="$3" marginTop="$2">
-      <Card
-        padding="$4"
-        bordered
-        borderStyle="dashed"
-        borderColor="$borderColor"
-        pressStyle={{ scale: 0.98, opacity: 0.9 }}
-        onPress={handleAddNewBusiness}
-      >
-        <XStack gap="$3" alignItems="center" justifyContent="center">
-          <YStack
-            width={40}
-            height={40}
-            borderRadius="$3"
-            backgroundColor="$gray2"
-            alignItems="center"
-            justifyContent="center"
+  const ListFooterComponent = () => {
+    if (businesses.length === 0) {
+      return (
+        <YStack gap="$3" marginTop="$2">
+          <Button
+            size="$5"
+            onPress={handleAddNewBusiness}
           >
-            <Plus size={20} color="$colorMuted" />
-          </YStack>
-          <Text
-            fontSize="$4"
-            fontWeight="500"
-            fontFamily="$heading"
-            color="$color"
+            Create Your First Business
+          </Button>
+          <Button
+            variant="outline"
+            size="$5"
+            onPress={() => router.replace("/(seller)/(drawer)/dashboard")}
           >
-            Add New Business
-          </Text>
-        </XStack>
-      </Card>
+            Skip, I'll do it later
+          </Button>
+        </YStack>
+      );
+    }
 
-      <Button
-        size="$5"
-        onPress={handleContinue}
-        disabled={!selectedBusinessId}
-        opacity={selectedBusinessId ? 1 : 0.5}
-      >
-        Continue to Dashboard
-      </Button>
-      <Button
-        variant="outline"
-        size="$5"
-        onPress={() => router.push("/(seller)/businesses")}
-      >
-        Manage All Businesses
-      </Button>
-    </YStack>
-  );
+    return (
+      <YStack gap="$3" marginTop="$2">
+        <Card
+          padding="$4"
+          bordered
+          borderStyle="dashed"
+          borderColor="$borderColor"
+          pressStyle={{ scale: 0.98, opacity: 0.9 }}
+          onPress={handleAddNewBusiness}
+        >
+          <XStack gap="$3" alignItems="center" justifyContent="center">
+            <YStack
+              width={40}
+              height={40}
+              borderRadius="$3"
+              backgroundColor="$gray2"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Plus size={20} color="$colorMuted" />
+            </YStack>
+            <Text
+              fontSize="$4"
+              fontWeight="500"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Add New Business
+            </Text>
+          </XStack>
+        </Card>
+
+        <Button
+          size="$5"
+          onPress={handleContinue}
+          disabled={!selectedBusinessId}
+          opacity={selectedBusinessId ? 1 : 0.5}
+        >
+          Continue to Dashboard
+        </Button>
+        <Button
+          variant="outline"
+          size="$5"
+          onPress={handleManage}
+        >
+          Manage All Businesses
+        </Button>
+      </YStack>
+    );
+  };
 
   return (
     <FlatList

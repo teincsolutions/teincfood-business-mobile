@@ -7,25 +7,33 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SellerOrder } from '@/types/seller.model';
 import * as sellerService from '@/services/seller.service';
+import { useBusinessStore } from '@/stores/business.store';
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
 export const SELLER_KEYS = {
   all: ['seller'] as const,
-  orders: () => [...SELLER_KEYS.all, 'orders'] as const,
-  order: (id: string) => [...SELLER_KEYS.all, 'order', id] as const,
+  orders: (businessId?: string) => [...SELLER_KEYS.all, 'orders', businessId] as const,
+  order: (id: string, businessId?: string) => [...SELLER_KEYS.all, 'order', id, businessId] as const,
 };
 
 // ─── Query Hooks ─────────────────────────────────────────────────────────────
 
 /**
- * Fetches all seller orders with automatic refetching.
+ * Fetches all seller orders scoped to the active business.
  */
 export function useSellerOrdersQuery(enabled = true) {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+
   return useQuery({
-    queryKey: SELLER_KEYS.orders(),
-    queryFn: () => sellerService.fetchSellerOrders(),
-    enabled,
+    queryKey: SELLER_KEYS.orders(activeBusinessId),
+    queryFn: () => {
+      if (activeBusinessId) {
+        return sellerService.fetchBusinessOrders(activeBusinessId);
+      }
+      return sellerService.fetchSellerOrders();
+    },
+    enabled: enabled,
     refetchInterval: 10000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
@@ -37,8 +45,10 @@ export function useSellerOrdersQuery(enabled = true) {
  * Fetches a single seller order by ID
  */
 export function useSellerOrderQuery(orderId: string, enabled = true) {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+
   return useQuery({
-    queryKey: SELLER_KEYS.order(orderId),
+    queryKey: SELLER_KEYS.order(orderId, activeBusinessId),
     queryFn: () => sellerService.fetchSellerOrder(orderId),
     enabled: enabled && Boolean(orderId),
     staleTime: 5000,

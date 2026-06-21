@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { YStack, Text, Card, XStack, Separator, Switch, ScrollView } from "tamagui";
+import { YStack, Text, Card, XStack, Separator, Switch, ScrollView, Spinner } from "tamagui";
 import {
   Building,
   Clock,
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
+import * as businessService from '@/services/business.service';
 
 /**
  * Seller Settings Screen
@@ -25,7 +26,35 @@ export default function SellerSettings() {
   const [isOpen, setIsOpen] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [togglingStore, setTogglingStore] = useState(false);
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+
+  const handleToggleStore = async (open: boolean) => {
+    if (!activeBusiness?.id) return;
+    setTogglingStore(true);
+    try {
+      await businessService.toggleBusinessOpen(activeBusiness.id);
+      setIsOpen(open);
+    } catch {
+      // Revert UI
+    } finally {
+      setTogglingStore(false);
+    }
+  };
+
+  const handleCloseStore = async () => {
+    if (!activeBusiness?.id) return;
+    setTogglingStore(true);
+    try {
+      await businessService.toggleBusinessOpen(activeBusiness.id);
+      setIsOpen(false);
+      setShowCloseDialog(false);
+    } catch {
+      // noop
+    } finally {
+      setTogglingStore(false);
+    }
+  };
 
   const handleBusinessProfile = () => {
     if (activeBusiness?.id) {
@@ -39,7 +68,9 @@ export default function SellerSettings() {
     {
       icon: Building,
       label: "Business Profile",
-      description: "Update business name, logo, description",
+      description: activeBusiness
+        ? `${activeBusiness.name} — update details, logo, description`
+        : "Manage your businesses",
       onPress: handleBusinessProfile,
     },
     {
@@ -98,11 +129,13 @@ export default function SellerSettings() {
               <Switch
                 size="$5"
                 checked={isOpen}
-                onCheckedChange={setIsOpen}
+                disabled={togglingStore}
+                onCheckedChange={handleToggleStore}
                 backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
               >
                 <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
+              {togglingStore && <Spinner size="small" />}
             </XStack>
           </Card>
 
@@ -216,10 +249,7 @@ export default function SellerSettings() {
         description="This will temporarily close your store and stop accepting new orders. You can reopen at any time."
         confirmText="CLOSE STORE"
         isDestructive
-        onConfirm={() => {
-          setIsOpen(false);
-          setShowCloseDialog(false);
-        }}
+        onConfirm={handleCloseStore}
       />
     </YStack>
   );

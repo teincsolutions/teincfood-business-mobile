@@ -104,13 +104,13 @@ See [detailed plan](.opencode/plans/business-context-plan.md) for full breakdown
 
 **Top-level checklist:**
 
-- [ ] **Step 1:** Backend — FleetController: support `business_id` for members
-- [ ] **Step 2:** Frontend — `useActiveBusiness` hook
-- [ ] **Step 3:** Frontend — Business selector flow at login
-- [ ] **Step 4:** Frontend — Remove Businesses from drawer → settings
-- [ ] **Step 5:** Frontend — Wire business context into seller APIs
-- [ ] **Step 6:** Frontend — Wire business context into fleet APIs
-- [ ] **Step 7:** Frontend — Wallet service for business finance
-- [ ] **Step 8:** Frontend — Wire settings store toggle to backend
-- [ ] **Step 9:** Frontend — Active business header indicator
-- [ ] **Step 10:** Test & verify — `npx tsc --noEmit` 0 errors
+- [x] **Step 1:** Backend — FleetController: support `business_id` for members
+- [x] **Step 2:** Frontend — `useActiveBusiness` hook
+- [x] **Step 3:** Frontend — Business selector flow at login
+- [x] **Step 4:** Frontend — Remove Businesses from drawer → settings
+- [x] **Step 5:** Frontend — Wire business context into seller APIs
+- [x] **Step 6:** Frontend — Wire business context into fleet APIs
+- [x] **Step 7:** Frontend — Wallet service for business finance
+- [x] **Step 8:** Frontend — Wire settings store toggle to backend
+- [x] **Step 9:** Frontend — Active business header indicator
+- [x] **Step 10:** Test & verify — `npx tsc --noEmit` 0 errors

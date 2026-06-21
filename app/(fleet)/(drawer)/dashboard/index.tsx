@@ -83,7 +83,7 @@ export default function FleetDashboardScreen() {
                 <Button
                   variant="primary"
                   onPress={() =>
-                    router.push("/(seller)/(drawer)/businesses/add")
+                    router.push("/(seller)/businesses/add")
                   }
                 >
                   Create Business
