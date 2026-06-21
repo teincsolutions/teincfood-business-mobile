@@ -7,3 +7,4 @@ export * from './kiosk.api';
 export * from './menu.api';
 export * from './business.api';
 export * from './wallet.api';
+export * from './conversation.api';

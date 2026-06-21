@@ -7,7 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Phone, MoreVertical } from '@tamagui/lucide-icons';
 import { BackButton } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
+import { useChatStore } from '@/stores/chat.store';
 import { useChatParticipantQuery, useChatSocket } from '@/services/messages.service';
+import { useChat } from '@/hooks/useChat';
+import type { StoredMessage } from '@/types/chat';
 
 export default function ChatScreen() {
   const { userId } = useLocalSearchParams();
@@ -17,47 +20,60 @@ export default function ChatScreen() {
   const scrollViewRef = useRef(null);
   const normalizedUserId = Array.isArray(userId) ? userId[0] : userId;
   const currentUserId = useAuthStore((state) => state.user?.id || 'me');
-  const { data: user } = useChatParticipantQuery(normalizedUserId || '');
-  
+  const isSupportChat = normalizedUserId === 'support';
   const [message, setMessage] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Hello! Your order is being prepared and will be sent out shortly.', sender: 'them', time: '10:00 AM' },
-    { id: '2', text: 'Great, thank you! Please let me know when the rider is on the way.', sender: 'me', time: '10:05 AM' },
-    { id: '3', text: "Of course! I'll update the status in the app as well.", sender: 'them', time: '10:06 AM' },
-  ]);
+
+  // Always call hooks at top level (unconditional)
+  const { data: user } = useChatParticipantQuery(normalizedUserId || '');
 
   const onChatEvent = useCallback(
-    (event) => {
-      if (event.type !== 'chat.message') return;
-      const payload = event.payload || {};
-      const isMe = payload.senderId === currentUserId;
-      const time = new Date(event.occurredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: payload.messageId || event.eventId,
-          text: payload.text || '',
-          sender: isMe ? 'me' : 'them',
-          time,
-        },
-      ]);
+    (event: any) => {
+      const payload = event.payload || event;
+      const text = payload.text || payload.content || '';
+      const senderId = payload.senderId || payload.sender_id || '';
+      const msgId = payload.messageId || payload.id || `msg_${Date.now()}`;
+      const insertedAt = payload.insertedAt || payload.inserted_at || new Date().toISOString();
+      const isMe = senderId === currentUserId;
+
+      const conversationId = payload.conversationId || payload.conversation_id || normalizedUserId;
+      if (!conversationId) return;
+
+      useChatStore.getState().upsertMessage(conversationId, {
+        id: msgId,
+        localId: `local_${msgId}`,
+        conversationId,
+        senderId,
+        text,
+        status: isMe ? 'sent' : 'received',
+        channel: 'websocket',
+        sentAt: insertedAt,
+      });
+
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     },
-    [currentUserId]
+    [currentUserId, normalizedUserId]
   );
-  const { sendMessage, markAsRead } = useChatSocket(normalizedUserId || '', onChatEvent);
 
-  // Mark messages as read when chat opens
-  useEffect(() => {
-    if (normalizedUserId && messages.length > 0) {
-      // Mark the last message as read to clear unread count
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage) {
-        markAsRead(lastMessage.id);
-      }
-    }
-  }, [normalizedUserId, messages, markAsRead]);
+  // Support chat uses the full useChat hook
+  const supportChat = useChat({
+    userId: 'support',
+    onChatEvent,
+  });
+
+  // Non-support chats use raw socket
+  const rawSocket = useChatSocket(normalizedUserId || '', onChatEvent);
+
+  const sendMessage = isSupportChat ? supportChat.sendMessage : rawSocket.sendMessage;
+
+  // Store messages for current conversation
+  const messagesMap = useChatStore((state) => state.messages);
+  const storedMessages = normalizedUserId ? (messagesMap[normalizedUserId] ?? []) : [];
+
+  // For support chat, also use supportChat's stored messages when available
+  const displayMessages = isSupportChat && supportChat.storedMessages.length > 0
+    ? supportChat.storedMessages
+    : storedMessages;
 
   const handleCall = async () => {
     const phone = user?.phone?.trim();
@@ -65,19 +81,19 @@ export default function ChatScreen() {
       Alert.alert('Call unavailable', 'No phone number is available for this contact.');
       return;
     }
-
     const url = `tel:${phone.replace(/\s+/g, '')}`;
     const canOpen = await Linking.canOpenURL(url);
     if (!canOpen) {
       Alert.alert('Call unavailable', 'This device cannot place calls right now.');
       return;
     }
-
     await Linking.openURL(url);
   };
 
   const handleClearConversation = () => {
-    setMessages([]);
+    if (normalizedUserId) {
+      useChatStore.getState().clearConversation(normalizedUserId);
+    }
     setMenuOpen(false);
   };
 
@@ -89,6 +105,20 @@ export default function ChatScreen() {
   const handleSend = () => {
     if (!message.trim()) return;
     sendMessage(message);
+
+    if (normalizedUserId) {
+      useChatStore.getState().upsertMessage(normalizedUserId, {
+        id: `msg_${Date.now()}`,
+        localId: `local_${Date.now()}`,
+        conversationId: normalizedUserId,
+        senderId: currentUserId,
+        text: message.trim(),
+        status: 'sending',
+        channel: 'websocket',
+        sentAt: new Date().toISOString(),
+      });
+    }
+
     setMessage('');
   };
   const canSend = Boolean(message.trim());
@@ -122,7 +152,7 @@ export default function ChatScreen() {
             />
             <YStack>
               <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
-                {user?.fullName}
+                {user?.fullName || (isSupportChat ? 'Support' : 'Chat')}
               </Text>
               <XStack alignItems="center" gap="$1">
                 <YStack width={8} height={8} borderRadius={4} backgroundColor="$green" />
@@ -148,11 +178,11 @@ export default function ChatScreen() {
             TODAY
           </Text>
 
-          {messages.map((msg) => {
-            const isMe = msg.sender === 'me';
+          {displayMessages.map((msg) => {
+            const isMe = msg.senderId === currentUserId;
             return (
               <YStack 
-                key={msg.id} 
+                key={msg.id || msg.localId} 
                 alignSelf={isMe ? 'flex-end' : 'flex-start'} 
                 maxWidth="80%" 
                 marginBottom="$4"
@@ -180,7 +210,7 @@ export default function ChatScreen() {
                   marginTop="$1"
                   alignSelf={isMe ? 'flex-end' : 'flex-start'}
                 >
-                  {msg.time}
+                  {msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                 </Text>
               </YStack>
             );

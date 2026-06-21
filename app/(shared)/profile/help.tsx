@@ -86,7 +86,7 @@ export default function HelpSupport() {
       icon: MessageCircle,
       label: "Live Chat",
       description: "Chat with our support team",
-      action: () => {},
+      action: () => router.push('/(communication)/chat/support'),
       available: true,
     },
     {

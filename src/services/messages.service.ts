@@ -3,40 +3,45 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { chatService } from './chat.service';
 import { useAuthStore } from '@/stores/auth.store';
+import type {
+  ConversationListResponse,
+  ConversationResponse,
+  ConversationMessagesResponse,
+  ConversationMessage,
+} from '@/models/api';
 
 export function useInboxConversationsQuery() {
-  return useQuery({
+  return useQuery<ConversationListResponse>({
     queryKey: ['inbox-conversations'],
-    queryFn: () => api.get<any[]>('/conversations'),
+    queryFn: () => api.get<ConversationListResponse>('/conversations'),
   });
 }
 
 export function useConversationMessagesQuery(conversationId: string) {
-  return useQuery({
+  return useQuery<ConversationMessagesResponse>({
     queryKey: ['conversation-messages', conversationId],
-    queryFn: () => api.get<any[]>(`/conversations/${conversationId}/messages`),
+    queryFn: () => api.get<ConversationMessagesResponse>(`/conversations/${conversationId}/messages`),
     enabled: Boolean(conversationId),
   });
 }
 
 export function useSupportConversationQuery() {
-  return useQuery({
+  return useQuery<ConversationResponse>({
     queryKey: ['support-conversation'],
-    queryFn: () => api.post<any>('/conversations/support'),
+    queryFn: () => api.post<ConversationResponse>('/conversations/support'),
   });
 }
 
 export function useChatParticipantQuery(userId: string) {
   return useQuery({
     queryKey: ['chat-participant', userId],
-    queryFn: () => api.get<any>(`/users/${userId}`),
+    queryFn: () => api.get<Record<string, unknown>>(`/users/${userId}`),
     enabled: Boolean(userId),
   });
 }
 
 export function useChatSocket(chatId: string, onEvent: (event: any) => void) {
   const accessToken = useAuthStore((state) => state.accessToken);
-  const userId = useAuthStore((state) => state.user?.id || 'me');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -62,8 +67,6 @@ export function useChatSocket(chatId: string, onEvent: (event: any) => void) {
       if (!trimmed) return;
       const localId = `cmsg_${Date.now()}`;
       chatService.sendMessage(chatId, trimmed, localId).catch(() => {});
-
-      useAuthStore.getState();
     },
     [chatId]
   );

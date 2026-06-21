@@ -19,6 +19,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **Account upgrade flow** — all users register as `buyer` role by default. Role selection at registration is intent only. On login, user picks a role from a role selector screen. To become `seller`/`fleet_manager`, user must **create a business**. To become `rider`, user must **create a rider profile**. Until they complete one of these, the user is `buyer` and has no access to role-grouped screens. After role selection, detect which prerequisite is incomplete and show the completion screen. Once completed, role upgrades and they enter the correct role group.
 - **KYC is optional** — show/prompt KYC but let user complete it later.
 - **Paginated endpoints use useInfiniteQuery** — when a backend endpoint returns `{ data: [...], pagination: {...} }`, the hook must use `useInfiniteQuery` with `select` to flatten pages. Never use `useQuery` for paginated responses.
+- **List screens use FlatList** — every screen listing dynamic data must use `FlatList` (not `ScrollView + .map()`). Include: `keyExtractor`, `ListEmptyComponent` with icon, `RefreshControl` for pull-to-refresh (unless real-time via WebSocket), `initialNumToRender={10}`, `windowSize={5}`, `maxToRenderPerBatch={10}`, `removeClippedSubviews`.
 
 ---
 
@@ -81,4 +82,16 @@ This file is for AI coding agents. Always re-read this file before starting work
 - [x] **`business.service.ts`** — typed with `BusinessResponse`, `PromoResponse`, `TaxRuleResponse`, etc.
 - [x] **Logout clears role** — `auth.store.ts` `clearAuth()` now calls `useRoleStore.clearRole()`; all logout paths (API token expiry, manual logout) clear both stores
 - [x] **`verification.tsx`** — already uses `useRoleStore` as primary source (`storedRole || role`)
+- [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors
+
+---
+
+## Phase 4: Communication Screens ✅ COMPLETE
+
+- [x] **`src/models/api/conversation.api.ts`** — typed conversation/message shapes matching backend snake_case
+- [x] **`messages.service.ts`** — all hook returns typed with `ConversationListResponse`, `ConversationResponse`, `ConversationMessagesResponse`
+- [x] **`useChat.ts`** — fixed `isReady` (was always false), fixed `loadOlderMessages` (was stub), typed returns, always calls hooks unconditionally
+- [x] **Inbox screen** — uses `useInboxConversations` hook instead of raw service; displays real backend fields (`type`, `status`, `updated_at`)
+- [x] **Chat screen** — uses `useChatStore` for message persistence; removes local mock data; supports both support and conversation-based chats; real WebSocket send
+- [x] **Deleted `useMessages.ts`** — dead code, never imported by any screen
 - [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors
