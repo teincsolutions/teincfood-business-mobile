@@ -16,6 +16,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **Port from buyer app** — for shared hooks/services/screens, check `../TeincFood/src/` first. The buyer app has real implementations of auth, chat, WebSocket, profile, addresses, push tokens, places, etc.
 - **Account upgrade flow** — all users register as `buyer` role by default. Role selection at registration is intent only. On login, user picks a role from a role selector screen. To become `seller`/`fleet_manager`, user must **create a business**. To become `rider`, user must **create a rider profile**. Until they complete one of these, the user is `buyer` and has no access to role-grouped screens. After role selection, detect which prerequisite is incomplete and show the completion screen. Once completed, role upgrades and they enter the correct role group.
 - **KYC is optional** — show/prompt KYC but let user complete it later.
+- **Paginated endpoints use useInfiniteQuery** — when a backend endpoint returns `{ data: [...], pagination: {...} }`, the hook must use `useInfiniteQuery` with `select` to flatten pages. Never use `useQuery` for paginated responses.
 
 ---
 

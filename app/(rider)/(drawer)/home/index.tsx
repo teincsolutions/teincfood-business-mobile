@@ -44,17 +44,19 @@ export default function RiderHome() {
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
   // Use query data or fallback to defaults
-  const metrics = metricsData ?? {
-    todayEarnings: 0,
-    todayDeliveries: 0,
-    availableDeliveries: 0,
-    totalDeliveries: 0,
+  const metrics = {
+    todayEarnings: metricsData?.todayEarnings ?? 0,
+    todayDeliveries: metricsData?.todayDeliveries ?? 0,
+    availableDeliveries: metricsData?.availableDeliveries ?? 0,
+    totalDeliveries: metricsData?.totalDeliveries ?? 0,
   };
   const activeDelivery = activeDeliveryData ?? null;
 
   // Get recent deliveries from the deliveries query
   const { data: deliveriesData = [] } = useRiderDeliveriesQuery();
-  const recentDeliveries = deliveriesData.filter(d => d.status === 'delivered').slice(0, 5);
+  const recentDeliveries = deliveriesData
+    .filter((d) => d.status === "delivered")
+    .slice(0, 5);
 
   const onRefresh = useCallback(async () => {
     await refetch();
@@ -88,7 +90,6 @@ export default function RiderHome() {
         gap="$4"
         backgroundColor="$background"
       >
-      
         <XStack justifyContent="space-between" alignItems="center">
           <XStack gap="$3" alignItems="center">
             <Button
@@ -136,10 +137,10 @@ export default function RiderHome() {
         </XStack>
 
         {/* Service Status */}
-          <ServiceStatusBanner
-            status={user?.serviceStatus}
-            hasCompletedKyc={user?.hasCompletedKyc}
-          />
+        <ServiceStatusBanner
+          status={user?.serviceStatus}
+          hasCompletedKyc={user?.hasCompletedKyc}
+        />
 
         {/* Online Status Card */}
         {!isOnline ? (
@@ -267,7 +268,7 @@ export default function RiderHome() {
                   height={48}
                   onPress={() => router.push("/(rider)/deliveries")}
                 >
-                  Available ({metrics.availableDeliveries})
+                  Available ({metrics.availableDeliveries || 0})
                 </Button>
                 <Button
                   variant="outline"

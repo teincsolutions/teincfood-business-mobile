@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   RiderMetrics,
   RiderDelivery,
@@ -36,7 +36,10 @@ const RIDER_KEYS = {
 export function useRiderMetricsQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.metrics(),
-    queryFn: () => riderService.fetchRiderMetrics(),
+    queryFn: async () => {
+      const res = await riderService.fetchRiderMetrics();
+      return res.data;
+    },
     enabled,
   });
 }
@@ -44,7 +47,10 @@ export function useRiderMetricsQuery(enabled = true) {
 export function useActiveDeliveryQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.activeDelivery(),
-    queryFn: () => riderService.fetchActiveDelivery(),
+    queryFn: async () => {
+      const res = await riderService.fetchActiveDelivery();
+      return res.data?.[0] ?? null;
+    },
     enabled,
   });
 }
@@ -52,12 +58,18 @@ export function useActiveDeliveryQuery(enabled = true) {
 // ─── Deliveries Hooks ───
 
 export function useRiderDeliveriesQuery(enabled = true) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: RIDER_KEYS.deliveries(),
-    queryFn: async () => {
-      const res = await riderService.fetchRiderDeliveries();
-      return res.data;
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await riderService.fetchRiderDeliveries(pageParam);
+      return res;
     },
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination ?? {};
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    select: (data) => data.pages.flatMap(p => p.data),
     enabled,
   });
 }

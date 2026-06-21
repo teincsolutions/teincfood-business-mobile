@@ -46,12 +46,12 @@ export async function updateRiderLocation(latitude: number, longitude: number): 
 
 // ─── Deliveries ───
 
-export async function fetchRiderDeliveries(): Promise<any> {
-  return api.get('/riders/deliveries');
+export async function fetchRiderDeliveries(page = 1, pageSize = 20): Promise<any> {
+  return api.get('/riders/deliveries', { params: { page, page_size: pageSize } });
 }
 
 export async function fetchActiveDelivery(): Promise<any | null> {
-  return api.get('/riders/deliveries');
+  return api.get('/riders/deliveries', { params: { page: 1, page_size: 1 } });
 }
 
 export async function fetchDeliveryDetail(deliveryId: string): Promise<any> {
