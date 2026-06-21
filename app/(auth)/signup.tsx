@@ -18,7 +18,9 @@ export default function SignupScreen() {
   const storedRole = useRoleStore((s) => s.role);
   const selectedRole = (() => {
     const r = storedRole || role;
-    return r === "seller" || r === "rider" || r === "fleet_manager" ? r : "seller";
+    return r === "seller" || r === "rider" || r === "fleet_manager"
+      ? r
+      : "seller";
   })();
   const signupMutation = useSignupMutation();
 
@@ -87,7 +89,7 @@ export default function SignupScreen() {
           phone: response.user.phone,
           username: response.user.username,
           role: selectedRole,
-          serviceStatus: 'pending_verification',
+          serviceStatus: "pending_verification",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -219,7 +221,7 @@ export default function SignupScreen() {
               Already have an account?
             </Text>
             <Button
-              variant="outlined"
+              variant="outline"
               width="100%"
               onPress={() =>
                 router.push({

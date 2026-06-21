@@ -72,7 +72,7 @@ export default function RiderDeliveryDetails() {
 
   const handleNavigateToPickup = () => {
     if (!delivery) return;
-    
+
     const locationData = {
       name: delivery.pickup.name,
       address: delivery.pickup.address,
@@ -128,11 +128,7 @@ export default function RiderDeliveryDetails() {
         </Text>
         <XStack gap="$2" alignItems="center">
           <TouchableOpacity onPress={() => setFilterSheetOpen(true)}>
-            <YStack
-              backgroundColor="$gray3"
-              padding="$2"
-              borderRadius="$3"
-            >
+            <YStack backgroundColor="$gray3" padding="$2" borderRadius="$3">
               <Filter size={20} color="$color" />
             </YStack>
           </TouchableOpacity>
@@ -249,7 +245,7 @@ export default function RiderDeliveryDetails() {
                 </Text>
               </YStack>
               <Button
-                variant="outlined"
+                variant="outline"
                 icon={<Navigation size={18} />}
                 onPress={handleNavigateToPickup}
                 width={"100%"}
@@ -318,25 +314,41 @@ export default function RiderDeliveryDetails() {
                     </Text>
                   </YStack>
                   <Text fontWeight="bold">
-                    {formatPrice(item.price * item.quantity, item.currency || DEFAULT_CURRENCY)}
+                    {formatPrice(
+                      item.price * item.quantity,
+                      item.currency || DEFAULT_CURRENCY,
+                    )}
                   </Text>
                 </XStack>
               ))}
               <Separator />
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Order Total</Text>
-                <Text>{formatPrice(delivery.orderTotal, delivery.currency || DEFAULT_CURRENCY)}</Text>
+                <Text>
+                  {formatPrice(
+                    delivery.orderTotal,
+                    delivery.currency || DEFAULT_CURRENCY,
+                  )}
+                </Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text color="$colorMuted">Delivery Fee</Text>
-                <Text>{formatPrice(delivery.deliveryFee, delivery.currency || DEFAULT_CURRENCY)}</Text>
+                <Text>
+                  {formatPrice(
+                    delivery.deliveryFee,
+                    delivery.currency || DEFAULT_CURRENCY,
+                  )}
+                </Text>
               </XStack>
               <XStack justifyContent="space-between">
                 <Text fontWeight="bold" color="$success">
                   Your Earnings
                 </Text>
                 <Text fontWeight="bold" color="$success">
-                  {formatPrice(delivery.earnings, delivery.currency || DEFAULT_CURRENCY)}
+                  {formatPrice(
+                    delivery.earnings,
+                    delivery.currency || DEFAULT_CURRENCY,
+                  )}
                 </Text>
               </XStack>
             </YStack>
@@ -382,7 +394,9 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.deliveredAt ? "$success" : "$gray800"}
+                  backgroundColor={
+                    delivery.deliveredAt ? "$success" : "$gray800"
+                  }
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
@@ -432,7 +446,11 @@ export default function RiderDeliveryDetails() {
                     Delivery Completed!
                   </Text>
                   <Text color="$colorMuted">
-                    You earned {formatPrice(delivery.earnings, delivery.currency || DEFAULT_CURRENCY)}
+                    You earned{" "}
+                    {formatPrice(
+                      delivery.earnings,
+                      delivery.currency || DEFAULT_CURRENCY,
+                    )}
                   </Text>
                 </YStack>
               </Card>
@@ -470,7 +488,12 @@ export default function RiderDeliveryDetails() {
             paddingHorizontal="$5"
             paddingVertical="$4"
           >
-            <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
+            <Text
+              fontSize="$6"
+              fontWeight="800"
+              fontFamily="$heading"
+              color="$color"
+            >
               Filter Options
             </Text>
             <TouchableOpacity onPress={() => setFilterSheetOpen(false)}>
@@ -505,14 +528,20 @@ export default function RiderDeliveryDetails() {
                         borderRadius="$4"
                         borderWidth={1}
                         borderColor={
-                          statusFilter === option.value ? "$primary" : "$borderColor"
+                          statusFilter === option.value
+                            ? "$primary"
+                            : "$borderColor"
                         }
                         backgroundColor={
-                          statusFilter === option.value ? "$primary" : "$background"
+                          statusFilter === option.value
+                            ? "$primary"
+                            : "$background"
                         }
                       >
                         <Text
-                          color={statusFilter === option.value ? "white" : "$color"}
+                          color={
+                            statusFilter === option.value ? "white" : "$color"
+                          }
                           fontWeight="600"
                         >
                           {option.label}
@@ -547,14 +576,20 @@ export default function RiderDeliveryDetails() {
                         borderRadius="$4"
                         borderWidth={1}
                         borderColor={
-                          dateFilter === option.value ? "$primary" : "$borderColor"
+                          dateFilter === option.value
+                            ? "$primary"
+                            : "$borderColor"
                         }
                         backgroundColor={
-                          dateFilter === option.value ? "$primary" : "$background"
+                          dateFilter === option.value
+                            ? "$primary"
+                            : "$background"
                         }
                       >
                         <Text
-                          color={dateFilter === option.value ? "white" : "$color"}
+                          color={
+                            dateFilter === option.value ? "white" : "$color"
+                          }
                           fontWeight="600"
                         >
                           {option.label}
@@ -575,9 +610,18 @@ export default function RiderDeliveryDetails() {
                 <XStack gap="$2" flexWrap="wrap">
                   {[
                     { value: "all", label: "All" },
-                    { value: "high", label: `High (>${formatPrice(10, DEFAULT_CURRENCY)})` },
-                    { value: "medium", label: `Medium (${formatPrice(5, DEFAULT_CURRENCY)}-10)` },
-                    { value: "low", label: `Low (<${formatPrice(5, DEFAULT_CURRENCY)})` },
+                    {
+                      value: "high",
+                      label: `High (>${formatPrice(10, DEFAULT_CURRENCY)})`,
+                    },
+                    {
+                      value: "medium",
+                      label: `Medium (${formatPrice(5, DEFAULT_CURRENCY)}-10)`,
+                    },
+                    {
+                      value: "low",
+                      label: `Low (<${formatPrice(5, DEFAULT_CURRENCY)})`,
+                    },
                   ].map((option) => (
                     <TouchableOpacity key={option.value}>
                       <YStack

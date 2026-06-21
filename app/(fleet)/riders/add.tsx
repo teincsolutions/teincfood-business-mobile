@@ -317,7 +317,7 @@ export default function AddRiderScreen() {
                 </Button>
 
                 <Button
-                  variant="outlined"
+                  variant="outline"
                   width="100%"
                   size="$5"
                   onPress={() =>

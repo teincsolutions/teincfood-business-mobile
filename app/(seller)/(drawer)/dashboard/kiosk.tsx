@@ -794,7 +794,7 @@ export default function KioskMode() {
       >
         <Button
           flex={1}
-          variant="outlined"
+          variant="outline"
           onPress={handleExitKiosk}
           loading={isAuthenticating}
           disabled={isAuthenticating}

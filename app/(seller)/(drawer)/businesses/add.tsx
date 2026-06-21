@@ -123,7 +123,9 @@ export default function AddBusinessScreen() {
       // add a logo, edit details, and upload operational documents immediately
       router.replace(`/(seller)/businesses/${newBusiness.id}`);
     } catch (err: any) {
-      setErrors({ form: err?.message || "Failed to add business. Please try again." });
+      setErrors({
+        form: err?.message || "Failed to add business. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -140,13 +142,25 @@ export default function AddBusinessScreen() {
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
       >
-        <YStack padding="$4" gap="$4" $gtSm={{ padding: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
+        <YStack
+          padding="$4"
+          gap="$4"
+          $gtSm={{ padding: "$6", maxWidth: 600 }}
+          alignSelf="center"
+          width="100%"
+        >
           <YStack mb="$4">
             <BackButton />
           </YStack>
 
           <YStack gap="$2">
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color" $gtSm={{ fontSize: "$10" }}>
+            <Text
+              fontSize="$8"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+              $gtSm={{ fontSize: "$10" }}
+            >
               Add Business
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -166,7 +180,13 @@ export default function AddBusinessScreen() {
             />
 
             <YStack gap="$2">
-              <Label htmlFor="businessType" fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+              <Label
+                htmlFor="businessType"
+                fontSize="$4"
+                fontWeight="500"
+                fontFamily="$body"
+                color="$color"
+              >
                 Business Type *
               </Label>
               <Select
@@ -179,18 +199,15 @@ export default function AddBusinessScreen() {
                   borderRadius="$4"
                   backgroundColor="$background"
                   borderColor={errors.type ? "$error" : "$borderColor"}
-                  focusStyle={{ borderColor: errors.type ? "$error" : "$primary" }}
+                  focusStyle={{
+                    borderColor: errors.type ? "$error" : "$primary",
+                  }}
                 >
                   <Select.Value placeholder="Select business type" />
                 </Select.Trigger>
 
                 <Adapt when="maxSm" platform="touch">
-                  <Sheet
-                    native
-                    modal
-                    dismissOnSnapToBottom
-                    animation="medium"
-                  >
+                  <Sheet native modal dismissOnSnapToBottom animation="medium">
                     <Sheet.Frame>
                       <Sheet.ScrollView>
                         <Adapt.Contents />
@@ -224,7 +241,9 @@ export default function AddBusinessScreen() {
                     borderColor="$borderColor"
                   >
                     <Select.Group>
-                      <Select.Label fontWeight="700">Business Types</Select.Label>
+                      <Select.Label fontWeight="700">
+                        Business Types
+                      </Select.Label>
                       <Select.Item index={0} value="restaurant">
                         <Select.ItemText>Restaurant</Select.ItemText>
                       </Select.Item>
@@ -321,9 +340,13 @@ export default function AddBusinessScreen() {
               </Button>
 
               <Button
-                variant="outlined"
+                variant="outline"
                 size="$5"
-                onPress={() => navigation.canGoBack() ? router.back() : router.replace("/(seller)/businesses")}
+                onPress={() =>
+                  navigation.canGoBack()
+                    ? router.back()
+                    : router.replace("/(seller)/businesses")
+                }
                 disabled={isLoading}
               >
                 Cancel

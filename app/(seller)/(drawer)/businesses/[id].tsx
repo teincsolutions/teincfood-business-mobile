@@ -315,7 +315,7 @@ export default function BusinessDetailScreen() {
             <XStack gap="$2">
               <Button
                 size="$3"
-                variant="outlined"
+                variant="outline"
                 icon={<X size={16} />}
                 onPress={handleCancelEdit}
                 disabled={isSaving}
@@ -387,7 +387,7 @@ export default function BusinessDetailScreen() {
             {isEditing && (
               <Button
                 size="$2"
-                variant="outlined"
+                variant="outline"
                 icon={<Camera size={14} />}
                 onPress={handleChangeLogo}
                 marginTop="$2"
@@ -768,7 +768,7 @@ export default function BusinessDetailScreen() {
                     <XStack gap="$2" paddingLeft="$11" marginTop="$1">
                       <Button
                         size="$2"
-                        variant="outlined"
+                        variant="outline"
                         icon={<Camera size={14} />}
                         onPress={() => pickDoc(doc.id, true)}
                         disabled={uploadingDocId === doc.id}
@@ -777,7 +777,7 @@ export default function BusinessDetailScreen() {
                       </Button>
                       <Button
                         size="$2"
-                        variant="outlined"
+                        variant="outline"
                         icon={<FileText size={14} />}
                         onPress={() => pickDoc(doc.id, false)}
                         disabled={uploadingDocId === doc.id}
@@ -797,7 +797,7 @@ export default function BusinessDetailScreen() {
         {!isEditing && !isDefault && isActive && (
           <Button
             size="$5"
-            variant="outlined"
+            variant="outline"
             onPress={() => setDefaultBusiness(id)}
           >
             <Text fontFamily="$body">Set as Default Business</Text>

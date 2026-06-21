@@ -1,14 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Separator,
-  Avatar,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DollarSign,
@@ -27,7 +20,9 @@ export default function FleetEarningsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { dashboard, riders } = useFleetStore();
-  const [selectedPeriod, setSelectedPeriod] = useState<"today" | "week" | "month">("today");
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    "today" | "week" | "month"
+  >("today");
 
   const getEarningsByPeriod = () => {
     switch (selectedPeriod) {
@@ -69,7 +64,12 @@ export default function FleetEarningsScreen() {
       <YStack padding="$4" gap="$4">
         {/* Header */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Earnings
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -122,7 +122,12 @@ export default function FleetEarningsScreen() {
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Total Earnings
               </Text>
-              <Text fontSize="$10" fontWeight="bold" color="$primary" fontFamily="$heading">
+              <Text
+                fontSize="$10"
+                fontWeight="bold"
+                color="$primary"
+                fontFamily="$heading"
+              >
                 {formatPrice(getEarningsByPeriod())}
               </Text>
             </YStack>
@@ -153,10 +158,20 @@ export default function FleetEarningsScreen() {
         <Card padding="$4" bordered>
           <YStack gap="$3">
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+              <Text
+                fontSize="$5"
+                fontWeight="600"
+                fontFamily="$heading"
+                color="$color"
+              >
                 Fleet Commission
               </Text>
-              <Text fontSize="$5" fontWeight="600" color="$success" fontFamily="$heading">
+              <Text
+                fontSize="$5"
+                fontWeight="600"
+                color="$success"
+                fontFamily="$heading"
+              >
                 {formatPrice(getEarningsByPeriod() * 0.15)}
               </Text>
             </XStack>
@@ -175,7 +190,12 @@ export default function FleetEarningsScreen() {
         {/* Top Riders */}
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
-            <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
+            <Text
+              fontSize="$6"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
               Top Riders
             </Text>
             <Button
@@ -215,12 +235,21 @@ export default function FleetEarningsScreen() {
                   <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
                     {rider.riderName}
                   </Text>
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     {rider.totalDeliveries} deliveries
                   </Text>
                 </YStack>
                 <YStack alignItems="flex-end">
-                  <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
+                  <Text
+                    fontSize="$4"
+                    fontWeight="600"
+                    color="$success"
+                    fontFamily="$heading"
+                  >
                     {formatPrice(rider.totalEarnings)}
                   </Text>
                   <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
@@ -235,7 +264,12 @@ export default function FleetEarningsScreen() {
             <Card padding="$4" bordered>
               <YStack alignItems="center" gap="$3">
                 <Users size={48} color="$colorMuted" />
-                <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+                <Text
+                  fontSize="$4"
+                  color="$colorSecondary"
+                  textAlign="center"
+                  fontFamily="$body"
+                >
                   No rider earnings yet
                 </Text>
               </YStack>
@@ -245,7 +279,12 @@ export default function FleetEarningsScreen() {
 
         {/* Earnings Breakdown */}
         <YStack gap="$3">
-          <Text fontSize="$6" fontWeight="600" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$6"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$color"
+          >
             Earnings Breakdown
           </Text>
           <Card padding="$4" bordered>
@@ -263,7 +302,12 @@ export default function FleetEarningsScreen() {
                 <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
                   Fleet Commission (15%)
                 </Text>
-                <Text fontSize="$4" fontWeight="600" color="$success" fontFamily="$heading">
+                <Text
+                  fontSize="$4"
+                  fontWeight="600"
+                  color="$success"
+                  fontFamily="$heading"
+                >
                   + {formatPrice(getEarningsByPeriod() * 0.15)}
                 </Text>
               </XStack>
@@ -281,7 +325,7 @@ export default function FleetEarningsScreen() {
         </YStack>
 
         {/* Export Button */}
-        <Button icon={Download} variant="outlined">
+        <Button icon={Download} variant="outline">
           Export Report
         </Button>
       </YStack>

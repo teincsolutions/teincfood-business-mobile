@@ -28,11 +28,11 @@ export function AppAlertDialog({
   isDestructive = false,
 }: AppAlertDialogProps) {
   return (
-    <AlertDialog  open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay
-        zIndex={1000}
-        style={{ zIndex: 1000 }}
+          zIndex={1000}
+          style={{ zIndex: 1000 }}
           key="overlay"
           animation="quick"
           opacity={0.5}
@@ -103,7 +103,7 @@ export function AppAlertDialog({
               <Button
                 flex={1}
                 height={50}
-                variant="outlined"
+                variant="outline"
                 borderColor="$borderColor"
                 fontFamily="$body"
                 fontWeight="700"

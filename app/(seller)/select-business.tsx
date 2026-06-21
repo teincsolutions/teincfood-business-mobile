@@ -1,13 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
 import { FlatList } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Avatar,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -28,8 +22,11 @@ export default function SelectBusinessScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
-  const { businesses, setActiveBusiness, getDefaultBusiness } = useBusinessStore();
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const { businesses, setActiveBusiness, getDefaultBusiness } =
+    useBusinessStore();
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const defaultBusiness = getDefaultBusiness();
@@ -40,7 +37,9 @@ export default function SelectBusinessScreen() {
 
   const handleContinue = () => {
     if (selectedBusinessId) {
-      const selectedBusiness = businesses.find((b) => b.id === selectedBusinessId);
+      const selectedBusiness = businesses.find(
+        (b) => b.id === selectedBusinessId,
+      );
       if (selectedBusiness) {
         setActiveBusiness(selectedBusiness as any);
         router.replace("/(seller)/(drawer)/dashboard");
@@ -57,8 +56,12 @@ export default function SelectBusinessScreen() {
       padding="$4"
       bordered
       marginBottom="$3"
-      backgroundColor={selectedBusinessId === business.id ? "$primaryLight" : "$background"}
-      borderColor={selectedBusinessId === business.id ? "$primary" : "$borderColor"}
+      backgroundColor={
+        selectedBusinessId === business.id ? "$primaryLight" : "$background"
+      }
+      borderColor={
+        selectedBusinessId === business.id ? "$primary" : "$borderColor"
+      }
       pressStyle={{ scale: 0.98, opacity: 0.9 }}
       onPress={() => setSelectedBusinessId(business.id)}
     >
@@ -78,36 +81,59 @@ export default function SelectBusinessScreen() {
               {business.name}
             </Text>
             {selectedBusinessId === business.id && (
-              <YStack width={24} height={24} borderRadius="$10" backgroundColor="$primary" alignItems="center" justifyContent="center">
+              <YStack
+                width={24}
+                height={24}
+                borderRadius="$10"
+                backgroundColor="$primary"
+                alignItems="center"
+                justifyContent="center"
+              >
                 <Check size={16} color="white" />
               </YStack>
             )}
           </XStack>
 
-          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">{business.code}</Text>
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            {business.code}
+          </Text>
 
           <XStack gap="$2" alignItems="center" marginTop="$1">
             <MapPin size={14} color="$colorMuted" />
-            <Text fontSize="$3" color="$colorSecondary" flex={1} numberOfLines={1} fontFamily="$body">
-              {business.address?.city || business.address?.fullAddress || "No address"}
+            <Text
+              fontSize="$3"
+              color="$colorSecondary"
+              flex={1}
+              numberOfLines={1}
+              fontFamily="$body"
+            >
+              {business.address?.city ||
+                business.address?.fullAddress ||
+                "No address"}
             </Text>
           </XStack>
 
           {business.phone && (
             <XStack gap="$2" alignItems="center">
               <Phone size={14} color="$colorMuted" />
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">{business.phone}</Text>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                {business.phone}
+              </Text>
             </XStack>
           )}
 
           <XStack gap="$3" marginTop="$1">
             <XStack gap="$1" alignItems="center">
               <Star size={14} color="$yellow10" />
-              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">{business.rating?.toFixed(1) || "5.0"}</Text>
+              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                {business.rating?.toFixed(1) || "5.0"}
+              </Text>
             </XStack>
             <XStack gap="$1" alignItems="center">
               <Clock size={14} color="$colorMuted" />
-              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">{business.todayOrders || 0} orders today</Text>
+              <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                {business.todayOrders || 0} orders today
+              </Text>
             </XStack>
           </XStack>
         </YStack>
@@ -119,10 +145,20 @@ export default function SelectBusinessScreen() {
 
   const ListHeaderComponent = () => (
     <YStack gap="$2" alignItems="center" paddingBottom="$2">
-      <Text fontSize="$9" fontWeight="bold" fontFamily="$heading" color="$color">
+      <Text
+        fontSize="$9"
+        fontWeight="bold"
+        fontFamily="$heading"
+        color="$color"
+      >
         Select Business
       </Text>
-      <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+      <Text
+        fontSize="$4"
+        color="$colorSecondary"
+        textAlign="center"
+        fontFamily="$body"
+      >
         Choose which business you want to manage
       </Text>
     </YStack>
@@ -132,10 +168,20 @@ export default function SelectBusinessScreen() {
     <Card padding="$6" bordered>
       <YStack alignItems="center" gap="$3">
         <Building size={48} color="$colorMuted" />
-        <Text fontSize="$5" fontWeight="600" textAlign="center" fontFamily="$heading">
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          textAlign="center"
+          fontFamily="$heading"
+        >
           No businesses yet
         </Text>
-        <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+        <Text
+          fontSize="$4"
+          color="$colorSecondary"
+          textAlign="center"
+          fontFamily="$body"
+        >
           Add your first business to get started
         </Text>
       </YStack>
@@ -144,21 +190,49 @@ export default function SelectBusinessScreen() {
 
   const ListFooterComponent = () => (
     <YStack gap="$3" marginTop="$2">
-      <Card padding="$4" bordered borderStyle="dashed" borderColor="$borderColor" pressStyle={{ scale: 0.98, opacity: 0.9 }} onPress={handleAddNewBusiness}>
+      <Card
+        padding="$4"
+        bordered
+        borderStyle="dashed"
+        borderColor="$borderColor"
+        pressStyle={{ scale: 0.98, opacity: 0.9 }}
+        onPress={handleAddNewBusiness}
+      >
         <XStack gap="$3" alignItems="center" justifyContent="center">
-          <YStack width={40} height={40} borderRadius="$3" backgroundColor="$gray2" alignItems="center" justifyContent="center">
+          <YStack
+            width={40}
+            height={40}
+            borderRadius="$3"
+            backgroundColor="$gray2"
+            alignItems="center"
+            justifyContent="center"
+          >
             <Plus size={20} color="$colorMuted" />
           </YStack>
-          <Text fontSize="$4" fontWeight="500" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$4"
+            fontWeight="500"
+            fontFamily="$heading"
+            color="$color"
+          >
             Add New Business
           </Text>
         </XStack>
       </Card>
 
-      <Button size="$5" onPress={handleContinue} disabled={!selectedBusinessId} opacity={selectedBusinessId ? 1 : 0.5}>
+      <Button
+        size="$5"
+        onPress={handleContinue}
+        disabled={!selectedBusinessId}
+        opacity={selectedBusinessId ? 1 : 0.5}
+      >
         Continue to Dashboard
       </Button>
-      <Button variant="outlined" size="$5" onPress={() => router.push("/(seller)/businesses")}>
+      <Button
+        variant="outline"
+        size="$5"
+        onPress={() => router.push("/(seller)/businesses")}
+      >
         Manage All Businesses
       </Button>
     </YStack>

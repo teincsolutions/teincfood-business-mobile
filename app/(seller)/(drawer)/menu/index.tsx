@@ -94,7 +94,8 @@ export default function SellerMenu() {
 
   // ─── Save (add or edit) ────────────────────────────────────────
   const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim() || form.images.length === 0) return;
+    if (!form.name.trim() || !form.price.trim() || form.images.length === 0)
+      return;
 
     const baseData = {
       name: form.name.trim(),
@@ -135,7 +136,8 @@ export default function SellerMenu() {
   };
 
   // ─── Form helpers ──────────────────────────────────────────────
-  const isFormValid = form.name.trim() && form.price.trim() && form.images.length > 0;
+  const isFormValid =
+    form.name.trim() && form.price.trim() && form.images.length > 0;
 
   const toggleDietaryTag = (tag: string) => {
     setForm((f) => ({
@@ -196,7 +198,7 @@ export default function SellerMenu() {
             <Button
               variant="primary"
               height="$8"
-              $lg={{height: "$8"}}
+              $lg={{ height: "$8" }}
               paddingHorizontal="$4"
               marginBottom="$2"
               onPress={openAdd}
@@ -264,7 +266,7 @@ export default function SellerMenu() {
               No items in this category
             </Text>
             <Button
-              variant="outlined"
+              variant="outline"
               height={44}
               width="auto"
               paddingHorizontal="$5"

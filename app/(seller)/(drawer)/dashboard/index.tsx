@@ -4,16 +4,7 @@ import { useState, useCallback } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { formatPrice } from "@/utils/currency";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Button,
-  Separator,
-  Switch,
-  Avatar,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Switch, Avatar } from "tamagui";
 import {
   ShoppingBag,
   DollarSign,
@@ -28,7 +19,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
-import { ServiceStatusBanner } from "@/components/ui";
+import { Button, ServiceStatusBanner } from "@/components/ui";
 import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
 
 /**
@@ -83,7 +74,12 @@ export default function SellerDashboard() {
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
     >
-      <YStack padding="$4" paddingBottom="$6" gap="$4" backgroundColor="$background">
+      <YStack
+        padding="$4"
+        paddingBottom="$6"
+        gap="$4"
+        backgroundColor="$background"
+      >
         {/* Service Status */}
         <ServiceStatusBanner
           status={user?.serviceStatus}
@@ -92,28 +88,52 @@ export default function SellerDashboard() {
 
         {/* No Business Banner */}
         {!hasBusiness && !dismissNoBusiness && (
-          <Card padding="$4" bordered backgroundColor="$orangeMuted" borderColor="$orange">
-            <XStack gap="$3" alignItems="center">
-              <YStack flex={1} gap="$2">
-                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+          <Card
+            padding="$4"
+            bordered
+            backgroundColor="$orangeMuted"
+            borderColor="$orange"
+          >
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color="$color"
+                >
                   Create a Business
                 </Text>
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  You need a business to start selling. Set one up now.
-                </Text>
-                <XStack gap="$2" marginTop="$1">
-                  <Button size="$3" variant="primary" onPress={() => router.push("/(seller)/(drawer)/businesses/add")}>
-                    Create Business
-                  </Button>
-                  <Button size="$3" variant="outlined" onPress={() => setDismissNoBusiness(true)}>
-                    Skip
-                  </Button>
-                </XStack>
-              </YStack>
-              <XStack position="absolute" top={0} right={0}>
-                <Button circular size="$2" variant="ghost" icon={<X size={16} />} onPress={() => setDismissNoBusiness(true)} />
+                <Button
+                  circular
+                  size="$2"
+                  variant="ghost"
+                  icon={<X size={16} />}
+                  onPress={() => setDismissNoBusiness(true)}
+                />
               </XStack>
-            </XStack>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                You need a business to start selling. Set one up now.
+              </Text>
+              <XStack gap="$2">
+                <Button
+                  size="$3"
+                  variant="primary"
+                  onPress={() =>
+                    router.push("/(seller)/(drawer)/businesses/add")
+                  }
+                >
+                  Create Business
+                </Button>
+                <Button
+                  size="$3"
+                  variant="outline"
+                  onPress={() => setDismissNoBusiness(true)}
+                >
+                  Skip
+                </Button>
+              </XStack>
+            </YStack>
           </Card>
         )}
 
@@ -244,7 +264,7 @@ export default function SellerDashboard() {
               </Button>
             </XStack>
             <Button
-              variant="outlined"
+              variant="outline"
               onPress={() => router.push("/(seller)/analytics")}
             >
               <XStack gap="$2" alignItems="center">
@@ -265,7 +285,7 @@ export default function SellerDashboard() {
                 Recent Orders
               </Text>
               <Button
-                variant="outlined"
+                variant="outline"
                 height={36}
                 paddingHorizontal="$3"
                 onPress={() => router.push("/(seller)/orders")}
