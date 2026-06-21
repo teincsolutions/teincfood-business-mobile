@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { FleetRider, FleetVehicle, FleetDashboard, InviteRiderRequest } from '@/models/fleet.model';
+import type { FleetRider, FleetVehicle, FleetDashboard } from '@/models/fleet.model';
 import * as fleetService from '@/services/fleet.service';
 
 const FLEET_KEYS = {
@@ -27,7 +27,7 @@ export function useFleetRidersQuery(enabled = true) {
 export function useInviteRiderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: InviteRiderRequest) => fleetService.inviteRider(data),
+    mutationFn: (data: Record<string, unknown>) => fleetService.inviteRider(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: FLEET_KEYS.riders() });
     },

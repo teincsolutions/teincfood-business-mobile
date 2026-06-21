@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@/models/user.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { useRoleStore } from './role.store';
 
 interface AuthState {
   user: User | null;
@@ -47,8 +48,10 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, hasCompletedKyc: true } : null,
         })),
 
-      clearAuth: () =>
-        set({ user: null, accessToken: null, refreshToken: null }),
+      clearAuth: () => {
+        useRoleStore.getState().clearRole();
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
 
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
     }),

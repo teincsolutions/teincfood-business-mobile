@@ -67,3 +67,18 @@ This file is for AI coding agents. Always re-read this file before starting work
 - [x] **`kiosk.hooks.ts`** — Removed stale type imports (`KioskOrdersResponse`, `KioskOrderActionResponse`, `AvailableRider`), fixed implicit `any` callbacks
 - [x] **`useFleet.ts`** — Added `useAcceptFleetInvitationMutation`
 - [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors
+
+---
+
+## Phase 3: Types, Stores & Mapping ✅ COMPLETE
+
+- [x] **`src/models/api/` created** — 9 files with typed snake_case API shapes matching backend exactly: `pagination.ts`, `auth.api.ts`, `rider.api.ts`, `seller.api.ts`, `fleet.api.ts`, `kiosk.api.ts`, `menu.api.ts`, `business.api.ts`, `wallet.api.ts`, `index.ts`
+- [x] **`rider.service.ts`** — all functions typed with proper return types (`RiderProfileResponse`, `RiderDeliveriesResponse`, `RiderEarningsResponse`, `RiderVehicleResponse`, etc.)
+- [x] **`seller.service.ts`** — typed with `SellerOrdersResponse`, `SellerOrderDetailResponse`
+- [x] **`fleet.service.ts`** — typed with `FleetRidersResponse`, `FleetVehiclesResponse`
+- [x] **`kiosk.service.ts`** — typed with `KioskOrdersResponse`
+- [x] **`menu.service.ts`** — typed with `MenuItemResponse`, `MenuCategoryListResponse`, `CatalogItemRequest`; keeps form types and utilities
+- [x] **`business.service.ts`** — typed with `BusinessResponse`, `PromoResponse`, `TaxRuleResponse`, etc.
+- [x] **Logout clears role** — `auth.store.ts` `clearAuth()` now calls `useRoleStore.clearRole()`; all logout paths (API token expiry, manual logout) clear both stores
+- [x] **`verification.tsx`** — already uses `useRoleStore` as primary source (`storedRole || role`)
+- [x] **TypeScript clean** — `npx tsc --noEmit` passes with 0 errors
