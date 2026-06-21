@@ -1,12 +1,13 @@
 // @ts-nocheck
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { TextInput, NativeSyntheticEvent, TextInputKeyPressEventData } from 'react-native';
-import { YStack, XStack, Text, useTheme } from 'tamagui';
+import { YStack, XStack, Text } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, BackButton } from '@/components/ui';
+import { OTPInput } from '@/components/ui/OTPInput';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
+import { KeyboardAvoidingView } from 'react-native';
 
 const OTP_LENGTH = 4;
 const RESEND_DELAY_SEC = 60;
@@ -14,18 +15,16 @@ const RESEND_DELAY_SEC = 60;
 export default function VerificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
-  const { contactInfo = 'your phone number', type, role } = useLocalSearchParams<{ contactInfo: string, type: string, role?: string }>();
-  const selectedRole = (role === 'seller' || role === 'rider') ? role : 'seller';
+  const { contactInfo = '', type, role } = useLocalSearchParams<{ contactInfo: string; type: string; role?: string }>();
+  const selectedRole = role === 'seller' || role === 'rider' || role === 'fleet_manager' ? role : 'seller';
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const inputRefs = useRef<Array<TextInput | null>>(Array(OTP_LENGTH).fill(null));
-  
+  const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
   const [timeLeft, setTimeLeft] = useState(RESEND_DELAY_SEC);
+  const isVerifying = useRef(false);
+  const lastSubmittedCodeRef = useRef('');
 
   const formattedContactInfo = (() => {
     const raw = String(contactInfo || '').trim();
@@ -41,58 +40,37 @@ export default function VerificationScreen() {
     return () => clearInterval(timerId);
   }, [timeLeft]);
 
-  const focusNextInfo = (index: number) => {
-    if (index < OTP_LENGTH - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
+  const routeToRole = () => {
+    if (selectedRole === 'seller') {
+      router.replace('/(seller)/');
+    } else if (selectedRole === 'rider') {
+      router.replace('/(rider)/');
+    } else if (selectedRole === 'fleet_manager') {
+      router.replace('/(fleet)/');
     }
   };
 
-  const focusPrevInfo = (index: number) => {
-    if (index > 0 && inputRefs.current[index - 1]) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleChange = (text: string, index: number) => {
-    if (text.length > 1) { // User pasted exactly length or more
-      const pasted = text.slice(0, OTP_LENGTH).split('');
-      const newOtp = [...otp];
-      pasted.forEach((char, i) => {
-        newOtp[i] = char;
-      });
-      setOtp(newOtp);
-      inputRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
-      return;
-    }
-
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-
-    if (text !== '') {
-      focusNextInfo(index);
-    }
-  };
-
-  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && otp[index] === '') {
-      focusPrevInfo(index);
-    }
-  };
-
-  const handleVerify = async () => {
-    const code = otp.join('');
-    if (code.length < OTP_LENGTH) {
+  const handleVerify = async (code?: string) => {
+    const otpCode = code || otp;
+    if (otpCode.length < OTP_LENGTH) {
       setError('Please enter the full verification code');
       return;
     }
+    if (isVerifying.current || isLoading) return;
+    if (lastSubmittedCodeRef.current === otpCode) return;
+
+    isVerifying.current = true;
+    lastSubmittedCodeRef.current = otpCode;
     setError('');
 
     setIsLoading(true);
     try {
-      const resp = await authService.verifyOtp({ phone: contactInfo, code, sessionId: 'mock' });
-      
-      // If logging in or signing up
+      const resp = await authService.verifyOtp({
+        phone: contactInfo,
+        code: otpCode,
+        type: type === 'register' ? 'register' : 'login',
+      });
+
       setAuth(
         {
           ...resp.user,
@@ -103,20 +81,14 @@ export default function VerificationScreen() {
         resp.accessToken,
         resp.refreshToken,
       );
-      if (selectedRole === 'seller') {
-        router.replace('/(seller)/');
-      } else {
-        router.replace('/(rider)/');
-      }
-      
-      // If this was an action from Forgot Password, you might redirect to a Reset Password screen instead.
+      routeToRole();
     } catch (err: any) {
       setError(err.message || 'Invalid code. Try again.');
-      // clear the inputs on error to encourage re-trying
-      setOtp(Array(OTP_LENGTH).fill(''));
-      inputRefs.current[0]?.focus();
+      setOtp('');
+      lastSubmittedCodeRef.current = '';
     } finally {
       setIsLoading(false);
+      isVerifying.current = false;
     }
   };
 
@@ -124,7 +96,7 @@ export default function VerificationScreen() {
     if (timeLeft > 0) return;
     setError('');
     try {
-      await authService.requestOtp(contactInfo);
+      await authService.requestOtp(contactInfo, type === 'register' ? 'register' : 'login');
       setTimeLeft(RESEND_DELAY_SEC);
     } catch (err: any) {
       setError('Failed to resend. Try later.');
@@ -132,95 +104,72 @@ export default function VerificationScreen() {
   };
 
   return (
-    <YStack
-      flex={1}
-      bg="$background"
-      items="center"
-      paddingHorizontal="$5"
-      paddingTop={Math.max(insets.top, 24)}
-      paddingBottom={Math.max(insets.bottom + 12, 20)}
-    >
-      <YStack width="100%" maxWidth={640}>
-        {/* Header */}
-        <YStack mb="$4">
-          <BackButton />
-        </YStack>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <YStack
+        flex={1}
+        bg="$background"
+        items="center"
+        paddingHorizontal="$5"
+        paddingTop={Math.max(insets.top, 24)}
+        paddingBottom={Math.max(insets.bottom + 12, 20)}
+      >
+        <YStack width="100%" maxWidth={640} flex={1}>
+          <YStack mb="$4">
+            <BackButton />
+          </YStack>
 
-        <YStack mb="$8">
-          <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
-            Verification
-          </Text>
-          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" mt="$2" lineHeight={22}>
-            We have sent a code to your phone
-          </Text>
-          <Text fontSize="$4" fontWeight="600" color="$color" fontFamily="$body">
-            {formattedContactInfo}
-          </Text>
-        </YStack>
+          <YStack mb="$8" ai="center">
+            <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color" ta="center">
+              Verification
+            </Text>
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" mt="$2" lineHeight={22} ta="center">
+              We have sent a code to your phone
+            </Text>
+            <Text fontSize="$4" fontWeight="600" color="$color" fontFamily="$body" mt="$3">
+              {formattedContactInfo}
+            </Text>
+          </YStack>
 
-      {/* 4-Digit Input Array */}
-      <XStack w="100%" jc="center" items="center" mt="$5" mb="$2" alignSelf="center">
-        {otp.map((digit, i) => (
-          <TextInput
-            key={i}
-            ref={(ref) => { inputRefs.current[i] = ref; }}
-            value={digit}
-            onChangeText={(text) => handleChange(text, i)}
-            onKeyPress={(e) => handleKeyPress(e, i)}
-            keyboardType="number-pad"
-            maxLength={1}
-            style={{
-              width: 64,
-              height: 64,
-              marginHorizontal: 6,
-              borderRadius: 12,
-              backgroundColor: theme.backgroundSoft.val as string,
-              textAlign: 'center',
-              fontSize: 24,
-              fontFamily: 'Sen_700Bold',
-              color: theme.color.val as string,
-              borderWidth: 1,
-              borderColor: theme.borderColor.val as string,
-            }}
+          <OTPInput
+            length={OTP_LENGTH}
+            value={otp}
+            onChange={setOtp}
+            onComplete={handleVerify}
           />
-        ))}
-      </XStack>
 
-      {error ? (
-        <YStack mt="$5" items="center">
-          <Text color="$error" fontSize="$3">{error}</Text>
+          {error ? (
+            <YStack mt="$5" items="center">
+              <Text color="$error" fontSize="$3">{error}</Text>
+            </YStack>
+          ) : null}
+
+          <YStack mt="$10">
+            <Button variant="primary" loading={isLoading} onPress={() => handleVerify()}>
+              VERIFY
+            </Button>
+          </YStack>
+
+          <XStack jc="center" mt="$6" gap="$2">
+            <Text color="$colorSecondary" fontFamily="$body">
+              Didn't receive code?
+            </Text>
+            {timeLeft > 0 ? (
+              <Text color="$colorSecondary" fontWeight="600" fontFamily="$body">
+                Resend in {timeLeft}s
+              </Text>
+            ) : (
+              <Text
+                color="$primary"
+                fontWeight="800"
+                fontFamily="$body"
+                onPress={handleResend}
+              >
+                Resend
+              </Text>
+            )}
+          </XStack>
         </YStack>
-      ) : null}
-
-      <YStack mt="$10">
-        <Button loading={isLoading} onPress={handleVerify}>
-          VERIFY
-        </Button>
       </YStack>
-
-      {/* Resend Section */}
-      {/* Note: Mockups typically show "Didn't receive code? Resend (in 10s)" */}
-      <XStack jc="center" mt="$6" gap="$2">
-        <Text color="$colorSecondary" fontFamily="$body">
-          Didn't receive code?
-        </Text>
-        {timeLeft > 0 ? (
-          <Text color="$colorSecondary" fontWeight="600" fontFamily="$body">
-            Resend in {timeLeft}s
-          </Text>
-        ) : (
-          <Text 
-            color="$primary" 
-            fontWeight="800" 
-            fontFamily="$body" 
-            onPress={handleResend}
-          >
-            Resend
-          </Text>
-        )}
-      </XStack>
-      
-      </YStack>
-    </YStack>
+    </KeyboardAvoidingView>
   );
 }

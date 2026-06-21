@@ -1,11 +1,11 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { YStack, Text, Card, Button, XStack, Separator, CardHeader } from 'tamagui';
+import { YStack, Text, Card, Button, XStack, Separator, CardHeader, Spinner } from 'tamagui';
 import { Filter, X, Check } from '@tamagui/lucide-icons';
 import { ScrollView, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { MOCK_SELLER_ORDERS } from '@/services/mock-data.service';
+import { useSellerOrdersQuery } from '@/hooks/seller.hooks';
 import { useResponsive } from '@/utils/responsive';
 import { formatPrice, DEFAULT_CURRENCY } from '@/utils/currency';
 /**
@@ -18,7 +18,8 @@ export default function SellerOrders() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   
-  const orders = MOCK_SELLER_ORDERS;
+  const { data, isLoading } = useSellerOrdersQuery();
+  const orders = data?.orders || [];
 
   const filterOptions = ['pending', 'preparing', 'ready', 'delivered'];
 
@@ -82,8 +83,13 @@ export default function SellerOrders() {
         </Button>
       </XStack>
 
-      <ScrollView>
-        {isTablet ? (
+      {isLoading ? (
+        <YStack flex={1} justifyContent="center" alignItems="center">
+          <Spinner size="large" color="$primary" />
+        </YStack>
+      ) : (
+        <ScrollView>
+          {isTablet ? (
           <XStack padding="$4" gap="$4" alignItems="flex-start">
             {/* Column 1: Pending — always isolated on tablet */}
             <YStack flex={1} gap="$3">
@@ -376,6 +382,7 @@ export default function SellerOrders() {
           </YStack>
         )}
       </ScrollView>
+      )}
 
       {/* Filter Modal */}
       <Modal

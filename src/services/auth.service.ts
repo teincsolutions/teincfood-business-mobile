@@ -1,6 +1,7 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useMutation } from '@tanstack/react-query';
 import { api } from './api';
 import type { AuthResponse } from '@/models/user.model';
 
@@ -187,3 +188,15 @@ export const authService = {
     return Promise.resolve();
   },
 };
+
+export function useEmailPasswordLoginMutation() {
+  return useMutation({
+    mutationFn: (payload: LoginRequest) => authService.login(payload),
+  });
+}
+
+export function useSignupMutation() {
+  return useMutation({
+    mutationFn: (payload: RegisterRequest) => authService.register(payload),
+  });
+}

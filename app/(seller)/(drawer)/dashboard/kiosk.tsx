@@ -47,7 +47,7 @@ import { useSecurityStore } from "@/stores/security.store";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
-import type { KioskOrder } from "@/services/mock-data.service";
+import type { KioskOrder } from "@/models/kiosk.model";
 import type { AvailableRider } from "@/services/kiosk.service";
 import {
   useKioskOrdersQuery,

@@ -11,7 +11,6 @@ import {
   CreditCard,
   FileText,
 } from "@tamagui/lucide-icons";
-import { SellerOrder } from "@/services/mock-data.service";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";

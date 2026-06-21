@@ -56,14 +56,18 @@ export default function LocationScreen() {
         countryCode: selectedCountryIso.toUpperCase(),
       };
 
-      // Save to backend
-      await setLocationMutation.mutateAsync({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        city: location.city,
-        area: location.area,
-        countryCode: location.countryCode,
-      });
+      // Best-effort save to backend — country selection isn't critical
+      try {
+        await setLocationMutation.mutateAsync({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          city: location.city,
+          area: location.area,
+          countryCode: location.countryCode,
+        });
+      } catch {
+        // Backend may not expose this endpoint yet; continue anyway
+      }
 
       // Save to local store
       setCurrentLocation(location);
