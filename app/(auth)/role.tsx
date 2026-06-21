@@ -6,6 +6,7 @@ import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
 import { Store, Truck, Users, ChevronRight } from "@tamagui/lucide-icons";
+import { useRoleStore } from "@/stores/role.store";
 
 export default function RoleScreen() {
   const router = useRouter();
@@ -14,14 +15,17 @@ export default function RoleScreen() {
   const [selectedRole, setSelectedRole] = useState<
     "seller" | "rider" | "fleet_manager" | null
   >(null);
+  const storeRole = useRoleStore((s) => s.setRole);
 
   const handleLogin = () => {
     if (!selectedRole) return;
+    storeRole(selectedRole);
     router.push({ pathname: "/(auth)/login", params: { role: selectedRole } });
   };
 
   const handleSignup = () => {
     if (!selectedRole) return;
+    storeRole(selectedRole);
     router.push({ pathname: "/(auth)/signup", params: { role: selectedRole } });
   };
 

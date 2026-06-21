@@ -8,16 +8,18 @@ import { BackButton, Button, FormInput } from "@/components/ui";
 import { validation } from "@/utils/validation";
 import { useSignupMutation } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
+import { useRoleStore } from "@/stores/role.store";
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { role } = useLocalSearchParams<{ role?: string }>();
-  const selectedRole =
-    role === "seller" || role === "rider" || role === "fleet_manager"
-      ? role
-      : "seller";
+  const storedRole = useRoleStore((s) => s.role);
+  const selectedRole = (() => {
+    const r = storedRole || role;
+    return r === "seller" || r === "rider" || r === "fleet_manager" ? r : "seller";
+  })();
   const signupMutation = useSignupMutation();
 
   const [form, setForm] = useState({
@@ -69,7 +71,7 @@ export default function SignupScreen() {
 
     try {
       const response = await signupMutation.mutateAsync({
-        fullName: form.fullName.trim(),
+        full_name: form.fullName.trim(),
         username: form.username.trim().toLowerCase(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
@@ -80,7 +82,7 @@ export default function SignupScreen() {
       setAuth(
         {
           id: response.user.id,
-          fullName: response.user.fullName,
+          full_name: response.user.full_name,
           email: response.user.email,
           phone: response.user.phone,
           username: response.user.username,
@@ -89,8 +91,8 @@ export default function SignupScreen() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
-        response.accessToken,
-        response.refreshToken,
+        response.access_token,
+        response.refresh_token,
       );
 
       if (selectedRole === "seller") {

@@ -4,12 +4,33 @@ import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { useLocationStore } from '@/stores/location.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
-import type { AuthResponse } from '@/models/user.model';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
+import type { AuthApiResponse } from '@/services/auth.service';
+import type { User } from '@/models/user.model';
 
 export interface AuthError {
   code?: string;
   message: string;
+}
+
+function mapApiUserToUser(apiUser: Record<string, any>): User {
+  return {
+    id: apiUser.id,
+    fullName: apiUser.full_name || apiUser.fullName || '',
+    email: apiUser.email || '',
+    phone: apiUser.phone || '',
+    username: apiUser.username || apiUser.user_name,
+    avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
+    role: (apiUser.role || apiUser.roles?.[0] || 'buyer') as User['role'],
+    vehicleType: apiUser.vehicle_type || apiUser.vehicleType,
+    vehiclePlateNumber: apiUser.vehicle_plate_number || apiUser.vehiclePlateNumber,
+    isOnline: apiUser.is_online ?? apiUser.isOnline,
+    bio: apiUser.bio,
+    hasCompletedKyc: apiUser.has_completed_kyc ?? apiUser.hasCompletedKyc,
+    serviceStatus: apiUser.service_status || apiUser.serviceStatus,
+    createdAt: apiUser.created_at || apiUser.createdAt || new Date().toISOString(),
+    updatedAt: apiUser.updated_at || apiUser.updatedAt || new Date().toISOString(),
+  };
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -59,14 +80,14 @@ export function useAuth() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
 
-  const signupMutation = useMutation<AuthResponse | RegisterResponse, Error, RegisterRequest>({
+  const signupMutation = useMutation<AuthApiResponse | RegisterResponse, Error, RegisterRequest>({
     mutationFn: authService.register,
     onError: (error: Error) => {
       setSignupError(extractErrorMessage(error));
     },
   });
 
-  const loginMutation = useMutation<AuthResponse, Error, LoginRequest>({
+  const loginMutation = useMutation<AuthApiResponse, Error, LoginRequest>({
     mutationFn: authService.login,
     onError: (error: Error) => {
       setLoginError(extractErrorMessage(error));
@@ -110,9 +131,9 @@ export function useAuth() {
     });
 
     setAuthAction(
-      response.user,
-      response.accessToken,
-      response.refreshToken
+      mapApiUserToUser(response.user),
+      response.access_token,
+      response.refresh_token
     );
 
     navigatePostAuth();
@@ -142,11 +163,11 @@ export function useAuth() {
       phone: data.phone.trim(),
     });
 
-    if ('accessToken' in response && response.accessToken) {
+    if ('access_token' in response && response.access_token) {
       setAuthAction(
-        response.user as AuthResponse['user'],
-        response.accessToken,
-        response.refreshToken
+        mapApiUserToUser(response.user),
+        response.access_token,
+        response.refresh_token
       );
       navigatePostAuth();
     }
@@ -166,9 +187,9 @@ export function useAuth() {
   const verifyOtpFn = useCallback(async (phone: string, code: string, type?: "login" | "register") => {
     const response = await authService.verifyOTP({ phone, code, type: type || "login" });
     setAuthAction(
-      response.user,
-      response.accessToken,
-      response.refreshToken
+      mapApiUserToUser(response.user),
+      response.access_token,
+      response.refresh_token
     );
     navigatePostAuth();
   }, [setAuthAction, navigatePostAuth]);
@@ -188,9 +209,9 @@ export function useAuth() {
       : await authService.loginWithApple();
 
     setAuthAction(
-      response.user,
-      response.accessToken,
-      response.refreshToken
+      mapApiUserToUser(response.user),
+      response.access_token,
+      response.refresh_token
     );
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, setAuthAction, router, navigatePostAuth]);

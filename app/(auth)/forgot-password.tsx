@@ -5,15 +5,15 @@ import { YStack, XStack, Text, Input } from "tamagui";
 import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { requestPasswordReset } from "@/services/account-validation.service";
+import { useForgotPasswordMutation } from "@/hooks/usePasswordRecovery";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
@@ -22,20 +22,12 @@ export default function ForgotPasswordScreen() {
     }
 
     setError("");
-    setIsLoading(true);
 
     try {
-      const result = await requestPasswordReset({ email: email.trim() });
-
-      if (result.success) {
-        setSuccess(true);
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setError("Failed to send reset link. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await forgotPasswordMutation.mutateAsync(email.trim());
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err?.message || "Failed to send reset link. Please try again.");
     }
   };
 
@@ -142,9 +134,9 @@ export default function ForgotPasswordScreen() {
             <Button
               variant="primary"
               onPress={handleResetPassword}
-              disabled={isLoading}
+              disabled={forgotPasswordMutation.isPending}
             >
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
             </Button>
           </YStack>
 

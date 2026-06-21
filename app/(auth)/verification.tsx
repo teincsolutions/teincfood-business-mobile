@@ -10,6 +10,7 @@ import {
   useRequestOtpMutation,
 } from '@/hooks/useAuthVerification';
 import { useAuthStore } from '@/stores/auth.store';
+import { useRoleStore } from '@/stores/role.store';
 import { KeyboardAvoidingView } from 'react-native';
 
 const OTP_LENGTH = 4;
@@ -19,7 +20,11 @@ export default function VerificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { contactInfo = '', type, role } = useLocalSearchParams<{ contactInfo: string; type: string; role?: string }>();
-  const selectedRole = role === 'seller' || role === 'rider' || role === 'fleet_manager' ? role : 'seller';
+  const storedRole = useRoleStore((s) => s.role);
+  const selectedRole = (() => {
+    const r = storedRole || role;
+    return r === 'seller' || r === 'rider' || r === 'fleet_manager' ? r : 'seller';
+  })();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [otp, setOtp] = useState('');
@@ -82,8 +87,8 @@ export default function VerificationScreen() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
-        resp.accessToken,
-        resp.refreshToken,
+        resp.access_token,
+        resp.refresh_token,
       );
       routeToRole();
     } catch (err: any) {

@@ -3,7 +3,6 @@ import * as WebBrowser from 'expo-web-browser';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import { api } from './api';
-import type { AuthResponse } from '@/models/user.model';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -46,13 +45,19 @@ interface RefreshResponse {
   refresh_token: string;
 }
 
+export interface AuthApiResponse {
+  access_token: string;
+  refresh_token: string;
+  user: Record<string, any>;
+}
+
 export const authService = {
-  register(payload: RegisterRequest): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/register', { user: payload });
+  register(payload: RegisterRequest): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/register', { user: payload });
   },
 
-  verifyEmailOtp(userId: string, code: string): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/verify-email/otp', {
+  verifyEmailOtp(userId: string, code: string): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/verify-email/otp', {
       user_id: userId,
       code,
     });
@@ -62,8 +67,8 @@ export const authService = {
     return api.post<{ status: string; message: string }>('/auth/verify-email/resend', { email });
   },
 
-  login(payload: LoginRequest): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/login', {
+  login(payload: LoginRequest): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/login', {
       email: payload.email,
       password: payload.password,
     });
@@ -77,16 +82,16 @@ export const authService = {
     return api.post<{ status: string; message: string }>('/auth/otp/send', { phone, purpose });
   },
 
-  verifyOTP(payload: OTPVerifyRequest): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/otp/verify', {
+  verifyOTP(payload: OTPVerifyRequest): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/otp/verify', {
       phone: payload.phone,
       code: payload.code,
       type: payload.type || "login",
     });
   },
 
-  loginWithOIDC(provider: 'google' | 'apple' | 'facebook', idToken: string): Promise<AuthResponse> {
-    return api.post<AuthResponse>('/auth/oidc', {
+  loginWithOIDC(provider: 'google' | 'apple' | 'facebook', idToken: string): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/oidc', {
       provider,
       id_token: idToken,
     });
@@ -113,7 +118,7 @@ export const authService = {
     return api.post<{ status: string; message: string }>('/auth/verify-email', { token });
   },
 
-  async loginWithGoogle(): Promise<AuthResponse> {
+  async loginWithGoogle(): Promise<AuthApiResponse> {
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
@@ -141,7 +146,7 @@ export const authService = {
     return this.loginWithOIDC('google', result.data.idToken);
   },
 
-  async loginWithFacebook(): Promise<AuthResponse> {
+  async loginWithFacebook(): Promise<AuthApiResponse> {
     const clientId = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? '';
     const redirectUri = AuthSession.makeRedirectUri({
       scheme: 'teincfood.business',
@@ -171,7 +176,7 @@ export const authService = {
     throw new Error(result.type === 'cancel' ? 'Facebook sign-in was cancelled' : 'Facebook sign-in failed');
   },
 
-  async loginWithApple(): Promise<AuthResponse> {
+  async loginWithApple(): Promise<AuthApiResponse> {
     const { signInAsync, AppleAuthenticationScope } = await import('expo-apple-authentication');
 
     const credential = await signInAsync({

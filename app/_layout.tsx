@@ -21,6 +21,7 @@ import { ThemeProvider, useAppTheme } from '../src/providers/ThemeProvider';
 import { useAuthStore } from '../src/stores/auth.store';
 import { useLocationStore } from '../src/stores/location.store';
 import { useOnboardingStore } from '../src/stores/onboarding.store';
+import { useRoleStore } from '../src/stores/role.store';
 import { useSecurityStore } from '../src/stores/security.store';
 import { BiometricLockOverlay } from '../src/components/security/BiometricLockOverlay';
 import { LocationGuard } from '../src/components/LocationGuard';
@@ -41,15 +42,17 @@ function AppShell() {
   const { resolvedTheme } = useAppTheme();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [splashReady, setSplashReady] = useState(false);
+  const splashWasReady = useRef(false);
   const appState = useRef(AppState.currentState);
   const authHydrated = useAuthStore((state) => state.isHydrated);
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const onboardingHydrated = useOnboardingStore((state) => state.isHydrated);
   const locationHydrated = useLocationStore((state) => state.isHydrated);
+  const roleHydrated = useRoleStore((state) => state.isHydrated);
   const hasLocation = useLocationStore((state) => state.hasLocation());
 
-  const isReady = authHydrated && onboardingHydrated && locationHydrated;
+  const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);
   const isSeller = user?.role === 'seller';
   const isRider = user?.role === 'rider';
@@ -90,9 +93,10 @@ function AppShell() {
   if (!fontsLoaded && !fontError) {
     return null;
   }
-  if (!isReady || !splashReady) {
+  if ((!isReady || !splashReady) && !splashWasReady.current) {
     return null;
   }
+  splashWasReady.current = true;
 
   const showLock = isBiometricEnabled && !isUnlocked;
 

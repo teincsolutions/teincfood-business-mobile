@@ -2,6 +2,13 @@ import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { useLocationStore } from '@/stores/location.store';
 
+// Auth routes that don't require location — user sets location during onboarding
+const PUBLIC_PREFIXES = [
+  '(auth)/',
+  'index',
+  '+not-found',
+];
+
 interface LocationGuardProps {
   children: React.ReactNode;
 }
@@ -13,26 +20,23 @@ export function LocationGuard({ children }: LocationGuardProps) {
   const isHydrated = useLocationStore((state) => state.isHydrated);
 
   useEffect(() => {
-    // Only check after the store has hydrated
     if (!isHydrated) return;
 
     const currentRoute = segments.join('/');
-    
-    // Allow access to location screen itself
-    if (currentRoute.includes('(auth)/location')) {
-      return;
-    }
 
-    // If location is not set, redirect to location screen
+    // Allow public/auth routes through regardless of location
+    const isPublic = PUBLIC_PREFIXES.some((prefix) => currentRoute.startsWith(prefix) || currentRoute === prefix);
+    if (isPublic) return;
+
+    // Allow location screen itself
+    if (currentRoute.includes('location')) return;
+
     if (!hasLocation) {
       router.replace('/(auth)/location');
     }
   }, [hasLocation, isHydrated, segments]);
 
-  // Don't render children until we've checked location
-  if (!isHydrated) {
-    return null;
-  }
+  if (!isHydrated) return null;
 
   return <>{children}</>;
 }
