@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import {
   useVehicleInfoQuery,
-  useUpdateVehicleInfoMutation,
+  useCreateVehicleMutation,
   useVehicleTypesQuery,
 } from "@/hooks/rider.hooks";
 
@@ -21,7 +21,7 @@ export default function VehicleInfo() {
 
   // TanStack Query hooks
   const { data: vehicleInfo, isLoading } = useVehicleInfoQuery();
-  const updateVehicle = useUpdateVehicleInfoMutation();
+  const updateVehicle = useCreateVehicleMutation();
   const { data: vehicleTypes = [] } = useVehicleTypesQuery();
 
   const [vehicleType, setVehicleType] = useState(

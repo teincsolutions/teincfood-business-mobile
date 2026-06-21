@@ -140,9 +140,18 @@ export function useEarningsBreakdownQuery(enabled = true) {
 }
 
 export function useWalletHistoryQuery(enabled = true) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: RIDER_KEYS.transactions(),
-    queryFn: () => riderService.fetchWalletHistory(),
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await riderService.fetchWalletHistory(pageParam);
+      return res;
+    },
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination ?? {};
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    select: (data) => data.pages.flatMap(p => p.data.entries),
     enabled,
   });
 }

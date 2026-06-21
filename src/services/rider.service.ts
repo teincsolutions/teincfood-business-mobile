@@ -106,8 +106,8 @@ export async function fetchWalletBalance(): Promise<any> {
   return api.get('/wallet/balance');
 }
 
-export async function fetchWalletHistory(): Promise<any> {
-  return api.get('/wallet/history');
+export async function fetchWalletHistory(page = 1, pageSize = 20): Promise<any> {
+  return api.get('/wallet/history', { params: { page, page_size: pageSize, type: 'rider' } });
 }
 
 // ─── Vehicle ───

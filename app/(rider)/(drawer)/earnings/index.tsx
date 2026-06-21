@@ -21,7 +21,7 @@ import { Button } from "@/components/ui";
 import {
   useRiderEarningsQuery,
   useEarningsBreakdownQuery,
-  useRecentTransactionsQuery,
+  useWalletHistoryQuery,
 } from "@/hooks/rider.hooks";
 
 export default function RiderEarningsScreen() {
@@ -32,21 +32,25 @@ export default function RiderEarningsScreen() {
   // TanStack Query hooks
   const { data: earningsData } = useRiderEarningsQuery();
   const { data: breakdownData } = useEarningsBreakdownQuery();
-  const { data: transactionsData = [] } = useRecentTransactionsQuery();
+  const { data: transactionsData = [] } = useWalletHistoryQuery();
 
   // Use query data or fallback to defaults
-  const earnings = earningsData ?? {
-    totalEarnings: 0,
-    totalDeliveries: 0,
-    currency: 'GHS',
-    period: { today: 0, week: 0, month: 0 },
+  const earnings = {
+    totalEarnings: earningsData?.total_earned_minor ?? 0,
+    totalDeliveries: earningsData?.pagination?.total_entries ?? 0,
+    currency: earningsData?.currency ?? 'GHS',
+    period: {
+      today: earningsData?.period?.today ?? 0,
+      week: earningsData?.period?.week ?? 0,
+      month: earningsData?.period?.month ?? 0,
+    },
   };
 
-  const breakdown = breakdownData ?? {
-    baseEarnings: 0,
-    tips: 0,
-    bonuses: 0,
-    deductions: 0,
+  const breakdown = {
+    baseEarnings: breakdownData?.baseEarnings ?? 0,
+    tips: breakdownData?.tips ?? 0,
+    bonuses: breakdownData?.bonuses ?? 0,
+    deductions: breakdownData?.deductions ?? 0,
   };
 
   const currentEarnings = selectedPeriod === 'today' 
@@ -241,16 +245,16 @@ export default function RiderEarningsScreen() {
                   </YStack>
                   <YStack>
                     <Text fontSize="$4" fontWeight="500" fontFamily="$heading">
-                      {transaction.orderId}
+                      {transaction.description || `Order #${transaction.id?.slice(0, 8)}`}
                     </Text>
                     <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                      {transaction.time}
+                      {transaction.inserted_at ? new Date(transaction.inserted_at).toLocaleDateString() : ''}
                     </Text>
                   </YStack>
                 </XStack>
                 <YStack alignItems="flex-end">
                   <Text fontSize="$4" fontWeight="600" color="$green10" fontFamily="$heading">
-                    + {earnings.currency} {transaction.amount.toFixed(2)}
+                    {`${transaction.type === 'debit' ? '-' : '+'} ${earnings.currency} ${((transaction.amount_minor ?? 0) / 100).toFixed(2)}`}
                   </Text>
                   <YStack
                     paddingHorizontal="$2"
@@ -259,7 +263,7 @@ export default function RiderEarningsScreen() {
                     backgroundColor="$green2"
                   >
                     <Text fontSize="$2" color="$green10" fontFamily="$body">
-                      {transaction.status}
+                      {transaction.type}
                     </Text>
                   </YStack>
                 </YStack>
