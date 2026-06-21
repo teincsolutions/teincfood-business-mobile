@@ -79,6 +79,24 @@ export default function NavigationScreen() {
         const decoded = polyline.decode(encoded);
         const coords = decoded.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
         setRouteCoords(coords);
+
+        // Fit map to show full route
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.fitToCoordinates(
+              [origin, destination, ...coords],
+              { edgePadding: { top: 120, right: 50, bottom: 250, left: 50 }, animated: true },
+            );
+          }
+        }, 300);
+      } else {
+        // No route data — fit to just origin + destination
+        setTimeout(() => {
+          mapRef.current?.fitToCoordinates(
+            [origin, destination],
+            { edgePadding: { top: 120, right: 50, bottom: 250, left: 50 }, animated: true },
+          );
+        }, 300);
       }
     });
   }, [riderLat, riderLng, locationData?.lat, locationData?.lng]);

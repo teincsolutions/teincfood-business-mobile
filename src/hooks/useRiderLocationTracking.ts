@@ -19,20 +19,31 @@ export function useRiderLocationTracking({ riderId, enabled }: UseRiderLocationT
 
     const topic: string = channelTopic;
 
+    console.log('[LocationTracking] Starting riderId=%s topic=%s', riderId, topic);
+
     async function start() {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted' || cancelled) return;
+      if (status !== 'granted' || cancelled) {
+        console.log('[LocationTracking] Permission not granted or cancelled');
+        return;
+      }
 
-      await phoenixSocket.connect().catch(() => {});
+      console.log('[LocationTracking] Connecting to WebSocket...');
+      await phoenixSocket.connect().catch(() => {
+        console.log('[LocationTracking] WebSocket connect failed, will use REST fallback');
+      });
 
       try {
         await phoenixSocket.joinChannel(topic);
-      } catch {
+        console.log('[LocationTracking] Joined channel %s successfully', topic);
+      } catch (err) {
+        console.log('[LocationTracking] Failed to join channel %s: %s', topic, (err as any)?.message || String(err));
         return;
       }
 
       if (cancelled) return;
 
+      console.log('[LocationTracking] Starting GPS watcher (10m / 5s)...');
       const watcher = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.Balanced,
@@ -66,6 +77,7 @@ export function useRiderLocationTracking({ riderId, enabled }: UseRiderLocationT
 
     return () => {
       cancelled = true;
+      console.log('[LocationTracking] Stopping riderId=%s', riderId);
 
       if (watcherRef.current) {
         watcherRef.current.remove();
@@ -73,6 +85,7 @@ export function useRiderLocationTracking({ riderId, enabled }: UseRiderLocationT
       }
 
       phoenixSocket.leaveChannel(topic);
+      console.log('[LocationTracking] Stopped riderId=%s', riderId);
     };
   }, [riderId, enabled]);
 }

@@ -303,21 +303,19 @@ export default function RiderHome() {
                   variant="primary"
                   height={48}
                   onPress={() => {
-                    if (!activeDelivery.pickup_lat || !activeDelivery.dropoff_lat) {
+                    if (!activeDelivery.dropoff_lat || !activeDelivery.dropoff_lng) {
                       router.push("/(rider)/deliveries");
                       return;
                     }
-                    router.push({
-                      pathname: "/(rider)/map",
-                      params: {
-                        pickupLat: activeDelivery.pickup_lat,
-                        pickupLng: activeDelivery.pickup_lng,
-                        dropoffLat: activeDelivery.dropoff_lat,
-                        dropoffLng: activeDelivery.dropoff_lng,
-                        orderId: activeDelivery.order_id,
-                        orderNumber: activeDelivery.order_number || activeDelivery.order_id,
-                      },
-                    });
+                    const locationData = {
+                      name: activeDelivery.dropoff || 'Dropoff',
+                      address: activeDelivery.dropoff || 'Dropoff location',
+                      phone: '',
+                      lat: activeDelivery.dropoff_lat,
+                      lng: activeDelivery.dropoff_lng,
+                    };
+                    const encoded = encodeURIComponent(JSON.stringify(locationData));
+                    router.push(`/(rider)/navigate/${encoded}`);
                   }}
                 >
                   Navigate
