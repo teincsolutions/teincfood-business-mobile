@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { useState } from "react";
 import { ScrollView, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";

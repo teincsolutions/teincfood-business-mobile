@@ -1,8 +1,10 @@
 // @ts-nocheck
+
 import { YStack, Text, Card, Button, XStack, Separator, Avatar } from 'tamagui';
-import { User, Mail, Phone, MapPin, Building, LogOut, HelpCircle, FileText, Shield, Palette } from '@tamagui/lucide-icons';
+import { User, Mail, Phone, HelpCircle, FileText, Shield, Palette, LogOut } from '@tamagui/lucide-icons';
 import { ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useProfileQuery } from '@/hooks/useProfile';
 import { useAuthStore } from '@/stores/auth.store';
 
 /**
@@ -12,6 +14,11 @@ export default function SharedProfile() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const { data: profile } = useProfileQuery();
+
+  const displayName = profile?.full_name || user?.fullName || 'User';
+  const displayEmail = profile?.email || user?.email || '';
+  const displayPhone = profile?.phone || user?.phone || '';
 
   const handleLogout = () => {
     clearAuth();
@@ -31,65 +38,30 @@ export default function SharedProfile() {
     <YStack flex={1} backgroundColor="$background">
       <ScrollView>
         <YStack padding="$4" gap="$4">
-          {/* Profile Header */}
           <Card padding="$4" bordered backgroundColor="$background">
             <XStack gap="$4" alignItems="center">
               <Avatar circular size="$12">
-                <Avatar.Image
-                  src={user?.avatarUrl}
-                />
+                <Avatar.Image src={profile?.avatar_url || user?.avatarUrl} />
                 <Avatar.Fallback backgroundColor="$primary" justifyContent="center" alignItems="center">
                   <Text color="$background" fontWeight="bold" fontSize="$7">
-                    {user?.fullName?.charAt(0) || 'S'}
+                    {displayName?.charAt(0) || 'U'}
                   </Text>
                 </Avatar.Fallback>
               </Avatar>
               <YStack flex={1} gap="$1">
                 <Text fontSize="$5" fontWeight="bold" color="$color">
-                  {user?.businessName || user?.fullName || 'Seller'}
+                  {displayName}
                 </Text>
                 <Text color="$colorMuted" fontSize="$3">
-                  {user?.email || 'seller@example.com'}
+                  {displayEmail}
                 </Text>
                 <Text color="$colorMuted" fontSize="$3">
-                  {user?.phone || '+233 XX XXX XXXX'}
+                  {displayPhone}
                 </Text>
               </YStack>
             </XStack>
           </Card>
 
-          {/* Business Info */}
-          {user?.businessName && (
-            <Card padding="$4" bordered backgroundColor="$background">
-              <YStack gap="$3">
-                <XStack gap="$2" alignItems="center">
-                  <Building size={20} color="$primary" />
-                  <Text fontWeight="bold" color="$color">Business Information</Text>
-                </XStack>
-                <Separator backgroundColor="$borderColor" />
-                <YStack gap="$2">
-                  <XStack justifyContent="space-between">
-                    <Text color="$colorMuted">Business Name</Text>
-                    <Text color="$color">{user.businessName}</Text>
-                  </XStack>
-                  {user.businessType && (
-                    <XStack justifyContent="space-between">
-                      <Text color="$colorMuted">Type</Text>
-                      <Text color="$color">{user.businessType}</Text>
-                    </XStack>
-                  )}
-                  {user.businessAddress && (
-                    <XStack justifyContent="space-between">
-                      <Text color="$colorMuted">Address</Text>
-                      <Text color="$color" flex={1} textAlign="right">{user.businessAddress}</Text>
-                    </XStack>
-                  )}
-                </YStack>
-              </YStack>
-            </Card>
-          )}
-
-          {/* Menu Items */}
           <Card padding="$4" bordered backgroundColor="$background">
             <YStack gap="$1">
               {profileItems.map((item, index) => (
@@ -115,7 +87,10 @@ export default function SharedProfile() {
             </YStack>
           </Card>
 
-          {/* App Version */}
+          <Button variant="outline" size="$4" onPress={handleLogout} icon={<LogOut size={20} />}>
+            Logout
+          </Button>
+
           <YStack alignItems="center" padding="$4">
             <Text color="$colorMuted" fontSize="$2">TeincFoodBusiness v1.0.0</Text>
           </YStack>

@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { ScrollView, TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Separator } from 'tamagui';
 import { Shield, Eye, Lock, Database, Share2, Bell, Settings, Mail } from '@tamagui/lucide-icons';

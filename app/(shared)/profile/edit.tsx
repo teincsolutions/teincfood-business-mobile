@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { useState } from "react";
 import { ScrollView, Alert, Platform } from "react-native";
 import { useRouter } from "expo-router";
@@ -6,29 +7,27 @@ import * as ImagePicker from "expo-image-picker";
 import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { FormInput, Button, BackButton } from "@/components/ui";
 import {
-  ArrowLeft,
   Save,
   Camera,
   User,
   Mail,
   Phone,
-  Image as ImageIcon,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/useProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/**
- * Edit Profile Screen
- */
 export default function EditProfile() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const { data: profile } = useProfileQuery();
+  const updateProfileMutation = useUpdateProfileMutation();
 
-  const [fullName, setFullName] = useState(user?.fullName || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone || "");
+  const [fullName, setFullName] = useState(profile?.full_name || user?.fullName || "");
+  const [email, setEmail] = useState(profile?.email || user?.email || "");
+  const [phone, setPhone] = useState(profile?.phone || user?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -104,7 +103,10 @@ export default function EditProfile() {
 
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await updateProfileMutation.mutateAsync({
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+      });
 
       updateUser({
         fullName: fullName.trim(),

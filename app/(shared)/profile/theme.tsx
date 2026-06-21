@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import {

@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { ScrollView, TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Separator } from 'tamagui';
 import { FileText, Scale, Shield, AlertTriangle } from '@tamagui/lucide-icons';

@@ -1,10 +1,10 @@
 // @ts-nocheck
+
 import { useState } from "react";
-import { ScrollView, Pressable } from "react-native";
+import { ScrollView, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import {
-  ArrowLeft,
   Save,
   Clock,
   CheckCircle,
@@ -14,6 +14,8 @@ import {
 import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { useBusinessStore } from "@/stores/business.store";
+import { upsertOperatingHours } from "@/services/business.service";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -87,7 +89,18 @@ export default function OperatingHoursSettings() {
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const activeBusiness = useBusinessStore.getState().getDefaultBusiness();
+      if (!activeBusiness) {
+        Alert.alert("Error", "No business selected. Please select a business first.");
+        return;
+      }
+      const hours = Object.fromEntries(
+        Object.entries(schedule).map(([day, s]) => [
+          day,
+          s.isOpen ? { open: s.openTime, close: s.closeTime } : null,
+        ])
+      );
+      await upsertOperatingHours(activeBusiness.id, hours);
       setSaveStatus("success");
       setTimeout(() => router.back(), 2500);
     } catch {

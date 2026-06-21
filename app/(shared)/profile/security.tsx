@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { useState } from "react";
 import { ScrollView, Platform, Alert } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";

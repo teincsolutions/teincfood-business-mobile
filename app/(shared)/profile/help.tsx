@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { useState } from "react";
 import { ScrollView, TouchableOpacity, Linking } from "react-native";
 import {
