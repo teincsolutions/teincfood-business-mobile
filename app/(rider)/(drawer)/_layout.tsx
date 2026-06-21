@@ -12,6 +12,7 @@ import {
   Separator,
   Button,
   Spinner,
+  ButtonIcon,
 } from "tamagui";
 import {
   Home,
@@ -25,6 +26,7 @@ import {
   MapPin,
   MessageSquare,
   Menu,
+  Copy,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRiderProfileQuery } from "@/hooks/useRider";
@@ -35,6 +37,7 @@ import {
   DrawerItemList,
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
+import { copyToClipboard } from "@/utils/copyToClipBoard";
 
 /**
  * Custom Drawer Content for Rider
@@ -46,10 +49,21 @@ function CustomDrawerContent(props: any) {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const { data: riderProfile, isLoading: profileLoading } = useRiderProfileQuery();
-  const riderStatus = riderProfile?.status ?? 'offline';
-  const statusLabel = riderStatus === 'available' ? 'Online' : riderStatus === 'busy' ? 'Busy' : 'Offline';
-  const statusColor = riderStatus === 'available' ? '$green10' : riderStatus === 'busy' ? '$yellow10' : '$gray800';
+  const { data: riderProfile, isLoading: profileLoading } =
+    useRiderProfileQuery();
+  const riderStatus = riderProfile?.status ?? "offline";
+  const statusLabel =
+    riderStatus === "available"
+      ? "Online"
+      : riderStatus === "busy"
+        ? "Busy"
+        : "Offline";
+  const statusColor =
+    riderStatus === "available"
+      ? "$green10"
+      : riderStatus === "busy"
+        ? "$yellow10"
+        : "$gray800";
 
   const handleLogout = () => {
     clearAuth();
@@ -66,7 +80,7 @@ function CustomDrawerContent(props: any) {
         backgroundColor="$primary"
       >
         <XStack gap="$3" alignItems="center">
-          <Avatar circular size="$10">
+          <Avatar circular size="$16">
             <Avatar.Image src={user?.avatarUrl} />
             <Avatar.Fallback
               items="center"
@@ -86,28 +100,25 @@ function CustomDrawerContent(props: any) {
               <Text color="white" opacity={0.8} fontSize="$3">
                 {user?.email || "rider@example.com"}
               </Text>
-              {riderProfile?.rider_number ? (
-                <Text color="white" opacity={0.6} fontSize="$2">
-                  #{riderProfile.rider_number}
-                </Text>
-              ) : null}
             </XStack>
-            <XStack gap="$2" alignItems="center" marginTop="$1">
-              {profileLoading ? (
-                <Spinner size="small" color="white" />
-              ) : (
-                <>
-                  <YStack
-                    width={8}
-                    height={8}
-                    borderRadius="$10"
-                    backgroundColor={statusColor}
-                  />
-                  <Text color="white" opacity={0.8} fontSize="$2">
-                    {statusLabel}
-                  </Text>
-                </>
-              )}
+            <XStack gap="$1" marginTop="$2" alignItems="center">
+              <Text
+                color="white"
+                opacity={0.6}
+                verticalAlign={"bottom"}
+                fontSize="$2"
+              >
+                Rider ID: #{riderProfile?.rider_number}
+              </Text>
+              <ButtonIcon
+                onPress={() => {
+                  copyToClipboard(riderProfile?.rider_number);
+                  toast.success("Rider ID copied to clipboard");
+                }}
+                color="$color.gray300"
+              >
+                <Copy color="$white" />
+              </ButtonIcon>
             </XStack>
           </YStack>
         </XStack>
@@ -309,7 +320,7 @@ export default function RiderDrawerLayout() {
   const { isTablet, isLandscape } = useResponsive();
 
   const { data: riderProfile } = useRiderProfileQuery();
-  const isOnline = riderProfile?.status === 'available';
+  const isOnline = riderProfile?.status === "available";
   useRiderLocationTracking({ riderId: riderProfile?.id, enabled: isOnline });
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -327,7 +338,7 @@ export default function RiderDrawerLayout() {
     <>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={({navigation}) => ({
+        screenOptions={({ navigation }) => ({
           headerShown: true,
           headerStyle: {
             backgroundColor: theme.background.val,
