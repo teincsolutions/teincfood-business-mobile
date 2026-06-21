@@ -170,7 +170,7 @@ module.exports = {
               appExtensions: [
                 {
                   targetName: "LiveActivity",
-                  bundleIdentifier: "com.teincfoods.business.LiveActivity",
+                  bundleIdentifier: "com.teincfood.business.LiveActivity",
                   entitlements: {},
                 },
               ],
