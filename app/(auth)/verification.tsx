@@ -5,7 +5,10 @@ import { YStack, XStack, Text } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, BackButton } from '@/components/ui';
 import { OTPInput } from '@/components/ui/OTPInput';
-import { authService } from '@/services/auth.service';
+import {
+  useVerifyOtpMutation,
+  useRequestOtpMutation,
+} from '@/hooks/useAuthVerification';
 import { useAuthStore } from '@/stores/auth.store';
 import { KeyboardAvoidingView } from 'react-native';
 
@@ -20,11 +23,13 @@ export default function VerificationScreen() {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [otp, setOtp] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(RESEND_DELAY_SEC);
   const isVerifying = useRef(false);
   const lastSubmittedCodeRef = useRef('');
+
+  const verifyOtpMutation = useVerifyOtpMutation();
+  const requestOtpMutation = useRequestOtpMutation();
 
   const formattedContactInfo = (() => {
     const raw = String(contactInfo || '').trim();
@@ -56,16 +61,15 @@ export default function VerificationScreen() {
       setError('Please enter the full verification code');
       return;
     }
-    if (isVerifying.current || isLoading) return;
+    if (isVerifying.current || verifyOtpMutation.isPending) return;
     if (lastSubmittedCodeRef.current === otpCode) return;
 
     isVerifying.current = true;
     lastSubmittedCodeRef.current = otpCode;
     setError('');
 
-    setIsLoading(true);
     try {
-      const resp = await authService.verifyOtp({
+      const resp = await verifyOtpMutation.mutateAsync({
         phone: contactInfo,
         code: otpCode,
         type: type === 'register' ? 'register' : 'login',
@@ -87,7 +91,6 @@ export default function VerificationScreen() {
       setOtp('');
       lastSubmittedCodeRef.current = '';
     } finally {
-      setIsLoading(false);
       isVerifying.current = false;
     }
   };
@@ -96,7 +99,10 @@ export default function VerificationScreen() {
     if (timeLeft > 0) return;
     setError('');
     try {
-      await authService.requestOtp(contactInfo, type === 'register' ? 'register' : 'login');
+      await requestOtpMutation.mutateAsync({
+        phone: contactInfo,
+        purpose: type === 'register' ? 'register' : 'login',
+      });
       setTimeLeft(RESEND_DELAY_SEC);
     } catch (err: any) {
       setError('Failed to resend. Try later.');
@@ -144,7 +150,7 @@ export default function VerificationScreen() {
           ) : null}
 
           <YStack mt="$10">
-            <Button variant="primary" loading={isLoading} onPress={() => handleVerify()}>
+            <Button variant="primary" loading={verifyOtpMutation.isPending || requestOtpMutation.isPending} onPress={() => handleVerify()}>
               VERIFY
             </Button>
           </YStack>
