@@ -84,67 +84,70 @@ export default function RiderHome() {
   };
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
-      }
-      contentContainerStyle={{ backgroundColor: "$background" }}
-    >
-      <YStack
+    <YStack flex={1} backgroundColor="$background">
+      {/* Fixed Header */}
+      <XStack
         paddingHorizontal="$4"
-        paddingBottom="$4"
         paddingTop={insets.top + 12}
-        gap="$4"
+        paddingBottom="$3"
+        justifyContent="space-between"
+        alignItems="center"
         backgroundColor="$background"
       >
-        <XStack justifyContent="space-between" alignItems="center">
-          <XStack gap="$3" alignItems="center">
-            <Button
-              variant="ghost"
-              size="$3"
-              onPress={() => navigation.openDrawer()}
-              icon={<Menu size={24} color="$color" />}
-            />
-            <YStack>
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                Welcome back,
-              </Text>
-              <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
-                {user?.fullName || "Rider"}
-              </Text>
-            </YStack>
-          </XStack>
-          <XStack gap="$3" alignItems="center">
-            <XStack gap="$1" alignItems="center">
-              <YStack
-                width={10}
-                height={10}
-                borderRadius={5}
-                backgroundColor={isOnline ? "$success" : "$colorMuted"}
-              />
-              <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
-                {isOnline ? "Online" : "Offline"}
-              </Text>
-            </XStack>
-            <Switch
-              size="$8"
-              checked={isOnline}
-              onCheckedChange={(val) => updateOnlineStatus.mutate(val)}
-              backgroundColor={isOnline ? "$success" : "$colorMuted"}
-            >
-              <Switch.Thumb animation="quick" backgroundColor="white" />
-            </Switch>
-            <Button
-              variant="ghost"
-              size="$3"
-              onPress={() => router.push("/(shared)/notifications")}
-              icon={<Bell size={22} color="$color" />}
-            />
-          </XStack>
+        <XStack gap="$3" alignItems="center">
+          <Button
+            variant="ghost"
+            size="$3"
+            onPress={() => navigation.openDrawer()}
+            icon={<Menu size={24} color="$color" />}
+          />
+          <YStack>
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              Welcome back,
+            </Text>
+            <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+              {user?.fullName || "Rider"}
+            </Text>
+          </YStack>
         </XStack>
+        <XStack gap="$3" alignItems="center">
+          <XStack gap="$1" alignItems="center">
+            <YStack
+              width={10}
+              height={10}
+              borderRadius={5}
+              backgroundColor={isOnline ? "$success" : "$colorMuted"}
+            />
+            <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
+              {isOnline ? "Online" : "Offline"}
+            </Text>
+          </XStack>
+          <Switch
+            size="$8"
+            checked={isOnline}
+            onCheckedChange={(val) => updateOnlineStatus.mutate(val)}
+            backgroundColor={isOnline ? "$success" : "$colorMuted"}
+          >
+            <Switch.Thumb animation="quick" backgroundColor="white" />
+          </Switch>
+          <Button
+            variant="ghost"
+            size="$3"
+            onPress={() => router.push("/(shared)/notifications")}
+            icon={<Bell size={22} color="$color" />}
+          />
+        </XStack>
+      </XStack>
 
-        {/* Service Status */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
+        }
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+      >
+        <YStack paddingHorizontal="$4" gap="$4">
+          {/* Service Status */}
         <ServiceStatusBanner
           status={user?.serviceStatus}
           hasCompletedKyc={user?.hasCompletedKyc}
@@ -435,5 +438,6 @@ export default function RiderHome() {
         ) : null}
       </YStack>
     </ScrollView>
+    </YStack>
   );
 }
