@@ -142,7 +142,7 @@ export default function RiderHome() {
           />
 
         {/* Online Status Card */}
-        {!isOnline && (
+        {!isOnline ? (
           <Card padding="$4" bordered backgroundColor="$backgroundSoft">
             <YStack gap="$3" alignItems="center">
               <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
@@ -165,7 +165,7 @@ export default function RiderHome() {
               </Button>
             </YStack>
           </Card>
-        )}
+        ) : null}
 
         {/* Earnings Summary */}
         <Card padding="$4" bordered>
@@ -198,7 +198,7 @@ export default function RiderHome() {
         </Card>
 
         {/* Active Delivery */}
-        {isOnline && activeDelivery && (
+        {isOnline && activeDelivery ? (
           <Card padding="$4" bordered backgroundColor="$primaryLight">
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
@@ -252,10 +252,10 @@ export default function RiderHome() {
               </XStack>
             </YStack>
           </Card>
-        )}
+        ) : null}
 
         {/* Quick Actions */}
-        {isOnline && !activeDelivery && (
+        {isOnline && !activeDelivery ? (
           <Card padding="$4" bordered>
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold">
@@ -279,7 +279,7 @@ export default function RiderHome() {
               </XStack>
             </YStack>
           </Card>
-        )}
+        ) : null}
 
         {/* Recent Deliveries */}
         <Card padding="$4" bordered>
@@ -324,7 +324,7 @@ export default function RiderHome() {
         </Card>
 
         {/* Map Preview Placeholder */}
-        {isOnline && (
+        {isOnline ? (
           <Card padding="$4" bordered>
             <YStack gap="$3" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
@@ -352,7 +352,7 @@ export default function RiderHome() {
               </Button>
             </YStack>
           </Card>
-        )}
+        ) : null}
       </YStack>
     </ScrollView>
   );
