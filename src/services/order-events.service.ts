@@ -18,6 +18,7 @@ const ORDER_RELATED_EVENTS = [
   'delivery.pickup_confirmed',
   'payment.completed',
   'payment.failed',
+  'rider.location_updated',
 ];
 
 class OrderEventsService {

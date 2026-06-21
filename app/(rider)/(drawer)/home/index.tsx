@@ -23,10 +23,12 @@ import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import {
   useRiderMetricsQuery,
+  useRiderProfileQuery,
   useActiveDeliveryQuery,
   useUpdateOnlineStatusMutation,
   useRiderDeliveriesQuery,
 } from "@/hooks/useRider";
+import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -43,11 +45,18 @@ export default function RiderHome() {
 
   // TanStack Query hooks
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
+  const { data: profileData } = useRiderProfileQuery();
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
   // Online status from rider profile (backend source of truth)
   const isOnline = metricsData?.status === 'available';
+
+  // Live GPS tracking — active when rider is online
+  useRiderLocationTracking({
+    riderId: profileData?.id,
+    enabled: isOnline,
+  });
 
   // Use query data or fallback to defaults
   const metrics = {
