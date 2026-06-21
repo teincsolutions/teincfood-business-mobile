@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
@@ -36,12 +36,14 @@ export default function RiderHome() {
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsive();
   const user = useAuthStore((state) => state.user);
-  const [isOnline, setIsOnline] = useState(user?.isOnline ?? false);
 
   // TanStack Query hooks
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
+
+  // Online status from rider profile (backend source of truth)
+  const isOnline = metricsData?.is_online ?? false;
 
   // Use query data or fallback to defaults
   const metrics = {
@@ -122,7 +124,7 @@ export default function RiderHome() {
             <Switch
               size="$8"
               checked={isOnline}
-              onCheckedChange={setIsOnline}
+              onCheckedChange={(val) => updateOnlineStatus.mutate(val)}
               backgroundColor={isOnline ? "$success" : "$colorMuted"}
             >
               <Switch.Thumb animation="quick" backgroundColor="white" />
@@ -160,7 +162,7 @@ export default function RiderHome() {
                 variant="primary"
                 height={48}
                 width="100%"
-                onPress={() => setIsOnline(true)}
+                onPress={() => updateOnlineStatus.mutate(true)}
               >
                 Go Online
               </Button>
@@ -268,7 +270,7 @@ export default function RiderHome() {
                   height={48}
                   onPress={() => router.push("/(rider)/deliveries")}
                 >
-                  Available ({metrics.availableDeliveries || 0})
+                  Available {`${metrics.availableDeliveries || 0}`}
                 </Button>
                 <Button
                   variant="outline"
