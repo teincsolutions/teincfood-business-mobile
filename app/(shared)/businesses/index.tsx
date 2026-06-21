@@ -50,7 +50,7 @@ export default function BusinessesScreen() {
         overflow="hidden"
         marginBottom="$3"
         pressStyle={{ scale: 0.99, opacity: 0.9 }}
-        onPress={() => router.push(`/(seller)/businesses/${business.id}`)}
+        onPress={() => router.push(`/(shared)/businesses/${business.id}`)}
       >
         <YStack
           position="absolute"
@@ -183,7 +183,7 @@ export default function BusinessesScreen() {
           <Button
             variant="outline"
             icon={Plus}
-            onPress={() => router.push("/(seller)/businesses/add")}
+            onPress={() => router.push("/(shared)/businesses/add")}
           >
             Add Business
           </Button>
@@ -243,7 +243,7 @@ export default function BusinessesScreen() {
             : "Add your first business to get started"}
         </Text>
         {!searchQuery && filterStatus === "all" && (
-          <Button onPress={() => router.push("/(seller)/businesses/add")}>
+          <Button onPress={() => router.push("/(shared)/businesses/add")}>
             Add Business
           </Button>
         )}

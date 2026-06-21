@@ -26,6 +26,9 @@ export default function AddBusinessScreen() {
   const { addBusiness } = useBusinessStore();
   const role = useRoleStore((s) => s.role);
   const businessType = role === 'fleet_manager' ? 'delivery_provider' : 'merchant';
+  const dashboardRoute = role === 'fleet_manager'
+    ? "/(fleet)/(drawer)/dashboard"
+    : "/(seller)/(drawer)/dashboard";
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const [form, setForm] = useState({
@@ -160,7 +163,7 @@ export default function AddBusinessScreen() {
       };
 
       addBusiness(newBusiness as any);
-      router.replace(`/(seller)/businesses/${newBusiness.id}`);
+      router.replace(dashboardRoute);
     } catch (err: any) {
       setErrors({
         form: err?.message || "Failed to add business. Please try again.",
@@ -387,7 +390,7 @@ export default function AddBusinessScreen() {
                 onPress={() =>
                   navigation.canGoBack()
                     ? router.back()
-                    : router.replace("/(seller)/businesses")
+                    : router.replace("/(shared)/businesses")
                 }
                 disabled={isLoading}
               >

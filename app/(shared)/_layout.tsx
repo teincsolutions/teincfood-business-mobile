@@ -14,11 +14,15 @@ export default function SharedLayout() {
         animation: 'slide_from_right',
       }}
     >
+      <Stack.Screen name="select-business" />
       <Stack.Screen name="notifications/index" />
       <Stack.Screen name="profile/privacy-policy" />
       <Stack.Screen name="profile/security" />
       <Stack.Screen name="profile/terms" />
       <Stack.Screen name="profile/theme" />
+      <Stack.Screen name="businesses" />
+      <Stack.Screen name="businesses/add" />
+      <Stack.Screen name="businesses/[id]" />
     </Stack>
   );
 }

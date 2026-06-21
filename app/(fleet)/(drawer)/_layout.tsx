@@ -18,6 +18,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog, Button } from "@/components/ui";
+import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import {
   DrawerContentScrollView,
   DrawerItemList,
@@ -30,7 +31,6 @@ import { useResponsive } from "@/utils/responsive";
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -43,36 +43,11 @@ function CustomDrawerContent(props: any) {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* User Profile Section */}
-      <YStack
-        padding="$4"
-        paddingTop={Math.max(insets.top + 8, 24)}
-        backgroundColor="$primary"
-      >
-        <XStack gap="$3" alignItems="center">
-          <Avatar circular size="$5">
-            <Avatar.Image src={user?.avatarUrl} />
-            <Avatar.Fallback backgroundColor="$gray800">
-              <Text color="white" fontWeight="bold">
-                {user?.fullName?.charAt(0) || "F"}
-              </Text>
-            </Avatar.Fallback>
-          </Avatar>
-          <YStack flex={1}>
-            <Text
-              color="white"
-              fontWeight="bold"
-              fontSize="$5"
-              fontFamily="$heading"
-            >
-              {user?.fullName || "Fleet Manager"}
-            </Text>
-            <Text color="white" opacity={0.8} fontSize="$3" fontFamily="$body">
-              {user?.email || "fleet@example.com"}
-            </Text>
-          </YStack>
-        </XStack>
-      </YStack>
+      <DrawerHeader
+        fallbackName="Fleet Manager"
+        fallbackEmail="fleet@example.com"
+        onNavigateCreateBusiness={() => router.push("/(shared)/businesses/add")}
+      />
 
       {/* Menu Items */}
       <DrawerContentScrollView

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { YStack, Spinner, Text } from 'tamagui';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
 
 export default function FleetIndex() {
@@ -8,14 +9,19 @@ export default function FleetIndex() {
 
   useEffect(() => {
     if (!hasBusiness) {
-      router.replace('/(seller)/select-business');
+      router.push('/(shared)/select-business');
     } else if (businesses.length === 1) {
       switchBusiness(businesses[0].id);
       router.replace('/(fleet)/(drawer)/dashboard');
     } else {
-      router.replace('/(seller)/select-business');
+      router.replace('/(shared)/select-business');
     }
   }, []);
 
-  return null;
+  return (
+    <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
+      <Spinner size="large" color="$primary" />
+      <Text marginTop="$3" fontSize="$4" color="$colorSecondary">Loading...</Text>
+    </YStack>
+  );
 }

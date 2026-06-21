@@ -2,6 +2,7 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { FormInput } from './FormInput';
 import { BackButton } from './BackButton';
+import { DrawerHeader } from './DrawerHeader';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
 import { AppAlertDialog } from './AlertDialog';
 import { Badge } from './Badge';
@@ -12,8 +13,9 @@ export {
   Button, 
   Input, 
   FormInput,
-  BackButton, 
-  Skeleton, 
+  BackButton,
+  DrawerHeader,
+  Skeleton,
   FoodCardSkeleton, 
   RestaurantCardSkeleton,
   OrderCardSkeleton,

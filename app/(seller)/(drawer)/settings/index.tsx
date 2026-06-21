@@ -58,9 +58,9 @@ export default function SellerSettings() {
 
   const handleBusinessProfile = () => {
     if (activeBusiness?.id) {
-      router.push(`/(seller)/businesses/${activeBusiness.id}`);
+      router.push(`/(shared)/businesses/${activeBusiness.id}`);
     } else {
-      router.push("/(seller)/businesses");
+      router.push("/(shared)/businesses");
     }
   };
 

@@ -82,17 +82,9 @@ export default function FleetDashboardScreen() {
               <XStack gap="$2">
                 <Button
                   variant="primary"
-                  onPress={() =>
-                    router.push("/(seller)/businesses/add")
-                  }
+                  onPress={() => router.push("/(shared)/businesses/add")}
                 >
                   Create Business
-                </Button>
-                <Button
-                  variant="outline"
-                  onPress={() => setDismissNoBusiness(true)}
-                >
-                  Skip
                 </Button>
               </XStack>
             </YStack>

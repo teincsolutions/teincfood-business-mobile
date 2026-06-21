@@ -11,9 +11,6 @@ import {
   Avatar,
   Separator,
   Button,
-  Select,
-  Adapt,
-  Sheet,
 } from "tamagui";
 import {
   LayoutDashboard,
@@ -28,21 +25,16 @@ import {
   LogOut,
   Menu,
   MessageSquare,
-  Building,
-  ChevronDown,
-  Check,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
-import { useBusinessStore } from "@/stores/business.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import {
   DrawerContentScrollView,
   DrawerItemList,
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
-import { useActiveBusiness } from "@/hooks/useActiveBusiness";
-import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Custom Drawer Content
@@ -50,17 +42,9 @@ import { useQueryClient } from "@tanstack/react-query";
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const { businesses, activeBusiness, switchBusiness } = useActiveBusiness();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const { isTablet } = useResponsive();
-
-  const avatarSize = isTablet ? "$12" : "$10";
-  const avatarTextSize = isTablet ? "$10" : "$8";
-  const nameTextSize = isTablet ? "$6" : "$5";
-  const emailTextSize = isTablet ? "$4" : "$3";
 
   const handleLogout = () => {
     clearAuth();
@@ -70,132 +54,11 @@ function CustomDrawerContent(props: any) {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* User Profile Section */}
-      <YStack
-        padding="$4"
-        paddingTop={Math.max(insets.top + 8, 24)}
-        backgroundColor="$primary"
-      >
-        <XStack gap="$3" alignItems="center">
-          <Avatar circular size={avatarSize}>
-            <Avatar.Image src={user?.avatarUrl} />
-            <Avatar.Fallback
-              items="center"
-              justify="center"
-              backgroundColor="$color.gray50"
-            >
-              <Text color="$color" fontWeight="bold" fontSize={avatarTextSize}>
-                {user?.fullName?.charAt(0) || "S"}
-              </Text>
-            </Avatar.Fallback>
-          </Avatar>
-          <YStack flex={1}>
-            <Text color="white" fontWeight="bold" fontSize={nameTextSize}>
-              {user?.fullName || "Seller"}
-            </Text>
-            <Text color="white" opacity={0.8} fontSize={emailTextSize}>
-              {user?.email || "seller@example.com"}
-            </Text>
-          </YStack>
-        </XStack>
-        </YStack>
-
-      {/* Business Switcher / Create */}
-      <YStack
-        backgroundColor="$primaryLight"
-        paddingHorizontal="$3"
-        paddingVertical="$3"
-      >
-        {businesses.length > 0 ? (
-          <Select
-            value={activeBusiness?.id ?? ""}
-            onValueChange={switchBusiness}
-            disablePreventBodyScroll
-          >
-            <Select.Trigger
-              width="100%"
-              borderRadius="$4"
-              backgroundColor="$background"
-              borderWidth={1}
-              borderColor="$borderColor"
-              iconAfter={ChevronDown}
-              paddingHorizontal="$3"
-              paddingVertical="$1"
-            >
-              <Select.Value placeholder="Select business" />
-            </Select.Trigger>
-
-            <Adapt when="maxSm" platform="touch">
-              <Sheet native modal dismissOnSnapToBottom animation="medium">
-                <Sheet.Frame>
-                  <Sheet.ScrollView>
-                    <Adapt.Contents />
-                  </Sheet.ScrollView>
-                </Sheet.Frame>
-                <Sheet.Overlay
-                  bg="$shadowColor"
-                  animation="lazy"
-                  enterStyle={{ opacity: 0 }}
-                  exitStyle={{ opacity: 0 }}
-                />
-              </Sheet>
-            </Adapt>
-
-            <Select.Content>
-              <Select.ScrollUpButton
-                items="center"
-                justify="center"
-                position="relative"
-                width="100%"
-                height="$3"
-              >
-                <ChevronDown size={20} />
-              </Select.ScrollUpButton>
-
-              <Select.Viewport
-                minW={200}
-                bg="$background"
-                borderRadius="$4"
-                borderWidth={1}
-                borderColor="$borderColor"
-              >
-                <Select.Group>
-                  <Select.Label fontWeight="700">Switch Business</Select.Label>
-                  {businesses.map((b, i) => (
-                    <Select.Item key={b.id} index={i} value={b.id}>
-                      <Select.ItemText>{b.name}</Select.ItemText>
-                      {activeBusiness?.id === b.id && (
-                        <YStack marginLeft="$2">
-                          <Check size={16} color="$primary" />
-                        </YStack>
-                      )}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
-              </Select.Viewport>
-
-              <Select.ScrollDownButton
-                items="center"
-                justify="center"
-                position="relative"
-                width="100%"
-                height="$3"
-              >
-                <ChevronDown size={20} />
-              </Select.ScrollDownButton>
-            </Select.Content>
-          </Select>
-        ) : (
-          <Button
-            variant="outline"
-            width="100%"
-            icon={<Building size={16} />}
-            onPress={() => router.push("/(seller)/businesses/add")}
-          >
-            Create a Business
-          </Button>
-        )}
-      </YStack>
+      <DrawerHeader
+        fallbackName="Seller"
+        fallbackEmail="seller@example.com"
+        onNavigateCreateBusiness={() => router.push("/(shared)/businesses/add")}
+      />
 
       {/* Menu Items */}
       <DrawerContentScrollView

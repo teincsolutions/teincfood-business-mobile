@@ -119,7 +119,7 @@ export default function SellerDashboard() {
                 <Button
                   variant="primary"
                   onPress={() =>
-                    router.push("/(seller)/businesses/add")
+                    router.push("/(shared)/businesses/add")
                   }
                 >
                   Create Business

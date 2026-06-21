@@ -49,7 +49,7 @@ export default function FleetSettingsScreen() {
       icon: Building,
       title: "Manage Businesses",
       description: "View and switch between your businesses",
-      onPress: () => router.push("/(seller)/businesses"),
+      onPress: () => router.push("/(shared)/businesses"),
     },
     {
       icon: Building,

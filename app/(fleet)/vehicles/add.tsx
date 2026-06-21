@@ -13,6 +13,7 @@ import {
   Label,
   ScrollView,
   Input as TamaguiInput,
+  Separator,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -175,7 +176,7 @@ export default function AddVehicleScreen() {
                     <Select.Value placeholder="Select vehicle type" />
                   </Select.Trigger>
 
-                  <Adapt when="maxSm" platform="touch">
+                  <Adapt platform="touch">
                     <Sheet
                       native
                       modal
@@ -196,55 +197,20 @@ export default function AddVehicleScreen() {
                     </Sheet>
                   </Adapt>
 
-                  <Select.Content>
-                    <Select.ScrollUpButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    >
-                      <Car size={20} />
-                    </Select.ScrollUpButton>
-
-                    <Select.Viewport
-                      minW={200}
-                      bg="$background"
-                      borderRadius="$4"
-                      borderWidth={1}
-                      borderColor="$borderColor"
-                    >
+                  <Select.Content style={{ display: 'none' }}>
+                    <Select.Viewport bg="$background">
                       <Select.Group>
-                        <Select.Label fontWeight="700">
-                          Vehicle Types
-                        </Select.Label>
-                        <Select.Item index={0} value="motorcycle">
-                          <Select.ItemText>Motorcycle</Select.ItemText>
-                        </Select.Item>
-                        <Select.Item index={1} value="car">
-                          <Select.ItemText>Car</Select.ItemText>
-                        </Select.Item>
-                        <Select.Item index={2} value="van">
-                          <Select.ItemText>Van</Select.ItemText>
-                        </Select.Item>
-                        <Select.Item index={3} value="bicycle">
-                          <Select.ItemText>Bicycle</Select.ItemText>
-                        </Select.Item>
-                        <Select.Item index={4} value="truck">
-                          <Select.ItemText>Truck</Select.ItemText>
-                        </Select.Item>
+                        {[
+                          { value: 'motorcycle', label: 'Motorcycle' },
+                          { value: 'car', label: 'Car' },
+                          { value: 'bicycle', label: 'Bicycle' },
+                        ].map((item, i) => (
+                          <Select.Item key={item.value} index={i} value={item.value}>
+                            <Select.ItemText>{item.label}</Select.ItemText>
+                          </Select.Item>
+                        ))}
                       </Select.Group>
                     </Select.Viewport>
-
-                    <Select.ScrollDownButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    >
-                      <Car size={20} />
-                    </Select.ScrollDownButton>
                   </Select.Content>
                 </Select>
                 {errors.vehicleType && (

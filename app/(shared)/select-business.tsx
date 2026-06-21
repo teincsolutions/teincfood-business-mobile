@@ -15,6 +15,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useBusinessStore } from "@/stores/business.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useRoleStore } from "@/stores/role.store";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 
@@ -22,6 +23,11 @@ export default function SelectBusinessScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
+  const role = useRoleStore((s) => s.role);
+  const isFleet = role === 'fleet_manager';
+  const dashboardRoute = isFleet
+    ? "/(fleet)/(drawer)/dashboard"
+    : "/(seller)/(drawer)/dashboard";
   const { businesses, setActiveBusiness, getDefaultBusiness } =
     useBusinessStore();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
@@ -42,17 +48,17 @@ export default function SelectBusinessScreen() {
       );
       if (selectedBusiness) {
         setActiveBusiness(selectedBusiness as any);
-        router.replace("/(seller)/(drawer)/dashboard");
+        router.replace(dashboardRoute);
       }
     }
   };
 
   const handleAddNewBusiness = () => {
-    router.push("/(seller)/businesses/add");
+    router.push("/(shared)/businesses/add");
   };
 
   const handleManage = () => {
-    router.push("/(seller)/businesses");
+    router.push("/(shared)/businesses");
   };
 
   const renderBusiness = ({ item: business }) => (
@@ -205,7 +211,7 @@ export default function SelectBusinessScreen() {
           <Button
             variant="outline"
             size="$5"
-            onPress={() => router.replace("/(seller)/(drawer)/dashboard")}
+            onPress={() => router.replace(dashboardRoute)}
           >
             Skip, I'll do it later
           </Button>
