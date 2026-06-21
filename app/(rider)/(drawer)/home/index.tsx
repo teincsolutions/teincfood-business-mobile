@@ -17,6 +17,7 @@ import {
   UserPlus,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
@@ -25,7 +26,7 @@ import {
   useActiveDeliveryQuery,
   useUpdateOnlineStatusMutation,
   useRiderDeliveriesQuery,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -378,7 +379,7 @@ export default function RiderHome() {
           </YStack>
         </Card>
 
-        {/* Map Preview Placeholder */}
+        {/* Map Preview */}
         {isOnline ? (
           <Card padding="$4" bordered>
             <YStack gap="$3" alignItems="center">
@@ -388,15 +389,23 @@ export default function RiderHome() {
               <YStack
                 height={200}
                 width="100%"
-                backgroundColor="$gray3"
                 borderRadius="$4"
-                alignItems="center"
-                justifyContent="center"
+                overflow="hidden"
               >
-                <MapPin size={48} color="$colorMuted" />
-                <Text color="$colorMuted" marginTop="$2">
-                  Map view coming soon
-                </Text>
+                <MapView
+                  style={{ flex: 1 }}
+                  provider={PROVIDER_GOOGLE}
+                  initialRegion={{
+                    latitude: 5.6037,
+                    longitude: -0.1870,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                  }}
+                  showsUserLocation
+                  showsMyLocationButton={false}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                />
               </YStack>
               <Button
                 variant="outline"

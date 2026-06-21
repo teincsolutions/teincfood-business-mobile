@@ -11,6 +11,7 @@ import {
   Avatar,
   Separator,
   Button,
+  Spinner,
 } from "tamagui";
 import {
   Home,
@@ -26,6 +27,7 @@ import {
   Menu,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { useRiderProfileQuery } from "@/hooks/useRider";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   DrawerContentScrollView,
@@ -43,6 +45,8 @@ function CustomDrawerContent(props: any) {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { data: riderProfile, isLoading: profileLoading } = useRiderProfileQuery();
+  const isOnline = riderProfile?.is_online ?? user?.isOnline ?? false;
 
   const handleLogout = () => {
     clearAuth();
@@ -79,15 +83,21 @@ function CustomDrawerContent(props: any) {
               {user?.email || "rider@example.com"}
             </Text>
             <XStack gap="$2" alignItems="center" marginTop="$1">
-              <YStack
-                width={8}
-                height={8}
-                borderRadius="$10"
-                backgroundColor={user?.isOnline ? "$green10" : "$gray800"}
-              />
-              <Text color="white" opacity={0.8} fontSize="$2">
-                {user?.isOnline ? "Online" : "Offline"}
-              </Text>
+              {profileLoading ? (
+                <Spinner size="small" color="white" />
+              ) : (
+                <>
+                  <YStack
+                    width={8}
+                    height={8}
+                    borderRadius="$10"
+                    backgroundColor={isOnline ? "$green10" : "$gray800"}
+                  />
+                  <Text color="white" opacity={0.8} fontSize="$2">
+                    {isOnline ? "Online" : "Offline"}
+                  </Text>
+                </>
+              )}
             </XStack>
           </YStack>
         </XStack>

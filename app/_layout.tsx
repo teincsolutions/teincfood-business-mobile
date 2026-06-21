@@ -16,6 +16,7 @@ import {
 } from '@expo-google-fonts/sen';
 
 import tamaguiConfig from '../tamagui.config';
+import { Toaster } from 'sonner-native';
 import { QueryProvider } from '../src/providers/QueryProvider';
 import { ThemeProvider, useAppTheme } from '../src/providers/ThemeProvider';
 import { useAuthStore } from '../src/stores/auth.store';
@@ -102,6 +103,7 @@ function AppShell() {
 
   return (
     <SafeAreaProvider>
+      <Toaster position="top-center" />
       <QueryProvider>
         <LocationGuard>
           <YStack flex={1}>

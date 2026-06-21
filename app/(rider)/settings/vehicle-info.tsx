@@ -10,7 +10,7 @@ import {
   useVehicleInfoQuery,
   useCreateVehicleMutation,
   useVehicleTypesQuery,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 
 /**
  * Rider Vehicle Information Screen

@@ -84,11 +84,12 @@ export default function SignupScreen() {
       setAuth(
         {
           id: response.user.id,
-          full_name: response.user.full_name,
+          fullName: response.user.full_name,
           email: response.user.email,
           phone: response.user.phone,
           username: response.user.username,
           role: selectedRole,
+          avatarUrl: response.user.avatar_url,
           serviceStatus: "pending_verification",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

@@ -5,7 +5,7 @@ import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
 import { MapPin, Navigation, Clock, Package, Phone, MessageCircle } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRiderDeliveriesQuery } from '@/hooks/rider.hooks';
+import { useRiderDeliveriesQuery } from '@/hooks/useRider';
 
 export default function RiderMap() {
   const router = useRouter();

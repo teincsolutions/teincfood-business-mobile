@@ -24,7 +24,7 @@ import {
   useDeliveryZonesQuery,
   useUpdateDeliveryZonesMutation,
   useToggleDeliveryZoneMutation,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 import type { DeliveryZone } from "@/models/rider.model";
 
 /**

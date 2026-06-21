@@ -17,6 +17,7 @@ import * as riderService from '@/services/rider.service';
 // Query keys
 const RIDER_KEYS = {
   all: ['rider'] as const,
+  profile: () => [...RIDER_KEYS.all, 'profile'] as const,
   metrics: () => [...RIDER_KEYS.all, 'metrics'] as const,
   activeDelivery: () => [...RIDER_KEYS.all, 'active-delivery'] as const,
   deliveries: () => [...RIDER_KEYS.all, 'deliveries'] as const,
@@ -32,6 +33,18 @@ const RIDER_KEYS = {
 };
 
 // ─── Metrics & Dashboard Hooks ───
+
+export function useRiderProfileQuery(enabled = true) {
+  return useQuery({
+    queryKey: RIDER_KEYS.profile(),
+    queryFn: async () => {
+      const res = await riderService.fetchRiderProfile();
+      return res.data;
+    },
+    enabled,
+    staleTime: 30000,
+  });
+}
 
 export function useRiderMetricsQuery(enabled = true) {
   return useQuery({
@@ -258,6 +271,7 @@ export function useUpdateOnlineStatusMutation() {
   return useMutation({
     mutationFn: (isOnline: boolean) => riderService.updateOnlineStatus(isOnline),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RIDER_KEYS.profile() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
     },
   });

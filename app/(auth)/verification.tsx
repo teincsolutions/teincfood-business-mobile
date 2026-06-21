@@ -83,6 +83,7 @@ export default function VerificationScreen() {
       setAuth(
         {
           ...resp.user,
+          fullName: resp.user.full_name || resp.user.fullName,
           role: selectedRole,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

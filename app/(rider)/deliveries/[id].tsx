@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useDeliveryDetailQuery,
   useUpdateDeliveryStatusMutation,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 import type { RiderDeliveryDetail } from "@/models/rider.model";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";

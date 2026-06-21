@@ -5,7 +5,7 @@ import { Truck, MapPin, Filter, ChevronRight, Package } from '@tamagui/lucide-ic
 import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
-import { useRiderDeliveriesQuery } from '@/hooks/rider.hooks';
+import { useRiderDeliveriesQuery } from '@/hooks/useRider';
 
 export default function RiderDeliveries() {
   const navigation = useNavigation();

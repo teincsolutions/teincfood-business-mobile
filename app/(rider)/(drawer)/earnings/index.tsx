@@ -10,7 +10,7 @@ import {
   useRiderEarningsQuery,
   useEarningsBreakdownQuery,
   useWalletHistoryQuery,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 
 export default function RiderEarningsScreen() {
   const router = useRouter();

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/utils/constants';
 import { useAuthStore } from '@/stores/auth.store';
+import { toast } from 'sonner-native';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -122,6 +123,9 @@ axiosInstance.interceptors.response.use(
     }
 
     const message = errorMessage || error.message || 'An unexpected error occurred';
+    if (status && status < 500) {
+      toast.error(message);
+    }
     return Promise.reject(new ApiError(status ?? 500, message, responseData));
   }
 );

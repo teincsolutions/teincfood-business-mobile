@@ -17,7 +17,7 @@ import {
   useNavigationSettingsQuery,
   useUpdateNavigationSettingsMutation,
   useNavigationAppsQuery,
-} from "@/hooks/rider.hooks";
+} from "@/hooks/useRider";
 
 /**
  * Rider Navigation Settings Screen
