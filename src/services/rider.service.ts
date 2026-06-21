@@ -6,6 +6,7 @@ import type {
   RiderDelivery,
   RiderEarningsResponse,
   RiderVehicleResponse,
+  AvailableOrdersResponse,
   PaginationMeta,
 } from '@/types/api';
 
@@ -53,6 +54,12 @@ export async function updateRiderLocation(latitude: number, longitude: number): 
   return api.post('/riders/location', { latitude, longitude });
 }
 
+// ─── Available Orders (ready for claim) ───
+
+export async function fetchAvailableOrders(): Promise<AvailableOrdersResponse> {
+  return api.get<AvailableOrdersResponse>('/riders/available-orders');
+}
+
 // ─── Deliveries ───
 
 export async function fetchRiderDeliveries(page = 1, pageSize = 20): Promise<RiderDeliveriesResponse> {
@@ -67,8 +74,8 @@ export async function fetchDeliveryDetail(deliveryId: string): Promise<{ data: R
   return api.get<{ data: RiderDelivery }>(`/deliveries/${deliveryId}`);
 }
 
-export async function acceptDelivery(deliveryId: string): Promise<{ data: Record<string, unknown> }> {
-  return api.post('/deliveries/claim', { delivery_id: deliveryId });
+export async function acceptDelivery(orderId: string): Promise<{ data: Record<string, unknown> }> {
+  return api.post('/deliveries/claim', { order_id: orderId });
 }
 
 export async function markDeliveryInTransit(deliveryId: string): Promise<{ data: Record<string, unknown> }> {

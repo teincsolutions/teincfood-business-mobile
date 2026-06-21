@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { TouchableOpacity, Dimensions } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text, Card, Button, Separator } from 'tamagui';
 import {
   MapPin,
@@ -12,9 +12,10 @@ import {
   ArrowLeft,
   Crosshair,
 } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
+import * as Location from 'expo-location';
 import polyline from '@mapbox/polyline';
 import { useRiderProfileQuery, useRiderDeliveriesQuery } from '@/hooks/useRider';
 import { useRiderLocationTracking } from '@/hooks/useRiderLocationTracking';
@@ -28,13 +29,24 @@ const ACCRA_REGION = {
   longitudeDelta: 0.05,
 };
 
+const ACTIVE_STATUSES = ['assigned', 'picked_up', 'en_route', 'arrived'];
+
 export default function RiderMap() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{
+    pickupLat?: string;
+    pickupLng?: string;
+    dropoffLat?: string;
+    dropoffLng?: string;
+    orderId?: string;
+    orderNumber?: string;
+  }>();
   const mapRef = useRef<MapView>(null);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const [riderLocation, setRiderLocation] = useState(null);
+  const [initialRegion, setInitialRegion] = useState(ACCRA_REGION);
 
   const { data: profileData } = useRiderProfileQuery();
   const { data: deliveries = [] } = useRiderDeliveriesQuery();
@@ -65,21 +77,72 @@ export default function RiderMap() {
     };
   }, [riderId]);
 
-  // Initial region from rider profile or default
-  const initialRegion = profileData?.current_lat && profileData?.current_lng
-    ? {
-        latitude: profileData.current_lat,
-        longitude: profileData.current_lng,
-        ...ACCRA_REGION,
+  // Center on rider's current location when map opens
+  useEffect(() => {
+    async function centerOnLocation() {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          const { latitude, longitude } = loc.coords;
+          const region = { latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 };
+          setInitialRegion(region);
+          mapRef.current?.animateToRegion(region, 1000);
+          return;
+        }
+      } catch {}
+
+      if (profileData?.current_lat && profileData?.current_lng) {
+        setInitialRegion({
+          latitude: profileData.current_lat,
+          longitude: profileData.current_lng,
+          ...ACCRA_REGION,
+        });
       }
-    : ACCRA_REGION;
+    }
+
+    centerOnLocation();
+  }, [profileData?.current_lat, profileData?.current_lng]);
+
+  // Build a virtual delivery from route params (navigated from deliveries screen)
+  const routeParamsDelivery = params.pickupLat && params.pickupLng && params.dropoffLat && params.dropoffLng
+    ? {
+        id: `route-${params.orderId || 'custom'}`,
+        order_id: params.orderId || 'custom',
+        order_number: params.orderNumber || 'Delivery',
+        pickup_lat: parseFloat(params.pickupLat),
+        pickup_lng: parseFloat(params.pickupLng),
+        dropoff_lat: parseFloat(params.dropoffLat),
+        dropoff_lng: parseFloat(params.dropoffLng),
+        status: 'assigned',
+        eta_minutes: null,
+        pickup: 'Pickup location',
+        dropoff: 'Dropoff location',
+        currency: 'GHS',
+        earnings: 0,
+      }
+    : null;
 
   // Active deliveries with coordinates (for markers)
   const activeDeliveries = deliveries.filter(
     (d) => d.pickup_lat && d.pickup_lng && d.dropoff_lat && d.dropoff_lng,
   );
 
-  // Fetch route polyline when a delivery is selected
+  // Include the route-param delivery if present
+  const allRouteDeliveries = routeParamsDelivery
+    ? [routeParamsDelivery, ...activeDeliveries]
+    : activeDeliveries;
+
+  // Auto-select — prefer route params delivery, else active delivery
+  const activeDelivery = routeParamsDelivery || activeDeliveries.find((d) => ACTIVE_STATUSES.includes(d.status));
+
+  useEffect(() => {
+    if (activeDelivery && !selectedDelivery) {
+      setSelectedDelivery(activeDelivery);
+    }
+  }, [activeDelivery?.id]);
+
+  // Fetch route polyline when selected delivery changes
   useEffect(() => {
     if (!selectedDelivery) {
       setRouteCoords([]);
@@ -106,6 +169,14 @@ export default function RiderMap() {
         setRouteCoords(coords);
       }
     });
+
+    // Fit map to show the full route
+    if (mapRef.current) {
+      mapRef.current.fitToCoordinates(
+        [origin, destination],
+        { edgePadding: { top: 100, right: 50, bottom: 250, left: 50 }, animated: true },
+      );
+    }
   }, [selectedDelivery]);
 
   const getStatusColor = (status) => {
@@ -118,17 +189,10 @@ export default function RiderMap() {
     }
   };
 
-  const getEtaDisplay = (delivery) => {
-    if (delivery.eta_minutes) {
-      return `${delivery.eta_minutes} min`;
-    }
-    return '-- min';
-  };
-
   const fitMarkers = useCallback(() => {
-    if (!mapRef.current || activeDeliveries.length === 0) return;
+    if (!mapRef.current || allRouteDeliveries.length === 0) return;
 
-    const coords = activeDeliveries.flatMap((d) => [
+    const coords = allRouteDeliveries.flatMap((d) => [
       { latitude: d.pickup_lat, longitude: d.pickup_lng },
       { latitude: d.dropoff_lat, longitude: d.dropoff_lng },
     ]);
@@ -141,7 +205,7 @@ export default function RiderMap() {
       edgePadding: { top: 100, right: 50, bottom: 200, left: 50 },
       animated: true,
     });
-  }, [activeDeliveries, riderLocation]);
+  }, [allRouteDeliveries, riderLocation]);
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -156,7 +220,7 @@ export default function RiderMap() {
         showsCompass
       >
         {/* Pickup Markers (green) */}
-        {activeDeliveries.map((delivery) => (
+        {allRouteDeliveries.map((delivery) => (
           <Marker
             key={`pickup-${delivery.id}`}
             coordinate={{
@@ -171,7 +235,7 @@ export default function RiderMap() {
         ))}
 
         {/* Dropoff Markers (red) */}
-        {activeDeliveries.map((delivery) => (
+        {allRouteDeliveries.map((delivery) => (
           <Marker
             key={`dropoff-${delivery.id}`}
             coordinate={{
@@ -217,12 +281,31 @@ export default function RiderMap() {
           <Text fontWeight="bold" fontFamily="$heading">Live Map</Text>
         </YStack>
 
+        <YStack width={44} />
+      </XStack>
+
+      {/* Recenter button — above bottom card */}
+      <YStack
+        position="absolute"
+        bottom={selectedDelivery ? 280 : 180}
+        right="$4"
+        zIndex={100}
+      >
         <TouchableOpacity onPress={fitMarkers}>
-          <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
-            <Crosshair size={20} color="$primary" />
+          <YStack
+            backgroundColor="$background"
+            padding="$3"
+            borderRadius="$10"
+            shadowColor="#000"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.15}
+            shadowRadius={4}
+            elevation={4}
+          >
+            <Crosshair size={22} color="$primary" />
           </YStack>
         </TouchableOpacity>
-      </XStack>
+      </YStack>
 
       {/* Selected Delivery Card */}
       {selectedDelivery ? (
@@ -236,7 +319,7 @@ export default function RiderMap() {
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
                 <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
-                  {selectedDelivery.order_id}
+                  {selectedDelivery.order_number}
                 </Text>
                 <YStack
                   backgroundColor={getStatusColor(selectedDelivery.status)}
@@ -258,9 +341,7 @@ export default function RiderMap() {
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">Pickup</Text>
                     <Text fontSize="$3" fontFamily="$body">
-                      {selectedDelivery.pickup
-                        ? `${selectedDelivery.pickup_lat?.toFixed(4)}, ${selectedDelivery.pickup_lng?.toFixed(4)}`
-                        : 'Pickup location'}
+                      {selectedDelivery.pickup || 'Pickup location'}
                     </Text>
                   </YStack>
                 </XStack>
@@ -270,9 +351,7 @@ export default function RiderMap() {
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">Dropoff</Text>
                     <Text fontSize="$3" fontFamily="$body">
-                      {selectedDelivery.dropoff
-                        ? `${selectedDelivery.dropoff_lat?.toFixed(4)}, ${selectedDelivery.dropoff_lng?.toFixed(4)}`
-                        : 'Dropoff location'}
+                      {selectedDelivery.dropoff || 'Dropoff location'}
                     </Text>
                   </YStack>
                 </XStack>
@@ -280,7 +359,9 @@ export default function RiderMap() {
 
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
-                <Text fontSize="$3" fontFamily="$body">ETA: {getEtaDisplay(selectedDelivery)}</Text>
+                <Text fontSize="$3" fontFamily="$body">
+                  ETA: {selectedDelivery.eta_minutes ? `${selectedDelivery.eta_minutes} min` : 'Calculating...'}
+                </Text>
               </XStack>
 
               <Separator />
@@ -335,7 +416,7 @@ export default function RiderMap() {
           <Card padding="$4" bordered backgroundColor="$background">
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
-                {activeDeliveries.length > 0
+                {allRouteDeliveries.length > 0
                   ? `Tap a marker to see delivery details`
                   : 'No active deliveries'}
               </Text>

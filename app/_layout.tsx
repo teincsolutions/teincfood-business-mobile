@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -154,8 +155,10 @@ function AppShell() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AppShell />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

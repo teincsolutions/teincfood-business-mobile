@@ -81,9 +81,16 @@ function CustomDrawerContent(props: any) {
             <Text color="white" fontWeight="bold" fontSize="$5">
               {user?.fullName || "Rider"}
             </Text>
-            <Text color="white" opacity={0.8} fontSize="$3">
-              {user?.email || "rider@example.com"}
-            </Text>
+            <XStack gap="$2" alignItems="center">
+              <Text color="white" opacity={0.8} fontSize="$3">
+                {user?.email || "rider@example.com"}
+              </Text>
+              {riderProfile?.rider_number ? (
+                <Text color="white" opacity={0.6} fontSize="$2">
+                  #{riderProfile.rider_number}
+                </Text>
+              ) : null}
+            </XStack>
             <XStack gap="$2" alignItems="center" marginTop="$1">
               {profileLoading ? (
                 <Spinner size="small" color="white" />

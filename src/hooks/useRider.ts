@@ -32,6 +32,33 @@ const RIDER_KEYS = {
   navigationApps: () => [...RIDER_KEYS.all, 'navigation-apps'] as const,
 };
 
+// ─── Available Orders ───
+
+export function useAvailableOrdersQuery(enabled = true) {
+  return useQuery({
+    queryKey: [...RIDER_KEYS.all, 'available-orders'],
+    queryFn: async () => {
+      const res = await riderService.fetchAvailableOrders();
+      return res.data;
+    },
+    enabled,
+    staleTime: 15000,
+  });
+}
+
+export function useClaimOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => riderService.acceptDelivery(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...RIDER_KEYS.all, 'available-orders'] });
+      queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });
+      queryClient.invalidateQueries({ queryKey: RIDER_KEYS.activeDelivery() });
+      queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
+    },
+  });
+}
+
 // ─── Metrics & Dashboard Hooks ───
 
 export function useRiderProfileQuery(enabled = true) {
@@ -125,8 +152,9 @@ export function useUpdateDeliveryStatusMutation() {
 export function useAcceptDeliveryMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (deliveryId: string) => riderService.acceptDelivery(deliveryId),
+    mutationFn: (orderId: string) => riderService.acceptDelivery(orderId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...RIDER_KEYS.all, 'available-orders'] });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.activeDelivery() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });

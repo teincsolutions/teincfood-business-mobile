@@ -20,6 +20,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **KYC is optional** — show/prompt KYC but let user complete it later.
 - **Paginated endpoints use useInfiniteQuery** — when a backend endpoint returns `{ data: [...], pagination: {...} }`, the hook must use `useInfiniteQuery` with `select` to flatten pages. Never use `useQuery` for paginated responses.
 - **List screens use FlatList** — every screen listing dynamic data must use `FlatList` (not `ScrollView + .map()`). Include: `keyExtractor`, `ListEmptyComponent` with icon, `RefreshControl` for pull-to-refresh (unless real-time via WebSocket), `initialNumToRender={10}`, `windowSize={5}`, `maxToRenderPerBatch={10}`, `removeClippedSubviews`.
+- **No UUIDs in UI** — never display UUIDs (order_id, user_id, delivery_id, etc.) directly to the user. Always use human-readable identifiers like `order_number`, `rider_number`, `business_number`. UUIDs are for backend APIs, databases, and system internals only.
 
 ---
 
