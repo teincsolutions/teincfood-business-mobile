@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { FlatList } from "react-native";
-import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
+import { YStack, XStack, Text, Spinner, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowUpRight,
@@ -82,20 +82,6 @@ export default function TransactionHistoryScreen() {
     );
   };
 
-  const ListHeader = () => (
-    <YStack gap="$2" marginBottom="$2">
-      <XStack gap="$2" alignItems="center">
-        <BackButton />
-        <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-          Transactions
-        </Text>
-      </XStack>
-      <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-        Your wallet transaction history
-      </Text>
-    </YStack>
-  );
-
   const ListEmpty = () => {
     if (isLoading) {
       return (
@@ -139,27 +125,37 @@ export default function TransactionHistoryScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
+      {/* Fixed header */}
       <YStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 16)}
-        flex={1}
-        $gtSm={{ padding: "$6", maxWidth: 600 }}
-        alignSelf="center"
-        width="100%"
+        backgroundColor="$background"
       >
-        <Card bordered flex={1}>
-          <FlatList
-            data={entries}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            ListHeaderComponent={ListHeader}
-            ListEmptyComponent={ListEmpty}
-            ListFooterComponent={ListFooter}
-            ItemSeparatorComponent={() => <Separator />}
-            contentContainerStyle={{ flexGrow: 1 }}
-            initialNumToRender={20}
-          />
-        </Card>
+        <XStack gap="$2" alignItems="center">
+          <BackButton />
+          <YStack gap="$1" flex={1}>
+            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+              Transactions
+            </Text>
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+              Your wallet transaction history
+            </Text>
+          </YStack>
+        </XStack>
+      </YStack>
+
+      {/* Transaction list */}
+      <YStack flex={1} paddingHorizontal="$4" $gtSm={{ paddingHorizontal: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
+        <FlatList
+          data={entries}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListEmptyComponent={ListEmpty}
+          ListFooterComponent={ListFooter}
+          ItemSeparatorComponent={() => <Separator />}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 20 }}
+          initialNumToRender={20}
+        />
       </YStack>
     </YStack>
   );

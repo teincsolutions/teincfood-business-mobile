@@ -20,6 +20,7 @@ import {
 } from "@/utils/phone";
 import { useSetUserLocationMutation } from "@/services/location.service";
 import { useLocationStore, AppLocation } from "@/stores/location.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 export default function LocationScreen() {
   const router = useRouter();
@@ -72,8 +73,17 @@ export default function LocationScreen() {
       // Save to local store
       setCurrentLocation(location);
 
-      // Navigate back to login
-      router.replace("/(auth)/login");
+      // If already authenticated, go to role home; otherwise go to login
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.role === 'rider') {
+        router.replace('/(rider)/');
+      } else if (currentUser?.role === 'fleet_manager') {
+        router.replace('/(fleet)/');
+      } else if (currentUser) {
+        router.replace('/(seller)/');
+      } else {
+        router.replace('/(auth)/login');
+      }
     } catch (err: any) {
       setError(err?.message || "Failed to save location. Please try again.");
     } finally {

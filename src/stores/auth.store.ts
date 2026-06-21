@@ -4,6 +4,7 @@ import type { User } from '@/types/user.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { useRoleStore } from './role.store';
+import { useLocationStore } from './location.store';
 
 interface AuthState {
   user: User | null;
@@ -50,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         useRoleStore.getState().clearRole();
+        useLocationStore.getState().clearLocation();
         set({ user: null, accessToken: null, refreshToken: null });
       },
 
