@@ -38,6 +38,7 @@ import {
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { copyToClipboard } from "@/utils/copyToClipBoard";
+import { toast } from "sonner-native";
 
 /**
  * Custom Drawer Content for Rider
@@ -101,7 +102,16 @@ function CustomDrawerContent(props: any) {
                 {user?.email || "rider@example.com"}
               </Text>
             </XStack>
-            <XStack gap="$1" marginTop="$2" alignItems="center">
+            <XStack
+              onPress={async () => {
+                await copyToClipboard(riderProfile?.rider_number);
+                console.log("ID copied", riderProfile?.rider_number);
+                toast.success("Rider ID copied to clipboard");
+              }}
+              gap="$1"
+              marginTop="$2"
+              alignItems="center"
+            >
               <Text
                 color="white"
                 opacity={0.6}
@@ -110,13 +120,7 @@ function CustomDrawerContent(props: any) {
               >
                 Rider ID: #{riderProfile?.rider_number}
               </Text>
-              <ButtonIcon
-                onPress={() => {
-                  copyToClipboard(riderProfile?.rider_number);
-                  toast.success("Rider ID copied to clipboard");
-                }}
-                color="$color.gray300"
-              >
+              <ButtonIcon color="$color.gray300">
                 <Copy color="$white" />
               </ButtonIcon>
             </XStack>
