@@ -7,6 +7,7 @@ import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
 import type { AuthApiResponse } from '@/services/auth.service';
 import type { User } from '@/types/user.model';
+import { extractApiErrorMessage } from '@/utils/error';
 
 export interface AuthError {
   code?: string;
@@ -33,37 +34,6 @@ function mapApiUserToUser(apiUser: Record<string, any>): User {
   };
 }
 
-function extractErrorMessage(error: unknown): string {
-  if (typeof error === 'string') return error;
-
-  if (error && typeof error === 'object') {
-    const err = error as Record<string, unknown>;
-
-    const errorObj = err.error as Record<string, unknown> | undefined;
-    if (errorObj?.message) {
-      return String(errorObj.message);
-    }
-
-    const response = err.response as Record<string, unknown> | undefined;
-    if (response?.data) {
-      const data = response.data as Record<string, unknown>;
-      const errorData = data.error as Record<string, unknown> | undefined;
-      if (errorData?.message) {
-        return String(errorData.message);
-      }
-      if (data.message) {
-        return String(data.message);
-      }
-    }
-
-    if (err.message) {
-      return String(err.message);
-    }
-  }
-
-  return 'An unexpected error occurred';
-}
-
 export function useAuth() {
   const router = useRouter();
 
@@ -83,14 +53,14 @@ export function useAuth() {
   const signupMutation = useMutation<AuthApiResponse | RegisterResponse, Error, RegisterRequest>({
     mutationFn: authService.register,
     onError: (error: Error) => {
-      setSignupError(extractErrorMessage(error));
+      setSignupError(extractApiErrorMessage(error));
     },
   });
 
   const loginMutation = useMutation<AuthApiResponse, Error, LoginRequest>({
     mutationFn: authService.login,
     onError: (error: Error) => {
-      setLoginError(extractErrorMessage(error));
+      setLoginError(extractApiErrorMessage(error));
     },
   });
 

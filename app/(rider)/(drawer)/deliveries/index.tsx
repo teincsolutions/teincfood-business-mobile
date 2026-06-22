@@ -83,7 +83,6 @@ export default function RiderDeliveries() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'picked_up': return '#3498db';
-      case 'delivering': return '#f39c12';
       case 'en_route': return '#f39c12';
       case 'arrived': return '#2ecc71';
       case 'delivered': return '$success';

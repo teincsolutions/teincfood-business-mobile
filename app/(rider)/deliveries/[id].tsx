@@ -25,6 +25,8 @@ import {
 import type { RiderDeliveryDetail } from "@/types/api/rider.api";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
+import { extractApiErrorMessage } from "@/utils/error";
+import { toast } from "sonner-native";
 
 /**
  * Rider Delivery Details Screen
@@ -50,8 +52,10 @@ export default function RiderDeliveryDetails() {
         return "#FFA500";
       case "picked_up":
         return "#3498db";
-      case "delivering":
+      case "en_route":
         return "#f39c12";
+      case "arrived":
+        return "#2ecc71";
       case "delivered":
         return "$success";
       default:
@@ -61,7 +65,23 @@ export default function RiderDeliveryDetails() {
 
   const handleStatusUpdate = (newStatus: string) => {
     if (id) {
-      updateStatus.mutate({ deliveryId: id as string, status: newStatus });
+      updateStatus.mutate(
+        { deliveryId: id as string, status: newStatus },
+        {
+          onSuccess: () => {
+            if (newStatus === 'confirm-pickup') {
+              toast.success("Pickup confirmed! Awaiting merchant handover.");
+            } else if (newStatus === 'in-transit') {
+              toast.success("En route to dropoff!");
+            } else if (newStatus === 'delivered') {
+              toast.success("Delivery completed!");
+            }
+          },
+          onError: (error) => {
+            toast.error(extractApiErrorMessage(error));
+          },
+        }
+      );
     }
   };
 
@@ -395,7 +415,21 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.status === 'delivered' ? '$success' : '$gray800'}
+                  backgroundColor={['en_route', 'arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
+                />
+                <YStack flex={1}>
+                  <Text fontWeight="bold">En Route</Text>
+                  <Text fontSize="$2" color="$colorMuted">
+                    {['en_route', 'arrived', 'delivered'].includes(delivery.status) ? 'In transit' : 'Pending'}
+                  </Text>
+                </YStack>
+              </XStack>
+              <XStack gap="$3" alignItems="center">
+                <YStack
+                  width={12}
+                  height={12}
+                  borderRadius="$10"
+                  backgroundColor={['arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
@@ -410,13 +444,25 @@ export default function RiderDeliveryDetails() {
           {/* Action Buttons */}
           <YStack gap="$3">
             {delivery.status === "assigned" && (
-              <Button
-                size="$5"
-                backgroundColor="$primary"
-                onPress={() => handleStatusUpdate("confirm-pickup")}
-              >
-                Confirm Pickup
-              </Button>
+              updateStatus.isSuccess && updateStatus.variables?.status === "confirm-pickup" ? (
+                <Button
+                  size="$5"
+                  backgroundColor="$yellow10"
+                  disabled
+                  icon={<Check size={18} />}
+                >
+                  Awaiting merchant handover
+                </Button>
+              ) : (
+                <Button
+                  size="$5"
+                  backgroundColor="$primary"
+                  onPress={() => handleStatusUpdate("confirm-pickup")}
+                  disabled={updateStatus.isPending}
+                >
+                  {updateStatus.isPending ? "Confirming..." : "Confirm Pickup"}
+                </Button>
+              )
             )}
             {delivery.status === "picked_up" && (
               <Button
@@ -428,7 +474,7 @@ export default function RiderDeliveryDetails() {
                 Start Delivery
               </Button>
             )}
-            {delivery.status === "delivering" && (
+            {delivery.status === "en_route" && (
               <Button
                 size="$5"
                 backgroundColor="$success"
@@ -514,7 +560,7 @@ export default function RiderDeliveryDetails() {
                     { value: "all", label: "All" },
                     { value: "assigned", label: "Assigned" },
                     { value: "picked_up", label: "Picked Up" },
-                    { value: "delivering", label: "Delivering" },
+                    { value: "en_route", label: "En Route" },
                     { value: "delivered", label: "Delivered" },
                   ].map((option) => (
                     <TouchableOpacity

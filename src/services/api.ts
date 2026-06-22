@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/utils/constants';
 import { useAuthStore } from '@/stores/auth.store';
+import { extractFromResponseBody } from '@/utils/error';
 import { toast } from 'sonner-native';
 
 let isRefreshing = false;
@@ -55,13 +56,16 @@ axiosInstance.interceptors.response.use(
     let errorCode: string | undefined;
     let errorMessage: string | undefined;
 
-    if (responseData?.error && typeof responseData.error === 'object') {
-      const errorObj = responseData.error as Record<string, unknown>;
-      errorCode = errorObj.code as string | undefined;
-      errorMessage = errorObj.message as string | undefined;
-    } else if (typeof responseData?.error === 'string') {
-      errorCode = responseData.error;
-      errorMessage = responseData.message as string | undefined;
+    if (responseData && typeof responseData === 'object') {
+      const data = responseData as Record<string, unknown>;
+      errorMessage = extractFromResponseBody(data) ?? undefined;
+
+      const errorField = data.error;
+      if (errorField && typeof errorField === 'object') {
+        errorCode = (errorField as Record<string, unknown>).code as string | undefined;
+      } else if (typeof errorField === 'string') {
+        errorCode = errorField;
+      }
     }
 
     // Token expired — attempt refresh

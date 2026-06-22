@@ -11,6 +11,7 @@ import {
 } from '@/hooks/useAuthVerification';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoleStore } from '@/stores/role.store';
+import { extractApiErrorMessage } from '@/utils/error';
 import { KeyboardAvoidingView } from 'react-native';
 
 const OTP_LENGTH = 4;
@@ -93,7 +94,7 @@ export default function VerificationScreen() {
       );
       routeToRole();
     } catch (err: any) {
-      setError(err.message || 'Invalid code. Try again.');
+      setError(extractApiErrorMessage(err));
       setOtp('');
       lastSubmittedCodeRef.current = '';
     } finally {
