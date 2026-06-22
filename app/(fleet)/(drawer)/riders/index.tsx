@@ -14,29 +14,30 @@ import {
   Plus,
   Search,
   Phone,
-  Car,
   ChevronRight,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
+import { useFleetRidersQuery } from "@/hooks/useFleet";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
 
 export default function FleetRidersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { riders } = useFleetStore();
+  const { data: ridersRes } = useFleetRidersQuery();
+  const riders = ridersRes?.data ?? [];
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
 
   const filteredRiders = riders.filter((rider) => {
+    const name = rider.user?.full_name || rider.rider_number || "";
     const matchesSearch =
-      rider.riderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rider.riderPhone.includes(searchQuery) ||
-      rider.riderEmail.toLowerCase().includes(searchQuery.toLowerCase());
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rider.phone?.includes(searchQuery);
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "active" && rider.status === "active") ||
-      (filterStatus === "inactive" && rider.status !== "active");
+      (filterStatus === "active" && rider.status === "available") ||
+      (filterStatus === "inactive" && rider.status !== "available");
     return matchesSearch && matchesStatus;
   });
 
@@ -50,10 +51,9 @@ export default function FleetRidersScreen() {
     >
       <XStack gap="$3" alignItems="center">
         <Avatar circular size="$5">
-          <Avatar.Image src={rider.riderAvatarUrl} />
           <Avatar.Fallback backgroundColor="$gray800">
             <Text color="white" fontWeight="bold">
-              {rider.riderName?.charAt(0) || "R"}
+              {(rider.user?.full_name || "R").charAt(0)}
             </Text>
           </Avatar.Fallback>
         </Avatar>
@@ -61,20 +61,20 @@ export default function FleetRidersScreen() {
         <YStack flex={1} gap="$1">
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-              {rider.riderName}
+              {rider.user?.full_name || rider.rider_number || "Rider"}
             </Text>
             <YStack
               paddingHorizontal="$2"
               paddingVertical="$1"
               borderRadius="$2"
-              backgroundColor={rider.status === "active" ? "$green2" : "$gray2"}
+              backgroundColor={rider.status === "available" ? "$green2" : "$gray2"}
             >
               <Text
                 fontSize="$2"
-                color={rider.status === "active" ? "$green10" : "$gray10"}
+                color={rider.status === "available" ? "$green10" : "$gray10"}
                 fontFamily="$body"
               >
-                {rider.status === "active" ? "Online" : "Offline"}
+                {rider.status === "available" ? "Online" : rider.status}
               </Text>
             </YStack>
           </XStack>
@@ -83,17 +83,9 @@ export default function FleetRidersScreen() {
             <XStack gap="$1" alignItems="center">
               <Phone size={14} color="$colorMuted" />
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {rider.riderPhone}
+                {rider.phone || "N/A"}
               </Text>
             </XStack>
-            {rider.vehiclePlateNumber && (
-              <XStack gap="$1" alignItems="center">
-                <Car size={14} color="$colorMuted" />
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  {rider.vehiclePlateNumber}
-                </Text>
-              </XStack>
-            )}
           </XStack>
         </YStack>
 
@@ -148,14 +140,14 @@ export default function FleetRidersScreen() {
               variant={filterStatus === "active" ? "primary" : "outline"}
               onPress={() => setFilterStatus("active")}
             >
-              Online {`(${riders.filter((r) => r.status === "active").length || "0"})`}
+              Online {`(${riders.filter((r) => r.status === "available").length || "0"})`}
             </Button>
             <Button
               size="$2"
               variant={filterStatus === "inactive" ? "primary" : "outline"}
               onPress={() => setFilterStatus("inactive")}
             >
-              Offline {`(${riders.filter((r) => r.status !== "active").length || "0"})`}
+              Offline {`(${riders.filter((r) => r.status !== "available").length || "0"})`}
           </Button>
         </XStack>
       </YStack>

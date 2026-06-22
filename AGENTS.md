@@ -99,7 +99,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 
 ---
 
-## Phase 5: Business Context & API Alignment 🔄 IN PROGRESS
+## Phase 5: Business Context & API Alignment ✅ COMPLETE
 
 See [detailed plan](.opencode/plans/business-context-plan.md) for full breakdown.
 
@@ -115,3 +115,25 @@ See [detailed plan](.opencode/plans/business-context-plan.md) for full breakdown
 - [x] **Step 8:** Frontend — Wire settings store toggle to backend
 - [x] **Step 9:** Frontend — Active business header indicator
 - [x] **Step 10:** Test & verify — `npx tsc --noEmit` 0 errors
+
+---
+
+## Phase 6: Delivery Engine, Dashboards & Monitoring 🔄 IN PROGRESS
+
+See [detailed plan](.opencode/plans/rider-delivery-engine-plan.md) for full breakdown.
+
+**Top-level checklist:**
+
+- [ ] **Step 1:** Fix frontend delivery bugs — action mapping, earnings display
+- [ ] **Step 2:** Backend — Dashboard stat endpoints for rider, seller, fleet (replace mock defaults with real data from dedicated endpoints)
+- [ ] **Step 3:** Backend — Pickup timeout worker (15 min auto-release stalled riders)
+- [ ] **Step 4:** Backend — Order availability expiry (30 min notify → auto-cancel + fee deduction)
+- [ ] **Step 5:** Backend — Monitoring & analytics engine (rider_metrics, business_metrics, eta_models tables, aggregation workers, leaderboard APIs, ETA model integration)
+- [ ] **Step 6a-e:** Wire fleet screens (dashboard, riders, vehicles, earnings) to real API hooks
+- [ ] **Step 6f-i:** Wire seller settings (payment, delivery, notification toggle, KYC upload) to real APIs
+- [ ] **OpenAPI docs updated** — every new endpoint added to openapi.ex
+- [ ] **TypeScript clean** — `npx tsc --noEmit` 0 errors
+
+**Ground rules for this phase:**
+- Every dashboard stat must come from a backend API via a query hook — no hardcoded defaults, no client-side derivation
+- Every new/modified backend endpoint must be added to `lib/teinc_food_backend_web/openapi.ex` before the step is considered complete

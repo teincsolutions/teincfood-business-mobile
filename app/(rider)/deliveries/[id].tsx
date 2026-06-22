@@ -413,7 +413,7 @@ export default function RiderDeliveryDetails() {
               <Button
                 size="$5"
                 backgroundColor="$primary"
-                onPress={() => handleStatusUpdate("picked_up")}
+                onPress={() => handleStatusUpdate("confirm-pickup")}
               >
                 Confirm Pickup
               </Button>
@@ -423,7 +423,7 @@ export default function RiderDeliveryDetails() {
                 size="$5"
                 width={"100%"}
                 backgroundColor="#f39c12"
-                onPress={() => handleStatusUpdate("delivering")}
+                onPress={() => handleStatusUpdate("in-transit")}
               >
                 Start Delivery
               </Button>

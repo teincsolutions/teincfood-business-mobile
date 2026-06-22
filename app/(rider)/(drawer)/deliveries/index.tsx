@@ -312,7 +312,7 @@ export default function RiderDeliveries() {
 
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$success">
-            +{delivery.currency || 'GHS'} {(delivery.earnings || 0).toFixed(2)}
+            +{delivery.currency || 'GHS'} {((delivery.earnings_minor || 0) / 100).toFixed(2)}
           </Text>
           <Button
             variant="ghost"

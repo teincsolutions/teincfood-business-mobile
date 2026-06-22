@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
-import { Image, ScrollView } from "react-native";
+import { useState } from "react";
+import { ScrollView } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -8,33 +8,34 @@ import {
   Car,
   DollarSign,
   TrendingUp,
-  MapPin,
   Clock,
   ChevronRight,
   Plus,
   X,
-  Building,
 } from "@tamagui/lucide-icons";
-import { useFleetStore } from "@/stores/fleet.store";
+import { useFleetDashboardQuery, useFleetRidersQuery } from "@/hooks/useFleet";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
-import { formatPrice } from "@/utils/currency";
+import { formatPriceFromMinor } from "@/utils/currency";
 
 export default function FleetDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
-  const { dashboard, riders, vehicles } = useFleetStore();
   const { businesses } = useBusinessStore();
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
   const hasBusiness = businesses.length > 0;
+  const { data: dashboardRes, isLoading } = useFleetDashboardQuery(hasBusiness);
+  const { data: ridersRes } = useFleetRidersQuery(hasBusiness);
 
-  const onlineRiders = riders.filter((r) => r.status === "active").length;
-  const totalVehicles = vehicles.length;
-  const assignedVehicles = vehicles.filter((v) => v.assignedRiderId).length;
+  const dashboard = dashboardRes?.data ?? null;
+  const riders = ridersRes?.data ?? [];
+  const onlineRiders = dashboard?.online_riders ?? 0;
+  const totalRiders = dashboard?.total_riders ?? riders.length;
+  const totalVehicles = dashboard?.total_vehicles ?? 0;
 
   return (
     <ScrollView
@@ -44,13 +45,11 @@ export default function FleetDashboardScreen() {
       }}
     >
       <YStack padding="$4" gap="$4">
-        {/* Service Status */}
         <ServiceStatusBanner
           status={user?.serviceStatus}
           hasCompletedKyc={user?.hasCompletedKyc}
         />
 
-        {/* No Business Banner */}
         {!hasBusiness && !dismissNoBusiness && (
           <Card
             padding="$4"
@@ -91,7 +90,6 @@ export default function FleetDashboardScreen() {
           </Card>
         )}
 
-        {/* Welcome Section */}
         <YStack gap="$2">
           <Text
             fontSize="$8"
@@ -106,7 +104,6 @@ export default function FleetDashboardScreen() {
           </Text>
         </YStack>
 
-        {/* Key Metrics */}
         <XStack gap="$3" flexWrap="wrap">
           <Card flex={1} minWidth={140} padding="$4" bordered>
             <YStack gap="$2" alignItems="center">
@@ -122,7 +119,7 @@ export default function FleetDashboardScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  {onlineRiders}/{riders.length}
+                  {onlineRiders}/{totalRiders}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Online Riders
@@ -141,17 +138,14 @@ export default function FleetDashboardScreen() {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Image
-                  source={require("assets/icons/delivery-bike.png")}
-                  style={{ width: 24, height: 24, tintColor: "white" }}
-                />
+                <Car size={24} color="$white" />
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  {assignedVehicles}/{totalVehicles}
+                  {totalVehicles}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Assigned Motors
+                  Total Vehicles
                 </Text>
               </YStack>
             </YStack>
@@ -171,7 +165,7 @@ export default function FleetDashboardScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  {formatPrice(dashboard?.todayEarnings || 0)}
+                  {formatPriceFromMinor(dashboard?.today_earnings_minor ?? 0)}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Today's Earnings
@@ -194,7 +188,7 @@ export default function FleetDashboardScreen() {
               </YStack>
               <YStack alignItems="center">
                 <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-                  {riders.length}
+                  {totalRiders}
                 </Text>
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   Total Riders
@@ -204,7 +198,6 @@ export default function FleetDashboardScreen() {
           </Card>
         </XStack>
 
-        {/* Quick Actions */}
         <YStack gap="$3">
           <Text
             fontSize="$6"
@@ -234,7 +227,6 @@ export default function FleetDashboardScreen() {
           </XStack>
         </YStack>
 
-        {/* Recent Riders */}
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
             <Text
@@ -259,16 +251,15 @@ export default function FleetDashboardScreen() {
             <Card key={rider.id} padding="$3" bordered>
               <XStack gap="$3" alignItems="center">
                 <Avatar circular size="$4">
-                  <Avatar.Image src={rider.riderAvatarUrl} />
                   <Avatar.Fallback backgroundColor="$colorMuted">
                     <Text color="$white" fontWeight="bold">
-                      {rider.riderName?.charAt(0) || "R"}
+                      {(rider.user?.full_name || "R").charAt(0)}
                     </Text>
                   </Avatar.Fallback>
                 </Avatar>
                 <YStack flex={1}>
                   <Text fontSize="$4" fontWeight="600" fontFamily="$body">
-                    {rider.riderName}
+                    {rider.user?.full_name || "Rider"}
                   </Text>
                   <XStack gap="$2" alignItems="center">
                     <YStack
@@ -276,7 +267,7 @@ export default function FleetDashboardScreen() {
                       height={8}
                       borderRadius="$10"
                       backgroundColor={
-                        rider.status === "active" ? "$success" : "$colorMuted"
+                        rider.status === "available" ? "$success" : "$colorMuted"
                       }
                     />
                     <Text
@@ -284,40 +275,9 @@ export default function FleetDashboardScreen() {
                       color="$colorSecondary"
                       fontFamily="$body"
                     >
-                      {rider.status === "active" ? "Online" : "Offline"}
+                      {rider.status === "available" ? "Online" : rider.status}
                     </Text>
-                    {rider.vehiclePlateNumber && (
-                      <>
-                        <Text fontSize="$3" color="$colorSecondary">
-                          •
-                        </Text>
-                        <Text
-                          fontSize="$3"
-                          color="$colorSecondary"
-                          fontFamily="$body"
-                        >
-                          {rider.vehiclePlateNumber}
-                        </Text>
-                      </>
-                    )}
                   </XStack>
-                </YStack>
-                <YStack alignItems="flex-end">
-                  <Text
-                    fontSize="$4"
-                    fontWeight="600"
-                    fontFamily="$heading"
-                    color="$success"
-                  >
-                    {formatPrice(rider.totalEarnings)}
-                  </Text>
-                  <Text
-                    fontSize="$2"
-                    color="$colorSecondary"
-                    fontFamily="$body"
-                  >
-                    earnings
-                  </Text>
                 </YStack>
               </XStack>
             </Card>
@@ -343,8 +303,7 @@ export default function FleetDashboardScreen() {
           )}
         </YStack>
 
-        {/* Fleet Performance Summary */}
-        {dashboard?.activeDeliveries > 0 && (
+        {dashboard && (
           <YStack gap="$3">
             <Text
               fontSize="$6"
@@ -352,78 +311,40 @@ export default function FleetDashboardScreen() {
               fontFamily="$heading"
               color="$color"
             >
-              Fleet Activity
+              Fleet Performance
             </Text>
-            <Card padding="$4" bordered backgroundColor="$infoMuted">
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={48}
-                  height={48}
-                  borderRadius="$4"
-                  backgroundColor="$info"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <MapPin size={24} color="$white" />
-                </YStack>
-                <YStack flex={1}>
-                  <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                    {dashboard.activeDeliveries} Active Riders
+            <Card padding="$4" bordered>
+              <YStack gap="$3">
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                    Today's Deliveries
                   </Text>
-                  <Text
-                    fontSize="$3"
-                    color="$colorSecondary"
-                    fontFamily="$body"
-                  >
-                    Riders are currently on delivery
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
+                    {dashboard.today_deliveries}
                   </Text>
-                </YStack>
-              </XStack>
+                </XStack>
+                <Separator />
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                    Pending Join Requests
+                  </Text>
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
+                    {dashboard.pending_join_requests}
+                  </Text>
+                </XStack>
+                <Separator />
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                    Active Riders
+                  </Text>
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
+                    {dashboard.active_riders}
+                  </Text>
+                </XStack>
+              </YStack>
             </Card>
           </YStack>
         )}
-
-        {/* Fleet Performance */}
-        <YStack gap="$3">
-          <Text
-            fontSize="$6"
-            fontWeight="600"
-            fontFamily="$heading"
-            color="$color"
-          >
-            Fleet Performance
-          </Text>
-          <Card padding="$4" bordered>
-            <YStack gap="$3">
-              <XStack justifyContent="space-between">
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                  This Week
-                </Text>
-                <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  {formatPrice(dashboard?.weekEarnings || 0)}
-                </Text>
-              </XStack>
-              <Separator />
-              <XStack justifyContent="space-between">
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                  This Month
-                </Text>
-                <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  {formatPrice(dashboard?.monthEarnings || 0)}
-                </Text>
-              </XStack>
-              <Separator />
-              <XStack justifyContent="space-between">
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                  Total Deliveries
-                </Text>
-                <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-                  {riders.reduce((sum, r) => sum + r.totalDeliveries, 0)}
-                </Text>
-              </XStack>
-            </YStack>
-          </Card>
-        </YStack>
       </YStack>
     </ScrollView>
   );

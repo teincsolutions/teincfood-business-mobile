@@ -12,6 +12,7 @@ import type {
   NavigationSettings,
   NavigationApp,
 } from '@/types/rider.model';
+import type { RiderDashboard } from '@/types/api/rider.api';
 import * as riderService from '@/services/rider.service';
 
 // Query keys
@@ -77,7 +78,7 @@ export function useRiderMetricsQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.metrics(),
     queryFn: async () => {
-      const res = await riderService.fetchRiderMetrics();
+      const res = await riderService.fetchRiderDashboard();
       return res.data;
     },
     enabled,

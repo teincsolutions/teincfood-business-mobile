@@ -11,22 +11,24 @@ import {
   ChevronRight,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
+import { useFleetVehiclesQuery, useFleetRidersQuery } from "@/hooks/useFleet";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
 
 export default function FleetVehiclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { vehicles, riders } = useFleetStore();
+  const { data: vehiclesRes } = useFleetVehiclesQuery();
+  const { data: ridersRes } = useFleetRidersQuery();
+  const vehicles = vehiclesRes?.data ?? [];
+  const riders = ridersRes?.data ?? [];
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "motorcycle" | "car" | "bicycle" | "van">("all");
+  const [filterType, setFilterType] = useState<"all" | "motorcycle" | "car" | "bicycle">("all");
 
   const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch =
-      vehicle.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vehicle.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vehicle.brand?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = filterType === "all" || vehicle.vehicleType === filterType;
+      vehicle.plate_number.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === "all" || vehicle.type === filterType;
     return matchesSearch && matchesType;
   });
 
@@ -35,10 +37,10 @@ export default function FleetVehiclesScreen() {
     return riders.find((r) => r.id === riderId);
   };
 
-  const typeFilters = ["all", "motorcycle", "car", "van", "bicycle"] as const;
+  const typeFilters = ["all", "motorcycle", "car", "bicycle"] as const;
 
   const renderVehicle = ({ item: vehicle }) => {
-    const assignedRider = getAssignedRider(vehicle.assignedRiderId);
+    const assignedRider = getAssignedRider(vehicle.rider_id);
     return (
       <Card
         padding="$4"
@@ -52,58 +54,42 @@ export default function FleetVehiclesScreen() {
             width={56}
             height={56}
             borderRadius="$4"
-            backgroundColor={vehicle.isActive ? "$primaryLight" : "$backgroundSoft"}
+            backgroundColor={vehicle.ownership === "fleet" ? "$primaryLight" : "$backgroundSoft"}
             alignItems="center"
             justifyContent="center"
           >
-            <Car size={20} color={vehicle.isActive ? "$primary" : "$colorMuted"} />
+            <Car size={20} color={vehicle.ownership === "fleet" ? "$primary" : "$colorMuted"} />
           </YStack>
 
           <YStack flex={1} gap="$1">
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                {vehicle.plateNumber}
+                {vehicle.plate_number}
               </Text>
               <YStack
                 paddingHorizontal="$2"
                 paddingVertical="$1"
                 borderRadius="$2"
-                backgroundColor={vehicle.isActive ? "$success" : "$backgroundSoft"}
+                backgroundColor={Boolean(vehicle.rider_id) ? "$success" : "$backgroundSoft"}
               >
-                <Text fontSize="$2" color={vehicle.isActive ? "$white" : "$colorSecondary"} fontFamily="$body">
-                  {vehicle.isActive ? "Active" : "Inactive"}
+                <Text fontSize="$2" color={Boolean(vehicle.rider_id) ? "$white" : "$colorSecondary"} fontFamily="$body">
+                  {vehicle.rider_id ? "Assigned" : "Unassigned"}
                 </Text>
               </YStack>
             </XStack>
 
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              {vehicle.brand} {vehicle.model} {vehicle.year && `(${vehicle.year})`}
+              {vehicle.type} {vehicle.ownership === "fleet" ? "(Fleet)" : "(Individual)"}
             </Text>
 
-            <XStack gap="$3" alignItems="center">
-              <Text fontSize="$2" color="$colorMuted" textTransform="capitalize" fontFamily="$body">
-                {vehicle.vehicleType}
-              </Text>
-              {vehicle.color && (
-                <>
-                  <Text fontSize="$2" color="$colorMuted" fontFamily="$body">•</Text>
-                  <Text fontSize="$2" color="$colorMuted" fontFamily="$body">{vehicle.color}</Text>
-                </>
-              )}
-            </XStack>
-
-            {assignedRider ? (
+            {assignedRider && (
               <XStack gap="$2" alignItems="center" marginTop="$1">
                 <User size={14} color="$colorMuted" />
                 <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  Assigned to: {assignedRider.riderName}
+                  Rider: {assignedRider.user?.full_name || assignedRider.rider_number}
                 </Text>
               </XStack>
-            ) : vehicle.isActive ? (
-              <Text fontSize="$2" color="$primary" fontFamily="$body" marginTop="$1">
-                Not assigned to any rider
-              </Text>
-            ) : null}
+            )}
           </YStack>
 
           <ChevronRight size={20} color="$colorMuted" />
@@ -152,7 +138,7 @@ export default function FleetVehiclesScreen() {
               onPress={() => setFilterType(type)}
               marginRight="$2"
             >
-              {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)} {`(${type === "all" ? vehicles.length : vehicles.filter((v) => v.vehicleType === type).length || "0"})`}
+              {type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)} {`(${type === "all" ? vehicles.length : vehicles.filter((v) => v.type === type).length || "0"})`}
             </Button>
           )}
           showsHorizontalScrollIndicator={false}

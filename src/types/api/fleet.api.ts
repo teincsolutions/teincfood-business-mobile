@@ -48,3 +48,20 @@ export interface FleetInvitation {
   status: string;
   inserted_at: string;
 }
+
+// ─── Fleet Dashboard ───
+
+export interface FleetDashboard {
+  total_riders: number;
+  active_riders: number;
+  online_riders: number;
+  offline_riders: number;
+  total_vehicles: number;
+  today_deliveries: number;
+  today_earnings_minor: number;
+  pending_join_requests: number;
+}
+
+export interface FleetDashboardResponse {
+  data: FleetDashboard;
+}

@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { formatPrice } from "@/utils/currency";
+import { formatPrice, formatPriceFromMinor } from "@/utils/currency";
 import { YStack, XStack, Text, Card, Separator, Switch, Avatar } from "tamagui";
 import {
   ShoppingBag,
@@ -34,19 +34,20 @@ export default function SellerDashboard() {
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
+  const activeBusinessId = activeBusiness?.id;
 
   // TanStack Query hooks
-  const { data, isLoading, refetch } = useSellerDashboardQuery();
+  const { data, isLoading, refetch } = useSellerDashboardQuery(activeBusinessId, hasBusiness);
 
   // Use query data or fallback to defaults
-  const metrics = data?.metrics ?? {
-    todayOrders: 0,
-    todayRevenue: 0,
-    pendingOrders: 0,
-    averageRating: 0,
-    activeOrders: 0,
+  const metrics = data ?? {
+    today_orders: 0,
+    today_revenue_minor: 0,
+    pending_orders: 0,
+    average_rating: 0,
+    active_orders: 0,
   };
-  const recentOrders = data?.recentOrders ?? [];
+  const recentOrders = data?.recent_orders ?? [];
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -177,7 +178,7 @@ export default function SellerDashboard() {
                 </Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">
-                {metrics.todayOrders}
+                {metrics.today_orders}
               </Text>
             </YStack>
           </Card>
@@ -190,8 +191,8 @@ export default function SellerDashboard() {
                   Today's Revenue
                 </Text>
               </XStack>
-              <Text fontSize="$7" fontWeight="bold">
-                {formatPrice(metrics.todayRevenue)}
+              <Text fontSize="$7" fontWeight="bold" color="$success">
+                {formatPriceFromMinor(metrics.today_revenue_minor)}
               </Text>
             </YStack>
           </Card>
@@ -205,7 +206,7 @@ export default function SellerDashboard() {
                 </Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">
-                {metrics.pendingOrders}
+                {metrics.pending_orders}
               </Text>
             </YStack>
           </Card>
@@ -219,7 +220,7 @@ export default function SellerDashboard() {
                 </Text>
               </XStack>
               <Text fontSize="$7" fontWeight="bold">
-                {metrics.averageRating}
+                {metrics.average_rating}
               </Text>
             </YStack>
           </Card>
@@ -234,6 +235,7 @@ export default function SellerDashboard() {
             <XStack gap="$3">
               <Button
                 flex={1}
+                backgroundColor="$star"
                 onPress={() => router.push("/(seller)/orders/pending")}
               >
                 <XStack gap="$2" alignItems="center">
@@ -243,12 +245,13 @@ export default function SellerDashboard() {
                     fontFamily="$body"
                     fontWeight="bold"
                   >
-                    Pending ({metrics.pendingOrders})
+                    Pending ({metrics.pending_orders})
                   </Text>
                 </XStack>
               </Button>
               <Button
                 flex={1}
+                backgroundColor="$primary"
                 onPress={() => router.push("/(seller)/orders/active")}
               >
                 <XStack gap="$2" alignItems="center">
@@ -258,7 +261,7 @@ export default function SellerDashboard() {
                     fontFamily="$body"
                     fontWeight="bold"
                   >
-                    Active ({metrics.activeOrders})
+                    Active ({metrics.active_orders})
                   </Text>
                 </XStack>
               </Button>
@@ -300,9 +303,9 @@ export default function SellerDashboard() {
               <YStack key={order.id} gap="$2">
                 <XStack justifyContent="space-between" alignItems="center">
                   <YStack>
-                    <Text fontWeight="bold">{order.orderNumber}</Text>
+                    <Text fontWeight="bold">{order.order_number}</Text>
                     <Text fontSize="$3" color="$colorMuted">
-                      {order.items} items • {formatPrice(order.total)}
+                      {order.item_count} items • {formatPrice(order.total_minor ? order.total_minor / 100 : 0)}
                     </Text>
                   </YStack>
                   <XStack gap="$2" alignItems="center">
@@ -330,14 +333,11 @@ export default function SellerDashboard() {
         </Card>
 
         {/* Active Delivery Status */}
-        {metrics.activeOrders > 0 && (
-          <Card padding="$4" bordered backgroundColor="$primaryLight">
-            <YStack gap="$2">
-              <Text fontSize="$5" fontWeight="bold">
-                Active Deliveries
-              </Text>
-              <Text color="$colorMuted">
-                You have {metrics.activeOrders} orders being delivered
+        {metrics.active_orders > 0 && (
+          <Card padding="$4" bordered backgroundColor="$greenLight">
+            <YStack gap="$2" alignItems="center">
+              <Text fontSize="$3" color="$colorMuted">
+                You have {metrics.active_orders} orders being delivered
               </Text>
               <Button onPress={() => router.push("/(seller)/orders")}>
                 Track Orders

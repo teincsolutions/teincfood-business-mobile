@@ -8,6 +8,7 @@ import type {
   RiderEarningsResponse,
   RiderVehicleResponse,
   AvailableOrdersResponse,
+  RiderDashboardResponse,
   PaginationMeta,
 } from '@/types/api';
 
@@ -141,6 +142,10 @@ export async function createVehicle(data: Record<string, unknown>): Promise<Ride
 
 export async function fetchRiderMetrics(): Promise<RiderProfileResponse> {
   return api.get<RiderProfileResponse>('/riders/profile');
+}
+
+export async function fetchRiderDashboard(): Promise<RiderDashboardResponse> {
+  return api.get<RiderDashboardResponse>('/riders/dashboard');
 }
 
 export async function fetchRiderStatistics(): Promise<RiderProfileResponse> {

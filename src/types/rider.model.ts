@@ -1,11 +1,11 @@
 // Rider-related models
 
 export interface RiderMetrics {
-  todayEarnings: number;
-  todayDeliveries: number;
-  activeDelivery: RiderActiveDelivery | null;
-  availableDeliveries: number;
-  currency: string;
+  today_earnings_minor: number;
+  today_deliveries: number;
+  available_deliveries: number;
+  total_deliveries: number;
+  status: string;
 }
 
 export interface RiderActiveDelivery {

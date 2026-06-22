@@ -49,6 +49,8 @@ export interface RiderDelivery {
   dropoff_lat: number;
   dropoff_lng: number;
   eta_minutes: number;
+  earnings_minor: number | null;
+  currency: string | null;
   inserted_at: string;
   updated_at: string;
 }
@@ -99,6 +101,20 @@ export interface AvailableOrder {
 
 export interface AvailableOrdersResponse {
   data: AvailableOrder[];
+}
+
+// ─── Rider Dashboard ───
+
+export interface RiderDashboard {
+  today_earnings_minor: number;
+  today_deliveries: number;
+  available_deliveries: number;
+  total_deliveries: number;
+  status: string;
+}
+
+export interface RiderDashboardResponse {
+  data: RiderDashboard;
 }
 
 // ─── Rider Delivery Detail ───

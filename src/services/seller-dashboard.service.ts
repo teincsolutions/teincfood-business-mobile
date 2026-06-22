@@ -1,26 +1,20 @@
 import { api } from './api';
 
 export interface SellerDashboardMetrics {
-  todayOrders: number;
-  todayRevenue: number;
-  pendingOrders: number;
-  averageRating: number;
-  activeOrders: number;
+  today_orders: number;
+  today_revenue_minor: number;
+  pending_orders: number;
+  average_rating: number;
+  active_orders: number;
 }
 
 export interface SellerDashboardResponse {
-  metrics: SellerDashboardMetrics;
-  recentOrders: any[];
+  data: {
+    metrics: SellerDashboardMetrics;
+    recent_orders: any[];
+  };
 }
 
-export async function fetchSellerDashboardMetrics(): Promise<any> {
-  return api.get('/orders');
-}
-
-export async function fetchSellerDashboardRecentOrders(): Promise<any> {
-  return api.get('/orders');
-}
-
-export async function fetchSellerDashboard(): Promise<any> {
-  return api.get('/orders');
+export async function fetchSellerDashboard(businessId: string): Promise<SellerDashboardResponse> {
+  return api.get<SellerDashboardResponse>(`/businesses/${businessId}/dashboard`);
 }

@@ -53,10 +53,10 @@ export default function RiderHome() {
 
   // Use query data or fallback to defaults
   const metrics = {
-    todayEarnings: metricsData?.todayEarnings ?? 0,
-    todayDeliveries: metricsData?.todayDeliveries ?? 0,
-    availableDeliveries: metricsData?.availableDeliveries ?? 0,
-    totalDeliveries: metricsData?.totalDeliveries ?? 0,
+    todayEarnings: metricsData?.today_earnings_minor ?? 0,
+    todayDeliveries: metricsData?.today_deliveries ?? 0,
+    availableDeliveries: metricsData?.available_deliveries ?? 0,
+    totalDeliveries: metricsData?.total_deliveries ?? 0,
   };
   const activeDelivery = activeDeliveryData ?? null;
 
@@ -238,7 +238,7 @@ export default function RiderHome() {
               <YStack flex={1} alignItems="center" gap="$1">
                 <DollarSign size={24} color="$success" />
                 <Text fontSize="$7" fontWeight="bold">
-                  GHS {metrics.todayEarnings.toFixed(2)}
+                  GHS {(metrics.todayEarnings / 100).toFixed(2)}
                 </Text>
                 <Text fontSize="$3" color="$colorMuted">
                   Earnings

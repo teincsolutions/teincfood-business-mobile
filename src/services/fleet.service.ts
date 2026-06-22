@@ -4,6 +4,7 @@ import type {
   FleetRidersResponse,
   FleetVehicle,
   FleetVehiclesResponse,
+  FleetDashboardResponse,
 } from '@/types/api';
 
 // ─── Riders ───
@@ -98,8 +99,8 @@ export async function acceptFleetInvitation(data: Record<string, unknown>): Prom
 
 // ─── Dashboard ───
 
-export async function fetchFleetDashboard(businessId?: string): Promise<FleetRidersResponse> {
-  return api.get<FleetRidersResponse>('/business/riders', {
+export async function fetchFleetDashboard(businessId?: string): Promise<FleetDashboardResponse> {
+  return api.get<FleetDashboardResponse>('/business/riders/dashboard', {
     params: businessId ? { business_id: businessId } : undefined,
   });
 }
