@@ -105,6 +105,7 @@ export async function markDeliveryReturned(deliveryId: string): Promise<{ data: 
 }
 
 export async function confirmDeliveryPickup(deliveryId: string): Promise<{ data: Record<string, unknown> }> {
+  console.log('[rider.service] confirmDeliveryPickup called:', { deliveryId, url: `/deliveries/${deliveryId}/confirm-pickup` });
   return api.post(`/deliveries/${deliveryId}/confirm-pickup`);
 }
 

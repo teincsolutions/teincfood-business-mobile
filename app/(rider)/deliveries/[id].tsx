@@ -45,6 +45,8 @@ export default function RiderDeliveryDetails() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [issueSheetOpen, setIssueSheetOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -64,20 +66,29 @@ export default function RiderDeliveryDetails() {
   };
 
   const handleStatusUpdate = (newStatus: string) => {
+    console.log('[handleStatusUpdate] called with:', { deliveryId: id, status: newStatus });
     if (id) {
       updateStatus.mutate(
-        { deliveryId: id as string, status: newStatus },
+        { deliveryId: id as string, action: newStatus },
         {
           onSuccess: () => {
+            console.log('[handleStatusUpdate] success for:', { deliveryId: id, action: newStatus });
             if (newStatus === 'confirm-pickup') {
               toast.success("Pickup confirmed! Awaiting merchant handover.");
             } else if (newStatus === 'in-transit') {
               toast.success("En route to dropoff!");
+            } else if (newStatus === 'arrived') {
+              toast.success("Arrived at dropoff!");
             } else if (newStatus === 'delivered') {
               toast.success("Delivery completed!");
+            } else if (newStatus === 'failed') {
+              toast.success("Delivery marked as failed.");
+            } else if (newStatus === 'returned') {
+              toast.success("Delivery returned to merchant.");
             }
           },
           onError: (error) => {
+            console.error('[handleStatusUpdate] error for:', { deliveryId: id, action: newStatus, error });
             toast.error(extractApiErrorMessage(error));
           },
         }
@@ -444,7 +455,7 @@ export default function RiderDeliveryDetails() {
           {/* Action Buttons */}
           <YStack gap="$3">
             {delivery.status === "assigned" && (
-              updateStatus.isSuccess && updateStatus.variables?.status === "confirm-pickup" ? (
+              updateStatus.isSuccess && updateStatus.variables?.action === "confirm-pickup" ? (
                 <Button
                   size="$5"
                   backgroundColor="$yellow10"
@@ -477,11 +488,22 @@ export default function RiderDeliveryDetails() {
             {delivery.status === "en_route" && (
               <Button
                 size="$5"
-                backgroundColor="$success"
-                onPress={() => handleStatusUpdate("delivered")}
+                backgroundColor="#3498db"
+                onPress={() => handleStatusUpdate("arrived")}
               >
-                Complete Delivery
+                Arrived at Dropoff
               </Button>
+            )}
+            {delivery.status === "arrived" && (
+              <>
+                <Button
+                  size="$5"
+                  backgroundColor="$success"
+                  onPress={() => setConfirmAction("delivered")}
+                >
+                  Complete Delivery
+                </Button>
+              </>
             )}
             {delivery.status === "delivered" && (
               <Card padding="$4" bordered backgroundColor="$green2">
@@ -499,6 +521,17 @@ export default function RiderDeliveryDetails() {
                   </Text>
                 </YStack>
               </Card>
+            )}
+            {["picked_up", "en_route", "arrived"].includes(delivery.status) && (
+              <Button
+                size="$5"
+                variant="outline"
+                borderColor="$red10"
+                color="$red10"
+                onPress={() => setIssueSheetOpen(true)}
+              >
+                Report Issue
+              </Button>
             )}
           </YStack>
         </YStack>
@@ -740,6 +773,166 @@ export default function RiderDeliveryDetails() {
               </YStack>
             </YStack>
           </ScrollView>
+        </Sheet.Frame>
+      </Sheet>
+
+      {/* Confirm Complete Delivery */}
+      <Sheet
+        modal
+        open={confirmAction === "delivered"}
+        onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+        snapPoints={[35]}
+        dismissOnSnapToBottom
+        zIndex={200_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$6"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack gap="$4" alignItems="center" paddingTop="$4">
+            <Text fontSize="$6" fontWeight="bold">Complete Delivery?</Text>
+            <Text fontSize="$4" color="$colorMuted" textAlign="center">
+              Confirm that you have handed the order to the customer.
+            </Text>
+            <XStack gap="$3" width="100%">
+              <Button
+                flex={1}
+                variant="outline"
+                onPress={() => setConfirmAction(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                backgroundColor="$success"
+                onPress={() => {
+                  setConfirmAction(null);
+                  handleStatusUpdate("delivered");
+                }}
+              >
+                Confirm
+              </Button>
+            </XStack>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
+
+      {/* Report Issue Sheet */}
+      <Sheet
+        modal
+        open={issueSheetOpen}
+        onOpenChange={setIssueSheetOpen}
+        snapPoints={[40]}
+        dismissOnSnapToBottom
+        zIndex={200_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$6"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack gap="$4" paddingTop="$4">
+            <Text fontSize="$6" fontWeight="bold">Report Issue</Text>
+            <Button
+              size="$5"
+              backgroundColor="$red10"
+              onPress={() => {
+                setIssueSheetOpen(false);
+                setConfirmAction("failed");
+              }}
+            >
+              Customer Not Found — Mark Failed
+            </Button>
+            <Button
+              size="$5"
+              backgroundColor="$orange10"
+              onPress={() => {
+                setIssueSheetOpen(false);
+                setConfirmAction("returned");
+              }}
+            >
+              Return to Merchant
+            </Button>
+            <Button
+              size="$5"
+              variant="outline"
+              onPress={() => setIssueSheetOpen(false)}
+            >
+              Cancel
+            </Button>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
+
+      {/* Confirm Failed/Returned */}
+      <Sheet
+        modal
+        open={confirmAction === "failed" || confirmAction === "returned"}
+        onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+        snapPoints={[35]}
+        dismissOnSnapToBottom
+        zIndex={200_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$6"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack gap="$4" alignItems="center" paddingTop="$4">
+            <Text fontSize="$6" fontWeight="bold">
+              {confirmAction === "failed" ? "Mark as Failed?" : "Return to Merchant?"}
+            </Text>
+            <Text fontSize="$4" color="$colorMuted" textAlign="center">
+              {confirmAction === "failed"
+                ? "This will end the delivery and mark it as failed. The order will be cancelled."
+                : "This will end the delivery and return the order to the merchant."}
+            </Text>
+            <XStack gap="$3" width="100%">
+              <Button
+                flex={1}
+                variant="outline"
+                onPress={() => setConfirmAction(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                backgroundColor="$red10"
+                onPress={() => {
+                  const action = confirmAction;
+                  setConfirmAction(null);
+                  handleStatusUpdate(action);
+                }}
+              >
+                Confirm
+              </Button>
+            </XStack>
+          </YStack>
         </Sheet.Frame>
       </Sheet>
     </YStack>

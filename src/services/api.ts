@@ -2,7 +2,6 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, In
 import { API_BASE_URL } from '@/utils/constants';
 import { useAuthStore } from '@/stores/auth.store';
 import { extractFromResponseBody } from '@/utils/error';
-import { toast } from 'sonner-native';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -40,6 +39,11 @@ axiosInstance.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+      data: config.data,
+      params: config.params,
+      headers: { ...config.headers, Authorization: config.headers?.Authorization ? 'Bearer ...' : undefined },
+    });
     return config;
   },
   (error: unknown) => Promise.reject(error)
@@ -127,9 +131,6 @@ axiosInstance.interceptors.response.use(
     }
 
     const message = errorMessage || error.message || 'An unexpected error occurred';
-    if (status && status < 500) {
-      toast.error(message);
-    }
     return Promise.reject(new ApiError(status ?? 500, message, responseData));
   }
 );

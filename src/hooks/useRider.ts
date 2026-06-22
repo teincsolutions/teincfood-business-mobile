@@ -131,6 +131,8 @@ export function useUpdateDeliveryStatusMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ deliveryId, action }: { deliveryId: string; action: string }) => {
+      console.log('[useUpdateDeliveryStatusMutation] mutationFn called:', { deliveryId, action });
+
       const actions: Record<string, (id: string) => Promise<any>> = {
         'in-transit': riderService.markDeliveryInTransit,
         arrived: riderService.markDeliveryArrived,
@@ -142,6 +144,7 @@ export function useUpdateDeliveryStatusMutation() {
       };
       const fn = actions[action];
       if (!fn) return Promise.reject(new Error(`Unknown action: ${action}`));
+      console.log('[useUpdateDeliveryStatusMutation] calling service:', { action, deliveryId });
       return fn(deliveryId);
     },
     onSuccess: (_, { deliveryId }) => {
