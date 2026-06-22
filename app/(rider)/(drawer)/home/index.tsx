@@ -387,7 +387,7 @@ export default function RiderHome() {
                   </YStack>
                   <XStack gap="$2" alignItems="center">
                     <Text fontWeight="bold" color="$success">
-                      +GHS {delivery.earnings.toFixed(2)}
+                      +GHS {((delivery.earnings_minor ?? 0) / 100).toFixed(2)}
                     </Text>
                     <ChevronRight size={16} color="$colorMuted" />
                   </XStack>

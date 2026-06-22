@@ -193,7 +193,7 @@ export default function RiderDeliveryDetails() {
                   fontWeight="bold"
                   color="$success"
                 >
-                  +{delivery.currency} {((delivery.order_total_minor ?? 0) / 100).toFixed(2)}
+                  +{delivery.currency} {((delivery.delivery_fee_minor ?? 0) / 100).toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
@@ -367,7 +367,7 @@ export default function RiderDeliveryDetails() {
                 </Text>
                 <Text fontWeight="bold" color="$success">
                   {formatPrice(
-                    (delivery.order_total_minor ?? 0) / 100,
+                    (delivery.delivery_fee_minor ?? 0) / 100,
                     delivery.currency || DEFAULT_CURRENCY,
                   )}
                 </Text>
@@ -493,7 +493,7 @@ export default function RiderDeliveryDetails() {
                   <Text color="$colorMuted">
                     You earned{" "}
                     {formatPrice(
-                      (delivery.order_total_minor ?? 0) / 100,
+                      (delivery.delivery_fee_minor ?? 0) / 100,
                       delivery.currency || DEFAULT_CURRENCY,
                     )}
                   </Text>
