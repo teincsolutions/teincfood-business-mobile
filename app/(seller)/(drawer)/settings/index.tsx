@@ -15,6 +15,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
+import {
+  useNotificationPreferencesQuery,
+  useUpdateNotificationPreferencesMutation,
+} from "@/hooks/useNotificationPreferences";
 import * as businessService from '@/services/business.service';
 
 /**
@@ -23,11 +27,18 @@ import * as businessService from '@/services/business.service';
 export default function SellerSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isOpen, setIsOpen] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+  const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed === false ?? true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [togglingStore, setTogglingStore] = useState(false);
-  const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+
+  const { data: prefsRes } = useNotificationPreferencesQuery();
+  const updatePrefs = useUpdateNotificationPreferencesMutation();
+  const notificationsEnabled = prefsRes?.data?.order_notifications ?? true;
+
+  const handleToggleNotifications = (enabled: boolean) => {
+    updatePrefs.mutate({ order_notifications: enabled });
+  };
 
   const handleToggleStore = async (open: boolean) => {
     if (!activeBusiness?.id) return;
@@ -158,13 +169,15 @@ export default function SellerSettings() {
               <Switch
                 size="$5"
                 checked={notificationsEnabled}
-                onCheckedChange={setNotificationsEnabled}
+                disabled={updatePrefs.isPending}
+                onCheckedChange={handleToggleNotifications}
                 backgroundColor={
                   notificationsEnabled ? "$color.orange" : "$color.gray600"
                 }
               >
                 <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
+              {updatePrefs.isPending && <Spinner size="small" />}
             </XStack>
           </Card>
 

@@ -24,6 +24,9 @@ import {
 } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import * as businessService from "@/services/business.service";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type FormErrors = {
   deliveryFee?: string;
@@ -51,16 +54,18 @@ const AmountInput = styled(Input, {
 export default function DeliverySettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = useState(false);
+  const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const queryClient = useQueryClient();
+  const ds = activeBusiness?.deliverySettings || {};
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
-  const [deliveryRadius, setDeliveryRadius] = useState(5);
-  const [deliveryFee, setDeliveryFee] = useState("5.00");
-  const [minimumOrder, setMinimumOrder] = useState("20.00");
-  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState("50.00");
-  const [estimatedTime, setEstimatedTime] = useState("30-45");
+  const [deliveryEnabled, setDeliveryEnabled] = useState(ds.deliveryEnabled ?? true);
+  const [deliveryRadius, setDeliveryRadius] = useState(ds.deliveryRadius ?? 5);
+  const [deliveryFee, setDeliveryFee] = useState(ds.deliveryFee?.toString() || "5.00");
+  const [minimumOrder, setMinimumOrder] = useState(ds.minimumOrder?.toString() || "20.00");
+  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState(ds.freeDeliveryMinimum?.toString() || "50.00");
+  const [estimatedTime, setEstimatedTime] = useState(ds.estimatedTime || "30-45");
 
   const clearError = (field: keyof FormErrors) =>
     setErrors((e) => ({ ...e, [field]: undefined }));
@@ -86,19 +91,32 @@ export default function DeliverySettings() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = async () => {
-    if (!validate()) return;
-    setIsSaving(true);
-    setSaveStatus("idle");
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      businessService.updateBusiness(activeBusinessId!, {
+        deliverySettings: {
+          deliveryEnabled,
+          deliveryRadius,
+          deliveryFee: parseFloat(deliveryFee),
+          minimumOrder: parseFloat(minimumOrder),
+          freeDeliveryMinimum: parseFloat(freeDeliveryMinimum),
+          estimatedTime,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
       setSaveStatus("success");
       setTimeout(() => router.back(), 1500);
-    } catch {
+    },
+    onError: () => {
       setSaveStatus("error");
-    } finally {
-      setIsSaving(false);
-    }
+    },
+  });
+
+  const handleSave = () => {
+    if (!validate()) return;
+    setSaveStatus("idle");
+    saveMutation.mutate();
   };
 
   return (
@@ -132,7 +150,7 @@ export default function DeliverySettings() {
                 variant="primary"
                 width={"auto"}
                 height={44}
-                loading={isSaving}
+                loading={saveMutation.isPending}
                 icon={<Save size="$4" color="white" />}
               >
                 Save

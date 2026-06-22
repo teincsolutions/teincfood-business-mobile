@@ -1,9 +1,9 @@
 // @ts-nocheck
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollView, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Spinner } from "tamagui";
 import {
   Save,
   Clock,
@@ -14,8 +14,8 @@ import {
 import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { useBusinessStore } from "@/stores/business.store";
-import { upsertOperatingHours } from "@/services/business.service";
+import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { fetchOperatingHours, upsertOperatingHours } from "@/services/business.service";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -42,11 +42,13 @@ function dateToTime(date: Date): string {
 export default function OperatingHoursSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const [loadingHours, setLoadingHours] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
 
-  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>({
+  const defaultSchedule = {
     monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
     tuesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
     wednesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
@@ -54,7 +56,38 @@ export default function OperatingHoursSettings() {
     friday: { isOpen: true, openTime: "08:00", closeTime: "23:00" },
     saturday: { isOpen: false, openTime: "09:00", closeTime: "23:00" },
     sunday: { isOpen: false, openTime: "10:00", closeTime: "21:00" },
-  });
+  };
+
+  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>(defaultSchedule);
+
+  useEffect(() => {
+    if (!activeBusinessId) {
+      setLoadingHours(false);
+      return;
+    }
+    fetchOperatingHours(activeBusinessId)
+      .then((res) => {
+        const data = res?.data;
+        if (data && typeof data === 'object') {
+          const merged = { ...defaultSchedule };
+          for (const day of Object.keys(defaultSchedule)) {
+            const dayData = data[day];
+            if (dayData && dayData.open && dayData.close) {
+              merged[day] = {
+                isOpen: true,
+                openTime: dayData.open,
+                closeTime: dayData.close,
+              };
+            } else {
+              merged[day] = { ...merged[day], isOpen: false };
+            }
+          }
+          setSchedule(merged);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingHours(false));
+  }, [activeBusinessId]);
 
   const days = [
     { key: "monday", label: "Monday" },
@@ -89,8 +122,7 @@ export default function OperatingHoursSettings() {
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      const activeBusiness = useBusinessStore.getState().getDefaultBusiness();
-      if (!activeBusiness) {
+      if (!activeBusinessId) {
         Alert.alert("Error", "No business selected. Please select a business first.");
         return;
       }
@@ -100,7 +132,7 @@ export default function OperatingHoursSettings() {
           s.isOpen ? { open: s.openTime, close: s.closeTime } : null,
         ])
       );
-      await upsertOperatingHours(activeBusiness.id, hours);
+      await upsertOperatingHours(activeBusinessId, hours);
       setSaveStatus("success");
       setTimeout(() => router.back(), 2500);
     } catch {
@@ -178,6 +210,12 @@ export default function OperatingHoursSettings() {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {loadingHours ? (
+          <YStack padding="$8" alignItems="center" gap="$3">
+            <Spinner size="large" />
+            <Text color="$colorMuted">Loading hours...</Text>
+          </YStack>
+        ) : (
         <YStack
           padding="$4"
           gap="$4"
@@ -336,6 +374,7 @@ export default function OperatingHoursSettings() {
             Save Changes
           </Button>
         </YStack>
+        )}
       </ScrollView>
 
       <DateTimePickerModal

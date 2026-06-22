@@ -11,26 +11,53 @@ import {
   Switch,
   Separator,
 } from 'tamagui';
-import { ArrowLeft, Save, CreditCard, Building, Clock, DollarSign } from '@tamagui/lucide-icons';
+import { ArrowLeft, Save, CreditCard, Building, Clock } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useActiveBusiness } from '@/hooks/useActiveBusiness';
+import * as businessService from '@/services/business.service';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-/**
- * Payment Settings Screen
- */
 export default function PaymentSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isSaving, setIsSaving] = useState(false);
+  const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const queryClient = useQueryClient();
 
-  const [acceptCash, setAcceptCash] = useState(true);
-  const [acceptMobileMoney, setAcceptMobileMoney] = useState(true);
-  const [acceptCard, setAcceptCard] = useState(true);
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
-  const [payoutSchedule, setPayoutSchedule] = useState('daily');
+  const settings = activeBusiness?.paymentSettings || {};
+  const [acceptCash, setAcceptCash] = useState(settings.acceptCash ?? true);
+  const [acceptMobileMoney, setAcceptMobileMoney] = useState(settings.acceptMobileMoney ?? true);
+  const [acceptCard, setAcceptCard] = useState(settings.acceptCard ?? true);
+  const [bankName, setBankName] = useState(settings.bankName || '');
+  const [accountNumber, setAccountNumber] = useState(settings.accountNumber || '');
+  const [accountName, setAccountName] = useState(settings.accountName || '');
+  const [mobileMoneyNumber, setMobileMoneyNumber] = useState(settings.mobileMoneyNumber || '');
+  const [payoutSchedule, setPayoutSchedule] = useState(settings.payoutSchedule || 'daily');
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      businessService.updateBusiness(activeBusinessId!, {
+        paymentSettings: {
+          acceptCash,
+          acceptMobileMoney,
+          acceptCard,
+          bankName,
+          accountNumber,
+          accountName,
+          mobileMoneyNumber,
+          payoutSchedule,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      Alert.alert('Success', 'Payment settings updated', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to update payment settings');
+    },
+  });
 
   const payoutOptions = [
     { value: 'daily', label: 'Daily', description: 'Receive payouts every day' },
@@ -39,26 +66,11 @@ export default function PaymentSettings() {
     { value: 'monthly', label: 'Monthly', description: 'Receive payouts on the 1st of each month' },
   ];
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      Alert.alert('Success', 'Payment settings updated successfully', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update payment settings');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Header */}
       <XStack
         padding="$4"
-         paddingTop={Math.max(insets.top + 8, 24)}
+        paddingTop={Math.max(insets.top + 8, 24)}
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -81,180 +93,105 @@ export default function PaymentSettings() {
           paddingHorizontal="$4"
           backgroundColor="$primary"
           borderRadius="$3"
-          onPress={handleSave}
-          disabled={isSaving}
+          onPress={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
           icon={<Save size={18} color="white" />}
         >
           <Text color="white" fontWeight="bold">
-            {isSaving ? 'Saving...' : 'Save'}
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
           </Text>
         </TamaguiButton>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4">
-          {/* Payment Methods */}
           <Card padding="$4" bordered>
             <YStack gap="$4">
-              <Text fontWeight="bold" fontSize="$5">
-                Accepted Payment Methods
-              </Text>
+              <Text fontWeight="bold" fontSize="$5">Accepted Payment Methods</Text>
               <Separator />
-
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
                   <Text fontWeight="bold">Cash</Text>
-                  <Text color="$colorMuted" fontSize="$3">
-                    Accept cash payments
-                  </Text>
+                  <Text color="$colorMuted" fontSize="$3">Accept cash payments</Text>
                 </YStack>
-                <Switch
-                  checked={acceptCash}
-                  onCheckedChange={setAcceptCash}
-                  backgroundColor={acceptCash ? '$green10' : '$gray800'}
-                >
+                <Switch checked={acceptCash} onCheckedChange={setAcceptCash} backgroundColor={acceptCash ? '$green10' : '$gray800'}>
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
               </XStack>
-
               <Separator />
-
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
                   <Text fontWeight="bold">Mobile Money</Text>
-                  <Text color="$colorMuted" fontSize="$3">
-                    MTN, Vodafone, AirtelTigo
-                  </Text>
+                  <Text color="$colorMuted" fontSize="$3">MTN, Vodafone, AirtelTigo</Text>
                 </YStack>
-                <Switch
-                  checked={acceptMobileMoney}
-                  onCheckedChange={setAcceptMobileMoney}
-                  backgroundColor={acceptMobileMoney ? '$green10' : '$gray800'}
-                >
+                <Switch checked={acceptMobileMoney} onCheckedChange={setAcceptMobileMoney} backgroundColor={acceptMobileMoney ? '$green10' : '$gray800'}>
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
               </XStack>
-
               <Separator />
-
               <XStack justifyContent="space-between" alignItems="center">
                 <YStack flex={1}>
                   <Text fontWeight="bold">Card Payment</Text>
-                  <Text color="$colorMuted" fontSize="$3">
-                    Visa, Mastercard
-                  </Text>
+                  <Text color="$colorMuted" fontSize="$3">Visa, Mastercard</Text>
                 </YStack>
-                <Switch
-                  checked={acceptCard}
-                  onCheckedChange={setAcceptCard}
-                  backgroundColor={acceptCard ? '$green10' : '$gray800'}
-                >
+                <Switch checked={acceptCard} onCheckedChange={setAcceptCard} backgroundColor={acceptCard ? '$green10' : '$gray800'}>
                   <Switch.Thumb backgroundColor="$background" />
                 </Switch>
               </XStack>
             </YStack>
           </Card>
 
-          {/* Bank Account */}
           <Card padding="$4" bordered>
             <YStack gap="$4">
               <XStack gap="$3" alignItems="center">
                 <Building size={20} color="$primary" />
-                <Text fontWeight="bold" fontSize="$5">
-                  Bank Account
-                </Text>
+                <Text fontWeight="bold" fontSize="$5">Bank Account</Text>
               </XStack>
               <Separator />
-
-              <FormInput
-                label="Bank Name"
-                placeholder="Select your bank"
-                value={bankName}
-                onChangeText={setBankName}
-              />
-
-              <FormInput
-                label="Account Number"
-                placeholder="Enter account number"
-                value={accountNumber}
-                onChangeText={setAccountNumber}
-                keyboardType="numeric"
-              />
-
-              <FormInput
-                label="Account Name"
-                placeholder="Enter account holder name"
-                value={accountName}
-                onChangeText={setAccountName}
-              />
+              <FormInput label="Bank Name" placeholder="Select your bank" value={bankName} onChangeText={setBankName} />
+              <FormInput label="Account Number" placeholder="Enter account number" value={accountNumber} onChangeText={setAccountNumber} keyboardType="numeric" />
+              <FormInput label="Account Name" placeholder="Enter account holder name" value={accountName} onChangeText={setAccountName} />
             </YStack>
           </Card>
 
-          {/* Mobile Money */}
           {acceptMobileMoney && (
             <Card padding="$4" bordered>
               <YStack gap="$4">
                 <XStack gap="$3" alignItems="center">
                   <CreditCard size={20} color="$primary" />
-                  <Text fontWeight="bold" fontSize="$5">
-                    Mobile Money Account
-                  </Text>
+                  <Text fontWeight="bold" fontSize="$5">Mobile Money Account</Text>
                 </XStack>
                 <Separator />
-
-                <FormInput
-                  label="Mobile Money Number"
-                  placeholder="+233 XX XXX XXXX"
-                  value={mobileMoneyNumber}
-                  onChangeText={setMobileMoneyNumber}
-                  keyboardType="phone-pad"
-                />
+                <FormInput label="Mobile Money Number" placeholder="+233 XX XXX XXXX" value={mobileMoneyNumber} onChangeText={setMobileMoneyNumber} keyboardType="phone-pad" />
               </YStack>
             </Card>
           )}
 
-          {/* Payout Schedule */}
           <Card padding="$4" bordered>
             <YStack gap="$4">
               <XStack gap="$3" alignItems="center">
                 <Clock size={20} color="$primary" />
-                <Text fontWeight="bold" fontSize="$5">
-                  Payout Schedule
-                </Text>
+                <Text fontWeight="bold" fontSize="$5">Payout Schedule</Text>
               </XStack>
               <Separator />
-
               {payoutOptions.map((option) => (
                 <TamaguiButton
                   key={option.value}
                   unstyled
                   padding="$3"
-                  backgroundColor={
-                    payoutSchedule === option.value ? '$primaryLight' : 'transparent'
-                  }
+                  backgroundColor={payoutSchedule === option.value ? '$primaryLight' : 'transparent'}
                   borderWidth={1}
-                  borderColor={
-                    payoutSchedule === option.value ? '$primary' : '$borderColor'
-                  }
+                  borderColor={payoutSchedule === option.value ? '$primary' : '$borderColor'}
                   borderRadius="$3"
                   onPress={() => setPayoutSchedule(option.value)}
                 >
                   <XStack justifyContent="space-between" alignItems="center">
                     <YStack>
                       <Text fontWeight="bold">{option.label}</Text>
-                      <Text fontSize="$2" color="$colorMuted">
-                        {option.description}
-                      </Text>
+                      <Text fontSize="$2" color="$colorMuted">{option.description}</Text>
                     </YStack>
                     {payoutSchedule === option.value && (
-                      <YStack
-                        width={20}
-                        height={20}
-                        borderRadius="$10"
-                        backgroundColor="$primary"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
+                      <YStack width={20} height={20} borderRadius="$10" backgroundColor="$primary" alignItems="center" justifyContent="center">
                         <Text color="$background" fontSize="$1">✓</Text>
                       </YStack>
                     )}
@@ -264,15 +201,8 @@ export default function PaymentSettings() {
             </YStack>
           </Card>
 
-          {/* Save Button */}
-          <Button
-            variant="primary"
-            onPress={handleSave}
-            disabled={isSaving}
-          >
-            <Text color="white" fontWeight="bold">
-              {isSaving ? 'Saving Changes...' : 'Save Changes'}
-            </Text>
+          <Button variant="primary" onPress={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <Text color="white" fontWeight="bold">{saveMutation.isPending ? 'Saving Changes...' : 'Save Changes'}</Text>
           </Button>
         </YStack>
       </ScrollView>
