@@ -14,6 +14,8 @@ import type {
 } from '@/types/rider.model';
 import type { RiderDashboard } from '@/types/api/rider.api';
 import * as riderService from '@/services/rider.service';
+import { toast } from 'sonner-native';
+import { extractApiErrorMessage } from '@/utils/error';
 
 // Query keys
 const RIDER_KEYS = {
@@ -53,10 +55,14 @@ export function useClaimOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => riderService.acceptDelivery(orderId),
     onSuccess: () => {
+      toast.success("Delivery accepted!");
       queryClient.invalidateQueries({ queryKey: [...RIDER_KEYS.all, 'available-orders'] });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.activeDelivery() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
+    },
+    onError: (error) => {
+      toast.error(extractApiErrorMessage(error));
     },
   });
 }
