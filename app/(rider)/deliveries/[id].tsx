@@ -66,32 +66,42 @@ export default function RiderDeliveryDetails() {
   };
 
   const handleStatusUpdate = (newStatus: string) => {
-    console.log('[handleStatusUpdate] called with:', { deliveryId: id, status: newStatus });
+    console.log("[handleStatusUpdate] called with:", {
+      deliveryId: id,
+      status: newStatus,
+    });
     if (id) {
       updateStatus.mutate(
         { deliveryId: id as string, action: newStatus },
         {
           onSuccess: () => {
-            console.log('[handleStatusUpdate] success for:', { deliveryId: id, action: newStatus });
-            if (newStatus === 'confirm-pickup') {
+            console.log("[handleStatusUpdate] success for:", {
+              deliveryId: id,
+              action: newStatus,
+            });
+            if (newStatus === "confirm-pickup") {
               toast.success("Pickup confirmed! Awaiting merchant handover.");
-            } else if (newStatus === 'in-transit') {
+            } else if (newStatus === "in-transit") {
               toast.success("En route to dropoff!");
-            } else if (newStatus === 'arrived') {
+            } else if (newStatus === "arrived") {
               toast.success("Arrived at dropoff!");
-            } else if (newStatus === 'delivered') {
+            } else if (newStatus === "delivered") {
               toast.success("Delivery completed!");
-            } else if (newStatus === 'failed') {
+            } else if (newStatus === "failed") {
               toast.success("Delivery marked as failed.");
-            } else if (newStatus === 'returned') {
+            } else if (newStatus === "returned") {
               toast.success("Delivery returned to merchant.");
             }
           },
           onError: (error) => {
-            console.error('[handleStatusUpdate] error for:', { deliveryId: id, action: newStatus, error });
+            console.debug("[handleStatusUpdate] error for:", {
+              deliveryId: id,
+              action: newStatus,
+              error,
+            });
             toast.error(extractApiErrorMessage(error));
           },
-        }
+        },
       );
     }
   };
@@ -189,14 +199,21 @@ export default function RiderDeliveryDetails() {
                 <XStack gap="$2" alignItems="center">
                   <Clock size={16} color="$colorMuted" />
                   <Text fontSize="$3" color="$colorMuted">
-                    {delivery.eta_minutes ? `${delivery.eta_minutes} min` : '--'}
+                    {delivery.eta_minutes
+                      ? `${delivery.eta_minutes} min`
+                      : "--"}
                   </Text>
                 </XStack>
               </XStack>
               <Separator />
               <XStack gap="$3" alignItems="center">
                 <Clock size={16} color="$colorMuted" />
-                <Text fontSize="$3">ETA: {delivery.eta_minutes ? `${delivery.eta_minutes} min` : 'Calculating...'}</Text>
+                <Text fontSize="$3">
+                  ETA:{" "}
+                  {delivery.eta_minutes
+                    ? `${delivery.eta_minutes} min`
+                    : "Calculating..."}
+                </Text>
                 <Text
                   flex={1}
                   textAlign="right"
@@ -204,7 +221,8 @@ export default function RiderDeliveryDetails() {
                   fontWeight="bold"
                   color="$success"
                 >
-                  +{delivery.currency} {((delivery.delivery_fee_minor ?? 0) / 100).toFixed(2)}
+                  +{delivery.currency}{" "}
+                  {((delivery.delivery_fee_minor ?? 0) / 100).toFixed(2)}
                 </Text>
               </XStack>
             </YStack>
@@ -398,12 +416,16 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={delivery.status !== 'assigned' ? '$success' : '$gray800'}
+                  backgroundColor={
+                    delivery.status !== "assigned" ? "$success" : "$gray800"
+                  }
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Assigned</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.inserted_at ? new Date(delivery.inserted_at).toLocaleString() : '--'}
+                    {delivery.inserted_at
+                      ? new Date(delivery.inserted_at).toLocaleString()
+                      : "--"}
                   </Text>
                 </YStack>
               </XStack>
@@ -412,12 +434,22 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={['picked_up', 'en_route', 'arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
+                  backgroundColor={
+                    ["picked_up", "en_route", "arrived", "delivered"].includes(
+                      delivery.status,
+                    )
+                      ? "#3498db"
+                      : "$gray800"
+                  }
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Picked Up</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {['picked_up', 'en_route', 'arrived', 'delivered'].includes(delivery.status) ? 'Confirmed' : 'Pending'}
+                    {["picked_up", "en_route", "arrived", "delivered"].includes(
+                      delivery.status,
+                    )
+                      ? "Confirmed"
+                      : "Pending"}
                   </Text>
                 </YStack>
               </XStack>
@@ -426,12 +458,22 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={['en_route', 'arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
+                  backgroundColor={
+                    ["en_route", "arrived", "delivered"].includes(
+                      delivery.status,
+                    )
+                      ? "#3498db"
+                      : "$gray800"
+                  }
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">En Route</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {['en_route', 'arrived', 'delivered'].includes(delivery.status) ? 'In transit' : 'Pending'}
+                    {["en_route", "arrived", "delivered"].includes(
+                      delivery.status,
+                    )
+                      ? "In transit"
+                      : "Pending"}
                   </Text>
                 </YStack>
               </XStack>
@@ -440,12 +482,16 @@ export default function RiderDeliveryDetails() {
                   width={12}
                   height={12}
                   borderRadius="$10"
-                  backgroundColor={['arrived', 'delivered'].includes(delivery.status) ? '#3498db' : '$gray800'}
+                  backgroundColor={
+                    ["arrived", "delivered"].includes(delivery.status)
+                      ? "#3498db"
+                      : "$gray800"
+                  }
                 />
                 <YStack flex={1}>
                   <Text fontWeight="bold">Delivered</Text>
                   <Text fontSize="$2" color="$colorMuted">
-                    {delivery.status === 'delivered' ? 'Completed' : 'Pending'}
+                    {delivery.status === "delivered" ? "Completed" : "Pending"}
                   </Text>
                 </YStack>
               </XStack>
@@ -454,8 +500,9 @@ export default function RiderDeliveryDetails() {
 
           {/* Action Buttons */}
           <YStack gap="$3">
-            {delivery.status === "assigned" && (
-              updateStatus.isSuccess && updateStatus.variables?.action === "confirm-pickup" ? (
+            {delivery.status === "assigned" &&
+              (updateStatus.isSuccess &&
+              updateStatus.variables?.action === "confirm-pickup" ? (
                 <Button
                   size="$5"
                   backgroundColor="$yellow10"
@@ -473,8 +520,7 @@ export default function RiderDeliveryDetails() {
                 >
                   {updateStatus.isPending ? "Confirming..." : "Confirm Pickup"}
                 </Button>
-              )
-            )}
+              ))}
             {delivery.status === "picked_up" && (
               <Button
                 size="$5"
@@ -780,7 +826,9 @@ export default function RiderDeliveryDetails() {
       <Sheet
         modal
         open={confirmAction === "delivered"}
-        onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
         snapPoints={[35]}
         dismissOnSnapToBottom
         zIndex={200_000}
@@ -799,7 +847,9 @@ export default function RiderDeliveryDetails() {
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" alignItems="center" paddingTop="$4">
-            <Text fontSize="$6" fontWeight="bold">Complete Delivery?</Text>
+            <Text fontSize="$6" fontWeight="bold">
+              Complete Delivery?
+            </Text>
             <Text fontSize="$4" color="$colorMuted" textAlign="center">
               Confirm that you have handed the order to the customer.
             </Text>
@@ -849,7 +899,9 @@ export default function RiderDeliveryDetails() {
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" paddingTop="$4">
-            <Text fontSize="$6" fontWeight="bold">Report Issue</Text>
+            <Text fontSize="$6" fontWeight="bold">
+              Report Issue
+            </Text>
             <Button
               size="$5"
               backgroundColor="$red10"
@@ -885,7 +937,9 @@ export default function RiderDeliveryDetails() {
       <Sheet
         modal
         open={confirmAction === "failed" || confirmAction === "returned"}
-        onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
         snapPoints={[35]}
         dismissOnSnapToBottom
         zIndex={200_000}
@@ -905,7 +959,9 @@ export default function RiderDeliveryDetails() {
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" alignItems="center" paddingTop="$4">
             <Text fontSize="$6" fontWeight="bold">
-              {confirmAction === "failed" ? "Mark as Failed?" : "Return to Merchant?"}
+              {confirmAction === "failed"
+                ? "Mark as Failed?"
+                : "Return to Merchant?"}
             </Text>
             <Text fontSize="$4" color="$colorMuted" textAlign="center">
               {confirmAction === "failed"
