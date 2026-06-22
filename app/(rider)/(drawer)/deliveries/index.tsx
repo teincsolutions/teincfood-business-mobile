@@ -6,6 +6,7 @@ import {
   Truck,
   MapPin,
   Filter,
+  Search,
   ChevronRight,
   Package,
   Clock,
@@ -13,7 +14,7 @@ import {
 } from '@tamagui/lucide-icons';
 import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import {
   useRiderDeliveriesQuery,
   useRiderProfileQuery,
@@ -21,13 +22,12 @@ import {
   useClaimOrderMutation,
 } from '@/hooks/useRider';
 
-type FilterOption = 'all' | 'active' | 'completed' | 'today';
+type FilterOption = 'all' | 'active' | 'completed';
 
 const FILTER_OPTIONS: { key: FilterOption; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
   { key: 'completed', label: 'Completed' },
-  { key: 'today', label: 'Today' },
 ];
 
 const ACTIVE_STATUSES = ['assigned', 'picked_up', 'en_route', 'arrived'];
@@ -47,8 +47,10 @@ export default function RiderDeliveries() {
   const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<'available' | 'my_deliveries'>('my_deliveries');
   const [filter, setFilter] = useState<FilterOption>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: profileData } = useRiderProfileQuery();
   const {
@@ -59,7 +61,9 @@ export default function RiderDeliveries() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useRiderDeliveriesQuery();
+  } = useRiderDeliveriesQuery(true, {
+    q: searchQuery || undefined,
+  });
 
   const isBusy = profileData?.status !== 'available';
   const { data: availableOrders = [] } = useAvailableOrdersQuery(!isBusy);
@@ -71,11 +75,6 @@ export default function RiderDeliveries() {
         return deliveries.filter((d) => ACTIVE_STATUSES.includes(d.status));
       case 'completed':
         return deliveries.filter((d) => COMPLETED_STATUSES.includes(d.status));
-      case 'today': {
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
-        return deliveries.filter((d) => d.inserted_at?.startsWith(todayStr));
-      }
       default:
         return deliveries;
     }
@@ -336,10 +335,14 @@ export default function RiderDeliveries() {
     <YStack flex={1} justifyContent="center" alignItems="center" padding="$10" paddingTop="$20">
       <Package size={80} color="$gray200" />
       <Text fontSize="$6" fontWeight="700" fontFamily="$heading" marginTop="$4" color="$color">
-        No deliveries yet
+        {tab === 'available' ? 'No available deliveries' : 'No deliveries yet'}
       </Text>
       <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$2" textAlign="center">
-        {filter !== 'all' ? 'No deliveries match this filter.' : 'Your delivery assignments will appear here once you start receiving orders.'}
+        {tab === 'available'
+          ? 'New delivery requests will appear here when available.'
+          : filter !== 'all'
+            ? 'No deliveries match this filter.'
+            : 'Your delivery assignments will appear here once you start receiving orders.'}
       </Text>
     </YStack>
   );
@@ -352,14 +355,48 @@ export default function RiderDeliveries() {
     ) : null
   );
 
+  const TabButton = ({ label, isActive, onPress }: { label: string; isActive: boolean; onPress: () => void }) => (
+    <TouchableOpacity onPress={onPress} style={{ flex: 1 }}>
+      <YStack
+        paddingVertical="$3"
+        alignItems="center"
+        borderBottomWidth={2}
+        borderBottomColor={isActive ? '$primary' : 'transparent'}
+      >
+        <Text
+          fontSize="$4"
+          fontWeight={isActive ? '700' : '400'}
+          fontFamily="$heading"
+          color={isActive ? '$primary' : '$colorSecondary'}
+        >
+          {label}
+        </Text>
+      </YStack>
+    </TouchableOpacity>
+  );
+
+  const TabBar = () => (
+    <XStack paddingHorizontal="$4" backgroundColor="$background">
+      <TabButton
+        label={`Available${availableOrders.length > 0 ? ` (${availableOrders.length})` : ''}`}
+        isActive={tab === 'available'}
+        onPress={() => setTab('available')}
+      />
+      <TabButton
+        label="My Deliveries"
+        isActive={tab === 'my_deliveries'}
+        onPress={() => setTab('my_deliveries')}
+      />
+    </XStack>
+  );
+
   const ListHeaderComponent = () => (
     <YStack>
-      {/* Header with drawer menu and filter — scrolls with content */}
+      {/* Header with drawer menu */}
       <XStack
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
         paddingBottom="$3"
-        justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
       >
@@ -371,67 +408,98 @@ export default function RiderDeliveries() {
             Deliveries
           </Text>
         </XStack>
-        <FilterSelector />
-      </XStack>
-
-      {/* Available Orders Section */}
-      {availableOrders.length > 0 ? (
-        <YStack marginBottom="$2">
-          <XStack paddingHorizontal="$4" paddingVertical="$2" alignItems="center" gap="$2">
-            <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$colorSecondary">
-              Available Deliveries
-            </Text>
-            <YStack backgroundColor="$success" paddingHorizontal="$2" borderRadius="$10">
-              <Text fontSize="$2" color="white" fontFamily="$body">{availableOrders.length}</Text>
-            </YStack>
-          </XStack>
-          {availableOrders.map((order) => (
-            <YStack key={order.order_id} paddingHorizontal="$4">
-              <AvailableOrderCard order={order} />
-            </YStack>
-          ))}
-        </YStack>
-      ) : null}
-
-      {/* Section title */}
-      <XStack paddingHorizontal="$4" paddingVertical="$2">
-        <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$colorSecondary">
-          {filter === 'all' ? 'All Deliveries' : `${FILTER_OPTIONS.find((o) => o.key === filter)?.label} Deliveries`}
-        </Text>
       </XStack>
     </YStack>
   );
 
+  const renderAvailableOrder = ({ item: order }) => (
+    <YStack paddingHorizontal="$4">
+      <AvailableOrderCard order={order} />
+    </YStack>
+  );
+
+  const data = tab === 'available' ? availableOrders : filteredDeliveries;
+  const renderItem = tab === 'available' ? renderAvailableOrder : renderDelivery;
+
   return (
     <YStack flex={1} backgroundColor="$background">
-      <FlatList
-        data={filteredDeliveries}
-        keyExtractor={(item) => item.id}
-        renderItem={renderDelivery}
-        ListHeaderComponent={ListHeaderComponent}
-        ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={ListFooterComponent}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 16,
-          flexGrow: 1,
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching || claimOrder.isPending}
-            onRefresh={refetch}
-          />
-        }
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+      {/* Fixed header outside FlatList */}
+      <ListHeaderComponent />
+      <TabBar />
+
+      {/* Available tab — simple ordered list */}
+      {tab === 'available' ? (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.order_id || item.id}
+          renderItem={renderItem}
+          ListEmptyComponent={ListEmptyComponent}
+          contentContainerStyle={{
+            paddingHorizontal: 0,
+            paddingTop: 16,
+            paddingBottom: insets.bottom + 16,
+            flexGrow: 1,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching || claimOrder.isPending}
+              onRefresh={refetch}
+            />
           }
-        }}
-        onEndReachedThreshold={0.5}
-        initialNumToRender={10}
-        windowSize={5}
-        maxToRenderPerBatch={10}
-        removeClippedSubviews
-      />
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews
+        />
+      ) : (
+        /* My Deliveries tab — search + filter + paginated list */
+        <YStack flex={1}>
+          {/* Search bar + filter */}
+          <XStack paddingHorizontal="$4" paddingTop="$3" paddingBottom="$3" gap="$2" alignItems="center">
+            <YStack flex={1} position="relative">
+              <Input
+                placeholder="Search by order number..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                paddingStart="$10"
+              />
+              <YStack position="absolute" left="$3" top={11}>
+                <Search size={18} color="$colorMuted" />
+              </YStack>
+            </YStack>
+            <FilterSelector />
+          </XStack>
+
+          <FlatList
+            data={filteredDeliveries}
+            keyExtractor={(item) => item.id}
+            renderItem={renderDelivery}
+            ListEmptyComponent={ListEmptyComponent}
+            ListFooterComponent={ListFooterComponent}
+            contentContainerStyle={{
+              paddingHorizontal: '$4',
+              paddingBottom: insets.bottom + 16,
+              flexGrow: 1,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching || claimOrder.isPending}
+                onRefresh={refetch}
+              />
+            }
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            initialNumToRender={10}
+            windowSize={5}
+            maxToRenderPerBatch={10}
+            removeClippedSubviews
+          />
+        </YStack>
+      )}
     </YStack>
   );
 }

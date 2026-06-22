@@ -25,6 +25,7 @@ const RIDER_KEYS = {
   deliveryDetail: (id: string) => [...RIDER_KEYS.all, 'delivery', id] as const,
   earnings: () => [...RIDER_KEYS.all, 'earnings'] as const,
   earningsBreakdown: () => [...RIDER_KEYS.all, 'earnings-breakdown'] as const,
+  earningsSummary: (period: string) => [...RIDER_KEYS.all, 'earnings-summary', period] as const,
   transactions: () => [...RIDER_KEYS.all, 'transactions'] as const,
   statistics: () => [...RIDER_KEYS.all, 'statistics'] as const,
   vehicleInfo: () => [...RIDER_KEYS.all, 'vehicle'] as const,
@@ -98,11 +99,14 @@ export function useActiveDeliveryQuery(enabled = true) {
 
 // ─── Deliveries Hooks ───
 
-export function useRiderDeliveriesQuery(enabled = true) {
+export function useRiderDeliveriesQuery(
+  enabled = true,
+  filters?: { q?: string; status?: string; order_number?: string; date_from?: string; date_to?: string }
+) {
   return useInfiniteQuery({
-    queryKey: RIDER_KEYS.deliveries(),
+    queryKey: [...RIDER_KEYS.deliveries(), filters],
     queryFn: async ({ pageParam = 1 }) => {
-      const res = await riderService.fetchRiderDeliveries(pageParam);
+      const res = await riderService.fetchRiderDeliveries(pageParam, 20, filters);
       return res;
     },
     getNextPageParam: (lastPage) => {
@@ -177,6 +181,14 @@ export function useEarningsBreakdownQuery(enabled = true) {
   return useQuery({
     queryKey: RIDER_KEYS.earningsBreakdown(),
     queryFn: () => riderService.fetchEarningsBreakdown(),
+    enabled,
+  });
+}
+
+export function useRiderEarningsSummaryQuery(period: 'today' | 'this_week' | 'this_month', enabled = true) {
+  return useQuery({
+    queryKey: RIDER_KEYS.earningsSummary(period),
+    queryFn: () => riderService.fetchRiderEarningsSummary(period),
     enabled,
   });
 }

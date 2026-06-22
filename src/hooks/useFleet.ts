@@ -21,11 +21,11 @@ function useBusinessId() {
 
 // ─── Riders ───
 
-export function useFleetRidersQuery(enabled = true) {
+export function useFleetRidersQuery(enabled = true, filters?: { q?: string; status?: string }) {
   const businessId = useBusinessId();
   return useQuery({
-    queryKey: FLEET_KEYS.riders(businessId),
-    queryFn: () => fleetService.fetchFleetRiders(businessId),
+    queryKey: [...FLEET_KEYS.riders(businessId), filters],
+    queryFn: () => fleetService.fetchFleetRiders(businessId, 1, 50, filters),
     enabled,
   });
 }

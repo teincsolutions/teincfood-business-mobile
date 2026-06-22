@@ -9,9 +9,14 @@ import type {
 
 // ─── Riders ───
 
-export async function fetchFleetRiders(businessId?: string): Promise<FleetRidersResponse> {
+export async function fetchFleetRiders(
+  businessId?: string,
+  page = 1,
+  pageSize = 20,
+  filters?: { q?: string; status?: string }
+): Promise<FleetRidersResponse> {
   return api.get<FleetRidersResponse>('/business/riders', {
-    params: businessId ? { business_id: businessId } : undefined,
+    params: { ...(businessId ? { business_id: businessId } : {}), page, page_size: pageSize, ...filters },
   });
 }
 

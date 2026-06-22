@@ -24,22 +24,14 @@ import { Button, Input } from "@/components/ui";
 export default function FleetRidersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: ridersRes } = useFleetRidersQuery();
-  const riders = ridersRes?.data ?? [];
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const filteredRiders = riders.filter((rider) => {
-    const name = rider.user?.full_name || rider.rider_number || "";
-    const matchesSearch =
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rider.phone?.includes(searchQuery);
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && rider.status === "available") ||
-      (filterStatus === "inactive" && rider.status !== "available");
-    return matchesSearch && matchesStatus;
+  const { data: ridersRes } = useFleetRidersQuery(true, {
+    q: searchQuery || undefined,
+    status: filterStatus !== "all" ? filterStatus : undefined,
   });
+  const riders = ridersRes?.data ?? [];
 
   const renderRider = ({ item: rider }) => (
     <Card
@@ -134,20 +126,27 @@ export default function FleetRidersScreen() {
             onPress={() => setFilterStatus("all")}
           >
             All {`(${riders.length || "0"})`}
-            </Button>
-            <Button
-              size="$2"
-              variant={filterStatus === "active" ? "primary" : "outline"}
-              onPress={() => setFilterStatus("active")}
-            >
-              Online {`(${riders.filter((r) => r.status === "available").length || "0"})`}
-            </Button>
-            <Button
-              size="$2"
-              variant={filterStatus === "inactive" ? "primary" : "outline"}
-              onPress={() => setFilterStatus("inactive")}
-            >
-              Offline {`(${riders.filter((r) => r.status !== "available").length || "0"})`}
+          </Button>
+          <Button
+            size="$2"
+            variant={filterStatus === "available" ? "primary" : "outline"}
+            onPress={() => setFilterStatus("available")}
+          >
+            Available
+          </Button>
+          <Button
+            size="$2"
+            variant={filterStatus === "busy" ? "primary" : "outline"}
+            onPress={() => setFilterStatus("busy")}
+          >
+            Busy
+          </Button>
+          <Button
+            size="$2"
+            variant={filterStatus === "offline" ? "primary" : "outline"}
+            onPress={() => setFilterStatus("offline")}
+          >
+            Offline
           </Button>
         </XStack>
       </YStack>
@@ -178,8 +177,8 @@ export default function FleetRidersScreen() {
   );
 
   return (
-    <FlatList
-      data={filteredRiders}
+      <FlatList
+      data={riders}
       keyExtractor={(item) => item.id}
       renderItem={renderRider}
       ListHeaderComponent={ListHeaderComponent}

@@ -66,6 +66,17 @@ export interface RiderEarningsResponse {
   currency: string;
 }
 
+// ─── Rider Earnings Summary ───
+
+export interface RiderEarningsSummaryResponse {
+  data: {
+    total_earnings_minor: number;
+    total_deliveries: number;
+    currency: string;
+    period: string;
+  };
+}
+
 // ─── Rider Vehicle ───
 
 export interface RiderVehicle {

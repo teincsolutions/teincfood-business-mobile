@@ -133,3 +133,15 @@ See [detailed plan](.opencode/plans/rider-delivery-engine-plan.md) for full brea
 - [x] **Step 6f-i:** Wire seller settings (payment, delivery, notification toggle) to real APIs
 - [x] **OpenAPI docs updated** — leaderboard, eta-models, fleet dashboard, rider dashboard, seller dashboard schemas + operations
 - [x] **TypeScript clean** — `npx tsc --noEmit` 0 errors
+
+---
+
+## Phase 7: Search, Filters & Earnings Period Summary ✅ COMPLETE
+
+- [x] **Backend search/filter params** — `list_rider_deliveries` now supports `q`, `order_number`, `business_number`, `status`, `date_from`, `date_to`; `list_business_riders` now supports `q`, `status`; `parse_pagination_params` passes through filter keys automatically
+- [x] **Earnings period endpoint** — `GET /riders/earnings/summary?period=today|this_week|this_month` with `get_rider_earnings_summary/2` in Dispatch, returns aggregated `total_earnings_minor`, `total_deliveries`, `currency`
+- [x] **Frontend search/filters wired** — Rider deliveries screen has search bar + status filter; Fleet riders screen has search bar + status filter (all/available/busy/offline); both pass params to backend via hooks
+- [x] **Rider earnings screen rewired** — Period selector (today/this week/this month) uses `useRiderEarningsSummaryQuery`; summary card shows dynamic label, earnings, delivery count, avg/delivery; uses `formatPriceFromMinor`
+- [x] **Fleet riders screen** — Search and status filter send real API params instead of client-side filtering
+- [x] **TypeScript clean** — `npx tsc --noEmit` 0 errors
+- [x] **Backend tests** — 581 tests, 0 failures

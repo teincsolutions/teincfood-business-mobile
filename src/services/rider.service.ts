@@ -64,8 +64,12 @@ export async function fetchAvailableOrders(): Promise<AvailableOrdersResponse> {
 
 // ─── Deliveries ───
 
-export async function fetchRiderDeliveries(page = 1, pageSize = 20): Promise<RiderDeliveriesResponse> {
-  return api.get<RiderDeliveriesResponse>('/riders/deliveries', { params: { page, page_size: pageSize } });
+export async function fetchRiderDeliveries(
+  page = 1,
+  pageSize = 20,
+  filters?: { q?: string; status?: string; order_number?: string; date_from?: string; date_to?: string }
+): Promise<RiderDeliveriesResponse> {
+  return api.get<RiderDeliveriesResponse>('/riders/deliveries', { params: { page, page_size: pageSize, ...filters } });
 }
 
 export async function fetchActiveDelivery(): Promise<RiderDeliveriesResponse> {
@@ -116,6 +120,17 @@ export async function fetchRiderEarnings(): Promise<RiderEarningsResponse> {
 
 export async function fetchEarningsBreakdown(): Promise<RiderEarningsResponse> {
   return api.get<RiderEarningsResponse>('/riders/earnings');
+}
+
+export async function fetchRiderEarningsSummary(period: 'today' | 'this_week' | 'this_month'): Promise<{
+  data: {
+    total_earnings_minor: number;
+    total_deliveries: number;
+    currency: string;
+    period: string;
+  };
+}> {
+  return api.get('/riders/earnings/summary', { params: { period } });
 }
 
 // ─── Wallet ───

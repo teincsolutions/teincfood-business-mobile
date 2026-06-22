@@ -15,6 +15,7 @@ import {
   MessageCircle,
   ArrowLeft,
   Truck,
+  Package,
 } from "@tamagui/lucide-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -310,7 +311,7 @@ export default function RiderMap() {
               latitude: delivery.pickup_lat,
               longitude: delivery.pickup_lng,
             }}
-            title={`Pickup: ${delivery.order_id}`}
+            title={`Pickup: ${delivery.order_number || "Delivery"}`}
             description={delivery.pickup || "Pickup location"}
             pinColor="#2ecc71"
             onPress={() => {
@@ -328,7 +329,7 @@ export default function RiderMap() {
               latitude: delivery.dropoff_lat,
               longitude: delivery.dropoff_lng,
             }}
-            title={`Dropoff: ${delivery.order_id}`}
+            title={`Dropoff: ${delivery.order_number || "Delivery"}`}
             description={delivery.dropoff || "Dropoff location"}
             pinColor="#e74c3c"
             onPress={() => {
@@ -467,11 +468,21 @@ export default function RiderMap() {
                   >
                     Dropoff
                   </Text>
-                  <Text fontSize="$4" fontFamily="$body">
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$body">
                     {selectedDelivery.dropoff || "Dropoff location"}
                   </Text>
                 </YStack>
               </XStack>
+
+              {/* Items count */}
+              {selectedDelivery.items && selectedDelivery.items.length > 0 ? (
+                <XStack gap="$3" alignItems="center">
+                  <Package size={18} color="$colorMuted" />
+                  <Text fontSize="$4" fontFamily="$body">
+                    {selectedDelivery.items.length} item{selectedDelivery.items.length > 1 ? "s" : ""}
+                  </Text>
+                </XStack>
+              ) : null}
 
               {/* ETA */}
               <XStack gap="$3" alignItems="center">

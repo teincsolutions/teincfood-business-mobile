@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useState } from "react";
 import { FlatList } from "react-native";
 import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,22 +7,31 @@ import { DollarSign, Download, CircleDashed } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import {
-  useRiderMetricsQuery,
+  useRiderEarningsSummaryQuery,
   useWalletHistoryQuery,
 } from "@/hooks/useRider";
 import { formatPriceFromMinor } from "@/utils/currency";
 
+const PERIODS = [
+  { key: "today" as const, label: "Today" },
+  { key: "this_week" as const, label: "Week" },
+  { key: "this_month" as const, label: "Month" },
+];
+
 export default function RiderEarningsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [period, setPeriod] = useState<"today" | "this_week" | "this_month">("today");
 
-  const { data: metricsData } = useRiderMetricsQuery();
+  const { data: earningsSummary } = useRiderEarningsSummaryQuery(period);
   const { data: transactionsData = [] } = useWalletHistoryQuery();
 
-  const todayEarningsMinor = metricsData?.today_earnings_minor ?? 0;
-  const todayDeliveries = metricsData?.today_deliveries ?? 0;
-  const totalDeliveries = metricsData?.total_deliveries ?? 0;
-  const avgPerDelivery = todayDeliveries > 0 ? todayEarningsMinor / todayDeliveries : 0;
+  const summary = earningsSummary?.data;
+  const totalEarningsMinor = summary?.total_earnings_minor ?? 0;
+  const totalPeriodDeliveries = summary?.total_deliveries ?? 0;
+  const avgPerDelivery = totalPeriodDeliveries > 0 ? totalEarningsMinor / totalPeriodDeliveries : 0;
+
+  const periodLabel = PERIODS.find((p) => p.key === period)?.label ?? "Today";
 
   const renderTransaction = ({ item: transaction }) => (
     <Card key={transaction.id} padding="$3" bordered marginBottom="$3">
@@ -85,9 +95,23 @@ export default function RiderEarningsScreen() {
           Earnings
         </Text>
         <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-          Your today's delivery earnings
+          Track your delivery earnings
         </Text>
       </YStack>
+
+      <XStack gap="$2">
+        {PERIODS.map((p) => (
+          <Button
+            key={p.key}
+            size="$2"
+            variant={period === p.key ? "primary" : "outline"}
+            onPress={() => setPeriod(p.key)}
+            flex={1}
+          >
+            {p.label}
+          </Button>
+        ))}
+      </XStack>
 
       <Card padding="$5" bordered backgroundColor="$green2">
         <YStack gap="$4" alignItems="center">
@@ -103,7 +127,7 @@ export default function RiderEarningsScreen() {
           </YStack>
           <YStack alignItems="center">
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              Today's Earnings
+              {periodLabel}
             </Text>
             <Text
               fontSize="$10"
@@ -111,24 +135,16 @@ export default function RiderEarningsScreen() {
               color="$green10"
               fontFamily="$heading"
             >
-              {formatPriceFromMinor(todayEarningsMinor)}
+              {formatPriceFromMinor(totalEarningsMinor)}
             </Text>
           </YStack>
           <XStack gap="$6">
             <YStack alignItems="center">
               <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                {todayDeliveries}
+                {totalPeriodDeliveries}
               </Text>
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                Today
-              </Text>
-            </YStack>
-            <YStack alignItems="center">
-              <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                {totalDeliveries}
-              </Text>
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                Total
+                Deliveries
               </Text>
             </YStack>
             <YStack alignItems="center">
@@ -139,38 +155,6 @@ export default function RiderEarningsScreen() {
                 Avg / delivery
               </Text>
             </YStack>
-          </XStack>
-        </YStack>
-      </Card>
-
-      <Card padding="$4" bordered>
-        <YStack gap="$3">
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text
-              fontSize="$5"
-              fontWeight="600"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Pending Payout
-            </Text>
-            <Text
-              fontSize="$5"
-              fontWeight="600"
-              color="$orange10"
-              fontFamily="$heading"
-            >
-              {formatPriceFromMinor(todayEarningsMinor)}
-            </Text>
-          </XStack>
-          <Separator />
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Status
-            </Text>
-            <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
-              {metricsData?.status === "available" ? "Available" : metricsData?.status ?? "---"}
-            </Text>
           </XStack>
         </YStack>
       </Card>
