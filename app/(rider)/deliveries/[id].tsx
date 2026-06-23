@@ -365,7 +365,7 @@ export default function RiderDeliveryDetails() {
                   </YStack>
                   <Text fontWeight="bold">
                     {formatPrice(
-                      item.price * item.quantity,
+                      (item.price * item.quantity) / 100,
                       item.currency || DEFAULT_CURRENCY,
                     )}
                   </Text>

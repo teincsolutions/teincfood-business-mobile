@@ -20,6 +20,8 @@ import {
   useUpdateNotificationPreferencesMutation,
 } from "@/hooks/useNotificationPreferences";
 import * as businessService from '@/services/business.service';
+import { toast } from 'sonner-native';
+import { extractApiErrorMessage } from '@/utils/error';
 
 /**
  * Seller Settings Screen
@@ -28,7 +30,7 @@ export default function SellerSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
-  const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed === false ?? true);
+  const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [togglingStore, setTogglingStore] = useState(false);
 
@@ -46,8 +48,8 @@ export default function SellerSettings() {
     try {
       await businessService.toggleBusinessOpen(activeBusiness.id);
       setIsOpen(open);
-    } catch {
-      // Revert UI
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
     } finally {
       setTogglingStore(false);
     }
@@ -60,8 +62,8 @@ export default function SellerSettings() {
       await businessService.toggleBusinessOpen(activeBusiness.id);
       setIsOpen(false);
       setShowCloseDialog(false);
-    } catch {
-      // noop
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
     } finally {
       setTogglingStore(false);
     }

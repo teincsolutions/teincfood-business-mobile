@@ -73,7 +73,7 @@ export default function LocationScreen() {
       // Save to local store
       setCurrentLocation(location);
 
-      // If already authenticated, go to role home; otherwise go to login
+      // If already authenticated, go to role home; otherwise go to role selection
       const currentUser = useAuthStore.getState().user;
       if (currentUser?.role === 'rider') {
         router.replace('/(rider)/');
@@ -82,7 +82,7 @@ export default function LocationScreen() {
       } else if (currentUser) {
         router.replace('/(seller)/');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/role');
       }
     } catch (err: any) {
       setError(err?.message || "Failed to save location. Please try again.");

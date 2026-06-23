@@ -76,14 +76,14 @@ export default function SellerMenu() {
     setEditingItem(item);
     setForm({
       name: item.name,
-      description: item.description,
-      price: toGHS(item.priceMinor),
+      description: item.description || "",
+      price: toGHS(item.price_minor),
       category: item.category,
-      dietaryTags: [...item.dietaryTags],
-      variants: [...item.variants],
-      extras: [...item.extras],
-      available: item.available,
-      images: [...(item.images || [])],
+      dietaryTags: [...(item.dietary_tags || [])],
+      variants: [...(item.variants || [])],
+      extras: [...(item.addons || [])],
+      available: item.is_available,
+      images: item.image_url ? [item.image_url] : [],
     });
     setVariantLabel("");
     setVariantPrice("");
@@ -94,7 +94,7 @@ export default function SellerMenu() {
 
   // ─── Save (add or edit) ────────────────────────────────────────
   const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim() || form.images.length === 0)
+    if (!form.name.trim() || !form.price.trim())
       return;
 
     const baseData = {
@@ -137,7 +137,7 @@ export default function SellerMenu() {
 
   // ─── Form helpers ──────────────────────────────────────────────
   const isFormValid =
-    form.name.trim() && form.price.trim() && form.images.length > 0;
+    form.name.trim() && form.price.trim();
 
   const toggleDietaryTag = (tag: string) => {
     setForm((f) => ({

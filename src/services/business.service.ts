@@ -5,7 +5,8 @@ import type {
   BusinessListResponse,
   BusinessMember,
   BusinessMemberListResponse,
-  OperatingHours,
+  OperatingHoursEntry,
+  OperatingHoursResponse,
   Promo,
   PromoListResponse,
   PromoResponse,
@@ -78,12 +79,12 @@ export async function acceptBusinessInvitation(data: Record<string, unknown>): P
 
 // ─── Operating Hours ───
 
-export async function fetchOperatingHours(businessId: string): Promise<{ data: OperatingHours }> {
-  return api.get(`/businesses/${businessId}/operating-hours`);
+export async function fetchOperatingHours(businessId: string): Promise<OperatingHoursResponse> {
+  return api.get<OperatingHoursResponse>(`/businesses/${businessId}/operating-hours`);
 }
 
-export async function upsertOperatingHours(businessId: string, data: OperatingHours): Promise<{ data: OperatingHours }> {
-  return api.put(`/businesses/${businessId}/operating-hours`, data);
+export async function upsertOperatingHours(businessId: string, data: OperatingHoursEntry[]): Promise<OperatingHoursResponse> {
+  return api.put<OperatingHoursResponse>(`/businesses/${businessId}/operating-hours`, { operating_hours: data });
 }
 
 // ─── Promo Codes (Seller) ───

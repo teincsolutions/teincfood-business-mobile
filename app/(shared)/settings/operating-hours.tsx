@@ -1,7 +1,7 @@
 // @ts-nocheck
 
-import { useState, useEffect } from "react";
-import { ScrollView, Pressable, Alert } from "react-native";
+import { useState, useEffect, useCallback } from "react";
+import { ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Card, Separator, Spinner } from "tamagui";
 import {
@@ -16,6 +16,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { fetchOperatingHours, upsertOperatingHours } from "@/services/business.service";
+import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
+import type { OperatingHoursEntry } from "@/types/api";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -23,8 +26,18 @@ interface DaySchedule {
   closeTime: string;
 }
 
-type PickerTarget = { day: string; field: "openTime" | "closeTime" } | null;
+type PickerTarget = { dayIndex: number; field: "openTime" | "closeTime" } | null;
 type SaveStatus = "idle" | "success" | "error";
+
+const DAYS = [
+  { index: 0, label: "Monday" },
+  { index: 1, label: "Tuesday" },
+  { index: 2, label: "Wednesday" },
+  { index: 3, label: "Thursday" },
+  { index: 4, label: "Friday" },
+  { index: 5, label: "Saturday" },
+  { index: 6, label: "Sunday" },
+];
 
 function timeToDate(time: string): Date {
   const [hours, minutes] = time.split(":").map(Number);
@@ -39,6 +52,16 @@ function dateToTime(date: Date): string {
   return `${h}:${m}`;
 }
 
+const defaultSchedule: Record<number, DaySchedule> = {
+  0: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
+  1: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
+  2: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
+  3: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
+  4: { isOpen: true, openTime: "08:00", closeTime: "23:00" },
+  5: { isOpen: false, openTime: "09:00", closeTime: "23:00" },
+  6: { isOpen: false, openTime: "10:00", closeTime: "21:00" },
+};
+
 export default function OperatingHoursSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -47,18 +70,7 @@ export default function OperatingHoursSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
-
-  const defaultSchedule = {
-    monday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    tuesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    wednesday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    thursday: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-    friday: { isOpen: true, openTime: "08:00", closeTime: "23:00" },
-    saturday: { isOpen: false, openTime: "09:00", closeTime: "23:00" },
-    sunday: { isOpen: false, openTime: "10:00", closeTime: "21:00" },
-  };
-
-  const [schedule, setSchedule] = useState<Record<string, DaySchedule>>(defaultSchedule);
+  const [schedule, setSchedule] = useState<Record<number, DaySchedule>>(defaultSchedule);
 
   useEffect(() => {
     if (!activeBusinessId) {
@@ -67,19 +79,16 @@ export default function OperatingHoursSettings() {
     }
     fetchOperatingHours(activeBusinessId)
       .then((res) => {
-        const data = res?.data;
-        if (data && typeof data === 'object') {
+        const entries = res?.data;
+        if (Array.isArray(entries)) {
           const merged = { ...defaultSchedule };
-          for (const day of Object.keys(defaultSchedule)) {
-            const dayData = data[day];
-            if (dayData && dayData.open && dayData.close) {
-              merged[day] = {
-                isOpen: true,
-                openTime: dayData.open,
-                closeTime: dayData.close,
+          for (const entry of entries) {
+            if (entry.day_of_week !== undefined) {
+              merged[entry.day_of_week] = {
+                isOpen: !entry.is_closed,
+                openTime: entry.open_time ? entry.open_time.slice(0, 5) : "08:00",
+                closeTime: entry.close_time ? entry.close_time.slice(0, 5) : "22:00",
               };
-            } else {
-              merged[day] = { ...merged[day], isOpen: false };
             }
           }
           setSchedule(merged);
@@ -89,20 +98,10 @@ export default function OperatingHoursSettings() {
       .finally(() => setLoadingHours(false));
   }, [activeBusinessId]);
 
-  const days = [
-    { key: "monday", label: "Monday" },
-    { key: "tuesday", label: "Tuesday" },
-    { key: "wednesday", label: "Wednesday" },
-    { key: "thursday", label: "Thursday" },
-    { key: "friday", label: "Friday" },
-    { key: "saturday", label: "Saturday" },
-    { key: "sunday", label: "Sunday" },
-  ];
-
-  const toggleDay = (day: string) => {
+  const toggleDay = (dayIndex: number) => {
     setSchedule((prev) => ({
       ...prev,
-      [day]: { ...prev[day], isOpen: !prev[day].isOpen },
+      [dayIndex]: { ...prev[dayIndex], isOpen: !prev[dayIndex].isOpen },
     }));
   };
 
@@ -110,8 +109,8 @@ export default function OperatingHoursSettings() {
     if (!pickerTarget) return;
     setSchedule((prev) => ({
       ...prev,
-      [pickerTarget.day]: {
-        ...prev[pickerTarget.day],
+      [pickerTarget.dayIndex]: {
+        ...prev[pickerTarget.dayIndex],
         [pickerTarget.field]: dateToTime(date),
       },
     }));
@@ -123,32 +122,36 @@ export default function OperatingHoursSettings() {
     setSaveStatus("idle");
     try {
       if (!activeBusinessId) {
-        Alert.alert("Error", "No business selected. Please select a business first.");
+        toast.error("No business selected. Please select a business first.");
         return;
       }
-      const hours = Object.fromEntries(
-        Object.entries(schedule).map(([day, s]) => [
-          day,
-          s.isOpen ? { open: s.openTime, close: s.closeTime } : null,
-        ])
-      );
+      const hours: OperatingHoursEntry[] = Object.entries(schedule).map(([dayIndexStr, s]) => {
+        const dayIndex = parseInt(dayIndexStr, 10);
+        return {
+          day_of_week: dayIndex,
+          open_time: s.isOpen ? `${s.openTime}:00` : null,
+          close_time: s.isOpen ? `${s.closeTime}:00` : null,
+          is_closed: !s.isOpen,
+        };
+      });
       await upsertOperatingHours(activeBusinessId, hours);
       setSaveStatus("success");
-      setTimeout(() => router.back(), 2500);
-    } catch {
+      toast.success("Operating hours saved successfully!");
+      setTimeout(() => router.back(), 1500);
+    } catch (e) {
       setSaveStatus("error");
+      toast.error(extractApiErrorMessage(e));
     } finally {
       setIsSaving(false);
     }
   };
 
   const pickerDate = pickerTarget
-    ? timeToDate(schedule[pickerTarget.day][pickerTarget.field])
+    ? timeToDate(schedule[pickerTarget.dayIndex][pickerTarget.field])
     : new Date();
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Header */}
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 24)}
@@ -167,7 +170,6 @@ export default function OperatingHoursSettings() {
         <Button
           variant="primary"
           height="$10"
-          $lg={{ height: "$10" }}
           paddingHorizontal="$4"
           onPress={handleSave}
           loading={isSaving}
@@ -177,35 +179,16 @@ export default function OperatingHoursSettings() {
         </Button>
       </XStack>
 
-      {/* Status Banner */}
       {saveStatus === "success" && (
-        <XStack
-          backgroundColor="$green2"
-          padding="$3"
-          gap="$2"
-          alignItems="center"
-          borderBottomWidth={1}
-          borderBottomColor="$green6"
-        >
+        <XStack backgroundColor="$green2" padding="$3" gap="$2" alignItems="center" borderBottomWidth={1} borderBottomColor="$green6">
           <CheckCircle size={16} color="$green10" />
-          <Text color="$green10" fontSize="$3" fontWeight="600">
-            Operating hours saved successfully!
-          </Text>
+          <Text color="$green10" fontSize="$3" fontWeight="600">Operating hours saved successfully!</Text>
         </XStack>
       )}
       {saveStatus === "error" && (
-        <XStack
-          backgroundColor="$red2"
-          padding="$3"
-          gap="$2"
-          alignItems="center"
-          borderBottomWidth={1}
-          borderBottomColor="$red6"
-        >
+        <XStack backgroundColor="$red2" padding="$3" gap="$2" alignItems="center" borderBottomWidth={1} borderBottomColor="$red6">
           <AlertCircle size={16} color="$red10" />
-          <Text color="$red10" fontSize="$3" fontWeight="600">
-            Failed to save operating hours. Please try again.
-          </Text>
+          <Text color="$red10" fontSize="$3" fontWeight="600">Failed to save operating hours. Please try again.</Text>
         </XStack>
       )}
 
@@ -216,164 +199,70 @@ export default function OperatingHoursSettings() {
             <Text color="$colorMuted">Loading hours...</Text>
           </YStack>
         ) : (
-        <YStack
-          padding="$4"
-          gap="$4"
-          paddingBottom={Math.max(insets.bottom + 8, 20)}
-        >
-          {/* Info Card */}
-          <Card padding="$4" bordered backgroundColor="$blue2">
-            <XStack gap="$3" alignItems="center">
-              <Clock size={24} color="$blue10" />
-              <YStack flex={1}>
-                <Text fontWeight="bold" color="$blue10">
-                  Set Your Business Hours
-                </Text>
-                <Text fontSize="$3" color="$colorMuted">
-                  Tap a time to edit when your store opens or closes
-                </Text>
-              </YStack>
-            </XStack>
-          </Card>
+          <YStack padding="$4" gap="$4" paddingBottom={Math.max(insets.bottom + 8, 20)}>
+            <Card padding="$4" bordered backgroundColor="$blue2">
+              <XStack gap="$3" alignItems="center">
+                <Clock size={24} color="$blue10" />
+                <YStack flex={1}>
+                  <Text fontWeight="bold" color="$blue10">Set Your Business Hours</Text>
+                  <Text fontSize="$3" color="$colorMuted">Tap a time to edit when your store opens or closes</Text>
+                </YStack>
+              </XStack>
+            </Card>
 
-          {/* Schedule */}
-          <Card padding="$4" bordered>
-            <YStack gap="$4">
-              <Text fontWeight="bold" fontSize="$5">
-                Weekly Schedule
-              </Text>
-              <Separator />
+            <Card padding="$4" bordered>
+              <YStack gap="$4">
+                <Text fontWeight="bold" fontSize="$5">Weekly Schedule</Text>
+                <Separator />
 
-              {days.map((day, index) => {
-                const isOpen = schedule[day.key].isOpen;
-                return (
-                  <YStack key={day.key} gap="$3" opacity={isOpen ? 1 : 0.6}>
-                    {/* Day header: name + "Closed" badge + labeled switch */}
-                    <XStack justifyContent="space-between" alignItems="center">
-                      <Text fontWeight="bold" fontSize="$4">
-                        {day.label}
-                      </Text>
-                      <Pressable
-                        onPress={() => toggleDay(day.key)}
-                        style={({ pressed }) => ({
-                          opacity: pressed ? 0.75 : 1,
-                        })}
-                      >
-                        <XStack
-                          alignItems="center"
-                          gap="$2"
-                          paddingHorizontal="$3"
-                          paddingVertical="$2"
-                          borderRadius="$10"
-                          borderWidth={1.5}
-                          backgroundColor={isOpen ? "$green3" : "$red3"}
-                          borderColor={isOpen ? "$success" : "$error"}
-                        >
-                          {isOpen ? (
-                            <CheckCircle size={14} color="$green10" />
-                          ) : (
-                            <X size={14} color="$red10" />
-                          )}
-                          <Text
-                            fontSize="$2"
-                            fontWeight="700"
-                            color={isOpen ? "$green10" : "$red10"}
-                          >
-                            {isOpen ? "Open" : "Closed"}
-                          </Text>
-                        </XStack>
-                      </Pressable>
-                    </XStack>
-
-                    {/* Time pickers — only shown when day is open */}
-                    {isOpen && (
-                      <XStack gap="$3" paddingLeft="$2">
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$2" color="$colorMuted">
-                            Opens
-                          </Text>
-                          <Pressable
-                            onPress={() =>
-                              setPickerTarget({
-                                day: day.key,
-                                field: "openTime",
-                              })
-                            }
-                          >
-                            <XStack
-                              padding="$3"
-                              borderWidth={1}
-                              borderColor={
-                                pickerTarget?.day === day.key &&
-                                pickerTarget?.field === "openTime"
-                                  ? "$primary"
-                                  : "$borderColor"
-                              }
-                              borderRadius="$3"
-                              backgroundColor="$backgroundSoft"
-                              alignItems="center"
-                              gap="$2"
-                            >
-                              <Clock size={14} color="$colorMuted" />
-                              <Text fontWeight="500">
-                                {schedule[day.key].openTime}
-                              </Text>
-                            </XStack>
-                          </Pressable>
-                        </YStack>
-                        <YStack flex={1} gap="$1">
-                          <Text fontSize="$2" color="$colorMuted">
-                            Closes
-                          </Text>
-                          <Pressable
-                            onPress={() =>
-                              setPickerTarget({
-                                day: day.key,
-                                field: "closeTime",
-                              })
-                            }
-                          >
-                            <XStack
-                              padding="$3"
-                              borderWidth={1}
-                              borderColor={
-                                pickerTarget?.day === day.key &&
-                                pickerTarget?.field === "closeTime"
-                                  ? "$primary"
-                                  : "$borderColor"
-                              }
-                              borderRadius="$3"
-                              backgroundColor="$backgroundSoft"
-                              alignItems="center"
-                              gap="$2"
-                            >
-                              <Clock size={14} color="$colorMuted" />
-                              <Text fontWeight="500">
-                                {schedule[day.key].closeTime}
-                              </Text>
-                            </XStack>
-                          </Pressable>
-                        </YStack>
+                {DAYS.map((day, index) => {
+                  const isOpen = schedule[day.index]?.isOpen ?? false;
+                  return (
+                    <YStack key={day.index} gap="$3" opacity={isOpen ? 1 : 0.6}>
+                      <XStack justifyContent="space-between" alignItems="center">
+                        <Text fontWeight="bold" fontSize="$4">{day.label}</Text>
+                        <Pressable onPress={() => toggleDay(day.index)} style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}>
+                          <XStack alignItems="center" gap="$2" paddingHorizontal="$3" paddingVertical="$2" borderRadius="$10" borderWidth={1.5} backgroundColor={isOpen ? "$green3" : "$red3"} borderColor={isOpen ? "$success" : "$error"}>
+                            {isOpen ? <CheckCircle size={14} color="$green10" /> : <X size={14} color="$red10" />}
+                            <Text fontSize="$2" fontWeight="700" color={isOpen ? "$green10" : "$red10"}>{isOpen ? "Open" : "Closed"}</Text>
+                          </XStack>
+                        </Pressable>
                       </XStack>
-                    )}
 
-                    {index < days.length - 1 && <Separator marginTop="$1" />}
-                  </YStack>
-                );
-              })}
-            </YStack>
-          </Card>
+                      {isOpen && (
+                        <XStack gap="$3" paddingLeft="$2">
+                          <YStack flex={1} gap="$1">
+                            <Text fontSize="$2" color="$colorMuted">Opens</Text>
+                            <Pressable onPress={() => setPickerTarget({ dayIndex: day.index, field: "openTime" })}>
+                              <XStack padding="$3" borderWidth={1} borderColor={pickerTarget?.dayIndex === day.index && pickerTarget?.field === "openTime" ? "$primary" : "$borderColor"} borderRadius="$3" backgroundColor="$backgroundSoft" alignItems="center" gap="$2">
+                                <Clock size={14} color="$colorMuted" />
+                                <Text fontWeight="500">{schedule[day.index].openTime}</Text>
+                              </XStack>
+                            </Pressable>
+                          </YStack>
+                          <YStack flex={1} gap="$1">
+                            <Text fontSize="$2" color="$colorMuted">Closes</Text>
+                            <Pressable onPress={() => setPickerTarget({ dayIndex: day.index, field: "closeTime" })}>
+                              <XStack padding="$3" borderWidth={1} borderColor={pickerTarget?.dayIndex === day.index && pickerTarget?.field === "closeTime" ? "$primary" : "$borderColor"} borderRadius="$3" backgroundColor="$backgroundSoft" alignItems="center" gap="$2">
+                                <Clock size={14} color="$colorMuted" />
+                                <Text fontWeight="500">{schedule[day.index].closeTime}</Text>
+                              </XStack>
+                            </Pressable>
+                          </YStack>
+                        </XStack>
+                      )}
 
-          {/* Footer Save */}
-          <Button
-            variant="primary"
-            width="100%"
-            onPress={handleSave}
-            loading={isSaving}
-          >
-            Save Changes
-          </Button>
-        </YStack>
+                      {index < DAYS.length - 1 && <Separator marginTop="$1" />}
+                    </YStack>
+                  );
+                })}
+              </YStack>
+            </Card>
+
+            <Button variant="primary" width="100%" onPress={handleSave} loading={isSaving}>
+              Save Changes
+            </Button>
+          </YStack>
         )}
       </ScrollView>
 

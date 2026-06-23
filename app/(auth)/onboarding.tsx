@@ -51,7 +51,7 @@ export default function OnboardingScreen() {
   const handleNext = () => {
     if (activeIndex >= SLIDES.length - 1) {
       completeOnboarding();
-      router.push("/(auth)/role");
+      router.push("/(auth)/location");
     } else {
       const nextIndex = activeIndex + 1;
       setActiveIndex(nextIndex);
@@ -171,7 +171,7 @@ export default function OnboardingScreen() {
             backgroundColor="transparent"
             onPress={() => {
               completeOnboarding();
-              router.push("/(auth)/role");
+              router.push("/(auth)/location");
             }}
           >
             <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">

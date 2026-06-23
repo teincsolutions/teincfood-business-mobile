@@ -448,6 +448,14 @@ export default function SellerDrawerLayout() {
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
+
+        {/* Members — custom screen header, drawer menu rendered via CustomDrawerContent */}
+        <Drawer.Screen
+          name="members/index"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Drawer>
 
       <AppAlertDialog

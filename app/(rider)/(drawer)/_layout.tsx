@@ -324,7 +324,7 @@ export default function RiderDrawerLayout() {
   const { isTablet, isLandscape } = useResponsive();
 
   const { data: riderProfile } = useRiderProfileQuery();
-  const isOnline = riderProfile?.status === "available";
+  const isOnline = riderProfile?.status !== "offline";
   useRiderLocationTracking({ riderId: riderProfile?.id, enabled: isOnline });
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);

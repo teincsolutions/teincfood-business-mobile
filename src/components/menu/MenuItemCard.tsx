@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, Image } from 'react-native';
 import {
   YStack,
   XStack,
@@ -16,7 +16,7 @@ import {
   EyeOff,
 } from '@tamagui/lucide-icons';
 import type { MenuItem } from '@/services/menu.service';
-import { formatPrice } from '@/utils/currency';
+import { formatPriceFromMinor } from '@/utils/currency';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -37,7 +37,7 @@ export function MenuItemCard({
     <Card
       padding="$4"
       bordered
-      opacity={item.available ? 1 : 0.55}
+      opacity={item.is_available ? 1 : 0.55}
     >
       <XStack gap="$3" alignItems="flex-start">
         {/* Thumbnail */}
@@ -49,8 +49,16 @@ export function MenuItemCard({
           alignItems="center"
           justifyContent="center"
           flexShrink={0}
+          overflow="hidden"
         >
-          <UtensilsCrossed size={26} color="$colorSecondary" />
+          {item.image_url ? (
+            <Image
+              source={{ uri: item.image_url }}
+              style={{ width: 64, height: 64, borderRadius: 8 }}
+            />
+          ) : (
+            <UtensilsCrossed size={26} color="$colorSecondary" />
+          )}
         </YStack>
 
         {/* Info */}
@@ -65,7 +73,7 @@ export function MenuItemCard({
               </Text>
             </YStack>
             <Text fontSize="$4" fontWeight="800" fontFamily="$heading" color="$primary">
-              {formatPrice(item.priceMinor / 100)}
+              {formatPriceFromMinor(item.price_minor)}
             </Text>
           </XStack>
 
@@ -76,9 +84,9 @@ export function MenuItemCard({
           ) : null}
 
           {/* Tags */}
-          {item.dietaryTags.length > 0 && (
+          {item.dietary_tags && item.dietary_tags.length > 0 && (
             <XStack gap="$1" flexWrap="wrap" mt="$1">
-              {item.dietaryTags.map((tag) => (
+              {item.dietary_tags.map((tag) => (
                 <YStack
                   key={tag}
                   paddingHorizontal="$2"
@@ -96,14 +104,14 @@ export function MenuItemCard({
             </XStack>
           )}
 
-          {/* Variants / extras summary */}
-          {(item.variants.length > 0 || item.extras.length > 0) && (
+          {/* Variants / addons summary */}
+          {(item.variants?.length > 0 || item.addons?.length > 0) && (
             <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" mt="$1">
               {[
                 item.variants.length > 0 &&
                   `${item.variants.length} size${item.variants.length > 1 ? 's' : ''}`,
-                item.extras.length > 0 &&
-                  `${item.extras.length} add-on${item.extras.length > 1 ? 's' : ''}`,
+                item.addons.length > 0 &&
+                  `${item.addons.length} add-on${item.addons.length > 1 ? 's' : ''}`,
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -121,7 +129,7 @@ export function MenuItemCard({
           onPress={() => onToggleAvailability(item.id)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
-          {item.available ? (
+          {item.is_available ? (
             <Eye size={15} color={theme.primary?.val || '#F97316'} />
           ) : (
             <EyeOff size={15} color={theme.colorSecondary?.val || '#6b7280'} />
@@ -130,9 +138,9 @@ export function MenuItemCard({
             fontSize="$3"
             fontFamily="$body"
             fontWeight="600"
-            color={item.available ? '$primary' : '$colorSecondary'}
+            color={item.is_available ? '$primary' : '$colorSecondary'}
           >
-            {item.available ? 'Available' : 'Unavailable'}
+            {item.is_available ? 'Available' : 'Unavailable'}
           </Text>
         </TouchableOpacity>
 

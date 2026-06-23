@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
+import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useResponsive } from "@/utils/responsive";
@@ -42,7 +43,9 @@ export default function SplashScreen() {
   const persistedRole = useRoleStore((s) => s.role);
   const isBiometricEnabled = useSecurityStore((s) => s.isBiometricEnabled);
   const setBiometricEnabled = useSecurityStore((s) => s.setBiometricEnabled);
-  const storesHydrated = authHydrated && onboardingHydrated && roleHydrated;
+  const locationHydrated = useLocationStore((s) => s.isHydrated);
+  const hasLocation = useLocationStore((s) => s.hasLocation());
+  const storesHydrated = authHydrated && onboardingHydrated && roleHydrated && locationHydrated;
 
   // Start entrance animations
   useEffect(() => {
@@ -82,7 +85,19 @@ export default function SplashScreen() {
       await new Promise((r) => setTimeout(r, minWait));
 
       if (!accessToken) {
-        // No session → login
+        // No session — check prerequisites in order: onboarding → location → role → login
+        if (!hasSeenOnboarding) {
+          setRedirectTarget("/(auth)/onboarding");
+          return;
+        }
+        if (!hasLocation) {
+          setRedirectTarget("/(auth)/location");
+          return;
+        }
+        if (!persistedRole) {
+          setRedirectTarget("/(auth)/role");
+          return;
+        }
         setRedirectTarget("/(auth)/login");
         return;
       }

@@ -65,7 +65,7 @@ export default function RiderDeliveries() {
     q: searchQuery || undefined,
   });
 
-  const isBusy = profileData?.status !== 'available';
+  const isBusy = profileData?.status === 'offline';
   const { data: availableOrders = [] } = useAvailableOrdersQuery(!isBusy);
   const claimOrder = useClaimOrderMutation();
 

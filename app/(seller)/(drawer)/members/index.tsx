@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl, TextInput } from "react-native";
-import { YStack, XStack, Text, Card, Avatar, Sheet, Separator, Button, Input } from "tamagui";
-import { UserPlus, X, ChevronRight, Mail, Phone } from "@tamagui/lucide-icons";
+import { YStack, XStack, Text, Card, Avatar, Sheet, Separator, Button, Input, ScrollView } from "tamagui";
+import { UserPlus, X, ChevronRight, Mail, Phone, Check } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -11,26 +11,23 @@ import {
   useInviteMemberMutation,
   useRemoveMemberMutation,
 } from "@/hooks/useBusinessMembers";
-
-const ROLE_LABELS = {
-  chief: "Owner",
-  sales: "Admin",
-  manager: "Staff",
-};
+import { useBusinessRolesQuery } from "@/hooks/useRoles";
 
 const ROLE_COLORS = {
-  chief: "$yellow9",
+  chief: "$orange9",
   sales: "$blue9",
-  manager: "$gray9",
+  manager: "$green9",
 };
 
 export default function MembersScreen() {
   const insets = useSafeAreaInsets();
   const { data: response, isLoading, refetch, isRefetching } = useBusinessMembersQuery();
+  const { data: rolesData } = useBusinessRolesQuery();
   const inviteMember = useInviteMemberMutation();
   const removeMember = useRemoveMemberMutation();
 
   const members = response?.data ?? [];
+  const roles = rolesData?.data ?? {};
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
@@ -114,55 +111,92 @@ export default function MembersScreen() {
       />
 
       {/* Invite Sheet */}
-      <Sheet modal open={inviteSheetOpen} onOpenChange={setInviteSheetOpen} snapPoints={[60]} dismissOnSnapToBottom zIndex={200_000}>
+      <Sheet modal open={inviteSheetOpen} onOpenChange={setInviteSheetOpen} snapPoints={[85]} dismissOnSnapToBottom zIndex={200_000}>
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
-          <YStack gap="$4" paddingTop="$4">
-            <Text fontSize="$6" fontWeight="bold">Invite Member</Text>
-            <YStack gap="$1">
-              <XStack gap="$2" alignItems="center"><Mail size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Email</Text></XStack>
-              <Input
-                placeholder="member@example.com"
-                value={inviteEmail}
-                onChangeText={setInviteEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
+          <ScrollView>
+            <YStack padding="$6" gap="$4">
+              <Text fontSize="$6" fontWeight="bold">Invite Member</Text>
+
+              <YStack gap="$1">
+                <XStack gap="$2" alignItems="center"><Mail size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Email</Text></XStack>
+                <Input
+                  placeholder="member@example.com"
+                  value={inviteEmail}
+                  onChangeText={setInviteEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </YStack>
+
+              <YStack gap="$1">
+                <XStack gap="$2" alignItems="center"><Phone size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Phone (optional)</Text></XStack>
+                <Input
+                  placeholder="+233XXXXXXXXX"
+                  value={invitePhone}
+                  onChangeText={setInvitePhone}
+                  keyboardType="phone-pad"
+                />
+              </YStack>
+
+              <YStack gap="$2">
+                <Text fontSize="$3" color="$colorMuted">Role</Text>
+                <YStack gap="$2">
+                  {Object.entries(roles).map(([key, role]: [string, any]) => {
+                    const selected = inviteRole === key;
+                    const color = ROLE_COLORS[key];
+                    const capCount = role.capabilities?.length ?? 0;
+                    return (
+                      <XStack
+                        key={key}
+                        backgroundColor={selected ? "$backgroundSoft" : "$background"}
+                        borderColor={selected ? color : "$borderColor"}
+                        borderWidth={1}
+                        borderRadius="$4"
+                        overflow="hidden"
+                        pressStyle={{ opacity: 0.8, backgroundColor: "$backgroundHover" }}
+                        onPress={() => setInviteRole(key)}
+                        cursor="pointer"
+                      >
+                        <YStack width={selected ? 4 : 0} backgroundColor={color} />
+                        <YStack flex={1} padding="$3.5" gap="$1">
+                          <Text fontWeight={selected ? "bold" : "500"} fontSize="$4" color={selected ? "$color" : "$color"}>
+                            {role.label}
+                          </Text>
+                          <Text fontSize="$2" color="$colorMuted">
+                            {capCount} capability{capCount !== 1 ? "ies" : "y"}
+                          </Text>
+                        </YStack>
+                      </XStack>
+                    );
+                  })}
+                </YStack>
+              </YStack>
+
+              {/* Permissions for selected role — fetched from backend */}
+              {inviteRole && roles[inviteRole] && (
+                <YStack gap="$3" backgroundColor="$backgroundSoft" borderRadius="$3" padding="$3">
+                  <Text fontSize="$3" fontWeight="600" color="$colorMuted">Capabilities</Text>
+                  <Separator />
+                  {roles[inviteRole].capabilities.map((cap: { key: string; label: string; description: string }) => (
+                    <XStack key={cap.key} gap="$2">
+                      <Check size={14} color="$green10" style={{ marginTop: 3 }} />
+                      <YStack flex={1} gap="$1">
+                        <Text fontSize="$3" fontWeight="500">{cap.label}</Text>
+                        <Text fontSize="$2" color="$colorMuted">{cap.description}</Text>
+                      </YStack>
+                    </XStack>
+                  ))}
+                </YStack>
+              )}
+
+              <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteEmail.trim() && !invitePhone.trim()}>
+                {inviteMember.isPending ? "Sending..." : "Send Invitation"}
+              </Button>
+              <Button variant="outline" onPress={() => setInviteSheetOpen(false)}>Cancel</Button>
             </YStack>
-            <YStack gap="$1">
-              <XStack gap="$2" alignItems="center"><Phone size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Phone (optional)</Text></XStack>
-              <Input
-                placeholder="+233XXXXXXXXX"
-                value={invitePhone}
-                onChangeText={setInvitePhone}
-                keyboardType="phone-pad"
-              />
-            </YStack>
-            <YStack gap="$1">
-              <Text fontSize="$3" color="$colorMuted">Role</Text>
-              <XStack gap="$2" flexWrap="wrap">
-                {[
-                  { value: "sales", label: "Admin" },
-                  { value: "manager", label: "Staff" },
-                ].map((option) => (
-                  <Button
-                    key={option.value}
-                    flex={1}
-                    backgroundColor={inviteRole === option.value ? "$primary" : "$gray3"}
-                    color={inviteRole === option.value ? "white" : "$color"}
-                    onPress={() => setInviteRole(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </XStack>
-            </YStack>
-            <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteEmail.trim() && !invitePhone.trim()}>
-              {inviteMember.isPending ? "Sending..." : "Send Invitation"}
-            </Button>
-            <Button variant="outline" onPress={() => setInviteSheetOpen(false)}>Cancel</Button>
-          </YStack>
+          </ScrollView>
         </Sheet.Frame>
       </Sheet>
 

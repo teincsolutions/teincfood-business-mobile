@@ -37,14 +37,16 @@ export interface BusinessMemberListResponse {
 
 // ─── Operating Hours ───
 
-export interface OperatingHours {
-  monday: DayHours | null;
-  tuesday: DayHours | null;
-  wednesday: DayHours | null;
-  thursday: DayHours | null;
-  friday: DayHours | null;
-  saturday: DayHours | null;
-  sunday: DayHours | null;
+export interface OperatingHoursEntry {
+  id?: string;
+  day_of_week: number; // 0=Monday, 6=Sunday
+  open_time: string | null;
+  close_time: string | null;
+  is_closed: boolean;
+}
+
+export interface OperatingHoursResponse {
+  data: OperatingHoursEntry[];
 }
 
 export interface DayHours {

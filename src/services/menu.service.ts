@@ -49,6 +49,10 @@ export function toMinor(ghsStr: string): number {
   return isNaN(n) ? 0 : Math.round(n * 100);
 }
 
+export function toGHS(minor: number): string {
+  return (minor / 100).toFixed(2);
+}
+
 // ─── Public Menu Endpoints ───
 
 export async function fetchBusinessMenu(businessId: string): Promise<MenuItemListResponse> {

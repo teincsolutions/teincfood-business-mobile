@@ -21,6 +21,9 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
 import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
+import * as businessService from '@/services/business.service';
+import { toast } from 'sonner-native';
+import { extractApiErrorMessage } from '@/utils/error';
 
 /**
  * Seller Dashboard Screen
@@ -30,11 +33,12 @@ export default function SellerDashboard() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [togglingStore, setTogglingStore] = useState(false);
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
+  const isStoreOpen = activeBusiness?.manuallyClosed !== true;
 
   // TanStack Query hooks
   const { data, isLoading, refetch } = useSellerDashboardQuery(activeBusinessId, hasBusiness);
@@ -54,6 +58,18 @@ export default function SellerDashboard() {
     await refetch();
     setIsRefreshing(false);
   }, [refetch]);
+
+  const handleToggleStore = useCallback(async () => {
+    if (!activeBusiness?.id) return;
+    setTogglingStore(true);
+    try {
+      await businessService.toggleBusinessOpen(activeBusiness.id);
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
+    } finally {
+      setTogglingStore(false);
+    }
+  }, [activeBusiness?.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -153,7 +169,8 @@ export default function SellerDashboard() {
             <Switch
               size="$8"
               checked={isStoreOpen}
-              onCheckedChange={setIsStoreOpen}
+              disabled={togglingStore}
+              onCheckedChange={handleToggleStore}
               backgroundColor={isStoreOpen ? "$primary" : "$color.gray600"}
             >
               <Switch.Thumb animation="quick" backgroundColor="$color.white" />
@@ -162,7 +179,7 @@ export default function SellerDashboard() {
               size="$4"
               circular
               icon={<Bell size={20} />}
-              onPress={() => router.push("/(seller)/notifications")}
+              onPress={() => router.push("/(shared)/notifications")}
             />
           </XStack>
         </XStack>
@@ -236,7 +253,7 @@ export default function SellerDashboard() {
               <Button
                 flex={1}
                 backgroundColor="$star"
-                onPress={() => router.push("/(seller)/orders/pending")}
+                onPress={() => router.push("/(seller)/orders")}
               >
                 <XStack gap="$2" alignItems="center">
                   <Clock size={18} color="$color.white" />
@@ -252,7 +269,7 @@ export default function SellerDashboard() {
               <Button
                 flex={1}
                 backgroundColor="$primary"
-                onPress={() => router.push("/(seller)/orders/active")}
+                onPress={() => router.push("/(seller)/orders")}
               >
                 <XStack gap="$2" alignItems="center">
                   <Package size={18} color="$color.white" />

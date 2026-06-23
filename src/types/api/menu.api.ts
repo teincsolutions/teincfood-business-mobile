@@ -24,7 +24,7 @@ export interface MenuItem {
   dietary_tags: string[];
   variants: MenuItemVariant[];
   addons: MenuItemAddon[];
-  images: string[];
+  image_url: string | null;
   business_id: string;
   inserted_at: string;
   updated_at: string;
@@ -58,5 +58,5 @@ export interface CatalogItemRequest {
   variants: Omit<MenuItemVariant, 'id'>[];
   addons: Omit<MenuItemAddon, 'id'>[];
   is_available: boolean;
-  images: string[];
+  image_url: string | null;
 }
