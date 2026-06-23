@@ -59,12 +59,21 @@ export async function fetchBusinessOrderByNumber(businessId: string, orderNumber
   return api.get<SellerOrderDetailResponse>(`/businesses/${businessId}/orders/${orderNumber}`);
 }
 
-// ─── Legacy aliases ───
+// ─── Legacy alias ───
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<{ data: SellerOrder }> {
   return api.post(`/orders/${orderId}/${status}`);
 }
 
-export async function markOrderDelivered(orderId: string): Promise<{ data: Record<string, unknown> }> {
-  return api.post(`/deliveries/${orderId}/delivered`);
+// ─── Handover ───
+
+export async function confirmHandover(deliveryId: string): Promise<{ data: { id: string; status: string } }> {
+  return api.post(`/deliveries/${deliveryId}/confirm-handover`);
+}
+
+// ─── Analytics ───
+
+export async function fetchBusinessAnalytics(businessId: string, period?: string): Promise<{ data: Record<string, unknown> }> {
+  const params = period ? { period } : undefined;
+  return api.get(`/businesses/${businessId}/analytics`, { params });
 }

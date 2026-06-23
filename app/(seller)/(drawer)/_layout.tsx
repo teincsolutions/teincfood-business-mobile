@@ -25,6 +25,8 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Users,
+  DollarSign,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
@@ -151,6 +153,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Analytics
+            </Text>
+          </Button>
+
+          {/* Members */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/members")}
+            icon={<Users size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Members
             </Text>
           </Button>
 
