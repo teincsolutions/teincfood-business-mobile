@@ -13,6 +13,12 @@ import {
 } from "@/hooks/useBusinessMembers";
 import { useBusinessRolesQuery } from "@/hooks/useRoles";
 
+const ROLE_LABELS: Record<string, string> = {
+  chief: "Chef",
+  sales: "Sales",
+  manager: "Manager",
+};
+
 const ROLE_COLORS = {
   chief: "$orange9",
   sales: "$blue9",
