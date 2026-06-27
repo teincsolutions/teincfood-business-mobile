@@ -18,7 +18,6 @@ import {
   getCountryOption,
   getDialCodeFromCountry,
 } from "@/utils/phone";
-import { useSetUserLocationMutation } from "@/services/location.service";
 import { useLocationStore, AppLocation } from "@/stores/location.store";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -27,7 +26,6 @@ export default function LocationScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const setCurrentLocation = useLocationStore((state) => state.setCurrentLocation);
-  const setLocationMutation = useSetUserLocationMutation();
 
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
   const [selectedCountryIso, setSelectedCountryIso] = useState("GH");
@@ -57,20 +55,8 @@ export default function LocationScreen() {
         countryCode: selectedCountryIso.toUpperCase(),
       };
 
-      // Best-effort save to backend — country selection isn't critical
-      try {
-        await setLocationMutation.mutateAsync({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          city: location.city,
-          area: location.area,
-          countryCode: location.countryCode,
-        });
-      } catch {
-        // Backend may not expose this endpoint yet; continue anyway
-      }
-
-      // Save to local store
+      // Save to local store (user is unauthenticated during onboarding, 
+      // so location is persisted client-side only until post-auth sync)
       setCurrentLocation(location);
 
       // If already authenticated, go to role home; otherwise go to role selection
