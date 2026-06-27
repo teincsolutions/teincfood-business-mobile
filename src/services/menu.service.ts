@@ -30,7 +30,6 @@ export interface MenuItemForm {
   images: string[];
 }
 
-export const MENU_CATEGORIES = ['All', 'Main', 'Snacks', 'Protein', 'Drinks', 'Desserts'];
 export const DIETARY_TAGS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Halal'];
 export const EMPTY_FORM: MenuItemForm = {
   name: '',

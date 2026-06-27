@@ -10,6 +10,7 @@ import { CategoryPill } from "@/components/home/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import {
   useMenuItemsQuery,
+  useMenuCategoriesQuery,
   useCreateMenuItemMutation,
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
@@ -17,7 +18,6 @@ import {
 } from "@/hooks/menu.hooks";
 import type { MenuItem, MenuItemForm } from "@/services/menu.service";
 import {
-  MENU_CATEGORIES,
   EMPTY_FORM,
   toGHS,
   toMinor,
@@ -30,10 +30,14 @@ export default function SellerMenu() {
 
   // TanStack Query hooks
   const { data: items = [] } = useMenuItemsQuery();
+  const { data: categoriesRes } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuItemMutation();
   const updateMutation = useUpdateMenuItemMutation();
   const deleteMutation = useDeleteMenuItemMutation();
   const toggleMutation = useToggleAvailabilityMutation();
+
+  const allCategories = categoriesRes?.data ?? [];
+  const filterCategories = [{ name: 'All' } as any, ...allCategories];
 
   // UI state
   const [activeCategory, setActiveCategory] = useState("All");
@@ -230,12 +234,12 @@ export default function SellerMenu() {
           flexDirection: "row",
         }}
       >
-        {MENU_CATEGORIES.map((cat) => (
+        {filterCategories.map((cat) => (
           <CategoryPill
-            key={cat}
-            label={cat}
-            isActive={activeCategory === cat}
-            onPress={() => setActiveCategory(cat)}
+            key={cat.name}
+            label={cat.name}
+            isActive={activeCategory === cat.name}
+            onPress={() => setActiveCategory(cat.name)}
           />
         ))}
       </ScrollView>
@@ -310,6 +314,7 @@ export default function SellerMenu() {
         onSave={handleSave}
         categorySheetOpen={categorySheetOpen}
         onCategorySheetOpenChange={setCategorySheetOpen}
+        categories={allCategories}
       />
 
       {/* ── Delete confirmation ──────────────────────────────────── */}

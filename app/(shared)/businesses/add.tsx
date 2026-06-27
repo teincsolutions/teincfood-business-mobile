@@ -17,13 +17,14 @@ import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { Building, MapPin, Phone, Mail, Navigation, Check, Search } from "@tamagui/lucide-icons";
 import { placesService, type PlaceSuggestion, type PlaceDetails } from "@/services/places.service";
+import * as businessService from '@/services/business.service';
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 
 export default function AddBusinessScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { addBusiness } = useBusinessStore();
+  const { addBusiness, setActiveBusiness } = useBusinessStore();
   const role = useRoleStore((s) => s.role);
   const businessType = role === 'fleet_manager' ? 'delivery_provider' : 'merchant';
   const dashboardRoute = role === 'fleet_manager'
@@ -129,19 +130,30 @@ export default function AddBusinessScreen() {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await businessService.createBusiness({
+        business: {
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim() || undefined,
+          business_type: businessType,
+          address_street: selectedPlace.street || selectedPlace.formattedAddress,
+          address_city: selectedPlace.city || "",
+          address_region: selectedPlace.region || "",
+          address_country: selectedPlace.country || "Ghana",
+          address_full: selectedPlace.formattedAddress,
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
+        },
+      });
 
-      const prefix = form.name.substring(0, 3).toUpperCase();
-      const cityCode = (selectedPlace.city || "ACC").substring(0, 3).toUpperCase();
-      const seq = Math.floor(Math.random() * 900) + 100;
-      const businessCode = `${prefix}-${cityCode}-${seq}`;
+      const biz = res.data;
 
       const newBusiness = {
-        id: `business_${Date.now()}`,
-        code: businessCode,
-        type: businessType,
-        ownerId: "user_001",
-        name: form.name.trim(),
+        id: biz.id,
+        code: biz.business_number,
+        type: biz.type || businessType,
+        ownerId: biz.owner_id,
+        name: biz.name,
         address: {
           street: selectedPlace.street || selectedPlace.formattedAddress,
           city: selectedPlace.city || "",
@@ -151,18 +163,19 @@ export default function AddBusinessScreen() {
           longitude: selectedPlace.longitude,
           fullAddress: selectedPlace.formattedAddress,
         },
-        phone: form.phone.trim(),
-        email: form.email.trim() || undefined,
-        status: "active" as const,
+        phone: biz.phone || form.phone.trim(),
+        email: biz.email || form.email.trim() || undefined,
+        status: biz.status,
         isDefault: false,
         rating: 5.0,
         reviewCount: 0,
         totalOrders: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: biz.inserted_at,
+        updatedAt: biz.updated_at || biz.inserted_at,
       };
 
       addBusiness(newBusiness as any);
+      setActiveBusiness(newBusiness as any);
       router.replace(dashboardRoute);
     } catch (err: any) {
       setErrors({

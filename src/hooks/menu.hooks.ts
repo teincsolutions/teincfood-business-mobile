@@ -11,6 +11,7 @@ import { extractApiErrorMessage } from '@/utils/error';
 export const MENU_KEYS = {
   all: ['menu'] as const,
   items: (businessId?: string) => [...MENU_KEYS.all, 'items', businessId] as const,
+  categories: (businessId?: string) => [...MENU_KEYS.all, 'categories', businessId] as const,
   item: (id: string) => [...MENU_KEYS.all, 'item', id] as const,
 };
 
@@ -31,6 +32,17 @@ export function useMenuItemsQuery(enabled = true) {
       return menuService.fetchMenuItems();
     },
     enabled,
+  });
+}
+
+// ─── Menu Categories Query Hook ──────────────────────────────────────────────
+
+export function useMenuCategoriesQuery() {
+  const businessId = useBusinessId();
+  return useQuery({
+    queryKey: MENU_KEYS.categories(businessId),
+    queryFn: () => menuService.fetchBusinessCategories(businessId!),
+    enabled: !!businessId,
   });
 }
 

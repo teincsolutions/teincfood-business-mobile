@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -17,6 +17,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, FormInput, BackButton } from "@/components/ui";
 import { FormTextArea } from "@/components/ui/FormTextArea";
 import { useBusinessStore } from "@/stores/business.store";
+import * as businessService from "@/services/business.service";
+import { api } from "@/services/api";
+import { extractApiErrorMessage } from "@/utils/error";
 import {
   Building,
   MapPin,
@@ -48,34 +51,29 @@ interface BusinessDoc {
   uri?: string;
 }
 
+// Backend-required documents for business_owner KYC
+// Matches TeincFoodBackend.KYC.required_documents_for(:business_owner)
 const INITIAL_OPERATIONAL_DOCS: BusinessDoc[] = [
   {
-    id: "business_reg",
-    name: "Business Registration Certificate",
-    description: "Official certificate of incorporation / registration",
+    id: "national_id",
+    name: "National ID",
+    description: "Valid government-issued ID (passport, national ID card, driver's license)",
     status: "not_uploaded",
     required: true,
   },
   {
-    id: "food_handler",
-    name: "Food Handler's Certificate",
-    description: "Valid food handling / hygiene certificate",
+    id: "business_license",
+    name: "Business License",
+    description: "Valid business operating license from local authorities",
     status: "not_uploaded",
     required: true,
   },
   {
-    id: "tax_tin",
-    name: "Tax Registration / TIN",
-    description: "Tax identification number certificate",
+    id: "business_cert",
+    name: "Business Certificate",
+    description: "Official certificate of incorporation or business registration",
     status: "not_uploaded",
     required: true,
-  },
-  {
-    id: "premises_license",
-    name: "Premises / Operating License",
-    description: "Local authority operating permit",
-    status: "not_uploaded",
-    required: false,
   },
 ];
 
@@ -122,6 +120,52 @@ export default function BusinessDetailScreen() {
   // Operational docs state
   const [docs, setDocs] = useState<BusinessDoc[]>(INITIAL_OPERATIONAL_DOCS);
   const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
+
+  // ── Business detail fetch ──
+  const [fetchedBusiness, setFetchedBusiness] = useState<any>(null);
+  const [isFetchingDetail, setIsFetchingDetail] = useState(true);
+
+  const effectiveBusiness = useMemo(() => {
+    if (!fetchedBusiness) return business;
+    return {
+      ...business,
+      ...fetchedBusiness,
+      code: business?.code || fetchedBusiness.business_number,
+      logoUrl: fetchedBusiness.logo_url || business?.logoUrl,
+      address: business?.address || {},
+      rating: fetchedBusiness.rating ?? business?.rating,
+    };
+  }, [business, fetchedBusiness]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await businessService.fetchBusinessById(id);
+        setFetchedBusiness(res.data);
+      } catch {
+        // silently fall back to store data
+      } finally {
+        setIsFetchingDetail(false);
+      }
+    })();
+  }, [id]);
+
+  useEffect(() => {
+    if (fetchedBusiness && !isEditing) {
+      setEditForm({
+        name: effectiveBusiness.name ?? "",
+        type: effectiveBusiness.type ?? "",
+        description: effectiveBusiness.description ?? "",
+        address: effectiveBusiness.address?.street ?? "",
+        city: effectiveBusiness.address?.city ?? "",
+        phone: effectiveBusiness.phone ?? "",
+        email: effectiveBusiness.email ?? "",
+      });
+      if (!logoUri && effectiveBusiness.logoUrl) {
+        setLogoUri(effectiveBusiness.logoUrl);
+      }
+    }
+  }, [fetchedBusiness]);
 
   if (!business) {
     return (
@@ -190,7 +234,19 @@ export default function BusinessDetailScreen() {
     }
     setIsSaving(true);
     try {
-      await new Promise((r) => setTimeout(r, 800)); // replace with real API call
+      // 1. Update backend
+      await businessService.updateBusiness(id, {
+        business: {
+          name: editForm.name.trim(),
+          type: editForm.type || undefined,
+          description: editForm.description.trim() || undefined,
+          phone: editForm.phone.trim() || undefined,
+          email: editForm.email.trim() || undefined,
+          logo_url: logoUri !== business?.logoUrl ? (logoUri || undefined) : undefined,
+        },
+      });
+
+      // 2. Update local store
       updateBusiness(id, {
         name: editForm.name.trim(),
         type: editForm.type as any,
@@ -199,18 +255,30 @@ export default function BusinessDetailScreen() {
         email: editForm.email.trim() || undefined,
         ...(logoUri ? { logoUrl: logoUri } : {}),
         address: {
-          ...(business.address ?? {}),
+          ...(business?.address ?? {}),
           street: editForm.address.trim(),
           city: editForm.city.trim(),
           fullAddress: `${editForm.address.trim()}, ${editForm.city.trim()}`,
         },
       });
+
+      // 3. Refresh fetched data
+      setFetchedBusiness((prev: any) => ({
+        ...prev,
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || undefined,
+        logo_url: logoUri || undefined,
+      }));
+
       setSaveStatus("success");
       setTimeout(() => {
         setSaveStatus("idle");
         setIsEditing(false);
       }, 1800);
-    } catch {
+    } catch (e: any) {
+      Alert.alert("Save Failed", extractApiErrorMessage(e));
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 2500);
     } finally {
@@ -219,23 +287,24 @@ export default function BusinessDetailScreen() {
   };
 
   const handleCancelEdit = () => {
+    const eb = effectiveBusiness || business;
     setEditForm({
-      name: business.name ?? "",
-      type: business.type ?? "",
-      description: business.description ?? "",
-      address: business.address?.street ?? "",
-      city: business.address?.city ?? "",
-      phone: business.phone ?? "",
-      email: business.email ?? "",
+      name: eb.name ?? "",
+      type: eb.type ?? "",
+      description: eb.description ?? "",
+      address: eb.address?.street ?? "",
+      city: eb.address?.city ?? "",
+      phone: eb.phone ?? "",
+      email: eb.email ?? "",
     });
-    setLogoUri(business.logoUrl);
+    setLogoUri(eb.logoUrl);
     setEditErrors({});
     setIsEditing(false);
   };
 
   // ── Operational docs helpers ─────────────────────────────────────────────────
 
-  const pickDoc = async (docId: string, useCamera: boolean) => {
+  const uploadDoc = async (docId: string, useCamera: boolean) => {
     const permFn = useCamera
       ? ImagePicker.requestCameraPermissionsAsync
       : ImagePicker.requestMediaLibraryPermissionsAsync;
@@ -259,21 +328,98 @@ export default function BusinessDetailScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
 
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const filename = uri.split("/").pop() || `${docId}.jpg`;
+    const contentType = asset.mimeType || "image/jpeg";
+
     setUploadingDocId(docId);
-    setDocs((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              uri: result.assets[0].uri,
-              status: "pending",
-              uploadedAt: new Date().toISOString().split("T")[0],
-              rejectionReason: undefined,
-            }
-          : d,
-      ),
-    );
-    setUploadingDocId(null);
+
+    try {
+      // Step 1: Get presigned S3 upload URL
+      const uploadRes = await api.post("/upload", {
+        filename,
+        content_type: contentType,
+        prefix: "kyc",
+      });
+      const { upload_url, key } = (uploadRes as any).data;
+
+      // Step 2: Upload file to S3
+      const fileResp = await fetch(uri);
+      const blob = await fileResp.blob();
+      const s3res = await fetch(upload_url, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body: blob,
+      });
+      if (!s3res.ok) throw new Error("Failed to upload file to storage");
+
+      // Step 3: Gather all previously uploaded docs and add this one
+      const today = new Date().toISOString().split("T")[0];
+      const nextYear = new Date();
+      nextYear.setFullYear(nextYear.getFullYear() + 1);
+      const expirationDate = nextYear.toISOString().split("T")[0];
+
+      const allDocs: Record<string, any> = {};
+      docs.forEach((d) => {
+        if (d.uri && d.id === docId) {
+          allDocs[d.id] = {
+            url: key,
+            key,
+            document_id: key,
+            issued_date: today,
+            expiration_date: expirationDate,
+          };
+        } else if (d.uri && d.id !== docId) {
+          allDocs[d.id] = {
+            url: d.uri,
+            key: d.uri,
+            document_id: d.uri,
+            issued_date: d.uploadedAt || today,
+            expiration_date: expirationDate,
+          };
+        }
+      });
+      allDocs[docId] = {
+        url: key,
+        key,
+        document_id: key,
+        issued_date: today,
+        expiration_date: expirationDate,
+      };
+
+      // Step 4: Submit KYC documents
+      await businessService.submitBusinessKyc(id, {
+        documents: allDocs,
+        user_type: "business_owner",
+      });
+
+      // Step 5: Update local state
+      setDocs((prev) =>
+        prev.map((d) =>
+          d.id === docId
+            ? {
+                ...d,
+                uri,
+                status: "pending" as DocStatus,
+                uploadedAt: today,
+                rejectionReason: undefined,
+              }
+            : d,
+        ),
+      );
+    } catch (e: any) {
+      Alert.alert("Upload Failed", extractApiErrorMessage(e));
+      setDocs((prev) =>
+        prev.map((d) =>
+          d.id === docId
+            ? { ...d, status: "not_uploaded" as DocStatus }
+            : d,
+        ),
+      );
+    } finally {
+      setUploadingDocId(null);
+    }
   };
 
   const uploadedRequired = docs.filter(
@@ -770,7 +916,7 @@ export default function BusinessDetailScreen() {
                         size="$2"
                         variant="outline"
                         icon={<Camera size={14} />}
-                        onPress={() => pickDoc(doc.id, true)}
+                        onPress={() => uploadDoc(doc.id, true)}
                         disabled={uploadingDocId === doc.id}
                       >
                         Camera
@@ -779,7 +925,7 @@ export default function BusinessDetailScreen() {
                         size="$2"
                         variant="outline"
                         icon={<FileText size={14} />}
-                        onPress={() => pickDoc(doc.id, false)}
+                        onPress={() => uploadDoc(doc.id, false)}
                         disabled={uploadingDocId === doc.id}
                       >
                         Gallery

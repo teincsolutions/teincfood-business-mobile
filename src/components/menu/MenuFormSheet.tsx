@@ -15,8 +15,8 @@ import {
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
 import type { MenuItem, MenuItemForm, Variant, Extra } from '@/services/menu.service';
+import type { MenuCategory } from '@/types/api';
 import {
-  MENU_CATEGORIES,
   DIETARY_TAGS,
   EMPTY_FORM,
   toMinor,
@@ -33,6 +33,7 @@ interface MenuFormSheetProps {
   extraLabel: string;
   extraPrice: string;
   isFormValid: boolean;
+  categories: MenuCategory[];
   onFormChange: (form: MenuItemForm) => void;
   onVariantLabelChange: (label: string) => void;
   onVariantPriceChange: (price: string) => void;
@@ -71,6 +72,7 @@ export function MenuFormSheet({
   onSave,
   categorySheetOpen,
   onCategorySheetOpenChange,
+  categories,
 }: MenuFormSheetProps) {
   const theme = useTheme();
 
@@ -565,21 +567,21 @@ export function MenuFormSheet({
           </YStack>
           <ScrollView>
             <YStack px="$5" pb="$6" gap="$1">
-              {MENU_CATEGORIES.filter((c) => c !== 'All').map((cat, i, arr) => (
-                <YStack key={cat}>
+              {categories.map((cat, i, arr) => (
+                <YStack key={cat.name}>
                   <XStack
                     py="$4"
                     justifyContent="space-between"
                     alignItems="center"
                     onPress={() => {
-                      updateFormField('category', cat);
+                      updateFormField('category', cat.name);
                       onCategorySheetOpenChange(false);
                     }}
                   >
                     <Text fontSize="$4" fontFamily="$body" fontWeight="600" color="$color">
-                      {cat}
+                      {cat.name}
                     </Text>
-                    {form.category === cat && (
+                    {form.category === cat.name && (
                       <YStack
                         width={20}
                         height={20}

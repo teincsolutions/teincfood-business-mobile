@@ -43,6 +43,9 @@ export interface MenuCategory {
   id: string;
   name: string;
   sort_order: number;
+  is_global: boolean;
+  is_system: boolean;
+  pending_global_request: boolean;
 }
 
 export interface MenuCategoryListResponse {
