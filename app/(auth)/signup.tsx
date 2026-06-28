@@ -6,14 +6,24 @@ import { YStack, Text, ScrollView } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { validation } from "@/utils/validation";
+import { normalizePhoneForCountry } from "@/utils/phone";
 import { useSignupMutation } from "@/services/auth.service";
 import { useRoleStore } from "@/stores/role.store";
+import { useLocationStore } from "@/stores/location.store";
+
+const FIELD_MAP: Record<string, string> = {
+  full_name: "fullName",
+  email: "email",
+  phone: "phone",
+  password: "password",
+};
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { role } = useLocalSearchParams<{ role?: string }>();
   const storedRole = useRoleStore((s) => s.role);
+  const countryCode = useLocationStore((s) => s.currentLocation?.countryCode);
   const selectedRole = (() => {
     const r = storedRole || role;
     return r === "seller" || r === "rider" || r === "fleet_manager"
@@ -29,37 +39,46 @@ export default function SignupScreen() {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateField = (key: string, value: string) => {
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSignup = async () => {
-    setError("");
+    setErrors({});
+
+    const newErrors: Record<string, string> = {};
 
     if (!validation.isNotEmpty(form.fullName)) {
-      setError("Full name is required");
-      return;
+      newErrors.fullName = "Full name is required";
     }
 
     if (!validation.isValid(form.email, validation.email)) {
-      setError(validation.email.message);
-      return;
+      newErrors.email = validation.email.message;
     }
 
     if (form.phone && !validation.isValid(form.phone, validation.phone)) {
-      setError(validation.phone.message);
-      return;
+      newErrors.phone = validation.phone.message;
     }
 
     if (!validation.isValid(form.password, validation.password)) {
-      setError(validation.password.message);
-      return;
+      newErrors.password = validation.password.message;
     }
 
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -70,12 +89,15 @@ export default function SignupScreen() {
         password: form.password,
       };
       if (form.phone.trim()) {
-        payload.phone = form.phone.trim();
+        const normalized = normalizePhoneForCountry(
+          form.phone.trim(),
+          countryCode,
+        );
+        payload.phone = normalized || form.phone.trim();
       }
 
       await signupMutation.mutateAsync(payload);
 
-      // Navigate to email verification
       router.replace({
         pathname: "/(auth)/verification",
         params: {
@@ -85,7 +107,20 @@ export default function SignupScreen() {
         },
       });
     } catch (err: any) {
-      setError(err?.message || "Failed to create account. Please try again.");
+      const apiErrors = err?.response?.data?.error?.details;
+      if (apiErrors && typeof apiErrors === "object") {
+        const mapped: Record<string, string> = {};
+        for (const [field, msgs] of Object.entries(apiErrors)) {
+          const frontendField = FIELD_MAP[field] || field;
+          const msgsArr = Array.isArray(msgs) ? msgs : [msgs];
+          mapped[frontendField] = msgsArr[0];
+        }
+        setErrors(mapped);
+      } else {
+        setErrors({
+          fullName: err?.message || "Failed to create account. Please try again.",
+        });
+      }
     }
   };
 
@@ -109,7 +144,6 @@ export default function SignupScreen() {
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          paddingHorizontal="$4"
           width="100%"
           maxW={"$media.sm"}
           paddingHorizontal={"$8"}
@@ -139,6 +173,7 @@ export default function SignupScreen() {
               placeholder="John Doe"
               value={form.fullName}
               onChangeText={(value) => updateField("fullName", value)}
+              error={errors.fullName}
               required
             />
             <FormInput
@@ -148,6 +183,7 @@ export default function SignupScreen() {
               autoCapitalize="none"
               value={form.email}
               onChangeText={(value) => updateField("email", value)}
+              error={errors.email}
               required
             />
             <FormInput
@@ -156,6 +192,7 @@ export default function SignupScreen() {
               keyboardType="phone-pad"
               value={form.phone}
               onChangeText={(value) => updateField("phone", value)}
+              error={errors.phone}
               required
             />
             <FormInput
@@ -164,6 +201,7 @@ export default function SignupScreen() {
               value={form.password}
               onChangeText={(value) => updateField("password", value)}
               isPassword
+              error={errors.password}
               required
             />
             <FormInput
@@ -172,7 +210,7 @@ export default function SignupScreen() {
               value={form.confirmPassword}
               onChangeText={(value) => updateField("confirmPassword", value)}
               isPassword
-              error={error}
+              error={errors.confirmPassword}
               required
             />
           </YStack>
