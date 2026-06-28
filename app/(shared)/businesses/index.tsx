@@ -28,7 +28,7 @@ export default function BusinessesScreen() {
   const filteredBusinesses = businesses.filter((business) => {
     const matchesSearch =
       business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      business.business_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       business.address?.city?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       filterStatus === "all" ||

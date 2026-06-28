@@ -10,6 +10,8 @@ import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useSecurityStore } from "@/stores/security.store";
+import { useBusinessStore } from "@/stores/business.store";
+import * as businessService from "@/services/business.service";
 import { useResponsive } from "@/utils/responsive";
 
 export default function SplashScreen() {
@@ -154,6 +156,22 @@ export default function SplashScreen() {
             hasShownFailureAlertRef.current = false;
           }
         }
+      }
+
+      // Sync businesses from API (replaces stale mock/persisted data)
+      setStatusMessage("Loading your businesses...");
+      try {
+        const bizRes = await businessService.fetchMyBusinesses();
+        const bizList = bizRes.data || [];
+        if (bizList.length > 0) {
+          const store = useBusinessStore.getState();
+          store.setBusinesses(bizList);
+          if (!store.activeBusiness) {
+            store.setActiveBusiness(bizList[0]);
+          }
+        }
+      } catch {
+        // Fall back to persisted data
       }
 
       // Navigate to role's home

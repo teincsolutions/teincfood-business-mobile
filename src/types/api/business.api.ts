@@ -17,6 +17,7 @@ export interface Business {
   logo_url: string | null;
   cover_image_url: string | null;
   kyc_status: string;
+  rating: number | null;
   inserted_at: string;
   updated_at: string;
 }

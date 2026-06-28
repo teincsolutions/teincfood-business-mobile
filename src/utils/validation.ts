@@ -193,3 +193,22 @@ export function validatePaymentMethod(payment: Record<string, unknown>): Validat
 
   return { valid: errors.length === 0, errors };
 }
+
+// ─── Convenience object for screen-level validation ───
+
+export const validation = {
+  isNotEmpty: (value: string) => value.trim().length > 0,
+  isValid: (value: string, validator: (v: string) => ValidationResult) => validator(value).valid,
+  email: Object.assign(
+    (v: string) => validateEmail(v),
+    { message: "Invalid email format" },
+  ),
+  phone: Object.assign(
+    (v: string) => validatePhone(v),
+    { message: "Invalid phone number format" },
+  ),
+  password: Object.assign(
+    (v: string) => validatePassword(v),
+    { message: "Password must be at least 8 characters" },
+  ),
+};

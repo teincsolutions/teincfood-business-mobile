@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   YStack,
   Text,
@@ -13,7 +13,9 @@ import { Filter, X, Check, Search } from "@tamagui/lucide-icons";
 import { FlatList, Modal, Pressable, RefreshControl, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useSellerOrdersQuery, useAcceptOrderMutation, useRejectOrderMutation, useStartPreparingOrderMutation, useMarkOrderReadyMutation } from "@/hooks/seller.hooks";
+import { useQueryClient } from '@tanstack/react-query';
+import { useSellerOrdersQuery, useAcceptOrderMutation, useRejectOrderMutation, useStartPreparingOrderMutation, useMarkOrderReadyMutation, SELLER_KEYS } from "@/hooks/seller.hooks";
+import { orderEventsService } from "@/services/order-events.service";
 import { useResponsive } from "@/utils/responsive";
 import { formatPriceFromMinor } from "@/utils/currency";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -40,11 +42,25 @@ export default function SellerOrders() {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const queryClient = useQueryClient();
   const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
   const acceptMutation = useAcceptOrderMutation();
   const rejectMutation = useRejectOrderMutation();
   const startPreparingMutation = useStartPreparingOrderMutation();
   const markReadyMutation = useMarkOrderReadyMutation();
+
+  // Real-time order updates via WebSocket
+  useEffect(() => {
+    const unsub = orderEventsService.onOrderUpdates((event) => {
+      // Invalidate orders list
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.orders() });
+      // Invalidate specific order detail if event carries an order_id
+      if (event.order_id) {
+        queryClient.invalidateQueries({ queryKey: SELLER_KEYS.order(event.order_id) });
+      }
+    });
+    return unsub;
+  }, [queryClient]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{

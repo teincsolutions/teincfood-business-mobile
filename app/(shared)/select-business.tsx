@@ -77,7 +77,7 @@ export default function SelectBusinessScreen() {
     >
       <XStack gap="$3" alignItems="center">
         <Avatar circular size="$5">
-          <Avatar.Image src={business.logoUrl} />
+          <Avatar.Image src={business.logo_url} />
           <Avatar.Fallback backgroundColor="$gray800">
             <Text color="white" fontWeight="bold">
               {business.name?.charAt(0) || "B"}
@@ -105,7 +105,7 @@ export default function SelectBusinessScreen() {
           </XStack>
 
           <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-            {business.code}
+            {business.business_number}
           </Text>
 
           <XStack gap="$2" alignItems="center" marginTop="$1">
@@ -118,7 +118,7 @@ export default function SelectBusinessScreen() {
               fontFamily="$body"
             >
               {business.address?.city ||
-                business.address?.fullAddress ||
+                business.address?.full_address ||
                 "No address"}
             </Text>
           </XStack>

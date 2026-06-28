@@ -105,12 +105,12 @@ export default function BusinessDetailScreen() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
     "idle",
   );
-  const [logoUri, setLogoUri] = useState<string | undefined>(business?.logoUrl);
+  const [logoUri, setLogoUri] = useState<string | undefined>(business?.logo_url);
   const [editForm, setEditForm] = useState({
     name: business?.name ?? "",
     type: business?.type ?? "",
     description: business?.description ?? "",
-    address: business?.address?.street ?? "",
+    address: business?.address?.full_address?.split(",")[0]?.trim() ?? "",
     city: business?.address?.city ?? "",
     phone: business?.phone ?? "",
     email: business?.email ?? "",

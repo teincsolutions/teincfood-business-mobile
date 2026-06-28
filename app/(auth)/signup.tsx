@@ -7,13 +7,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { validation } from "@/utils/validation";
 import { useSignupMutation } from "@/services/auth.service";
-import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const setAuth = useAuthStore((state) => state.setAuth);
   const { role } = useLocalSearchParams<{ role?: string }>();
   const storedRole = useRoleStore((s) => s.role);
   const selectedRole = (() => {
@@ -26,7 +24,6 @@ export default function SignupScreen() {
 
   const [form, setForm] = useState({
     fullName: "",
-    username: "",
     email: "",
     phone: "",
     password: "",
@@ -46,17 +43,12 @@ export default function SignupScreen() {
       return;
     }
 
-    if (!validation.isNotEmpty(form.username)) {
-      setError("Username is required");
-      return;
-    }
-
     if (!validation.isValid(form.email, validation.email)) {
       setError(validation.email.message);
       return;
     }
 
-    if (!validation.isValid(form.phone, validation.phone)) {
+    if (form.phone && !validation.isValid(form.phone, validation.phone)) {
       setError(validation.phone.message);
       return;
     }
@@ -72,41 +64,26 @@ export default function SignupScreen() {
     }
 
     try {
-      const response = await signupMutation.mutateAsync({
+      const payload: Record<string, any> = {
         full_name: form.fullName.trim(),
-        username: form.username.trim().toLowerCase(),
         email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
         password: form.password,
-        role: selectedRole,
-      });
-
-      setAuth(
-        {
-          id: response.user.id,
-          fullName: response.user.full_name,
-          email: response.user.email,
-          phone: response.user.phone,
-          username: response.user.username,
-          role: selectedRole,
-          avatarUrl: response.user.avatar_url,
-          serviceStatus: "pending_verification",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        response.access_token,
-        response.refresh_token,
-      );
-
-      if (selectedRole === "seller") {
-        router.replace("/(seller)/");
-      } else if (selectedRole === "rider") {
-        router.replace("/(rider)/");
-      } else if (selectedRole === "fleet_manager") {
-        router.replace("/(fleet)/");
-      } else {
-        router.replace("/(auth)/onboarding");
+      };
+      if (form.phone.trim()) {
+        payload.phone = form.phone.trim();
       }
+
+      await signupMutation.mutateAsync(payload);
+
+      // Navigate to email verification
+      router.replace({
+        pathname: "/(auth)/verification",
+        params: {
+          contactInfo: form.email.trim().toLowerCase(),
+          type: "email_verification",
+          role: selectedRole,
+        },
+      });
     } catch (err: any) {
       setError(err?.message || "Failed to create account. Please try again.");
     }
@@ -159,17 +136,9 @@ export default function SignupScreen() {
           <YStack gap="$4">
             <FormInput
               label="Full Name"
-              placeholder="Eric Mensah"
+              placeholder="John Doe"
               value={form.fullName}
               onChangeText={(value) => updateField("fullName", value)}
-              required
-            />
-            <FormInput
-              label="Username"
-              placeholder="ericm"
-              autoCapitalize="none"
-              value={form.username}
-              onChangeText={(value) => updateField("username", value)}
               required
             />
             <FormInput

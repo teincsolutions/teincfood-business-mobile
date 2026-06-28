@@ -23,7 +23,7 @@ export function useSellerOrdersQuery(enabled = true) {
       return sellerService.fetchSellerOrders();
     },
     enabled: enabled,
-    refetchInterval: 10000,
+    refetchInterval: 60000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     staleTime: 5000,

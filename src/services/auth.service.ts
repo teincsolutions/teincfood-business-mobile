@@ -33,9 +33,9 @@ export interface RegisterResponse {
   status: string;
   message: string;
   user: {
-    id: string;
     email: string;
     full_name: string;
+    has_password: boolean;
     roles: string[];
   };
 }
@@ -52,13 +52,20 @@ export interface AuthApiResponse {
 }
 
 export const authService = {
-  register(payload: RegisterRequest): Promise<AuthApiResponse> {
-    return api.post<AuthApiResponse>('/auth/register', { user: payload });
+  register(payload: RegisterRequest): Promise<RegisterResponse> {
+    return api.post<RegisterResponse>('/auth/register', { user: payload });
   },
 
   verifyEmailOtp(userId: string, code: string): Promise<AuthApiResponse> {
     return api.post<AuthApiResponse>('/auth/verify-email/otp', {
       user_id: userId,
+      code,
+    });
+  },
+
+  verifyEmailOtpByEmail(email: string, code: string): Promise<AuthApiResponse> {
+    return api.post<AuthApiResponse>('/auth/verify-email/otp', {
+      email,
       code,
     });
   },

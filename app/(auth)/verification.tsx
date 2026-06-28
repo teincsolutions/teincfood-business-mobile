@@ -8,6 +8,8 @@ import { OTPInput } from '@/components/ui/OTPInput';
 import {
   useVerifyOtpMutation,
   useRequestOtpMutation,
+  useVerifyEmailOtpByEmailMutation,
+  useResendEmailOtpMutation,
 } from '@/hooks/useAuthVerification';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRoleStore } from '@/stores/role.store';
@@ -28,6 +30,8 @@ export default function VerificationScreen() {
   })();
   const setAuth = useAuthStore((state) => state.setAuth);
 
+  const isEmailVerification = type === 'email_verification';
+
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(RESEND_DELAY_SEC);
@@ -36,8 +40,11 @@ export default function VerificationScreen() {
 
   const verifyOtpMutation = useVerifyOtpMutation();
   const requestOtpMutation = useRequestOtpMutation();
+  const verifyEmailMutation = useVerifyEmailOtpByEmailMutation();
+  const resendEmailMutation = useResendEmailOtpMutation();
 
   const formattedContactInfo = (() => {
+    if (isEmailVerification) return contactInfo;
     const raw = String(contactInfo || '').trim();
     if (!raw.startsWith('+')) return raw;
     const digits = raw.slice(1);
@@ -67,7 +74,9 @@ export default function VerificationScreen() {
       setError('Please enter the full verification code');
       return;
     }
-    if (isVerifying.current || verifyOtpMutation.isPending) return;
+
+    const isPending = isEmailVerification ? verifyEmailMutation.isPending : verifyOtpMutation.isPending;
+    if (isVerifying.current || isPending) return;
     if (lastSubmittedCodeRef.current === otpCode) return;
 
     isVerifying.current = true;
@@ -75,11 +84,13 @@ export default function VerificationScreen() {
     setError('');
 
     try {
-      const resp = await verifyOtpMutation.mutateAsync({
-        phone: contactInfo,
-        code: otpCode,
-        type: type === 'register' ? 'register' : 'login',
-      });
+      const resp = isEmailVerification
+        ? await verifyEmailMutation.mutateAsync({ email: contactInfo, code: otpCode })
+        : await verifyOtpMutation.mutateAsync({
+            phone: contactInfo,
+            code: otpCode,
+            type: type === 'register' ? 'register' : 'login',
+          });
 
       setAuth(
         {
@@ -106,10 +117,14 @@ export default function VerificationScreen() {
     if (timeLeft > 0) return;
     setError('');
     try {
-      await requestOtpMutation.mutateAsync({
-        phone: contactInfo,
-        purpose: type === 'register' ? 'register' : 'login',
-      });
+      if (isEmailVerification) {
+        await resendEmailMutation.mutateAsync(contactInfo);
+      } else {
+        await requestOtpMutation.mutateAsync({
+          phone: contactInfo,
+          purpose: type === 'register' ? 'register' : 'login',
+        });
+      }
       setTimeLeft(RESEND_DELAY_SEC);
     } catch (err: any) {
       setError('Failed to resend. Try later.');
@@ -136,7 +151,7 @@ export default function VerificationScreen() {
               Verification
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" mt="$2" lineHeight={22} ta="center">
-              We have sent a code to your phone
+              We have sent a code to your {isEmailVerification ? 'email' : 'phone'}
             </Text>
             <Text fontSize="$4" fontWeight="600" color="$color" fontFamily="$body" mt="$3">
               {formattedContactInfo}
@@ -157,7 +172,7 @@ export default function VerificationScreen() {
           ) : null}
 
           <YStack mt="$10">
-            <Button variant="primary" loading={verifyOtpMutation.isPending || requestOtpMutation.isPending} onPress={() => handleVerify()}>
+            <Button variant="primary" loading={verifyEmailMutation.isPending || verifyOtpMutation.isPending || requestOtpMutation.isPending} onPress={() => handleVerify()}>
               VERIFY
             </Button>
           </YStack>

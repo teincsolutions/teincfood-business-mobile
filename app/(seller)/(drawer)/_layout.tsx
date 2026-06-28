@@ -37,6 +37,7 @@ import {
   DrawerItemList,
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
+import { useEventsConnection } from "@/hooks/useEventsConnection";
 
 /**
  * Custom Drawer Content
@@ -316,6 +317,8 @@ export default function SellerDrawerLayout() {
   const { isTablet, isLandscape } = useResponsive();
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+
+  useEventsConnection();
 
   const handleProtectedRoute = (e: any) => {
     if (!isAuthenticated) {

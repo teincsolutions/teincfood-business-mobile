@@ -92,20 +92,9 @@ export interface UpdateBusinessRequest {
   status?: BusinessStatus;
 }
 
-export interface BusinessSummary {
-  id: string;
-  code: string;
-  name: string;
-  type: BusinessType;
-  logoUrl?: string;
-  address: {
-    city: string;
-    fullAddress: string;
-  };
-  status: BusinessStatus;
-  isDefault: boolean;
-  pendingOrders: number;
-  todayOrders: number;
-  todayRevenue: number;
-  rating: number;
+import type { Business as ApiBusiness } from '@/types/api';
+
+export interface BusinessSummary extends ApiBusiness {
+  address?: { city: string; full_address: string; };
+  isDefault?: boolean;
 }

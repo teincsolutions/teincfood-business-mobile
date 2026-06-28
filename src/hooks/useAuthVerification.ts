@@ -9,6 +9,13 @@ export function useVerifyEmailOtpMutation() {
   });
 }
 
+export function useVerifyEmailOtpByEmailMutation() {
+  return useMutation({
+    mutationFn: ({ email, code }: { email: string; code: string }) =>
+      authService.verifyEmailOtpByEmail(email, code),
+  });
+}
+
 export function useResendEmailOtpMutation() {
   return useMutation({
     mutationFn: (email: string) => authService.resendEmailOtp(email),
