@@ -30,6 +30,7 @@ export default function SellerMenu() {
 
   // TanStack Query hooks
   const { data: items = [] } = useMenuItemsQuery();
+  const filtered = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
   const { data: categoriesRes } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuItemMutation();
   const updateMutation = useUpdateMenuItemMutation();
@@ -58,11 +59,6 @@ export default function SellerMenu() {
 
   // Category picker in form
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
-
-  const filtered =
-    activeCategory === "All"
-      ? items
-      : items.filter((i) => i.category === activeCategory);
 
   // ─── Open add sheet ────────────────────────────────────────────
   const openAdd = () => {

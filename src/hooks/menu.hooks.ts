@@ -25,13 +25,13 @@ export function useMenuItemsQuery(enabled = true) {
   const businessId = useBusinessId();
   return useQuery({
     queryKey: MENU_KEYS.items(businessId),
-    queryFn: () => {
-      if (businessId) {
-        return menuService.fetchBusinessMenuItems(businessId);
-      }
-      return menuService.fetchMenuItems();
+    queryFn: async (): Promise<MenuItem[]> => {
+      const res = businessId
+        ? await menuService.fetchBusinessMenuItems(businessId)
+        : await menuService.fetchMenuItems();
+      return res.data;
     },
-    enabled,
+    enabled: enabled && !!businessId,
   });
 }
 
