@@ -1,31 +1,53 @@
 import type { PaginationMeta } from './pagination';
 
-// ─── Menu Item ───
+// ─── Money object used by serializer ───
 
-export interface MenuItemVariant {
-  id: string;
-  label: string;
-  price_minor: number;
+export interface Money {
+  amount: number;
+  currency: string;
 }
 
-export interface MenuItemAddon {
+// ─── Response types — matches MenuSerializer.serialize_menu_item/1 ───
+
+export interface MenuItemVariantResponse {
   id: string;
-  label: string;
-  price_minor: number;
+  name: string;
+  price: Money;
+}
+
+export interface MenuItemAddonResponse {
+  id: string;
+  name: string;
+  pricingType: string;
+  amountMinor: number;
+  currencyCode: string;
+}
+
+export interface MenuItemCategory {
+  id: string;
+  name: string;
+}
+
+export interface MenuItemBusiness {
+  id: string;
+  name: string;
+  distance?: number;
+  is_open?: boolean;
 }
 
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
-  price_minor: number;
-  category: string;
-  is_available: boolean;
-  dietary_tags: string[];
-  variants: MenuItemVariant[];
-  addons: MenuItemAddon[];
+  basePrice: Money;
   image_url: string | null;
+  is_available: boolean;
+  category_id: string;
   business_id: string;
+  category: MenuItemCategory | null;
+  variants: MenuItemVariantResponse[];
+  extras: MenuItemAddonResponse[];
+  business?: MenuItemBusiness;
   inserted_at: string;
   updated_at: string;
 }
@@ -37,6 +59,20 @@ export interface MenuItemResponse {
 export interface MenuItemListResponse {
   data: MenuItem[];
   pagination: PaginationMeta;
+}
+
+// ─── Request types for create/update ───
+
+export interface MenuItemVariant {
+  id: string;
+  label: string;
+  price_minor: number;
+}
+
+export interface MenuItemAddon {
+  id: string;
+  label: string;
+  price_minor: number;
 }
 
 export interface MenuCategory {

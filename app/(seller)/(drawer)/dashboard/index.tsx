@@ -43,8 +43,7 @@ export default function SellerDashboard() {
   // TanStack Query hooks
   const { data, isLoading, refetch } = useSellerDashboardQuery(activeBusinessId, hasBusiness);
 
-  // Use query data or fallback to defaults
-  const metrics = data ?? {
+  const metrics = data?.metrics ?? {
     today_orders: 0,
     today_revenue_minor: 0,
     pending_orders: 0,

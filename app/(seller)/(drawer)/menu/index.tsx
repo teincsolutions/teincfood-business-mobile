@@ -29,7 +29,8 @@ export default function SellerMenu() {
   const theme = useTheme();
 
   // TanStack Query hooks
-  const { data: items = [] } = useMenuItemsQuery();
+  const { data } = useMenuItemsQuery();
+  const items = Array.isArray(data) ? data : [];
   const filtered = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
   const { data: categoriesRes } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuItemMutation();
