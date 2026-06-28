@@ -415,7 +415,7 @@ export default function DeliverySettings() {
 
             {/* Footer Save */}
             <Form.Trigger asChild>
-              <Button variant="primary" width="100%" loading={isSaving}>
+              <Button variant="primary" width="100%" loading={saveMutation.isPending}>
                 Save Changes
               </Button>
             </Form.Trigger>
