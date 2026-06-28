@@ -1,29 +1,46 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { KeyboardAvoidingView, Platform } from "react-native";
-import { YStack, Text, ScrollView } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Input as TamaguiInput,
+  Image,
+  useTheme,
+  Sheet,
+  Separator,
+  ScrollView,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ChevronDown, Check, Apple, Facebook } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validation } from "@/utils/validation";
-import { normalizePhoneForCountry } from "@/utils/phone";
-import { useSignupMutation } from "@/services/auth.service";
+import { validateEmail, validatePassword } from "@/utils/validation";
+import {
+  PHONE_COUNTRIES,
+  getDialCodeFromCountry,
+  getCountryOption,
+  normalizePhoneForCountry,
+} from "@/utils/phone";
+import { authService, useSignupMutation } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useLocationStore } from "@/stores/location.store";
+import { useOnboardingStore } from "@/stores/onboarding.store";
 
-const FIELD_MAP: Record<string, string> = {
-  full_name: "fullName",
-  email: "email",
-  phone: "phone",
-  password: "password",
-};
+type SignupMethod = "phone" | "email";
 
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const { role } = useLocalSearchParams<{ role?: string }>();
   const storedRole = useRoleStore((s) => s.role);
-  const countryCode = useLocationStore((s) => s.currentLocation?.countryCode);
+  const hasLocation = useLocationStore((s) => s.hasLocation());
+  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const hasSeenOnboarding = useOnboardingStore((s) => s.hasSeenOnboarding);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const selectedRole = (() => {
     const r = storedRole || role;
     return r === "seller" || r === "rider" || r === "fleet_manager"
@@ -32,95 +49,171 @@ export default function SignupScreen() {
   })();
   const signupMutation = useSignupMutation();
 
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [method, setMethod] = useState<SignupMethod>("phone");
 
-  const updateField = (key: string, value: string) => {
-    if (errors[key]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-    setForm((prev) => ({ ...prev, [key]: value }));
+  // Phone method
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  // Email method
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [selectedCountryIso, setSelectedCountryIso] = useState(
+    currentLocation?.countryCode?.toUpperCase() || "GH",
+  );
+  const [countrySheetOpen, setCountrySheetOpen] = useState(false);
+
+  const phoneDialCode = getDialCodeFromCountry(selectedCountryIso) || "+233";
+  const selectedCountry = getCountryOption(selectedCountryIso);
+
+  useEffect(() => {
+    if (!currentLocation?.countryCode) return;
+    setSelectedCountryIso(currentLocation.countryCode.toUpperCase());
+  }, [currentLocation?.countryCode]);
+
+  const clearError = (field: string) => {
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
-  const handleSignup = async () => {
-    setErrors({});
+  // Phone OTP flow: send code → verify → create user → complete profile
+  const handleSendCode = async () => {
+    setError("");
+    setPhoneError("");
 
-    const newErrors: Record<string, string> = {};
-
-    if (!validation.isNotEmpty(form.fullName)) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!validation.isValid(form.email, validation.email)) {
-      newErrors.email = validation.email.message;
-    }
-
-    if (form.phone && !validation.isValid(form.phone, validation.phone)) {
-      newErrors.phone = validation.phone.message;
-    }
-
-    if (!validation.isValid(form.password, validation.password)) {
-      newErrors.password = validation.password.message;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 8) {
+      setPhoneError("Enter a valid phone number");
       return;
     }
 
-    try {
-      const payload: Record<string, any> = {
-        full_name: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-      };
-      if (form.phone.trim()) {
-        const normalized = normalizePhoneForCountry(
-          form.phone.trim(),
-          countryCode,
-        );
-        payload.phone = normalized || form.phone.trim();
-      }
+    const normalized = normalizePhoneForCountry(digits, selectedCountryIso);
+    if (!normalized) {
+      setPhoneError("Could not format phone number");
+      return;
+    }
 
-      await signupMutation.mutateAsync(payload);
+    setIsLoading(true);
+    try {
+      await authService.sendOTP(normalized, "register");
+      router.push({
+        pathname: "/(auth)/verification",
+        params: { contactInfo: normalized, type: "register", role: selectedRole },
+      });
+    } catch (err: any) {
+      setError(err?.message || "Failed to send code. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Email signup: register → verify email → auth → dashboard
+  const handleEmailSignup = async () => {
+    setError("");
+    setFormErrors({});
+
+    let hasError = false;
+    const newErrors: Record<string, string> = {};
+
+    if (!fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+      hasError = true;
+    }
+
+    const emailResult = validateEmail(email);
+    if (!emailResult.valid) {
+      newErrors.email = emailResult.errors[0];
+      hasError = true;
+    }
+
+    const passwordResult = validatePassword(password);
+    if (!passwordResult.valid) {
+      newErrors.password = passwordResult.errors[0];
+      hasError = true;
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFormErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signupMutation.mutateAsync({
+        full_name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
       router.replace({
         pathname: "/(auth)/verification",
         params: {
-          contactInfo: form.email.trim().toLowerCase(),
+          contactInfo: email.trim().toLowerCase(),
           type: "email_verification",
           role: selectedRole,
         },
       });
     } catch (err: any) {
-      const apiErrors = err?.response?.data?.error?.details;
-      if (apiErrors && typeof apiErrors === "object") {
-        const mapped: Record<string, string> = {};
-        for (const [field, msgs] of Object.entries(apiErrors)) {
-          const frontendField = FIELD_MAP[field] || field;
-          const msgsArr = Array.isArray(msgs) ? msgs : [msgs];
-          mapped[frontendField] = msgsArr[0];
+      const details = err?.response?.data?.error?.details;
+      if (details && typeof details === "object") {
+        const mapped: Record<string, string> = { full_name: "fullName" };
+        for (const [field, msgs] of Object.entries(details)) {
+          const f = mapped[field] || field;
+          const arr = Array.isArray(msgs) ? msgs : [msgs];
+          newErrors[f] = arr[0];
         }
-        setErrors(mapped);
+        setFormErrors(newErrors);
       } else {
-        setErrors({
-          fullName: err?.message || "Failed to create account. Please try again.",
-        });
+        setError(err?.message || "Failed to create account. Try again.");
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const goPostAuth = () => {
+    if (selectedRole === "seller") router.replace("/(seller)/");
+    else if (selectedRole === "rider") router.replace("/(rider)/");
+    else if (selectedRole === "fleet_manager") router.replace("/(fleet)/");
+  };
+
+  const handleOIDCLogin = async (provider: string) => {
+    try {
+      if (!hasLocation || !currentLocation?.countryCode) {
+        router.replace(
+          hasSeenOnboarding
+            ? "/(auth)/onboarding?requireLocation=1"
+            : "/(auth)/onboarding",
+        );
+        return;
+      }
+      setError("");
+
+      let response: Awaited<ReturnType<typeof authService.loginWithGoogle>>;
+      if (provider === "google") response = await authService.loginWithGoogle();
+      else if (provider === "apple") response = await authService.loginWithApple();
+      else if (provider === "facebook") response = await authService.loginWithFacebook();
+      else throw new Error(`Unknown provider: ${provider}`);
+
+      setAuth(response.user, response.access_token, response.refresh_token);
+      goPostAuth();
+    } catch {
+      setError(`Failed to sign in with ${provider}`);
     }
   };
 
@@ -149,119 +242,198 @@ export default function SignupScreen() {
           paddingHorizontal={"$8"}
         >
           <YStack mb="$7" gap="$3">
-            <Text
-              fontSize={30}
-              fontWeight="800"
-              fontFamily="$heading"
-              color="$color"
-            >
+            <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
               Create Account
             </Text>
-            <Text
-              fontSize="$4"
-              color="$colorSecondary"
-              fontFamily="$body"
-              lineHeight={22}
-            >
-              Sign up with email and password.
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
+              {method === "phone"
+                ? "Verify your phone to create an account instantly."
+                : "Sign up with email and password."}
             </Text>
           </YStack>
 
-          <YStack gap="$4">
-            <FormInput
-              label="Full Name"
-              placeholder="John Doe"
-              value={form.fullName}
-              onChangeText={(value) => updateField("fullName", value)}
-              error={errors.fullName}
-              required
-            />
-            <FormInput
-              label="Email"
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={form.email}
-              onChangeText={(value) => updateField("email", value)}
-              error={errors.email}
-              required
-            />
-            <FormInput
-              label="Phone Number"
-              placeholder="+233 24 000 0000"
-              keyboardType="phone-pad"
-              value={form.phone}
-              onChangeText={(value) => updateField("phone", value)}
-              error={errors.phone}
-              required
-            />
-            <FormInput
-              label="Password"
-              placeholder="Create password"
-              value={form.password}
-              onChangeText={(value) => updateField("password", value)}
-              isPassword
-              error={errors.password}
-              required
-            />
-            <FormInput
-              label="Confirm Password"
-              placeholder="Re-enter password"
-              value={form.confirmPassword}
-              onChangeText={(value) => updateField("confirmPassword", value)}
-              isPassword
-              error={errors.confirmPassword}
-              required
-            />
-          </YStack>
+          <XStack gap="$3" mb="$5">
+            <Button
+              flex={1}
+              width="auto"
+              variant={method === "phone" ? "primary" : "outline"}
+              height={46}
+              onPress={() => { setMethod("phone"); setError(""); setFormErrors({}); }}
+            >
+              PHONE OTP
+            </Button>
+            <Button
+              flex={1}
+              width="auto"
+              variant={method === "email" ? "primary" : "outline"}
+              height={46}
+              onPress={() => { setMethod("email"); setError(""); setFormErrors({}); }}
+            >
+              EMAIL SIGNUP
+            </Button>
+          </XStack>
+
+          {method === "phone" ? (
+            <YStack gap="$4">
+              <YStack gap="$2">
+                <XStack gap="$2" ai="center">
+                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body" textTransform="uppercase" letterSpacing={0.5}>
+                    Phone Number
+                  </Text>
+                  <Text color="$error"> *</Text>
+                </XStack>
+                <XStack gap="$2" items="center">
+                  <YStack
+                    width={88} height={60} borderRadius="$3"
+                    backgroundColor="$backgroundSoft"
+                    borderWidth={1} borderColor={phoneError ? "$error" : "$borderColor"}
+                    justifyContent="center" alignItems="center"
+                    pressStyle={{ opacity: 0.85 }}
+                    onPress={() => setCountrySheetOpen(true)}
+                  >
+                    <XStack items="center" gap="$1">
+                      <Text fontSize="$5" fontWeight="700" color="$color" fontFamily="$body">{phoneDialCode}</Text>
+                      <ChevronDown size={14} color="$colorSecondary" />
+                    </XStack>
+                  </YStack>
+                  <TamaguiInput
+                    flex={1} height={60} borderWidth={0} borderRadius="$3"
+                    backgroundColor="$backgroundSoft" color="$color"
+                    fontFamily="$body" fontSize="$4"
+                    keyboardType="phone-pad" placeholder="24 000 0000"
+                    placeholderTextColor={theme.colorPlaceholder?.val as string}
+                    value={phone}
+                    onChangeText={(v) => { setPhone(v); setPhoneError(""); }}
+                    focusStyle={{ borderWidth: 1, borderColor: "$primary", backgroundColor: "$background" }}
+                  />
+                </XStack>
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  {selectedCountry?.name || "Selected country"} ({selectedCountryIso})
+                </Text>
+                {phoneError ? <Text fontSize="$2" color="$error" fontFamily="$body">{phoneError}</Text> : null}
+              </YStack>
+              {error ? <Text fontSize="$2" color="$error" fontFamily="$body">{error}</Text> : null}
+            </YStack>
+          ) : (
+            <YStack gap="$4">
+              <FormInput
+                label="Full Name"
+                placeholder="John Doe"
+                value={fullName}
+                onChangeText={(v) => { setFullName(v); clearError("fullName"); }}
+                error={formErrors.fullName}
+                required
+              />
+              <FormInput
+                label="Email"
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={(v) => { setEmail(v); clearError("email"); }}
+                error={formErrors.email}
+                required
+              />
+              <FormInput
+                label="Password"
+                placeholder="Create password"
+                value={password}
+                onChangeText={(v) => { setPassword(v); clearError("password"); }}
+                isPassword
+                error={formErrors.password}
+                required
+              />
+              <FormInput
+                label="Confirm Password"
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChangeText={(v) => { setConfirmPassword(v); clearError("confirmPassword"); }}
+                isPassword
+                error={formErrors.confirmPassword}
+                required
+              />
+              {error ? <Text fontSize="$2" color="$error" fontFamily="$body">{error}</Text> : null}
+            </YStack>
+          )}
 
           <YStack mt="$7" gap="$4">
             <Button
               variant="primary"
               width="100%"
-              loading={signupMutation.isPending}
-              onPress={handleSignup}
+              loading={isLoading}
+              onPress={method === "phone" ? handleSendCode : handleEmailSignup}
             >
-              CREATE ACCOUNT
+              {method === "phone" ? "SEND CODE" : "CREATE ACCOUNT"}
             </Button>
+
+            <Text ta="center" color="$colorSecondary" fontFamily="$body">
+              Or continue with
+            </Text>
+
+            <XStack jc="center" items="center" gap="$4">
+              <Button
+                variant="social"
+                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
+                icon={<Facebook size={24} color="#1877F2" />}
+                onPress={() => handleOIDCLogin("facebook")}
+              />
+              <Button
+                variant="social"
+                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
+                icon={<Apple size={24} color="$color" />}
+                onPress={() => handleOIDCLogin("apple")}
+              />
+              <Button
+                variant="social"
+                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
+                icon={<Image objectFit="contain" height={24} src={require("assets/icons/icons8-google-100.png")} />}
+                onPress={() => handleOIDCLogin("google")}
+              />
+            </XStack>
 
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?
             </Text>
-            <Button
-              variant="outline"
-              width="100%"
-              onPress={() =>
-                router.push({
-                  pathname: "/(auth)/login",
-                  params: { role: selectedRole },
-                })
-              }
-            >
+            <Button variant="outline" width="100%" onPress={() => router.push({ pathname: "/(auth)/login", params: { role: selectedRole } })}>
               LOG IN
             </Button>
-            <Button
-              variant="ghost"
-              height={40}
-              onPress={() => router.push({ pathname: "/(auth)/role" })}
-            >
-              <Text
-                fontSize="$3"
-                color="$primary"
-                fontWeight="600"
-                fontFamily="$body"
-              >
-                Signing up as{" "}
-                {selectedRole === "seller"
-                  ? "Seller"
-                  : selectedRole === "rider"
-                    ? "Rider"
-                    : "Fleet Manager"}{" "}
-                · Switch Role
+            <Button variant="ghost" height={40} onPress={() => router.push({ pathname: "/(auth)/role" })}>
+              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+                Signing up as {selectedRole === "seller" ? "Seller" : selectedRole === "rider" ? "Rider" : "Fleet Manager"} · Switch Role
               </Text>
             </Button>
           </YStack>
         </ScrollView>
+
+        <Sheet modal open={countrySheetOpen} onOpenChange={setCountrySheetOpen} snapPoints={[75]} dismissOnSnapToBottom zIndex={100_000}>
+          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.6)" />
+          <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$8" borderTopRightRadius="$8">
+            <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
+            <YStack px="$5" pt="$3" pb="$4">
+              <Text fontSize="$6" fontWeight="800" color="$color" fontFamily="$heading">Select Country Code</Text>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" mt="$1">Choose a country for your phone number.</Text>
+            </YStack>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <YStack px="$5" pb="$6">
+                {PHONE_COUNTRIES.map((country, index) => (
+                  <YStack key={country.iso}>
+                    <XStack items="center" jc="space-between" py="$4" onPress={() => { setSelectedCountryIso(country.iso); setCountrySheetOpen(false); }}>
+                      <YStack>
+                        <Text fontSize="$4" fontWeight="700" color="$color" fontFamily="$body">{country.name}</Text>
+                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">{country.iso}</Text>
+                      </YStack>
+                      <XStack items="center" gap="$2">
+                        <Text fontSize="$4" color="$color" fontFamily="$body">{country.dialCode}</Text>
+                        {selectedCountryIso === country.iso ? <Check size={16} color="$primary" /> : null}
+                      </XStack>
+                    </XStack>
+                    {index < PHONE_COUNTRIES.length - 1 ? <Separator borderColor="$borderColor" /> : null}
+                  </YStack>
+                ))}
+              </YStack>
+            </ScrollView>
+          </Sheet.Frame>
+        </Sheet>
       </YStack>
     </KeyboardAvoidingView>
   );

@@ -176,19 +176,28 @@ export default function LoginScreen() {
 
   const handleOIDCLogin = async (provider: string) => {
     try {
+      if (!hasLocation || !currentLocation?.countryCode) {
+        router.replace(
+          hasSeenOnboarding
+            ? "/(auth)/onboarding?requireLocation=1"
+            : "/(auth)/onboarding",
+        );
+        return;
+      }
       setError("");
-      const response = await authService.loginWithOIDC(provider);
-      setAuth(
-        {
-          ...response.user,
-          fullName: response.user.full_name || response.user.fullName,
-          role: selectedRole,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        response.access_token,
-        response.refresh_token,
-      );
+
+      let response: Awaited<ReturnType<typeof authService.loginWithGoogle>>;
+      if (provider === "google") {
+        response = await authService.loginWithGoogle();
+      } else if (provider === "apple") {
+        response = await authService.loginWithApple();
+      } else if (provider === "facebook") {
+        response = await authService.loginWithFacebook();
+      } else {
+        throw new Error(`Unknown provider: ${provider}`);
+      }
+
+      setAuth(response.user, response.access_token, response.refresh_token);
       goPostAuth();
     } catch {
       setError(`Failed to sign in with ${provider}`);

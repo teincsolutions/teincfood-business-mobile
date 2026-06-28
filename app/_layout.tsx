@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +28,7 @@ import { useRoleStore } from '../src/stores/role.store';
 import { useSecurityStore } from '../src/stores/security.store';
 import { BiometricLockOverlay } from '../src/components/security/BiometricLockOverlay';
 import { LocationGuard } from '../src/components/LocationGuard';
+import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
@@ -105,8 +107,8 @@ function AppShell() {
   return (
     <SafeAreaProvider>
       <Toaster position="top-center" />
-      <QueryProvider>
-        <LocationGuard>
+      <BusinessesSync />
+      <LocationGuard>
           <YStack flex={1}>
             <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
             <Stack
@@ -148,17 +150,26 @@ function AppShell() {
             )}
           </YStack>
         </LocationGuard>
-      </QueryProvider>
     </SafeAreaProvider>
   );
+}
+
+/** Mounted at root to sync React Query business data into Zustand store */
+function BusinessesSync() {
+  useBusinessesQuery();
+  return null;
 }
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <AppShell />
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <BottomSheetModalProvider>
+            <AppShell />
+          </BottomSheetModalProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </GestureHandlerRootView>
   );
 }

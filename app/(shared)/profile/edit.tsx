@@ -12,6 +12,8 @@ import {
   User,
   Mail,
   Phone,
+  ChevronRight,
+  Shield,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/useProfile";
@@ -26,10 +28,11 @@ export default function EditProfile() {
   const updateProfileMutation = useUpdateProfileMutation();
 
   const [fullName, setFullName] = useState(profile?.full_name || user?.fullName || "");
-  const [email, setEmail] = useState(profile?.email || user?.email || "");
-  const [phone, setPhone] = useState(profile?.phone || user?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const displayEmail = profile?.email || user?.email || "";
+  const displayPhone = profile?.phone || user?.phone || "";
 
   const requestPermissions = async (useCamera: boolean) => {
     if (useCamera) {
@@ -105,13 +108,10 @@ export default function EditProfile() {
     try {
       await updateProfileMutation.mutateAsync({
         full_name: fullName.trim(),
-        phone: phone.trim(),
       });
 
       updateUser({
         fullName: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
       });
 
       Alert.alert("Success", "Profile updated successfully", [
@@ -183,7 +183,7 @@ export default function EditProfile() {
 
           {/* Personal Information */}
           <Card padding="$4" bordered>
-            <YStack gap="$4">
+            <YStack gap="$3">
               <Text fontWeight="bold" fontSize="$5">
                 Personal Information
               </Text>
@@ -197,22 +197,54 @@ export default function EditProfile() {
                 required
               />
 
-              <FormInput
-                label="Email Address"
-                placeholder="your@email.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+              <XStack
+                alignItems="center" gap="$3" paddingVertical="$2"
+                onPress={() => router.push("/(shared)/profile/security")}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                  <Mail size={20} color="$primary" />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Email Address</Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">{displayEmail || "Not set"}</Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorSecondary" />
+              </XStack>
 
-              <FormInput
-                label="Phone Number"
-                placeholder="+233 XX XXX XXXX"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-              />
+              <Separator />
+
+              <XStack
+                alignItems="center" gap="$3" paddingVertical="$2"
+                onPress={() => router.push("/(shared)/profile/security")}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                  <Phone size={20} color="$primary" />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Phone Number</Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">{displayPhone || "Not set"}</Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorSecondary" />
+              </XStack>
+
+              <Separator />
+
+              <XStack
+                alignItems="center" gap="$3" paddingVertical="$2"
+                onPress={() => router.push("/(shared)/profile/security")}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                  <Shield size={20} color="$primary" />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Password</Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">Manage security settings</Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorSecondary" />
+              </XStack>
             </YStack>
           </Card>
 

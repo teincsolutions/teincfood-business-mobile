@@ -10,7 +10,8 @@ import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useSecurityStore } from "@/stores/security.store";
-import { useBusinessStore } from "@/stores/business.store";
+import { queryClient } from "@/providers/QueryProvider";
+import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
 import { useResponsive } from "@/utils/responsive";
 
@@ -158,21 +159,16 @@ export default function SplashScreen() {
         }
       }
 
-      // Sync businesses from API (replaces stale mock/persisted data)
+      // Prefetch businesses — reads from persisted cache instantly, refetches in background
       setStatusMessage("Loading your businesses...");
-      try {
-        const bizRes = await businessService.fetchMyBusinesses();
-        const bizList = bizRes.data || [];
-        if (bizList.length > 0) {
-          const store = useBusinessStore.getState();
-          store.setBusinesses(bizList);
-          if (!store.activeBusiness) {
-            store.setActiveBusiness(bizList[0]);
-          }
-        }
-      } catch {
-        // Fall back to persisted data
-      }
+      queryClient.prefetchQuery({
+        queryKey: BUSINESSES_QUERY_KEY,
+        queryFn: async () => {
+          const res = await businessService.fetchMyBusinesses();
+          return res.data || [];
+        },
+        staleTime: 1000 * 60 * 5,
+      });
 
       // Navigate to role's home
       if (persistedRole === "seller") setRedirectTarget("/(seller)/");

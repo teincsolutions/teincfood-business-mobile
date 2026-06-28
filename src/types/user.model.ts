@@ -8,6 +8,8 @@ export interface User {
   email: string;
   phone: string;
   avatarUrl?: string;
+  email_verified_at?: string | null;
+  phone_verified_at?: string | null;
   role: UserRole;
   // Rider-specific fields
   vehicleType?: 'bicycle' | 'motorcycle' | 'car';

@@ -95,12 +95,22 @@ export default function SharedProfile() {
                 <Text fontSize="$5" fontWeight="bold" color="$color">
                   {displayName}
                 </Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  {displayEmail}
-                </Text>
-                <Text color="$colorMuted" fontSize="$3">
-                  {displayPhone}
-                </Text>
+                <XStack gap="$2" alignItems="center">
+                  <Text color="$colorMuted" fontSize="$3">{displayEmail}</Text>
+                  {profile?.email_verified_at ? (
+                    <XStack px="$1.5" py="$0.5" borderRadius="$2" backgroundColor="$successMuted">
+                      <Text fontSize="$1" color="$success" fontWeight="600" fontFamily="$body">Verified</Text>
+                    </XStack>
+                  ) : null}
+                </XStack>
+                <XStack gap="$2" alignItems="center">
+                  <Text color="$colorMuted" fontSize="$3">{displayPhone}</Text>
+                  {profile?.phone_verified_at ? (
+                    <XStack px="$1.5" py="$0.5" borderRadius="$2" backgroundColor="$successMuted">
+                      <Text fontSize="$1" color="$success" fontWeight="600" fontFamily="$body">Verified</Text>
+                    </XStack>
+                  ) : null}
+                </XStack>
               </YStack>
             </XStack>
           </Card>

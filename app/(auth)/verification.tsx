@@ -59,6 +59,11 @@ export default function VerificationScreen() {
   }, [timeLeft]);
 
   const routeToRole = () => {
+    // Phone registration — user needs to complete profile first
+    if (type === 'register') {
+      router.replace('/(auth)/complete-profile');
+      return;
+    }
     if (selectedRole === 'seller') {
       router.replace('/(seller)/');
     } else if (selectedRole === 'rider') {

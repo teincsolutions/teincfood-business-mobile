@@ -1,5 +1,8 @@
 import React from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { mmkvStorage } from "@/utils/storage";
 
 /**
  * Shared QueryClient instance with sensible defaults for mobile.
@@ -8,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
  * - gcTime: 30 min — keeps unused cache longer for offline scenarios
  * - retry: 2 — retries failed requests twice before surfacing error
  */
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
@@ -22,12 +25,28 @@ const queryClient = new QueryClient({
   },
 });
 
+const mmkvPersister = createSyncStoragePersister({
+  storage: {
+    getItem: (key: string) => mmkvStorage.getString(key) ?? null,
+    setItem: (key: string, value: string) => mmkvStorage.set(key, value),
+    removeItem: (key: string) => mmkvStorage.delete(key),
+  },
+});
+
 interface QueryProviderProps {
   children: React.ReactNode;
 }
 
 export function QueryProvider({ children }: QueryProviderProps) {
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: mmkvPersister,
+        maxAge: 1000 * 60 * 60 * 24, // 24h
+      }}
+    >
+      {children}
+    </PersistQueryClientProvider>
   );
 }

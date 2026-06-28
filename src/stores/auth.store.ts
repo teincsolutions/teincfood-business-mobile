@@ -3,8 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@/types/user.model';
 import { zustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { queryClient } from '@/providers/QueryProvider';
 import { useRoleStore } from './role.store';
 import { useLocationStore } from './location.store';
+import { useBusinessStore } from './business.store';
 
 interface AuthState {
   user: User | null;
@@ -52,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         useRoleStore.getState().clearRole();
         useLocationStore.getState().clearLocation();
+        useBusinessStore.getState().clearBusinesses();
+        queryClient.clear();
         set({ user: null, accessToken: null, refreshToken: null });
       },
 
