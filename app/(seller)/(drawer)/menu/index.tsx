@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
@@ -152,43 +152,33 @@ export default function SellerMenu() {
     }));
   };
 
-  const addVariant = () => {
-    if (!variantLabel.trim() || !variantPrice.trim()) return;
+  const addVariant = useCallback(() => {
+    const label = variantLabel.trim();
+    const price = variantPrice.trim();
+    if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      variants: [
-        ...f.variants,
-        {
-          id: Date.now().toString(),
-          label: variantLabel.trim(),
-          priceMinor: toMinor(variantPrice),
-        },
-      ],
+      variants: [...f.variants, { id: Date.now().toString(), label, price_minor: toMinor(price) }],
     }));
     setVariantLabel("");
     setVariantPrice("");
-  };
+  }, [variantLabel, variantPrice]);
 
   const removeVariant = (id: string) => {
     setForm((f) => ({ ...f, variants: f.variants.filter((v) => v.id !== id) }));
   };
 
-  const addExtra = () => {
-    if (!extraLabel.trim() || !extraPrice.trim()) return;
+  const addExtra = useCallback(() => {
+    const label = extraLabel.trim();
+    const price = extraPrice.trim();
+    if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      extras: [
-        ...f.extras,
-        {
-          id: Date.now().toString(),
-          label: extraLabel.trim(),
-          priceMinor: toMinor(extraPrice),
-        },
-      ],
+      extras: [...f.extras, { id: Date.now().toString(), label, price_minor: toMinor(price) }],
     }));
     setExtraLabel("");
     setExtraPrice("");
-  };
+  }, [extraLabel, extraPrice]);
 
   const removeExtra = (id: string) => {
     setForm((f) => ({ ...f, extras: f.extras.filter((e) => e.id !== id) }));

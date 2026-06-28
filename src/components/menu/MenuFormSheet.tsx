@@ -399,7 +399,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {v.label} — {formatPrice(v.priceMinor / 100)}
+                          {v.label} — {formatPrice(v.price_minor / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveVariant(v.id)}>
@@ -410,31 +410,17 @@ export function MenuFormSheet({
 
                   <XStack gap="$2" alignItems="flex-end">
                     <YStack flex={1}>
-                      <TamaguiInput
-                        height={50}
-                        borderWidth={0}
-                        borderRadius="$3"
-                        backgroundColor="$backgroundSoft"
-                        fontFamily="$body"
-                        fontSize="$3"
-                        color="$color"
+                      <FormInput
+                        label=""
                         placeholder="Label (e.g. Large)"
-                        placeholderTextColor="$color.gray900"
                         value={variantLabel}
                         onChangeText={onVariantLabelChange}
                       />
                     </YStack>
                     <YStack flex={1}>
-                      <TamaguiInput
-                        height={50}
-                        borderWidth={0}
-                        borderRadius="$3"
-                        backgroundColor="$backgroundSoft"
-                        fontFamily="$body"
-                        fontSize="$3"
-                        color="$color"
+                      <FormInput
+                        label=""
                         placeholder="Price"
-                        placeholderTextColor="$color.gray900"
                         keyboardType="decimal-pad"
                         value={variantPrice}
                         onChangeText={onVariantPriceChange}
@@ -442,10 +428,10 @@ export function MenuFormSheet({
                     </YStack>
                     <Button
                       variant="outline"
-                      height={50}
-                      width={50}
+                      height={48}
+                      width={48}
                       paddingHorizontal="$0"
-                      onPress={onAddVariant}
+                      onPress={() => onAddVariant()}
                     >
                       <Plus size={18} />
                     </Button>
@@ -474,7 +460,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {e.label} — {formatPrice(e.priceMinor / 100)}
+                          {e.label} — {formatPrice(e.price_minor / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveExtra(e.id)}>
@@ -485,31 +471,17 @@ export function MenuFormSheet({
 
                   <XStack gap="$2" alignItems="flex-end">
                     <YStack flex={1}>
-                      <TamaguiInput
-                        height={50}
-                        borderWidth={0}
-                        borderRadius="$3"
-                        backgroundColor="$backgroundSoft"
-                        fontFamily="$body"
-                        fontSize="$3"
-                        color="$color"
+                      <FormInput
+                        label=""
                         placeholder="Label (e.g. Extra Cheese)"
-                        placeholderTextColor="$color.gray900"
                         value={extraLabel}
                         onChangeText={onExtraLabelChange}
                       />
                     </YStack>
                     <YStack flex={1}>
-                      <TamaguiInput
-                        height={50}
-                        borderWidth={0}
-                        borderRadius="$3"
-                        backgroundColor="$backgroundSoft"
-                        fontFamily="$body"
-                        fontSize="$3"
-                        color="$color"
+                      <FormInput
+                        label=""
                         placeholder="Price"
-                        placeholderTextColor="$color.gray900"
                         keyboardType="decimal-pad"
                         value={extraPrice}
                         onChangeText={onExtraPriceChange}
@@ -517,10 +489,10 @@ export function MenuFormSheet({
                     </YStack>
                     <Button
                       variant="outline"
-                      height={50}
-                      width={50}
+                      height={48}
+                      width={48}
                       paddingHorizontal="$0"
-                      onPress={onAddExtra}
+                      onPress={() => onAddExtra()}
                     >
                       <Plus size={18} />
                     </Button>

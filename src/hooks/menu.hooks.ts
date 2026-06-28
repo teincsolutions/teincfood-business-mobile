@@ -90,11 +90,11 @@ export function useCreateMenuItemMutation() {
         dietary_tags: input.dietaryTags,
         variants: input.variants.map((v: any) => ({
           label: v.label,
-          price_minor: v.priceMinor,
+          price_minor: v.price_minor,
         })),
         addons: input.extras.map((e: any) => ({
           label: e.label,
-          price_minor: e.priceMinor,
+          price_minor: e.price_minor,
         })),
         is_available: input.available,
         image_url: imageUrl,
@@ -131,13 +131,13 @@ export function useUpdateMenuItemMutation() {
       if (updates.variants !== undefined) {
         payload.variants = updates.variants.map((v: any) => ({
           label: v.label,
-          price_minor: v.priceMinor,
+          price_minor: v.price_minor,
         }));
       }
       if (updates.extras !== undefined) {
         payload.addons = updates.extras.map((e: any) => ({
           label: e.label,
-          price_minor: e.priceMinor,
+          price_minor: e.price_minor,
         }));
       }
       return menuService.updateMenuItem(id, payload);
