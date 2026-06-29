@@ -60,14 +60,18 @@ type CreateInput = {
 
 type UpdateInput = CreateInput & { id: string };
 
-async function uploadFirstImage(images: string[]): Promise<string | null> {
+async function uploadFirstImage(images: string[], businessId?: string): Promise<string | null> {
   if (!images || images.length === 0) return null;
-  const uri = images[0];
-  if (uri.startsWith('http://') || uri.startsWith('https://')) {
-    return uri;
+  // Image 0 is the S3 key (already uploaded), image 1 is the preview URL
+  const keyOrUri = images[0];
+  // If it starts with a path like "menus/...", it's already an uploaded key — return as-is
+  if (typeof keyOrUri === 'string' && !keyOrUri.startsWith('file://') && !keyOrUri.startsWith('ph://') && !keyOrUri.startsWith('content://')) {
+    return keyOrUri;
   }
+  // Local file that wasn't pre-uploaded — upload now
   try {
-    return await uploadImage(uri);
+    const result = await uploadImage(keyOrUri, 'menus', { business_id: businessId });
+    return result.key;
   } catch (e) {
     toast.error(extractApiErrorMessage(e));
     return null;
@@ -81,7 +85,7 @@ export function useCreateMenuItemMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateInput) => {
-      const imageUrl = await uploadFirstImage(input.images);
+      const imageUrl = await uploadFirstImage(input.images, businessId);
       return menuService.createBusinessMenuItem(businessId!, {
         name: input.name,
         description: input.description,
@@ -125,7 +129,7 @@ export function useUpdateMenuItemMutation() {
       if (updates.dietaryTags !== undefined) payload.dietary_tags = updates.dietaryTags;
       if (updates.available !== undefined) payload.is_available = updates.available;
       if (updates.images !== undefined) {
-        const imageUrl = await uploadFirstImage(updates.images);
+        const imageUrl = await uploadFirstImage(updates.images, businessId);
         payload.image_url = imageUrl;
       }
       if (updates.variants !== undefined) {

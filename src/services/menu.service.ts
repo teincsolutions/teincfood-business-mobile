@@ -9,26 +9,12 @@ import type {
   MenuItemAddon as ApiMenuItemAddon,
   CatalogItemRequest,
 } from '@/types/api';
+import type { Variant, Extra, MenuItemForm } from '@/types/menu.types';
 
 // ─── Re-export API types for consumers ───
 
 export type MenuItem = ApiMenuItem;
-export type Variant = ApiMenuItemVariant;
-export type Extra = ApiMenuItemAddon;
-
-// ─── Form-specific types ───
-
-export interface MenuItemForm {
-  name: string;
-  description: string;
-  price: string;
-  category: string;
-  dietaryTags: string[];
-  variants: Variant[];
-  extras: Extra[];
-  available: boolean;
-  images: string[];
-}
+export type { Variant, Extra, MenuItemForm };
 
 export const DIETARY_TAGS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Halal'];
 export const EMPTY_FORM: MenuItemForm = {

@@ -17,9 +17,7 @@ export function useSellerDashboardMetricsQuery(businessId: string, enabled = tru
       return res.data.metrics;
     },
     enabled: enabled && Boolean(businessId),
-    refetchInterval: 10000,
-    refetchIntervalInBackground: true,
-    staleTime: 5000,
+    staleTime: 1000 * 60 * 2,
   });
 }
 
@@ -31,9 +29,7 @@ export function useSellerDashboardRecentOrdersQuery(businessId: string, enabled 
       return res.data.recent_orders;
     },
     enabled: enabled && Boolean(businessId),
-    refetchInterval: 10000,
-    refetchIntervalInBackground: true,
-    staleTime: 5000,
+    staleTime: 1000 * 60 * 2,
   });
 }
 
@@ -45,9 +41,7 @@ export function useSellerDashboardQuery(businessId: string, enabled = true) {
       return res.data;
     },
     enabled: enabled && Boolean(businessId),
-    refetchInterval: 10000,
-    refetchIntervalInBackground: true,
-    staleTime: 5000,
+    staleTime: 1000 * 60 * 2,
   });
 }
 

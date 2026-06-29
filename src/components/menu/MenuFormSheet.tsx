@@ -13,8 +13,11 @@ import {
   useTheme,
 } from 'tamagui';
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
+import { toast } from 'sonner-native';
 import { Button, FormInput } from '@/components/ui';
-import type { MenuItem, MenuItemForm, Variant, Extra } from '@/services/menu.service';
+import type { MenuItem } from '@/types/api/menu.api';
+import type { MenuItemForm, Variant, Extra } from '@/types/menu.types';
+import type { UploadResult } from '@/services/upload.service';
 import type { MenuCategory } from '@/types/api';
 import {
   DIETARY_TAGS,
@@ -33,6 +36,8 @@ interface MenuFormSheetProps {
   extraLabel: string;
   extraPrice: string;
   isFormValid: boolean;
+  isSaving?: boolean;
+  isUploadingImage?: boolean;
   categories: MenuCategory[];
   onFormChange: (form: MenuItemForm) => void;
   onVariantLabelChange: (label: string) => void;
@@ -44,6 +49,7 @@ interface MenuFormSheetProps {
   onRemoveVariant: (id: string) => void;
   onAddExtra: () => void;
   onRemoveExtra: (id: string) => void;
+  onImagePick: (uri: string) => Promise<UploadResult>;
   onSave: () => void;
   categorySheetOpen: boolean;
   onCategorySheetOpenChange: (open: boolean) => void;
@@ -59,6 +65,9 @@ export function MenuFormSheet({
   extraLabel,
   extraPrice,
   isFormValid,
+  isSaving,
+  isUploadingImage,
+  onImagePick,
   onFormChange,
   onVariantLabelChange,
   onVariantPriceChange,
@@ -83,14 +92,25 @@ export function MenuFormSheet({
     onFormChange({ ...form, [field]: value });
   };
 
+  const handleImageResult = async (localUri: string) => {
+    try {
+      console.log('[MenuForm] Uploading image', localUri?.slice(0, 60));
+      const result = await onImagePick(localUri);
+      // Store preview URL for the UI, and key for the API save
+      // The mutation hooks will use the first image that starts with a path (key)
+      console.log('[MenuForm] Upload succeeded', result);
+      updateFormField('images', [result.key, result.download_url]);
+    } catch (e) {
+      console.error('[MenuForm] Upload failed', e);
+      toast.error("Could not upload image. Try again.");
+    }
+  };
+
   const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert(
-        "Permission Required",
-        "Media library permission is needed to select photos."
-      );
+      toast.error("Photo library permission is needed to select photos.");
       return;
     }
 
@@ -102,8 +122,7 @@ export function MenuFormSheet({
     });
 
     if (!result.canceled && result.assets[0]) {
-      const newImages = [...form.images, result.assets[0].uri];
-      updateFormField('images', newImages);
+      await handleImageResult(result.assets[0].uri);
     }
   };
 
@@ -111,10 +130,7 @@ export function MenuFormSheet({
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert(
-        "Permission Required",
-        "Camera permission is needed to take photos."
-      );
+      toast.error("Camera permission is needed to take photos.");
       return;
     }
 
@@ -126,8 +142,7 @@ export function MenuFormSheet({
     });
 
     if (!result.canceled && result.assets[0]) {
-      const newImages = [...form.images, result.assets[0].uri];
-      updateFormField('images', newImages);
+      await handleImageResult(result.assets[0].uri);
     }
   };
 
@@ -268,71 +283,61 @@ export function MenuFormSheet({
 
                 <Separator />
 
-                {/* Images */}
+                {/* Image (single) */}
                 <YStack gap="$3">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
-                      Images
-                    </Text>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                      At least 1 required
-                    </Text>
-                  </XStack>
+                  <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                    Item Image
+                  </Text>
                   
-                  {/* Image preview grid */}
-                  {form.images.length > 0 && (
-                    <XStack gap="$2" flexWrap="wrap">
-                      {form.images.map((uri, index) => (
-                        <YStack key={index} position="relative">
-                          <Image
-                            source={{ uri }}
-                            style={{
-                              width: 80,
-                              height: 80,
-                              borderRadius: 8,
-                            }}
-                          />
-                          <TouchableOpacity
-                            onPress={() => removeImage(index)}
-                            style={{
-                              position: 'absolute',
-                              top: -6,
-                              right: -6,
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              backgroundColor: '#ef4444',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <X size={12} color="white" />
-                          </TouchableOpacity>
-                        </YStack>
-                      ))}
-                    </XStack>
+                  {form.images.length > 0 ? (
+                    <YStack position="relative" width={120} height={120}>
+                      <Image
+                        source={{ uri: form.images[1] || form.images[0] }}
+                        style={{ width: 120, height: 120, borderRadius: 8 }}
+                      />
+                      <TouchableOpacity
+                        onPress={() => removeImage(0)}
+                        style={{
+                          position: 'absolute', top: -6, right: -6,
+                          width: 20, height: 20, borderRadius: 10,
+                          backgroundColor: '#ef4444',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <X size={12} color="white" />
+                      </TouchableOpacity>
+                    </YStack>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={pickImage}
+                      disabled={isUploadingImage}
+                      style={{
+                        height: 120,
+                        borderRadius: 8,
+                        borderWidth: 2,
+                        borderColor: theme.borderColor?.val || '#e5e7eb',
+                        borderStyle: 'dashed',
+                        backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        opacity: isUploadingImage ? 0.5 : 1,
+                      }}
+                    >
+                      {isUploadingImage ? (
+                        <Text fontFamily="$body" fontSize="$3" color="$colorSecondary">
+                          Uploading...
+                        </Text>
+                      ) : (
+                        <>
+                          <Camera size={24} color={theme.colorSecondary?.val} />
+                          <Text fontFamily="$body" fontSize="$3" color="$colorSecondary">
+                            Tap to add photo
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
                   )}
-
-                  {/* Add image button */}
-                  <TouchableOpacity
-                    onPress={pickImage}
-                    style={{
-                      height: 100,
-                      borderRadius: 8,
-                      borderWidth: 2,
-                      borderColor: theme.borderColor?.val || '#e5e7eb',
-                      borderStyle: 'dashed',
-                      backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    <Camera size={24} color={theme.colorSecondary?.val} />
-                    <Text fontFamily="$body" fontSize="$3" color="$colorSecondary">
-                      {form.images.length === 0 ? 'Add Image' : 'Add Another'}
-                    </Text>
-                  </TouchableOpacity>
                 </YStack>
 
                 <Separator />
@@ -504,8 +509,9 @@ export function MenuFormSheet({
                   variant="primary"
                   width="100%"
                   onPress={onSave}
-                  disabled={!isFormValid}
-                  opacity={isFormValid ? 1 : 0.5}
+                  disabled={!isFormValid || isSaving}
+                  loading={isSaving}
+                  opacity={isFormValid && !isSaving ? 1 : 0.5}
                 >
                   {editingItem ? 'SAVE CHANGES' : 'ADD ITEM'}
                 </Button>

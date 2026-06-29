@@ -8,6 +8,8 @@ import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { CategoryPill } from "@/components/home/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
+import { useBusinessStore } from "@/stores/business.store";
+import { uploadImage } from "@/services/upload.service";
 import {
   useMenuItemsQuery,
   useMenuCategoriesQuery,
@@ -54,6 +56,10 @@ export default function SellerMenu() {
   const [variantPrice, setVariantPrice] = useState("");
   const [extraLabel, setExtraLabel] = useState("");
   const [extraPrice, setExtraPrice] = useState("");
+
+  // Image upload state
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
 
   // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
@@ -288,6 +294,8 @@ export default function SellerMenu() {
         extraLabel={extraLabel}
         extraPrice={extraPrice}
         isFormValid={isFormValid}
+        isSaving={createMutation.isPending || updateMutation.isPending}
+        isUploadingImage={isUploadingImage}
         onFormChange={setForm}
         onVariantLabelChange={setVariantLabel}
         onVariantPriceChange={setVariantPrice}
@@ -298,6 +306,14 @@ export default function SellerMenu() {
         onRemoveVariant={removeVariant}
         onAddExtra={addExtra}
         onRemoveExtra={removeExtra}
+        onImagePick={async (uri) => {
+          setIsUploadingImage(true);
+          try {
+            return await uploadImage(uri, 'menus', { business_id: businessId });
+          } finally {
+            setIsUploadingImage(false);
+          }
+        }}
         onSave={handleSave}
         categorySheetOpen={categorySheetOpen}
         onCategorySheetOpenChange={setCategorySheetOpen}
