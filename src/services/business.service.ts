@@ -45,10 +45,6 @@ export async function submitBusinessKyc(businessId: string, data: Record<string,
   return api.post<BusinessResponse>(`/businesses/${businessId}/kyc`, data);
 }
 
-export async function fetchMyKycStatus(): Promise<{ data: { kyc_status: string } }> {
-  return api.get('/kyc/status');
-}
-
 // ─── Business Toggle ───
 
 export async function toggleBusinessOpen(businessId: string): Promise<BusinessResponse> {

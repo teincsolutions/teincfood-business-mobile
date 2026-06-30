@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -14,7 +14,6 @@ import {
   styled,
 } from "tamagui";
 import {
-  ArrowLeft,
   Save,
   MapPin,
   Truck,
@@ -22,22 +21,22 @@ import {
   CheckCircle,
   AlertCircle,
 } from "@tamagui/lucide-icons";
-import { BackButton, Button, FormInput } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
-import * as businessService from "@/services/business.service";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/services/api";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
 
 type FormErrors = {
   deliveryFee?: string;
   minimumOrder?: string;
   freeDeliveryMinimum?: string;
-  estimatedTime?: string;
 };
 
 type SaveStatus = "idle" | "success" | "error";
 
-// Compact inline input styled to match BaseInput but shorter
 const AmountInput = styled(Input, {
   flex: 1,
   height: 48,
@@ -51,65 +50,76 @@ const AmountInput = styled(Input, {
   focusStyle: { borderWidth: 0 },
 });
 
+const SETTINGS_KEYS = ['delivery-settings'];
+const toMinor = (ghs: string) => Math.round(parseFloat(ghs || '0') * 100);
+const fromMinor = (minor: number) => (minor / 100).toFixed(2);
+
 export default function DeliverySettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeBusiness, activeBusinessId } = useActiveBusiness();
-  const queryClient = useQueryClient();
-  const ds = activeBusiness?.deliverySettings || {};
+  const { activeBusinessId } = useActiveBusiness();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const [deliveryEnabled, setDeliveryEnabled] = useState(ds.deliveryEnabled ?? true);
-  const [deliveryRadius, setDeliveryRadius] = useState(ds.deliveryRadius ?? 5);
-  const [deliveryFee, setDeliveryFee] = useState(ds.deliveryFee?.toString() || "5.00");
-  const [minimumOrder, setMinimumOrder] = useState(ds.minimumOrder?.toString() || "20.00");
-  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState(ds.freeDeliveryMinimum?.toString() || "50.00");
-  const [estimatedTime, setEstimatedTime] = useState(ds.estimatedTime || "30-45");
+  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
+  const [deliveryRadius, setDeliveryRadius] = useState(5);
+  const [deliveryFee, setDeliveryFee] = useState("5.00");
+  const [minimumOrder, setMinimumOrder] = useState("20.00");
+  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState("50.00");
+
+  const { data: settings } = useQuery({
+    queryKey: [...SETTINGS_KEYS, activeBusinessId],
+    queryFn: async () => {
+      const res = await api.get<any>(`/businesses/${activeBusinessId}/delivery-settings`);
+      return res.data;
+    },
+    enabled: !!activeBusinessId,
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setDeliveryEnabled(settings.delivery_enabled ?? true);
+      setDeliveryRadius(settings.max_delivery_radius_km ?? 5);
+      setDeliveryFee(fromMinor(settings.base_delivery_fee_minor ?? 0));
+      setMinimumOrder(fromMinor(settings.min_order_minor ?? 0));
+      setFreeDeliveryMinimum(fromMinor(settings.free_delivery_threshold_minor ?? 0));
+    }
+  }, [settings]);
 
   const clearError = (field: keyof FormErrors) =>
     setErrors((e) => ({ ...e, [field]: undefined }));
 
   const validate = (): boolean => {
     const next: FormErrors = {};
-    const fee = parseFloat(deliveryFee);
-    const minOrder = parseFloat(minimumOrder);
-    const freeMin = parseFloat(freeDeliveryMinimum);
-
     if (deliveryEnabled) {
-      if (deliveryFee.trim() === "" || isNaN(fee) || fee < 0)
+      if (deliveryFee.trim() === "" || isNaN(parseFloat(deliveryFee)) || parseFloat(deliveryFee) < 0)
         next.deliveryFee = "Enter a valid delivery fee (0 or more)";
-      if (minimumOrder.trim() === "" || isNaN(minOrder) || minOrder < 0)
+      if (minimumOrder.trim() === "" || isNaN(parseFloat(minimumOrder)) || parseFloat(minimumOrder) < 0)
         next.minimumOrder = "Enter a valid minimum order amount";
-      if (freeDeliveryMinimum.trim() === "" || isNaN(freeMin) || freeMin < 0)
+      if (freeDeliveryMinimum.trim() === "" || isNaN(parseFloat(freeDeliveryMinimum)) || parseFloat(freeDeliveryMinimum) < 0)
         next.freeDeliveryMinimum = "Enter a valid amount (0 to disable)";
-      if (!/^\d+-\d+$/.test(estimatedTime.trim()))
-        next.estimatedTime = "Use format min-max e.g. 30-45";
     }
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      businessService.updateBusiness(activeBusinessId!, {
-        deliverySettings: {
-          deliveryEnabled,
-          deliveryRadius,
-          deliveryFee: parseFloat(deliveryFee),
-          minimumOrder: parseFloat(minimumOrder),
-          freeDeliveryMinimum: parseFloat(freeDeliveryMinimum),
-          estimatedTime,
-        },
+      api.put(`/businesses/${activeBusinessId}/delivery-settings`, {
+        delivery_enabled: deliveryEnabled,
+        max_delivery_radius_km: deliveryRadius,
+        base_delivery_fee_minor: toMinor(deliveryFee),
+        min_order_minor: toMinor(minimumOrder),
+        free_delivery_threshold_minor: toMinor(freeDeliveryMinimum),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
       setSaveStatus("success");
+      toast.success("Delivery settings saved");
       setTimeout(() => router.back(), 1500);
     },
-    onError: () => {
+    onError: (e) => {
       setSaveStatus("error");
+      toast.error(extractApiErrorMessage(e));
     },
   });
 
@@ -130,33 +140,31 @@ export default function DeliverySettings() {
         backgroundColor="$background"
       >
         {/* Header */}
-        <Form onSubmit={handleSave} flex={1}>
-          <XStack
-            padding="$4"
-            justifyContent="space-between"
-            alignItems="center"
-            backgroundColor="$background"
-            borderBottomWidth={1}
-            borderBottomColor="$borderColor"
-          >
-            <XStack gap="$3" alignItems="center">
-             <BackButton />
-              <Text fontSize="$6" fontWeight="bold">
-                Delivery Settings
-              </Text>
-            </XStack>
-            <Form.Trigger asChild>
-              <Button
-                variant="primary"
-                width={"auto"}
-                height={44}
-                loading={saveMutation.isPending}
-                icon={<Save size="$4" color="white" />}
-              >
-                Save
-              </Button>
-            </Form.Trigger>
+        <XStack
+          padding="$4"
+          justifyContent="space-between"
+          alignItems="center"
+          backgroundColor="$background"
+          borderBottomWidth={1}
+          borderBottomColor="$borderColor"
+        >
+          <XStack gap="$3" alignItems="center">
+           <BackButton />
+            <Text fontSize="$6" fontWeight="bold">
+              Delivery Settings
+            </Text>
           </XStack>
+          <Button
+            variant="primary"
+            width={"auto"}
+            height={44}
+            loading={saveMutation.isPending}
+            icon={<Save size="$4" color="white" />}
+            onPress={handleSave}
+          >
+            Save
+          </Button>
+        </XStack>
 
           {/* Status banner */}
           {saveStatus !== "idle" && (
@@ -389,39 +397,15 @@ export default function DeliverySettings() {
                   </YStack>
                 </Card>
 
-                {/* Estimated Time */}
-                <Card padding="$4" bordered>
-                  <YStack gap="$3">
-                    <Text fontWeight="bold">Estimated Delivery Time</Text>
-                    <Text color="$colorMuted" fontSize="$3">
-                      Display time range for customers
-                    </Text>
-                    <FormInput
-                      placeholder="30-45"
-                      value={estimatedTime}
-                      onChangeText={(t) => {
-                        setEstimatedTime(t);
-                        clearError("estimatedTime");
-                      }}
-                      error={errors.estimatedTime}
-                    />
-                    <Text fontSize="$2" color="$colorMuted">
-                      Format: min-max (e.g., 30-45 minutes)
-                    </Text>
-                  </YStack>
-                </Card>
               </>
             )}
 
             {/* Footer Save */}
-            <Form.Trigger asChild>
-              <Button variant="primary" width="100%" loading={saveMutation.isPending}>
-                Save Changes
-              </Button>
-            </Form.Trigger>
+            <Button variant="primary" width="100%" loading={saveMutation.isPending} onPress={handleSave}>
+              Save Changes
+            </Button>
           </YStack>
         </ScrollView>
-        </Form>
       </YStack>
     </KeyboardAvoidingView>
   );

@@ -18,7 +18,7 @@ import { Button, FormInput, BackButton } from "@/components/ui";
 import { FormTextArea } from "@/components/ui/FormTextArea";
 import { useBusinessStore } from "@/stores/business.store";
 import * as businessService from "@/services/business.service";
-import { api } from "@/services/api";
+import { uploadImage } from "@/services/upload.service";
 import { extractApiErrorMessage } from "@/utils/error";
 import {
   Building,
@@ -177,7 +177,6 @@ export default function BusinessDetailScreen() {
   const validateEdit = () => {
     const errs: Record<string, string> = {};
     if (!editForm.name.trim()) errs.name = "Business name is required";
-    if (!editForm.city.trim()) errs.city = "City is required";
     return errs;
   };
 
@@ -195,26 +194,11 @@ export default function BusinessDetailScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
 
-    const asset = result.assets[0];
-    const uri = asset.uri;
+    const uri = result.assets[0].uri;
 
     try {
-      const filename = uri.split("/").pop() || "logo.jpg";
-      const contentType = asset.mimeType || "image/jpeg";
-
-      const uploadRes = await api.post("/upload", { filename, content_type: contentType, prefix: "logos" });
-      const { upload_url, key } = (uploadRes as any).data;
-
-      const fileResp = await fetch(uri);
-      const blob = await fileResp.blob();
-      const s3res = await fetch(upload_url, {
-        method: "PUT",
-        headers: { "Content-Type": contentType },
-        body: blob,
-      });
-      if (!s3res.ok) throw new Error("Failed to upload logo");
-
-      setLogoUri(key);
+      const { download_url } = await uploadImage(uri, 'businesses', { business_id: id });
+      setLogoUri(download_url);
     } catch (e: any) {
       Alert.alert("Upload Failed", extractApiErrorMessage(e));
     }
@@ -235,6 +219,8 @@ export default function BusinessDetailScreen() {
           phone: editForm.phone.trim() || undefined,
           email: editForm.email.trim() || undefined,
           logo_url: logoUri !== business?.logo_url ? (logoUri || undefined) : undefined,
+          latitude: business?.latitude,
+          longitude: business?.longitude,
         },
       });
 
@@ -301,17 +287,7 @@ export default function BusinessDetailScreen() {
     setUploadingDocId(docId);
 
     try {
-      const uploadRes = await api.post("/upload", { filename, content_type: contentType, prefix: "kyc" });
-      const { upload_url, key } = (uploadRes as any).data;
-
-      const fileResp = await fetch(uri);
-      const blob = await fileResp.blob();
-      const s3res = await fetch(upload_url, {
-        method: "PUT",
-        headers: { "Content-Type": contentType },
-        body: blob,
-      });
-      if (!s3res.ok) throw new Error("Failed to upload file to storage");
+      const { key } = await uploadImage(uri, 'kyc', { business_id: id });
 
       const today = new Date().toISOString().split("T")[0];
       const nextYear = new Date();

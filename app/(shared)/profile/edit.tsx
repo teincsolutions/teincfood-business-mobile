@@ -15,8 +15,11 @@ import {
   ChevronRight,
   Shield,
 } from "@tamagui/lucide-icons";
+import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
 import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/useProfile";
+import { uploadImage } from "@/services/upload.service";
+import { extractApiErrorMessage } from "@/utils/error";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function EditProfile() {
@@ -27,7 +30,9 @@ export default function EditProfile() {
   const { data: profile } = useProfileQuery();
   const updateProfileMutation = useUpdateProfileMutation();
 
-  const [fullName, setFullName] = useState(profile?.full_name || user?.fullName || "");
+  const [fullName, setFullName] = useState(
+    profile?.full_name || user?.fullName || "",
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -40,7 +45,7 @@ export default function EditProfile() {
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Camera permission is needed to take photos."
+          "Camera permission is needed to take photos.",
         );
         return false;
       }
@@ -50,7 +55,7 @@ export default function EditProfile() {
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Media library permission is needed to select photos."
+          "Media library permission is needed to select photos.",
         );
         return false;
       }
@@ -63,7 +68,7 @@ export default function EditProfile() {
     if (!hasPermission) return;
 
     const options: ImagePicker.ImagePickerOptions = {
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -100,25 +105,25 @@ export default function EditProfile() {
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert("Error", "Full name is required");
+      toast.error("Full name is required");
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateProfileMutation.mutateAsync({
-        full_name: fullName.trim(),
-      });
+      const payload: Record<string, any> = { full_name: fullName.trim() };
+      if (selectedImage) {
+        const { key } = await uploadImage(selectedImage, "avatars");
+        payload.avatar_url = key;
+      }
+      await updateProfileMutation.mutateAsync(payload);
 
-      updateUser({
-        fullName: fullName.trim(),
-      });
+      updateUser({ fullName: fullName.trim() });
 
-      Alert.alert("Success", "Profile updated successfully", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      toast.success("Profile updated successfully");
+      router.back();
     } catch (error) {
-      Alert.alert("Error", "Failed to update profile");
+      toast.error(extractApiErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
@@ -161,10 +166,12 @@ export default function EditProfile() {
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
               <Avatar circular size="$20">
-                <Avatar.Image
-                  src={selectedImage || user?.avatarUrl}
-                />
-                <Avatar.Fallback backgroundColor="$primary">
+                <Avatar.Image src={selectedImage || user?.avatarUrl} />
+                <Avatar.Fallback
+                  justify="center"
+                  alignItems="center"
+                  backgroundColor="$primary"
+                >
                   <User size={32} color="$background" />
                 </Avatar.Fallback>
               </Avatar>
@@ -198,16 +205,31 @@ export default function EditProfile() {
               />
 
               <XStack
-                alignItems="center" gap="$3" paddingVertical="$2"
+                alignItems="center"
+                gap="$3"
+                paddingVertical="$2"
                 onPress={() => router.push("/(shared)/profile/security")}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack
+                  backgroundColor="rgba(255,145,0,0.1)"
+                  padding="$2"
+                  borderRadius="$3"
+                >
                   <Mail size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Email Address</Text>
-                  <Text fontSize="$4" color="$color" fontFamily="$body">{displayEmail || "Not set"}</Text>
+                  <Text
+                    fontSize="$3"
+                    fontWeight="600"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    Email Address
+                  </Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">
+                    {displayEmail || "Not set"}
+                  </Text>
                 </YStack>
                 <ChevronRight size={20} color="$colorSecondary" />
               </XStack>
@@ -215,16 +237,31 @@ export default function EditProfile() {
               <Separator />
 
               <XStack
-                alignItems="center" gap="$3" paddingVertical="$2"
+                alignItems="center"
+                gap="$3"
+                paddingVertical="$2"
                 onPress={() => router.push("/(shared)/profile/security")}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack
+                  backgroundColor="rgba(255,145,0,0.1)"
+                  padding="$2"
+                  borderRadius="$3"
+                >
                   <Phone size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Phone Number</Text>
-                  <Text fontSize="$4" color="$color" fontFamily="$body">{displayPhone || "Not set"}</Text>
+                  <Text
+                    fontSize="$3"
+                    fontWeight="600"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    Phone Number
+                  </Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">
+                    {displayPhone || "Not set"}
+                  </Text>
                 </YStack>
                 <ChevronRight size={20} color="$colorSecondary" />
               </XStack>
@@ -232,16 +269,31 @@ export default function EditProfile() {
               <Separator />
 
               <XStack
-                alignItems="center" gap="$3" paddingVertical="$2"
+                alignItems="center"
+                gap="$3"
+                paddingVertical="$2"
                 onPress={() => router.push("/(shared)/profile/security")}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack
+                  backgroundColor="rgba(255,145,0,0.1)"
+                  padding="$2"
+                  borderRadius="$3"
+                >
                   <Shield size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body">Password</Text>
-                  <Text fontSize="$4" color="$color" fontFamily="$body">Manage security settings</Text>
+                  <Text
+                    fontSize="$3"
+                    fontWeight="600"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    Password
+                  </Text>
+                  <Text fontSize="$4" color="$color" fontFamily="$body">
+                    Manage security settings
+                  </Text>
                 </YStack>
                 <ChevronRight size={20} color="$colorSecondary" />
               </XStack>

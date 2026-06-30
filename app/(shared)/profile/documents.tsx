@@ -14,8 +14,11 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { BackButton, Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
+import { uploadImage } from "@/services/upload.service";
+import { extractApiErrorMessage } from "@/utils/error";
 
 type DocStatus = "not_uploaded" | "pending" | "verified" | "rejected";
 
@@ -179,21 +182,26 @@ export default function Documents() {
     const uri = result.assets[0].uri;
     setUploadingId(docId);
 
-    // Optimistically mark as pending (replace with real upload call)
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === docId
-          ? {
-              ...doc,
-              uri,
-              status: "pending",
-              uploadedAt: new Date().toISOString().split("T")[0],
-              rejectionReason: undefined,
-            }
-          : doc,
-      ),
-    );
-    setUploadingId(null);
+    try {
+      const { key } = await uploadImage(uri, 'kyc');
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === docId
+            ? {
+                ...doc,
+                uri: key,
+                status: "pending",
+                uploadedAt: new Date().toISOString().split("T")[0],
+                rejectionReason: undefined,
+              }
+            : doc,
+        ),
+      );
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
+    } finally {
+      setUploadingId(null);
+    }
   };
 
   const uploadedRequiredCount = documents.filter(

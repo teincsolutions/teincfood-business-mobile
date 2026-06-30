@@ -4,6 +4,18 @@ import { profileService } from '@/services/profile.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type { User } from '@/types/user.model';
 
+/** Map snake_case API profile to camelCase User store fields */
+function apiProfileToUser(api: Record<string, any>): Partial<User> {
+  return {
+    fullName: api.full_name ?? '',
+    email: api.email ?? '',
+    phone: api.phone ?? '',
+    avatarUrl: api.avatar_url ?? undefined,
+    email_verified_at: api.email_verified_at ?? null,
+    phone_verified_at: api.phone_verified_at ?? null,
+  };
+}
+
 export function useProfileQuery() {
   const setUser = useAuthStore((state) => state.setUser);
   const user = useAuthStore((state) => state.user);
@@ -12,7 +24,7 @@ export function useProfileQuery() {
     queryKey: ['profile'],
     queryFn: async () => {
       const response = await profileService.getProfile();
-      return response.data as User;
+      return response.data as Record<string, any>;
     },
     enabled: !!user,
     refetchOnWindowFocus: true,
@@ -20,10 +32,7 @@ export function useProfileQuery() {
 
   useEffect(() => {
     if (query.data && user) {
-      setUser({
-        ...user,
-        ...query.data,
-      });
+      setUser({ ...user, ...apiProfileToUser(query.data) });
     }
   }, [query.data]);
 
@@ -40,7 +49,7 @@ export function useUpdateProfileMutation() {
       profileService.updateProfile(payload),
     onSuccess: (response) => {
       if (user && response.data) {
-        setUser({ ...user, ...response.data });
+        setUser({ ...user, ...apiProfileToUser(response.data) });
       }
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
@@ -101,7 +110,7 @@ export function useVerifyPhoneChangeMutation() {
 export function useSetPasswordMutation() {
   return useMutation({
     mutationFn: ({ password, passwordConfirmation }: { password: string; passwordConfirmation: string }) => {
-      return profileService.changePassword('', password);
+      return profileService.setPassword(password);
     },
   });
 }

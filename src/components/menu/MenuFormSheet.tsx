@@ -99,8 +99,7 @@ export function MenuFormSheet({
       console.log('[MenuForm] Uploading image', localUri?.slice(0, 60));
       const result = await onImagePick(localUri);
       console.log('[MenuForm] Upload succeeded', result);
-      updateFormField('image_url', result.download_url);
-      updateFormField('image_key', result.key);
+      onFormChange({ ...form, image_url: result.download_url, image_key: result.key });
     } catch (e) {
       console.error('[MenuForm] Upload failed', e);
       toast.error("Could not upload image. Try again.");

@@ -22,6 +22,10 @@ export const profileService = {
     });
   },
 
+  async setPassword(newPassword: string): Promise<any> {
+    return api.put('/users/me/password/set', { new_password: newPassword });
+  },
+
   async updateEmail(email: string): Promise<any> {
     return api.post('/users/me/email', { email });
   },
