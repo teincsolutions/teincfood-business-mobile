@@ -18,7 +18,6 @@ export function useUserKycQuery(enabled = true) {
     },
     enabled: enabled && !!userId,
     staleTime: 0,
-    refetchOnMount: 'always',
   });
 }
 
@@ -31,7 +30,6 @@ export function useBusinessKycQuery(businessId?: string, enabled = true) {
     },
     enabled: enabled && !!businessId,
     staleTime: 0,
-    refetchOnMount: 'always',
   });
 }
 

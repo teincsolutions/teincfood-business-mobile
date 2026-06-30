@@ -21,6 +21,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
 import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
+import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
@@ -39,6 +40,11 @@ export default function SellerDashboard() {
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
   const isStoreOpen = activeBusiness?.manuallyClosed !== true;
+
+  // Fetch business KYC status (fresh every mount)
+  const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
+  const bizKycStatus = bizKyc?.kyc_status;
+  const bannerRoute = activeBusinessId ? `/(shared)/kyc?type=business&id=${activeBusinessId}` : '/(shared)/businesses';
 
   // TanStack Query hooks
   const { data, isLoading, refetch } = useSellerDashboardQuery(
@@ -101,8 +107,8 @@ export default function SellerDashboard() {
       >
         {/* Service Status */}
         <ServiceStatusBanner
-          kyc_status={user?.kyc_status}
-          hasCompletedKyc={user?.has_completed_kyc}
+          kyc_status={bizKycStatus}
+          kycRoute={bannerRoute}
         />
 
         {/* No Business Banner */}

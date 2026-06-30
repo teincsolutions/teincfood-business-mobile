@@ -89,17 +89,9 @@ export default function AddBusinessScreen() {
         setErrors((prev) => ({ ...prev, address: "", city: "" }));
       }
     } catch {
-      setSelectedPlace({
-        placeId: suggestion.placeId,
-        formattedAddress: suggestion.description,
-        street: suggestion.mainText || suggestion.description,
-        city: "",
-        region: "",
-        postalCode: "",
-        country: "",
-        latitude: 0,
-        longitude: 0,
-      });
+      setSelectedPlace(null);
+      setPlaceQuery("");
+      setErrors((prev) => ({ ...prev, address: "Could not get address details. Try using current location or a different address." }));
     } finally {
       setLoadingDetails(false);
     }
@@ -119,6 +111,9 @@ export default function AddBusinessScreen() {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = "Business name is required";
     if (!selectedPlace) newErrors.address = "Please select an address";
+    else if (!selectedPlace.latitude || !selectedPlace.longitude || Math.abs(selectedPlace.latitude) < 0.0001 || Math.abs(selectedPlace.longitude) < 0.0001) {
+      newErrors.address = "Selected location is missing coordinates — try a different address or use current location";
+    }
     if (!form.phone.trim()) newErrors.phone = "Phone number is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

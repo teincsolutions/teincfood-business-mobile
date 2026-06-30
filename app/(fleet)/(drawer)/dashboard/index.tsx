@@ -16,9 +16,9 @@ import {
 import { useFleetDashboardQuery, useFleetRidersQuery } from "@/hooks/useFleet";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
-import { ServiceStatusBanner } from "@/components/ui";
+import { ServiceStatusBanner, Button } from "@/components/ui";
 import { useRouter } from "expo-router";
-import { Button } from "@/components/ui";
+import { useBusinessKycQuery } from "@/hooks/useKyc";
 import { formatPriceFromMinor } from "@/utils/currency";
 
 export default function FleetDashboardScreen() {
@@ -28,6 +28,10 @@ export default function FleetDashboardScreen() {
   const { businesses } = useBusinessStore();
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
   const hasBusiness = businesses.length > 0;
+  const activeBizId = businesses[0]?.id;
+  const { data: bizKyc } = useBusinessKycQuery(activeBizId);
+  const bizKycStatus = bizKyc?.kyc_status;
+  const bannerRoute = activeBizId ? `/(shared)/kyc?type=business&id=${activeBizId}` : '/(shared)/businesses';
   const { data: dashboardRes, isLoading } = useFleetDashboardQuery(hasBusiness);
   const { data: ridersRes } = useFleetRidersQuery(hasBusiness);
 
@@ -46,8 +50,8 @@ export default function FleetDashboardScreen() {
     >
       <YStack padding="$4" gap="$4">
         <ServiceStatusBanner
-          kyc_status={user?.kyc_status}
-          hasCompletedKyc={user?.has_completed_kyc}
+          kyc_status={bizKycStatus}
+          kycRoute={bannerRoute}
         />
 
         {!hasBusiness && !dismissNoBusiness && (

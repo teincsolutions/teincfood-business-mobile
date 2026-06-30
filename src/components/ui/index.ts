@@ -1,6 +1,7 @@
 import { Button } from './Button';
 import { Input } from './Input';
 import { FormInput } from './FormInput';
+import { FormTextArea } from './FormTextArea';
 import { BackButton } from './BackButton';
 import { DrawerHeader } from './DrawerHeader';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
@@ -14,6 +15,7 @@ export {
   Button, 
   Input, 
   FormInput,
+  FormTextArea,
   BackButton,
   DrawerHeader,
   Skeleton,

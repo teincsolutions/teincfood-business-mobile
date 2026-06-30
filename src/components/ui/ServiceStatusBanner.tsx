@@ -1,53 +1,26 @@
 // @ts-nocheck
 import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
-import { AlertTriangle, Clock, ShieldCheck, ShieldOff, FileText } from '@tamagui/lucide-icons';
+import { FileText } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/stores/auth.store';
-import { useBusinessStore } from '@/stores/business.store';
-import { useBusinessKycQuery } from '@/hooks/useKyc';
 
 interface Props {
   kyc_status?: string;
-  hasCompletedKyc?: boolean;
+  kycRoute?: string;
 }
 
-/**
- * ServiceStatusBanner
- * Displays a contextual banner based on the user's KYC status and account status.
- * Uses kyc_status from the backend (pending | submitted | approved | rejected).
- * For sellers/fleet managers, reads the active business's KYC status via a fresh query.
- */
-export function ServiceStatusBanner({ kyc_status, hasCompletedKyc }: Props) {
+export function ServiceStatusBanner({ kyc_status, kycRoute }: Props) {
   const router = useRouter();
-  const role = useAuthStore((s) => s.user?.role);
-  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const status = kyc_status || 'pending';
 
-  // For non-riders, fetch the business KYC status fresh from the backend
-  const { data: bizKycData } = useBusinessKycQuery(role !== 'rider' ? activeBusinessId : undefined);
-  const bizKycStatus = role !== 'rider' ? (bizKycData?.kyc_status || 'pending') : null;
+  if (status === 'approved') return null;
 
-  const effectiveStatus = role === 'rider' ? (kyc_status || 'pending') : bizKycStatus;
-
-  // For non-riders, treat "approved" as complete even without hasCompletedKyc
-  const isComplete = role === 'rider' ? (effectiveStatus === 'approved' && hasCompletedKyc) : effectiveStatus === 'approved';
-  if (isComplete) return null;
-
-  // Determine banner content based on KYC status
-  const isPending = effectiveStatus === 'pending' || effectiveStatus === 'not_uploaded' || effectiveStatus === 'rejected';
-  const isSubmitted = effectiveStatus === 'submitted';
-
-  // Show KYC button for all roles — riders go directly to KYC, business users go to their active business KYC
-  const kycRoute = role === 'rider'
-    ? '/(shared)/kyc?type=user&role=rider'
-    : activeBusinessId
-      ? `/(shared)/kyc?type=business&id=${activeBusinessId}`
-      : '/(shared)/businesses';
+  const isPending = status === 'pending' || status === 'not_uploaded' || status === 'rejected';
+  const isSubmitted = status === 'submitted';
 
   return (
     <YStack backgroundColor="$yellow2" borderWidth={1} borderColor="$yellow7" borderRadius="$4" padding="$3" gap="$2">
       <XStack gap="$2" alignItems="center">
-        <Clock size={18} color="$primary" />
         <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$yellow11" flex={1}>
           {isPending ? 'Verification Required' : 'Verification Submitted'}
         </Text>

@@ -12,7 +12,7 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, BackButton } from "@/components/ui";
+import { Button, BackButton, FormInput, FormTextArea } from "@/components/ui";
 import { useBusinessStore } from "@/stores/business.store";
 import * as businessService from "@/services/business.service";
 import { uploadImage } from "@/services/upload.service";

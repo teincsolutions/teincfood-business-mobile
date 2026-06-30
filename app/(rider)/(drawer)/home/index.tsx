@@ -150,7 +150,7 @@ export default function RiderHome() {
           {/* Service Status */}
         <ServiceStatusBanner
           kyc_status={user?.kyc_status}
-          hasCompletedKyc={user?.has_completed_kyc}
+          kycRoute="/(shared)/kyc?type=user&role=rider"
         />
 
         {/* No Rider Profile Banner */}
