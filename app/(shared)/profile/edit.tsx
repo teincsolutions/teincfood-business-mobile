@@ -300,10 +300,12 @@ export default function EditProfile() {
             </YStack>
           </Card>
 
-          {/* KYC Documents */}
-          <Button variant="outline" width="100%" onPress={() => router.push("/(shared)/kyc?type=user&role=" + (user?.role || "rider"))}>
-            KYC Documents
-          </Button>
+          {/* KYC Documents — only riders have personal KYC */}
+          {user?.role === "rider" && (
+            <Button variant="outline" width="100%" onPress={() => router.push("/(shared)/kyc?type=user&role=rider")}>
+              KYC Documents
+            </Button>
+          )}
 
           {/* Save Button */}
           <Button

@@ -3,6 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { YStack, XStack, Text } from 'tamagui';
 import { AlertTriangle, Clock, ShieldCheck, ShieldOff, FileText } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/stores/auth.store';
 import type { ServiceStatus } from '@/types/user.model';
 
 interface BannerConfig {
@@ -78,6 +79,7 @@ interface Props {
  */
 export function ServiceStatusBanner({ status, hasCompletedKyc }: Props) {
   const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role);
 
   // Treat missing status as pending_verification for new accounts
   const effectiveStatus: ServiceStatus = status ?? 'pending_verification';
@@ -86,6 +88,14 @@ export function ServiceStatusBanner({ status, hasCompletedKyc }: Props) {
   if (effectiveStatus === 'verified' && hasCompletedKyc) return null;
 
   const config = CONFIGS[effectiveStatus];
+
+  // Build dynamic KYC route based on role
+  const kycRoute =
+    role === 'rider'
+      ? '/(shared)/kyc?type=user&role=rider'
+      : role === 'seller' || role === 'fleet_manager'
+        ? '/(shared)/kyc?type=business'
+        : '/(shared)/kyc';
 
   return (
     <YStack
@@ -105,8 +115,8 @@ export function ServiceStatusBanner({ status, hasCompletedKyc }: Props) {
       <Text fontSize="$3" fontFamily="$body" color={config.textColor}>
         {config.message}
       </Text>
-      {config.ctaLabel && config.ctaRoute && (
-        <TouchableOpacity onPress={() => router.push(config.ctaRoute as any)}>
+      {config.ctaLabel && (
+        <TouchableOpacity onPress={() => router.push(kycRoute as any)}>
           <XStack gap="$1" alignItems="center">
             {effectiveStatus === 'pending_verification' && <FileText size={14} color={config.iconColor} />}
             <Text fontSize="$3" fontWeight="700" fontFamily="$body" color={config.textColor} textDecorationLine="underline">
