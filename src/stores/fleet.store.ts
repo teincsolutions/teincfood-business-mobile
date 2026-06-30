@@ -121,7 +121,7 @@ export const useFleetStore = create<FleetState>()(
 
       getRiderById: (id) => get().riders.find((r) => r.id === id),
 
-      getAvailableVehicles: () => get().vehicles.filter((v) => v.isActive && !v.assignedRiderId),
+      getAvailableVehicles: () => get().vehicles.filter((v) => !v.rider_id),
 
       getOnlineRiders: () => get().riders.filter((r) => r.status === 'active'),
 

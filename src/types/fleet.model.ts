@@ -25,40 +25,30 @@ export interface FleetManager {
 
 export interface FleetVehicle {
   id: string;
-  fleetId: string;
-  vehicleType: VehicleType;
-  plateNumber: string;
-  model?: string;
+  rider_id: string | null;
+  plate_number: string;
+  type: string;
+  ownership: string;
   brand?: string;
+  model?: string;
   color?: string;
   year?: number;
-  isActive: boolean;
-  assignedRiderId?: string;
-  assignedRiderName?: string;
-  insuranceExpiryDate?: string;
-  lastMaintenanceDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  rider_number?: string;
+  rider_name?: string;
+  inserted_at: string;
 }
 
 export interface FleetRider {
   id: string;
-  fleetId: string;
-  riderId: string;               // Links to User.id
-  riderName: string;
-  riderEmail: string;
-  riderPhone: string;
-  riderAvatarUrl?: string;
-  vehicleId?: string;
-  vehiclePlateNumber?: string;
-  vehicleType?: VehicleType;
-  status: RiderFleetStatus;
-  totalDeliveries: number;
-  totalEarnings: number;
-  currency: string;
-  rating: number;
-  joinedAt: string;
-  lastActiveAt?: string;
+  rider_number: string;
+  status: string;
+  is_online: boolean;
+  is_active: boolean;
+  phone: string;
+  license_number: string;
+  kyc_status: string;
+  user: { id: string; full_name: string; phone?: string } | null;
+  inserted_at: string;
 }
 
 export interface FleetEarnings {

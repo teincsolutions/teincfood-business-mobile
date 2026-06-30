@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState } from "react";
-import { FlatList } from "react-native";
-import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import { useState, useCallback } from "react";
+import { FlatList, RefreshControl } from "react-native";
+import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Car,
@@ -10,7 +10,6 @@ import {
   User,
   ChevronRight,
 } from "@tamagui/lucide-icons";
-import { useFleetStore } from "@/stores/fleet.store";
 import { useFleetVehiclesQuery, useFleetRidersQuery } from "@/hooks/useFleet";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
@@ -18,7 +17,7 @@ import { Button, Input } from "@/components/ui";
 export default function FleetVehiclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: vehiclesRes } = useFleetVehiclesQuery();
+  const { data: vehiclesRes, refetch, isRefetching } = useFleetVehiclesQuery();
   const { data: ridersRes } = useFleetRidersQuery();
   const vehicles = vehiclesRes?.data ?? [];
   const riders = ridersRes?.data ?? [];
@@ -38,6 +37,10 @@ export default function FleetVehiclesScreen() {
   };
 
   const typeFilters = ["all", "motorcycle", "car", "bicycle"] as const;
+
+  const onRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const renderVehicle = ({ item: vehicle }) => {
     const assignedRider = getAssignedRider(vehicle.rider_id);
@@ -171,6 +174,7 @@ export default function FleetVehiclesScreen() {
       renderItem={renderVehicle}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={ListEmptyComponent}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
       contentContainerStyle={{
         paddingBottom: Math.max(insets.bottom + 20, 24),
       }}

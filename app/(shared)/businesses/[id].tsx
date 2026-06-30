@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { TouchableOpacity } from "react-native";
 import {
   YStack,
   XStack,
@@ -9,15 +10,18 @@ import {
   Separator,
   Avatar,
   ScrollView,
+  Spinner,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, BackButton, FormInput, FormTextArea } from "@/components/ui";
+import { Button, BackButton, FormInput, FormTextArea, Input } from "@/components/ui";
 import { useBusinessStore } from "@/stores/business.store";
 import * as businessService from "@/services/business.service";
 import { uploadImage } from "@/services/upload.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
+import { placesService, type PlaceSuggestion } from "@/services/places.service";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import {
   Building,
   MapPin,
@@ -32,6 +36,8 @@ import {
   Camera,
   AlertCircle,
   CheckCircle,
+  Search,
+  Navigation,
 } from "@tamagui/lucide-icons";
 
 
@@ -68,6 +74,15 @@ export default function BusinessDetailScreen() {
     email: business?.email ?? "",
   });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+
+  // Place search
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const { isLocating, getCurrentLocation } = useCurrentLocation();
 
   // ── Detail fetch ──
   const [fetchedBusiness, setFetchedBusiness] = useState<any>(null);
@@ -144,6 +159,8 @@ export default function BusinessDetailScreen() {
   const validateEdit = () => {
     const errs: Record<string, string> = {};
     if (!editForm.name.trim()) errs.name = "Business name is required";
+    if (!editForm.address.trim() && !selectedPlace) errs.address = "Address is required";
+    if (!editForm.city.trim() && !selectedPlace) errs.city = "City is required";
     return errs;
   };
 
@@ -181,6 +198,9 @@ export default function BusinessDetailScreen() {
     }
     setIsSaving(true);
     try {
+      const updateLat = selectedPlace?.latitude || business?.latitude;
+      const updateLng = selectedPlace?.longitude || business?.longitude;
+
       await businessService.updateBusiness(id, {
         business: {
           name: editForm.name.trim(),
@@ -189,8 +209,13 @@ export default function BusinessDetailScreen() {
           email: editForm.email.trim() || undefined,
           logo_url:
             logoUri !== business?.logo_url ? logoUri || undefined : undefined,
-          latitude: business?.latitude,
-          longitude: business?.longitude,
+          latitude: updateLat,
+          longitude: updateLng,
+          address_street: editForm.address.trim() || undefined,
+          address_city: editForm.city.trim() || undefined,
+          address_full: selectedPlace
+            ? selectedPlace.formattedAddress
+            : `${editForm.address.trim()}, ${editForm.city.trim()}`,
         },
       });
 
@@ -233,11 +258,76 @@ export default function BusinessDetailScreen() {
       email: eb.email ?? "",
     });
     setLogoUri(eb.logo_url);
+    setPlaceQuery("");
+    setSuggestions([]);
+    setSelectedPlace(null);
     setEditErrors({});
     setIsEditing(false);
   };
 
+  // ── Place search ──
 
+  const handlePlaceSearch = (text: string) => {
+    setPlaceQuery(text);
+    setSelectedPlace(null);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (text.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    setSearching(true);
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const results = await placesService.searchPlaces(text);
+        setSuggestions(results);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
+
+  const handleSelectPlace = async (suggestion: PlaceSuggestion) => {
+    setSuggestions([]);
+    setPlaceQuery(suggestion.description);
+    setLoadingDetails(true);
+
+    try {
+      const details = await placesService.getPlaceDetails(suggestion.placeId);
+      if (details) {
+        setSelectedPlace(details);
+        setEditForm((prev) => ({
+          ...prev,
+          address: details.street || details.formattedAddress,
+          city: details.city || "",
+        }));
+        setEditErrors((prev) => ({ ...prev, address: "", city: "" }));
+      }
+    } catch {
+      toast.error("Could not get address details. Try using current location.");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    const place = await getCurrentLocation();
+    if (place) {
+      setSelectedPlace(place);
+      setPlaceQuery(place.formattedAddress);
+      setSuggestions([]);
+      setEditForm((prev) => ({
+        ...prev,
+        address: place.street || place.formattedAddress,
+        city: place.city || "",
+      }));
+      setEditErrors((prev) => ({ ...prev, address: "", city: "" }));
+    }
+  };
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -481,12 +571,106 @@ export default function BusinessDetailScreen() {
                     onChangeText={(v) => updateField("description", v)}
                     numberOfLines={3}
                   />
+                  {/* Address search */}
+                  <YStack gap="$2">
+                    <Text fontSize="$4" fontWeight="500" fontFamily="$heading" color="$color">
+                      Business Address
+                    </Text>
+                    <XStack gap="$2" alignItems="center">
+                      <YStack flex={1} position="relative">
+                        <Input
+                          placeholder="Search for an address..."
+                          value={placeQuery}
+                          onChangeText={handlePlaceSearch}
+                          paddingStart="$10"
+                          borderColor={editErrors.address ? "$error" : "$borderColor"}
+                        />
+                        <YStack position="absolute" left="$3" top="$3.5">
+                          <Search size={20} color="$colorMuted" />
+                        </YStack>
+                        {searching && (
+                          <YStack position="absolute" right="$3" top="$3.5">
+                            <Spinner size="small" />
+                          </YStack>
+                        )}
+                      </YStack>
+                    </XStack>
+
+                    <Button
+                      variant="outline"
+                      icon={<Navigation size={16} />}
+                      onPress={handleUseCurrentLocation}
+                      disabled={isLocating}
+                      opacity={isLocating ? 0.7 : 1}
+                    >
+                      {isLocating ? "Getting location..." : "Use Current Location"}
+                    </Button>
+
+                    {/* Suggestions */}
+                    {suggestions.length > 0 && (
+                      <Card bordered padding="$1" backgroundColor="$background" elevation="$6">
+                        <ScrollView maxHeight={200} keyboardShouldPersistTaps="handled">
+                          {suggestions.map((item) => (
+                            <TouchableOpacity
+                              key={item.placeId}
+                              onPress={() => handleSelectPlace(item)}
+                              style={{ paddingHorizontal: 12, paddingVertical: 10 }}
+                            >
+                              <XStack gap="$2" alignItems="center">
+                                <MapPin size={16} color="$colorMuted" />
+                                <YStack flex={1}>
+                                  <Text fontSize="$3" fontWeight="500" fontFamily="$body" color="$color">
+                                    {item.mainText || item.description}
+                                  </Text>
+                                  {item.secondaryText && (
+                                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                                      {item.secondaryText}
+                                    </Text>
+                                  )}
+                                </YStack>
+                              </XStack>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </Card>
+                    )}
+
+                    {/* Loading details */}
+                    {loadingDetails && (
+                      <XStack gap="$2" alignItems="center" padding="$2">
+                        <Spinner size="small" />
+                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                          Getting address details...
+                        </Text>
+                      </XStack>
+                    )}
+
+                    {/* Selected place confirmation */}
+                    {selectedPlace && !loadingDetails && (
+                      <Card padding="$3" bordered borderColor="$primary" backgroundColor="$primaryLight">
+                        <XStack gap="$2" alignItems="flex-start">
+                          <CheckCircle size={16} color="$primary" style={{ marginTop: 2 }} />
+                          <YStack flex={1} gap="$1">
+                            <Text fontSize="$3" fontWeight="600" fontFamily="$body" color="$primary">
+                              Address Selected
+                            </Text>
+                            <Text fontSize="$3" color="$color" fontFamily="$body">
+                              {selectedPlace.formattedAddress}
+                            </Text>
+                          </YStack>
+                        </XStack>
+                      </Card>
+                    )}
+
+                  </YStack>
+
                   <FormInput
-                    label="Street Address"
-                    placeholder="123 Main Street"
+                    label="Street / Landmark"
+                    placeholder="e.g. 123 Independence Ave, near the roundabout"
                     value={editForm.address}
                     onChangeText={(v) => updateField("address", v)}
                     icon={<MapPin size={18} color="$colorMuted" />}
+                    error={editErrors.address}
                   />
                   <FormInput
                     label="City"

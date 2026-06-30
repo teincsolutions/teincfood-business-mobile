@@ -7,6 +7,7 @@ import { queryClient } from '@/providers/QueryProvider';
 import { useRoleStore } from './role.store';
 import { useLocationStore } from './location.store';
 import { useBusinessStore } from './business.store';
+import { useFleetStore } from './fleet.store';
 
 interface AuthState {
   user: User | null;
@@ -55,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
         useRoleStore.getState().clearRole();
         useLocationStore.getState().clearLocation();
         useBusinessStore.getState().clearBusinesses();
+        useFleetStore.getState().clearFleet();
         queryClient.clear();
         set({ user: null, accessToken: null, refreshToken: null });
       },

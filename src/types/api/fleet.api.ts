@@ -1,26 +1,39 @@
 // ─── Fleet Rider ───
 
+export interface FleetRiderUser {
+  id: string;
+  full_name: string;
+  phone?: string;
+}
+
 export interface FleetRider {
   id: string;
   rider_number: string;
-  user_id: string;
   status: string;
   is_online: boolean;
+  is_fleet_managed: boolean;
   is_active: boolean;
   phone: string;
   license_number: string;
   kyc_status: string;
-  business_id: string;
+  user: FleetRiderUser | null;
+  inserted_at: string;
 }
 
 // ─── Fleet Vehicle ───
 
 export interface FleetVehicle {
   id: string;
-  rider_id: string;
+  rider_id: string | null;
   plate_number: string;
   type: string;
   ownership: string;
+  brand?: string;
+  model?: string;
+  color?: string;
+  year?: number;
+  rider_number?: string;
+  rider_name?: string;
   inserted_at: string;
 }
 

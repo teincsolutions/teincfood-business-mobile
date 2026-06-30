@@ -37,7 +37,16 @@ export const useBusinessStore = create<BusinessState>()(
       activeBusiness: null,
       isHydrated: false,
 
-      setBusinesses: (businesses) => set({ businesses }),
+      setBusinesses: (businesses) =>
+        set((state) => ({
+          businesses,
+          activeBusiness:
+            state.activeBusiness
+              ? state.activeBusiness
+              : businesses.length === 1
+                ? (businesses[0] as any)
+                : null,
+        })),
 
       setActiveBusiness: (business) => set({ activeBusiness: business }),
 
