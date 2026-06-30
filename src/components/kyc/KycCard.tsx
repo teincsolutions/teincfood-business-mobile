@@ -23,7 +23,7 @@ import {
   Image as ImageIcon,
   File as FileIcon,
 } from "@tamagui/lucide-icons";
-import { Button, FormInput } from "@/components/ui";
+import { Button, FormInput, TamaguiDateInput } from "@/components/ui";
 
 export type DocStatus =
   | "not_uploaded"
@@ -117,7 +117,7 @@ export function KycCard({
   const selectedLabel =
     ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
   const canUpload = status === "not_uploaded" || status === "rejected";
-  const canSubmit = status === "uploading" && !uploading;
+  const canSubmit = status !== "not_uploaded" && status !== "pending" && status !== "verified" && status !== "rejected" && !uploading;
 
   return (
     <YStack gap="$2" paddingVertical="$2">
@@ -219,20 +219,10 @@ export function KycCard({
       {config.hasDates && canUpload && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
           <YStack flex={1}>
-            <FormInput
-              label=""
-              placeholder="Issued (YYYY-MM-DD)"
-              value={issuedDate || ""}
-              onChangeText={onIssuedDateChange || (() => {})}
-            />
+            <TamaguiDateInput value={issuedDate} onChange={onIssuedDateChange || (() => {})} placeholder="Issued date" />
           </YStack>
           <YStack flex={1}>
-            <FormInput
-              label=""
-              placeholder="Expires (YYYY-MM-DD)"
-              value={expirationDate || ""}
-              onChangeText={onExpirationDateChange || (() => {})}
-            />
+            <TamaguiDateInput value={expirationDate} onChange={onExpirationDateChange || (() => {})} placeholder="Expiry date" />
           </YStack>
         </XStack>
       )}

@@ -1,9 +1,8 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { Platform } from 'react-native';
 import { XStack, Text, useTheme } from 'tamagui';
 import { Calendar } from '@tamagui/lucide-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 interface TamaguiDateInputProps {
   value?: Date;
@@ -15,15 +14,6 @@ export function TamaguiDateInput({ value, onChange, placeholder }: TamaguiDateIn
   const theme = useTheme();
   const [showPicker, setShowPicker] = useState(false);
   const displayText = value ? value.toISOString().split('T')[0] : '';
-
-  const handleChange = (_event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowPicker(false);
-    }
-    if (selectedDate) {
-      onChange(selectedDate);
-    }
-  };
 
   return (
     <>
@@ -45,14 +35,13 @@ export function TamaguiDateInput({ value, onChange, placeholder }: TamaguiDateIn
         </Text>
       </XStack>
 
-      {showPicker && (
-        <DateTimePicker
-          value={value || new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleChange}
-        />
-      )}
+      <DateTimePickerModal
+        isVisible={showPicker}
+        mode="date"
+        date={value || new Date()}
+        onConfirm={(date: Date) => { setShowPicker(false); onChange(date); }}
+        onCancel={() => setShowPicker(false)}
+      />
     </>
   );
 }

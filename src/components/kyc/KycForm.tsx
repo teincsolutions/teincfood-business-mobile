@@ -17,8 +17,8 @@ export interface KycDocumentState {
   uri?: string;
   idType?: string;
   idNumber?: string;
-  issuedDate?: string;
-  expirationDate?: string;
+  issuedDate?: Date;
+  expirationDate?: Date;
 }
 
 export interface KycFormProps {
@@ -98,10 +98,11 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
     const doc = documents[docId];
     if (!doc || !doc.uri) return;
 
+    const fmt = (d: Date | undefined) => d ? d.toISOString().split('T')[0] : '';
     const payload: Record<string, any> = {
       url: doc.uri,
-      issued_date: doc.issuedDate || doc.uploadedAt || new Date().toISOString().split('T')[0],
-      expiration_date: doc.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+      issued_date: fmt(doc.issuedDate) || doc.uploadedAt || new Date().toISOString().split('T')[0],
+      expiration_date: fmt(doc.expirationDate) || new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
     };
     if (doc.idNumber) payload.id_number = doc.idNumber;
     if (doc.idType) payload.id_type = doc.idType;
@@ -160,8 +161,8 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
                   expirationDate={doc.expirationDate}
                   onIdTypeChange={(val) => updateDoc(config.id, { idType: val })}
                   onIdNumberChange={(val) => updateDoc(config.id, { idNumber: val })}
-                  onIssuedDateChange={(val) => updateDoc(config.id, { issuedDate: val })}
-                  onExpirationDateChange={(val) => updateDoc(config.id, { expirationDate: val })}
+                  onIssuedDateChange={(val: Date) => updateDoc(config.id, { issuedDate: val })}
+                  onExpirationDateChange={(val: Date) => updateDoc(config.id, { expirationDate: val })}
                   onUpload={handleUpload}
                   onSubmitDoc={handleSubmitDoc}
                   onRemove={() => updateDoc(config.id, { status: 'not_uploaded', uri: undefined, previewUri: undefined })}

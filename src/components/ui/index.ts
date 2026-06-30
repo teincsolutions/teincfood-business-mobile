@@ -8,6 +8,7 @@ import { AppAlertDialog } from './AlertDialog';
 import { Badge } from './Badge';
 import { ScreenContainer } from './ScreenContainer';
 import { ServiceStatusBanner } from './ServiceStatusBanner';
+import { TamaguiDateInput } from './TamaguiDateInput';
 
 export { 
   Button, 
@@ -23,4 +24,5 @@ export {
   Badge,
   ScreenContainer,
   ServiceStatusBanner,
+  TamaguiDateInput,
 };
