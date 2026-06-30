@@ -28,7 +28,7 @@ const CONFIGS: Record<ServiceStatus, BannerConfig> = {
     title: 'Verification Pending',
     message: 'Your account is awaiting verification. Some features may be limited until approved.',
     ctaLabel: 'Upload Documents',
-    ctaRoute: '/(shared)/profile/documents',
+    ctaRoute: '/(shared)/kyc',
   },
   verified: {
     bg: '$green2',

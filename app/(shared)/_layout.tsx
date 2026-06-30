@@ -18,7 +18,7 @@ export default function SharedLayout() {
       <Stack.Screen name="select-business" />
       <Stack.Screen name="notifications/index" />
       <Stack.Screen name="profile/edit" />
-      <Stack.Screen name="profile/documents" />
+      <Stack.Screen name="kyc" />
       <Stack.Screen name="profile/help" />
       <Stack.Screen name="profile/index" />
       <Stack.Screen name="profile/privacy-policy" />

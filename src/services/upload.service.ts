@@ -12,6 +12,11 @@ interface UploadResponse {
 export interface UploadContext {
   business_id?: string;
   item_id?: string;
+  entity_type?: string;
+  entity_id?: string;
+  document_type?: string;
+  user_id?: string;
+  subdomain?: string;
 }
 
 export interface UploadResult {

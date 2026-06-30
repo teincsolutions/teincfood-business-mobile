@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { FormInput, Button, BackButton } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth.store";
 import {
   Save,
   Camera,
@@ -16,7 +17,6 @@ import {
   Shield,
 } from "@tamagui/lucide-icons";
 import { toast } from "sonner-native";
-import { useAuthStore } from "@/stores/auth.store";
 import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/useProfile";
 import { uploadImage } from "@/services/upload.service";
 import { extractApiErrorMessage } from "@/utils/error";
@@ -299,6 +299,11 @@ export default function EditProfile() {
               </XStack>
             </YStack>
           </Card>
+
+          {/* KYC Documents */}
+          <Button variant="outline" width="100%" onPress={() => router.push("/(shared)/kyc?type=user&role=" + (user?.role || "rider"))}>
+            KYC Documents
+          </Button>
 
           {/* Save Button */}
           <Button
