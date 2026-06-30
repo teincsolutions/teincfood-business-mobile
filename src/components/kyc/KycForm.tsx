@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { YStack, XStack, Text, Card, Progress, Separator } from 'tamagui';
 import { toast } from 'sonner-native';
 import { Button } from '@/components/ui';
@@ -25,9 +26,10 @@ export interface KycFormProps {
   documents: Record<string, KycDocumentState>;
   onDocumentsChange: (docs: Record<string, KycDocumentState>) => void;
   onSubmitDoc: (docId: string, docPayload: Record<string, any>) => Promise<void>;
+  uploadContext?: Record<string, string>;
 }
 
-export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsChange, onSubmitDoc }: KycFormProps) {
+export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsChange, onSubmitDoc, uploadContext }: KycFormProps) {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
@@ -35,31 +37,42 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
     onDocumentsChange({ ...documents, [docId]: { ...documents[docId], ...updates } });
   }, [documents, onDocumentsChange]);
 
-  const handleUpload = useCallback(async (docId: string, useCamera: boolean) => {
-    const permFn = useCamera ? ImagePicker.requestCameraPermissionsAsync : ImagePicker.requestMediaLibraryPermissionsAsync;
-    const { status } = await permFn();
-    if (status !== 'granted') {
-      toast.error(useCamera ? 'Camera access is required.' : 'Photo library access is required.');
-      return;
+  const pickAsset = useCallback(async (source: 'camera' | 'gallery' | 'document'): Promise<{ uri: string; name: string } | null> => {
+    if (source === 'camera' || source === 'gallery') {
+      const permFn = source === 'camera' ? ImagePicker.requestCameraPermissionsAsync : ImagePicker.requestMediaLibraryPermissionsAsync;
+      const { status } = await permFn();
+      if (status !== 'granted') {
+        toast.error(source === 'camera' ? 'Camera access is required.' : 'Photo library access is required.');
+        return null;
+      }
+      const result = await (source === 'camera' ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync)({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.85,
+      });
+      if (result.canceled || !result.assets?.[0]) return null;
+      const asset = result.assets[0];
+      return { uri: asset.uri, name: asset.uri.split('/').pop() || 'photo.jpg' };
     }
 
-    const result = await (useCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync)({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.85,
-    });
+    // Document picker (PDF, etc.)
+    const docResult = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+    if (docResult.canceled || !docResult.assets?.[0]) return null;
+    return { uri: docResult.assets[0].uri, name: docResult.assets[0].name || 'document.pdf' };
+  }, []);
 
-    if (result.canceled || !result.assets[0]) return;
+  const handleUpload = useCallback(async (docId: string, source: 'camera' | 'gallery' | 'document') => {
+    const asset = await pickAsset(source);
+    if (!asset) return;
 
-    const asset = result.assets[0];
     setUploadingId(docId);
     setUploadProgress(0);
     updateDoc(docId, { status: 'uploading', previewUri: asset.uri });
 
     try {
-      // Simulate progress for better UX
       const progressTimer = setInterval(() => setUploadProgress((p) => Math.min(p + 15, 85)), 400);
-      const { key } = await uploadImage(asset.uri, 'kyc');
+      const ctx = { entity_type: 'unknown', entity_id: 'unknown', document_type: docId, ...(uploadContext || {}) };
+      const { key } = await uploadImage(asset.uri, 'kyc', ctx);
       clearInterval(progressTimer);
       setUploadProgress(100);
 
@@ -77,7 +90,7 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
       setUploadingId(null);
       setUploadProgress(0);
     }
-  }, [updateDoc]);
+  }, [pickAsset, updateDoc, uploadContext]);
 
   const handleSubmitDoc = useCallback(async (docId: string) => {
     const doc = documents[docId];

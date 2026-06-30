@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { TouchableOpacity, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { YStack, XStack, Text, Sheet, Separator, Progress, useTheme, Spinner } from 'tamagui';
-import { FileText, Check, Clock, AlertCircle, Camera, ChevronDown, Upload } from '@tamagui/lucide-icons';
-import { toast } from 'sonner-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { YStack, XStack, Text, Sheet, Separator, Progress, useTheme } from 'tamagui';
+import { FileText, Check, Clock, AlertCircle, Camera, ChevronDown, Upload, Image as ImageIcon, File as FileIcon } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
 
 export type DocStatus = 'not_uploaded' | 'uploading' | 'pending' | 'verified' | 'rejected';
@@ -31,7 +31,7 @@ interface KycCardProps {
   idNumber?: string;
   onIdTypeChange?: (type: string) => void;
   onIdNumberChange?: (val: string) => void;
-  onUpload: (docId: string, useCamera: boolean) => void;
+  onUpload: (docId: string, source: 'camera' | 'gallery' | 'document') => void;
   onSubmitDoc: (docId: string) => void;
   onRemove: (docId: string) => void;
 }
@@ -76,6 +76,7 @@ export function KycCard({
 }: KycCardProps) {
   const theme = useTheme();
   const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const isImage = previewUri ? /\.(jpe?g|png|gif|webp|bmp)$/i.test(previewUri) || previewUri.startsWith('http') : false;
 
   const selectedLabel = ID_TYPES.find((t) => t.value === idType)?.label || 'Select ID Type';
@@ -161,13 +162,40 @@ export function KycCard({
         </YStack>
       )}
 
-      {/* Buttons */}
+      {/* Upload button */}
       {canUpload && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
-          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, true)} disabled={uploading}>Camera</Button>
-          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, false)} disabled={uploading}>Gallery</Button>
+          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => setPickerOpen(true)} disabled={uploading}>Upload</Button>
         </XStack>
       )}
+
+      {/* Source picker sheet — Camera, Gallery, Document */}
+      <Sheet modal open={pickerOpen} onOpenChange={setPickerOpen} snapPoints={[35]} dismissOnSnapToBottom zIndex={200_000}>
+        <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack px="$5" pt="$3" pb="$4" gap="$2">
+            <Text fontSize="$5" fontWeight="800" fontFamily="$heading">Upload Document</Text>
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">Choose a source</Text>
+          </YStack>
+          <YStack px="$5" pb="$6" gap="$1">
+            <XStack py="$4" gap="$3" alignItems="center" onPress={() => { setPickerOpen(false); onUpload(config.id, 'camera'); }}>
+              <YStack p="$2" backgroundColor="rgba(255,145,0,0.1)" borderRadius="$3"><Camera size={20} color="$primary" /></YStack>
+              <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$color">Camera</Text>
+            </XStack>
+            <Separator />
+            <XStack py="$4" gap="$3" alignItems="center" onPress={() => { setPickerOpen(false); onUpload(config.id, 'gallery'); }}>
+              <YStack p="$2" backgroundColor="rgba(255,145,0,0.1)" borderRadius="$3"><ImageIcon size={20} color="$primary" /></YStack>
+              <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$color">Photo Gallery</Text>
+            </XStack>
+            <Separator />
+            <XStack py="$4" gap="$3" alignItems="center" onPress={() => { setPickerOpen(false); onUpload(config.id, 'document'); }}>
+              <YStack p="$2" backgroundColor="rgba(255,145,0,0.1)" borderRadius="$3"><FileIcon size={20} color="$primary" /></YStack>
+              <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$color">Document (PDF)</Text>
+            </XStack>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
 
       {status === 'uploading' && !uploading && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">

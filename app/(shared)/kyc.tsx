@@ -49,6 +49,7 @@ export default function KycScreen() {
 
   const docType = type === "business" ? "business" : (role as string) || "rider";
   const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.rider;
+  const uploadContext = type === "business" && id ? { entity_type: "business", entity_id: id } : { entity_type: "user" };
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(() => buildInitialDocs(configs));
 
   const title = type === "business" ? "Business KYC" : "KYC Verification";
@@ -82,6 +83,7 @@ export default function KycScreen() {
             documents={documents}
             onDocumentsChange={setDocuments}
             onSubmitDoc={handleSubmitDoc}
+            uploadContext={uploadContext}
           />
         </YStack>
       </ScrollView>
