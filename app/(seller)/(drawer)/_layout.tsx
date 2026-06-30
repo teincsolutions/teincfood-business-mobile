@@ -66,7 +66,10 @@ function CustomDrawerContent(props: any) {
       {/* Menu Items */}
       <DrawerContentScrollView
         {...props}
-        contentContainerStyle={{ backgroundColor: theme.background.val }}
+        contentContainerStyle={{
+          backgroundColor: theme.background.val,
+          paddingTop: 0,
+        }}
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
