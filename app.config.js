@@ -110,6 +110,12 @@ module.exports = {
         },
       ],
       [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+      [
         "expo-notifications",
         {
           sounds: ["./assets/notification_sound.wav"],
