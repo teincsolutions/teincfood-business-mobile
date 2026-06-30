@@ -1,30 +1,21 @@
 export type UserRole = 'seller' | 'rider' | 'fleet_manager';
-export type ServiceStatus = 'pending_verification' | 'verified' | 'suspended' | 'banned';
 
+/** Matches the backend's user show/format_user_response shape exactly */
 export interface User {
   id: string;
-  username?: string;
-  fullName: string;
   email: string;
+  full_name: string;
   phone: string;
-  avatarUrl?: string;
-  email_verified_at?: string | null;
-  phone_verified_at?: string | null;
+  avatar_url: string | null;
+  has_password: boolean;
+  email_verified_at: string | null;
+  phone_verified_at: string | null;
+  kyc_status: string;
+  has_completed_kyc: boolean;
+  inserted_at: string;
+  updated_at: string;
+  /** Derived by the frontend — backend returns `roles: string[]` */
   role: UserRole;
-  // Rider-specific fields
-  vehicleType?: 'bicycle' | 'motorcycle' | 'car';
-  vehiclePlateNumber?: string;
-  isOnline?: boolean;
-  bio?: string;
-  hasCompletedKyc?: boolean;
-  serviceStatus?: ServiceStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserProfile extends User {
-  addresses: Address[];
-  paymentMethods: PaymentMethod[];
 }
 
 export interface Address {
@@ -45,47 +36,8 @@ export interface PaymentMethod {
   accountNumber?: string;
   bankName?: string;
   accountHolderName?: string;
-  // Card-specific fields
   last4?: string;
   cardHolderName?: string;
   cardBrand?: 'visa' | 'mastercard' | 'amex';
   isDefault: boolean;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface SellerSignupRequest {
-  fullName: string;
-  email: string;
-  password: string;
-  phone: string;
-  businessName: string;
-  businessType: string;
-  businessAddress: string;
-}
-
-export interface RiderSignupRequest {
-  fullName: string;
-  email: string;
-  password: string;
-  phone: string;
-  vehicleType: 'bicycle' | 'motorcycle' | 'car';
-  vehiclePlateNumber?: string;
-  dateOfBirth: string;
-  nationalIdNumber: string;
-}
-
-export interface OTPVerifyRequest {
-  phone: string;
-  code: string;
-  sessionId: string;
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
 }

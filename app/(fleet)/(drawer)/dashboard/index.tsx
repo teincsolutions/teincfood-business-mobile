@@ -46,8 +46,8 @@ export default function FleetDashboardScreen() {
     >
       <YStack padding="$4" gap="$4">
         <ServiceStatusBanner
-          status={user?.serviceStatus}
-          hasCompletedKyc={user?.hasCompletedKyc}
+          kyc_status={user?.kyc_status}
+          hasCompletedKyc={user?.has_completed_kyc}
         />
 
         {!hasBusiness && !dismissNoBusiness && (

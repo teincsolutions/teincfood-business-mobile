@@ -212,38 +212,6 @@ export function KycCard({
         </XStack>
       )}
 
-      {/* ID Number input */}
-      {config.hasIdNumber && canUpload && (
-        <YStack paddingLeft="$11" marginTop="$1">
-          <FormInput
-            label=""
-            placeholder={`${config.name} number`}
-            value={idNumber || ""}
-            onChangeText={onIdNumberChange || (() => {})}
-          />
-        </YStack>
-      )}
-
-      {/* Issued date + Expiration date */}
-      {config.hasDates && canUpload && (
-        <XStack gap="$2" paddingLeft="$11" marginTop="$1">
-          <YStack flex={1}>
-            <TamaguiDateInput
-              value={issuedDate}
-              onChange={onIssuedDateChange || (() => {})}
-              placeholder="Issued date"
-            />
-          </YStack>
-          <YStack flex={1}>
-            <TamaguiDateInput
-              value={expirationDate}
-              onChange={onExpirationDateChange || (() => {})}
-              placeholder="Expiry date"
-            />
-          </YStack>
-        </XStack>
-      )}
-
       {/* Upload progress bar */}
       {status === "uploading" && (
         <YStack paddingLeft="$11" marginTop="$1" gap="$1">

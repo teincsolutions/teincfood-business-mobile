@@ -7,10 +7,10 @@ import type { User } from '@/types/user.model';
 /** Map snake_case API profile to camelCase User store fields */
 function apiProfileToUser(api: Record<string, any>): Partial<User> {
   return {
-    fullName: api.full_name ?? '',
+    full_name: api.full_name ?? '',
     email: api.email ?? '',
     phone: api.phone ?? '',
-    avatarUrl: api.avatar_url ?? undefined,
+    avatar_url: api.avatar_url ?? undefined,
     email_verified_at: api.email_verified_at ?? null,
     phone_verified_at: api.phone_verified_at ?? null,
   };

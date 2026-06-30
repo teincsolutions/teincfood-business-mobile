@@ -17,20 +17,18 @@ export interface AuthError {
 function mapApiUserToUser(apiUser: Record<string, any>): User {
   return {
     id: apiUser.id,
-    fullName: apiUser.full_name || apiUser.fullName || '',
-    email: apiUser.email || '',
-    phone: apiUser.phone || '',
-    username: apiUser.username || apiUser.user_name,
-    avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
+    email: apiUser.email ?? '',
+    full_name: apiUser.full_name ?? '',
+    phone: apiUser.phone ?? '',
+    avatar_url: apiUser.avatar_url ?? null,
+    has_password: apiUser.has_password ?? false,
+    email_verified_at: apiUser.email_verified_at ?? null,
+    phone_verified_at: apiUser.phone_verified_at ?? null,
+    kyc_status: apiUser.kyc_status ?? 'pending',
+    has_completed_kyc: apiUser.has_completed_kyc ?? false,
+    inserted_at: apiUser.inserted_at ?? apiUser.created_at ?? new Date().toISOString(),
+    updated_at: apiUser.updated_at ?? new Date().toISOString(),
     role: (apiUser.role || apiUser.roles?.[0] || 'buyer') as User['role'],
-    vehicleType: apiUser.vehicle_type || apiUser.vehicleType,
-    vehiclePlateNumber: apiUser.vehicle_plate_number || apiUser.vehiclePlateNumber,
-    isOnline: apiUser.is_online ?? apiUser.isOnline,
-    bio: apiUser.bio,
-    hasCompletedKyc: apiUser.has_completed_kyc ?? apiUser.hasCompletedKyc,
-    serviceStatus: apiUser.service_status || apiUser.serviceStatus,
-    createdAt: apiUser.created_at || apiUser.createdAt || new Date().toISOString(),
-    updatedAt: apiUser.updated_at || apiUser.updatedAt || new Date().toISOString(),
   };
 }
 

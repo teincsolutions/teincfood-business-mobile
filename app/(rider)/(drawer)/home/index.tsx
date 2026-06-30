@@ -149,8 +149,8 @@ export default function RiderHome() {
         <YStack paddingHorizontal="$4" gap="$4">
           {/* Service Status */}
         <ServiceStatusBanner
-          status={user?.serviceStatus}
-          hasCompletedKyc={user?.hasCompletedKyc}
+          kyc_status={user?.kyc_status}
+          hasCompletedKyc={user?.has_completed_kyc}
         />
 
         {/* No Rider Profile Banner */}

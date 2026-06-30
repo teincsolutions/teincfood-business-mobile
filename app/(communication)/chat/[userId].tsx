@@ -108,7 +108,7 @@ export default function ChatScreen() {
 
   const handleViewContact = () => {
     setMenuOpen(false);
-    Alert.alert('Contact', `${user?.fullName || 'User'}\n${user?.phone || 'Phone not available'}`);
+    Alert.alert('Contact', `${user?.full_name || 'User'}\n${user?.phone || 'Phone not available'}`);
   };
 
   const handleSend = () => {
@@ -154,14 +154,14 @@ export default function ChatScreen() {
           <BackButton />
           <XStack flex={1} gap="$3" alignItems="center">
             <Image 
-              source={{ uri: user?.avatarUrl }} 
+              source={{ uri: user?.avatar_url }} 
               width={40} 
               height={40} 
               borderRadius="$full" 
             />
             <YStack>
               <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
-                {user?.fullName || (isSupportChat ? 'Support' : 'Chat')}
+                {user?.full_name || (isSupportChat ? 'Support' : 'Chat')}
               </Text>
               <XStack alignItems="center" gap="$1">
                 <YStack width={8} height={8} borderRadius={4} backgroundColor="$green" />
@@ -283,7 +283,7 @@ export default function ChatScreen() {
             </YStack>
             <YStack px="$5" pb="$6">
               <XStack py="$4" items="center" jc="space-between" onPress={handleCall}>
-                <Text fontSize="$4" fontFamily="$body" color="$color">Call {user?.fullName || 'Contact'}</Text>
+                <Text fontSize="$4" fontFamily="$body" color="$color">Call {user?.full_name || 'Contact'}</Text>
                 <Phone size={18} color="$primary" />
               </XStack>
               <Separator borderColor="$borderColor" />

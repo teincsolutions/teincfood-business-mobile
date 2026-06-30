@@ -21,9 +21,9 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
 import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
-import * as businessService from '@/services/business.service';
-import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import * as businessService from "@/services/business.service";
+import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
 
 /**
  * Seller Dashboard Screen
@@ -41,7 +41,10 @@ export default function SellerDashboard() {
   const isStoreOpen = activeBusiness?.manuallyClosed !== true;
 
   // TanStack Query hooks
-  const { data, isLoading, refetch } = useSellerDashboardQuery(activeBusinessId, hasBusiness);
+  const { data, isLoading, refetch } = useSellerDashboardQuery(
+    activeBusinessId,
+    hasBusiness,
+  );
 
   const metrics = data?.metrics ?? {
     today_orders: 0,
@@ -98,8 +101,8 @@ export default function SellerDashboard() {
       >
         {/* Service Status */}
         <ServiceStatusBanner
-          status={user?.serviceStatus}
-          hasCompletedKyc={user?.hasCompletedKyc}
+          kyc_status={user?.kyc_status}
+          hasCompletedKyc={user?.has_completed_kyc}
         />
 
         {/* No Business Banner */}
@@ -134,9 +137,7 @@ export default function SellerDashboard() {
               <XStack gap="$2">
                 <Button
                   variant="primary"
-                  onPress={() =>
-                    router.push("/(shared)/businesses/add")
-                  }
+                  onPress={() => router.push("/(shared)/businesses/add")}
                 >
                   Create Business
                 </Button>
@@ -148,11 +149,8 @@ export default function SellerDashboard() {
         {/* Header */}
         <XStack justifyContent="space-between" alignItems="center">
           <YStack>
-            <Text fontSize="$4" color="$colorMuted">
-              Welcome back,
-            </Text>
-            <Text fontSize="$6" fontWeight="bold">
-              {user?.businessName || user?.fullName || "Seller"}
+            <Text fontSize="$4" color="$color">
+              Welcome back, {user?.full_name || "Seller"}
             </Text>
             {activeBusiness && (
               <XStack gap="$1" alignItems="center" marginTop="$1">
@@ -321,7 +319,10 @@ export default function SellerDashboard() {
                   <YStack>
                     <Text fontWeight="bold">{order.order_number}</Text>
                     <Text fontSize="$3" color="$colorMuted">
-                      {order.item_count} items • {formatPrice(order.total_minor ? order.total_minor / 100 : 0)}
+                      {order.item_count} items •{" "}
+                      {formatPrice(
+                        order.total_minor ? order.total_minor / 100 : 0,
+                      )}
                     </Text>
                   </YStack>
                   <XStack gap="$2" alignItems="center">
