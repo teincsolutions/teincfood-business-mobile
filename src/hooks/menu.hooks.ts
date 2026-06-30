@@ -1,18 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as menuService from '@/services/menu.service';
-import { uploadImage } from '@/services/upload.service';
-import type { MenuItem } from '@/services/menu.service';
-import { useBusinessStore } from '@/stores/business.store';
-import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import {
+  useMutation,
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import * as menuService from "@/services/menu.service";
+import { uploadImage } from "@/services/upload.service";
+import type { MenuItem } from "@/services/menu.service";
+import { useBusinessStore } from "@/stores/business.store";
+import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
 export const MENU_KEYS = {
-  all: ['menu'] as const,
-  items: (businessId?: string) => [...MENU_KEYS.all, 'items', businessId] as const,
-  categories: (businessId?: string) => [...MENU_KEYS.all, 'categories', businessId] as const,
-  item: (id: string) => [...MENU_KEYS.all, 'item', id] as const,
+  all: ["menu"] as const,
+  items: (businessId?: string) =>
+    [...MENU_KEYS.all, "items", businessId] as const,
+  categories: (businessId?: string) =>
+    [...MENU_KEYS.all, "categories", businessId] as const,
+  item: (id: string) => [...MENU_KEYS.all, "item", id] as const,
 };
 
 function useBusinessId() {
@@ -21,17 +28,20 @@ function useBusinessId() {
 
 // ─── Menu Items Query Hooks ──────────────────────────────────────────────────
 
-export function useMenuItemsQuery(enabled = true) {
+export function useMenuItemsQuery(filters?: { search?: string; category_ids?: string; sort?: string }, enabled = true) {
   const businessId = useBusinessId();
-  return useQuery({
-    queryKey: MENU_KEYS.items(businessId),
-    queryFn: async (): Promise<MenuItem[]> => {
-      const res = businessId
-        ? await menuService.fetchBusinessMenuItems(businessId)
-        : await menuService.fetchMenuItems();
-      return res.data;
-    },
+  return useInfiniteQuery({
+    queryKey: [...MENU_KEYS.items(businessId), filters],
+    queryFn: ({ pageParam = 1 }) =>
+      menuService.fetchBusinessMenuItems(businessId!, pageParam, filters),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.page < lastPage.pagination.total_pages
+        ? lastPage.pagination.page + 1
+        : undefined,
     enabled: enabled && !!businessId,
+    staleTime: 1000 * 30,
+    select: (data) => data.pages.flatMap((p) => p.data),
   });
 }
 
@@ -50,7 +60,7 @@ type CreateInput = {
   name: string;
   description: string;
   priceMinor: number;
-  category: string;
+  categoryId: string;
   dietaryTags: string[];
   variants: any[];
   extras: any[];
@@ -60,17 +70,27 @@ type CreateInput = {
 
 type UpdateInput = CreateInput & { id: string };
 
-async function uploadFirstImage(images: string[], businessId?: string): Promise<string | null> {
+async function uploadFirstImage(
+  images: string[],
+  businessId?: string,
+): Promise<string | null> {
   if (!images || images.length === 0) return null;
   // Image 0 is the S3 key (already uploaded), image 1 is the preview URL
   const keyOrUri = images[0];
   // If it starts with a path like "menus/...", it's already an uploaded key — return as-is
-  if (typeof keyOrUri === 'string' && !keyOrUri.startsWith('file://') && !keyOrUri.startsWith('ph://') && !keyOrUri.startsWith('content://')) {
+  if (
+    typeof keyOrUri === "string" &&
+    !keyOrUri.startsWith("file://") &&
+    !keyOrUri.startsWith("ph://") &&
+    !keyOrUri.startsWith("content://")
+  ) {
     return keyOrUri;
   }
   // Local file that wasn't pre-uploaded — upload now
   try {
-    const result = await uploadImage(keyOrUri, 'menus', { business_id: businessId });
+    const result = await uploadImage(keyOrUri, "menus", {
+      business_id: businessId,
+    });
     return result.key;
   } catch (e) {
     toast.error(extractApiErrorMessage(e));
@@ -90,26 +110,24 @@ export function useCreateMenuItemMutation() {
         name: input.name,
         description: input.description,
         price_minor: input.priceMinor,
-        category: input.category,
+        category_id: input.categoryId,
+        currency_code: "GHS",
         dietary_tags: input.dietaryTags,
         variants: input.variants.map((v: any) => ({
-          label: v.label,
-          price_minor: v.price_minor,
+          name: v.label,
+          price_adjustment: v.price_minor,
         })),
-        addons: input.extras.map((e: any) => ({
-          label: e.label,
+        extras: input.extras.map((e: any) => ({
+          name: e.label,
           price_minor: e.price_minor,
         })),
-        is_available: input.available,
+        available: input.available,
         image_url: imageUrl,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success('Menu item created');
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
+      toast.success("Menu item created");
     },
   });
 }
@@ -120,27 +138,39 @@ export function useUpdateMenuItemMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateInput> }) => {
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: Partial<CreateInput>;
+    }) => {
       const payload: Record<string, any> = {};
       if (updates.name !== undefined) payload.name = updates.name;
-      if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.priceMinor !== undefined) payload.price_minor = updates.priceMinor;
-      if (updates.category !== undefined) payload.category = updates.category;
-      if (updates.dietaryTags !== undefined) payload.dietary_tags = updates.dietaryTags;
-      if (updates.available !== undefined) payload.is_available = updates.available;
+      if (updates.description !== undefined)
+        payload.description = updates.description;
+      if (updates.priceMinor !== undefined)
+        payload.price_minor = updates.priceMinor;
+      if (updates.categoryId !== undefined)
+        payload.category_id = updates.categoryId;
+      payload.currency_code = "GHS";
+      if (updates.available !== undefined)
+        payload.available = updates.available;
+      if (updates.dietaryTags !== undefined)
+        payload.dietary_tags = updates.dietaryTags;
       if (updates.images !== undefined) {
         const imageUrl = await uploadFirstImage(updates.images, businessId);
         payload.image_url = imageUrl;
       }
       if (updates.variants !== undefined) {
         payload.variants = updates.variants.map((v: any) => ({
-          label: v.label,
-          price_minor: v.price_minor,
+          name: v.label,
+          price_adjustment: v.price_minor,
         }));
       }
       if (updates.extras !== undefined) {
-        payload.addons = updates.extras.map((e: any) => ({
-          label: e.label,
+        payload.extras = updates.extras.map((e: any) => ({
+          name: e.label,
           price_minor: e.price_minor,
         }));
       }
@@ -148,10 +178,7 @@ export function useUpdateMenuItemMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success('Menu item updated');
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
+      toast.success("Menu item updated");
     },
   });
 }
@@ -165,7 +192,7 @@ export function useDeleteMenuItemMutation() {
     mutationFn: (id: string) => menuService.deleteMenuItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success('Menu item deleted');
+      toast.success("Menu item deleted");
     },
     onError: (e) => {
       toast.error(extractApiErrorMessage(e));

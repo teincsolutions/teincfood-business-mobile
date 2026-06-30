@@ -31,6 +31,7 @@ interface MenuFormSheetProps {
   onOpenChange: (open: boolean) => void;
   editingItem: MenuItem | null;
   form: MenuItemForm;
+  fieldErrors?: Record<string, string>;
   variantLabel: string;
   variantPrice: string;
   extraLabel: string;
@@ -67,6 +68,7 @@ export function MenuFormSheet({
   isFormValid,
   isSaving,
   isUploadingImage,
+  fieldErrors,
   onImagePick,
   onFormChange,
   onVariantLabelChange,
@@ -212,6 +214,7 @@ export function MenuFormSheet({
                     placeholder="e.g. Jollof Rice"
                     value={form.name}
                     onChangeText={(v) => updateFormField('name', v)}
+                    error={fieldErrors?.name}
                     required
                   />
                   <FormInput
@@ -219,6 +222,7 @@ export function MenuFormSheet({
                     placeholder="Short description of the item"
                     value={form.description}
                     onChangeText={(v) => updateFormField('description', v)}
+                    error={fieldErrors?.description}
                   />
                   <FormInput
                     label="Base Price"
@@ -226,6 +230,7 @@ export function MenuFormSheet({
                     keyboardType="decimal-pad"
                     value={form.price}
                     onChangeText={(v) => updateFormField('price', v)}
+                    error={fieldErrors?.price}
                     required
                   />
                 </YStack>
@@ -255,7 +260,7 @@ export function MenuFormSheet({
                     }}
                   >
                     <Text fontFamily="$body" fontSize="$4" color="$color">
-                      {form.category}
+                      {categories.find((c) => c.id === form.category)?.name || 'Select a category'}
                     </Text>
                     <ChevronDown size={18} color={theme.colorSecondary?.val} />
                   </TouchableOpacity>
@@ -552,14 +557,14 @@ export function MenuFormSheet({
                     justifyContent="space-between"
                     alignItems="center"
                     onPress={() => {
-                      updateFormField('category', cat.name);
+                      updateFormField('category', cat.id);
                       onCategorySheetOpenChange(false);
                     }}
                   >
                     <Text fontSize="$4" fontFamily="$body" fontWeight="600" color="$color">
                       {cat.name}
                     </Text>
-                    {form.category === cat.name && (
+                    {form.category === cat.id && (
                       <YStack
                         width={20}
                         height={20}

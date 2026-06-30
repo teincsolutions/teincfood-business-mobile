@@ -3,8 +3,8 @@ import type { PaginationMeta } from './pagination';
 // ─── Money object used by serializer ───
 
 export interface Money {
-  amount: number;
-  currency: string;
+  amountMinor: number;
+  currencyCode: string;
 }
 
 // ─── Response types — matches MenuSerializer.serialize_menu_item/1 ───
@@ -38,10 +38,11 @@ export interface MenuItemBusiness {
 export interface MenuItem {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   basePrice: Money;
   image_url: string | null;
   is_available: boolean;
+  dietary_tags: string[];
   category_id: string;
   business_id: string;
   category: MenuItemCategory | null;
@@ -92,10 +93,17 @@ export interface CatalogItemRequest {
   name: string;
   description: string;
   price_minor: number;
-  category: string;
+  category_id: string;
+  currency_code: string;
   dietary_tags: string[];
-  variants: Omit<MenuItemVariant, 'id'>[];
-  addons: Omit<MenuItemAddon, 'id'>[];
-  is_available: boolean;
+  variants: {
+    name: string;
+    price_adjustment: number;
+  }[];
+  extras: {
+    name: string;
+    price_minor: number;
+  }[];
+  available: boolean;
   image_url: string | null;
 }

@@ -4,6 +4,7 @@ import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { CategoryPill } from "@/components/home/CategoryPill";
@@ -30,10 +31,25 @@ export default function SellerMenu() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
 
-  // TanStack Query hooks
-  const { data } = useMenuItemsQuery();
-  const items = Array.isArray(data) ? data : [];
-  const filtered = activeCategory === "All" ? items : items.filter((i) => i.category === activeCategory);
+  // ── State (must be before hooks that use them) ──
+  const [activeCategory, setActiveCategory] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [form, setForm] = useState<MenuItemForm>({ ...EMPTY_FORM });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [variantLabel, setVariantLabel] = useState("");
+  const [variantPrice, setVariantPrice] = useState("");
+  const [extraLabel, setExtraLabel] = useState("");
+  const [extraPrice, setExtraPrice] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  // TanStack Query hooks — filters sent to backend, no client-side filtering
+  const categoryFilter = activeCategory ? { category_ids: activeCategory } : undefined;
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useMenuItemsQuery(categoryFilter);
+  console.log('[Menu] businessId:', businessId, 'items:', data?.length, 'categoryFilter:', categoryFilter);
   const { data: categoriesRes } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuItemMutation();
   const updateMutation = useUpdateMenuItemMutation();
@@ -41,31 +57,7 @@ export default function SellerMenu() {
   const toggleMutation = useToggleAvailabilityMutation();
 
   const allCategories = categoriesRes?.data ?? [];
-  const filterCategories = [{ name: 'All' } as any, ...allCategories];
-
-  // UI state
-  const [activeCategory, setActiveCategory] = useState("All");
-
-  // Sheet state
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-
-  // Form state
-  const [form, setForm] = useState<MenuItemForm>({ ...EMPTY_FORM });
-  const [variantLabel, setVariantLabel] = useState("");
-  const [variantPrice, setVariantPrice] = useState("");
-  const [extraLabel, setExtraLabel] = useState("");
-  const [extraPrice, setExtraPrice] = useState("");
-
-  // Image upload state
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
-
-  // Delete dialog
-  const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
-
-  // Category picker in form
-  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const filterCategories = [{ id: '', name: 'All' } as any, ...allCategories];
 
   // ─── Open add sheet ────────────────────────────────────────────
   const openAdd = () => {
@@ -84,11 +76,19 @@ export default function SellerMenu() {
     setForm({
       name: item.name,
       description: item.description || "",
-      price: toGHS(item.price_minor),
-      category: item.category,
-      dietaryTags: [...(item.dietary_tags || [])],
-      variants: [...(item.variants || [])],
-      extras: [...(item.addons || [])],
+      price: item.basePrice ? toGHS(item.basePrice.amountMinor) : "",
+      category: item.category?.id || "",
+      dietaryTags: [],
+      variants: (item.variants || []).map((v: any) => ({
+        id: v.id,
+        label: v.name,
+        price_minor: v.price?.amount || 0,
+      })),
+      extras: (item.extras || []).map((e: any) => ({
+        id: e.id,
+        label: e.name,
+        price_minor: e.amountMinor || 0,
+      })),
       available: item.is_available,
       images: item.image_url ? [item.image_url] : [],
     });
@@ -104,11 +104,16 @@ export default function SellerMenu() {
     if (!form.name.trim() || !form.price.trim())
       return;
 
+    if (!form.category) {
+      toast.error('Please select a category');
+      return;
+    }
+
     const baseData = {
       name: form.name.trim(),
       description: form.description.trim(),
       priceMinor: toMinor(form.price),
-      category: form.category,
+      categoryId: form.category,
       dietaryTags: form.dietaryTags,
       variants: form.variants,
       extras: form.extras,
@@ -117,14 +122,45 @@ export default function SellerMenu() {
     };
 
     if (editingItem) {
-      updateMutation.mutate({
-        id: editingItem.id,
-        updates: baseData,
-      });
+      updateMutation.mutate(
+        { id: editingItem.id, updates: baseData },
+        {
+          onSuccess: () => setSheetOpen(false),
+          onError: (err: any) => {
+            const details = err?.response?.data?.error?.details;
+            if (details && typeof details === 'object') {
+              const mapped: Record<string, string> = {};
+              for (const [field, msgs] of Object.entries(details)) {
+                const arr = Array.isArray(msgs) ? msgs : [msgs];
+                const key = field === 'category_id' ? 'category' : field;
+                mapped[key] = arr[0];
+              }
+              setFieldErrors(mapped);
+            } else {
+              toast.error(extractApiErrorMessage(err));
+            }
+          },
+        },
+      );
     } else {
-      createMutation.mutate(baseData);
+      createMutation.mutate(baseData, {
+        onSuccess: () => setSheetOpen(false),
+        onError: (err: any) => {
+          const details = err?.response?.data?.error?.details;
+          if (details && typeof details === 'object') {
+            const mapped: Record<string, string> = {};
+            for (const [field, msgs] of Object.entries(details)) {
+              const arr = Array.isArray(msgs) ? msgs : [msgs];
+              const key = field === 'category_id' ? 'category' : field;
+              mapped[key] = arr[0];
+            }
+            setFieldErrors(mapped);
+          } else {
+            toast.error(extractApiErrorMessage(err));
+          }
+        },
+      });
     }
-    setSheetOpen(false);
   };
 
   // ─── Toggle availability ───────────────────────────────────────
@@ -229,18 +265,19 @@ export default function SellerMenu() {
       >
         {filterCategories.map((cat) => (
           <CategoryPill
-            key={cat.name}
+            key={cat.id || 'all'}
             label={cat.name}
-            isActive={activeCategory === cat.name}
-            onPress={() => setActiveCategory(cat.name)}
+            isActive={activeCategory === cat.id}
+            onPress={() => setActiveCategory(cat.id)}
           />
         ))}
       </ScrollView>
 
       {/* List */}
       <FlatList
-        data={filtered}
+        data={data}
         keyExtractor={(item) => item.id}
+        extraData={data?.length}
         renderItem={({ item }) => (
           <MenuItemCard
             item={item}
@@ -252,7 +289,7 @@ export default function SellerMenu() {
         ListHeaderComponent={
           <XStack paddingHorizontal="$4" pb="$2">
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              {filtered.length} {filtered.length === 1 ? "item" : "items"}
+              {data?.length || 0} {(data?.length || 0) === 1 ? "item" : "items"}
             </Text>
           </XStack>
         }
@@ -281,14 +318,21 @@ export default function SellerMenu() {
         windowSize={5}
         maxToRenderPerBatch={10}
         removeClippedSubviews
+        onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isFetchingNextPage ? <Text p="$4" ta="center" color="$colorMuted">Loading more...</Text> : null}
       />
 
       {/* ── Add / Edit Sheet ─────────────────────────────────────── */}
       <MenuFormSheet
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) setFieldErrors({});
+        }}
         editingItem={editingItem}
         form={form}
+        fieldErrors={fieldErrors}
         variantLabel={variantLabel}
         variantPrice={variantPrice}
         extraLabel={extraLabel}

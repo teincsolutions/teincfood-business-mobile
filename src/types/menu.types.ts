@@ -10,6 +10,7 @@ export interface MenuItemForm {
   name: string;
   description: string;
   price: string;
+  /** Category ID (UUID) */
   category: string;
   dietaryTags: string[];
   variants: Variant[];

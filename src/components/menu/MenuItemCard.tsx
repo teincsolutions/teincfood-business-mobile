@@ -15,7 +15,7 @@ import {
   Eye,
   EyeOff,
 } from '@tamagui/lucide-icons';
-import type { MenuItem } from '@/services/menu.service';
+import type { MenuItem } from '@/types/api/menu.api';
 import { formatPriceFromMinor } from '@/utils/currency';
 
 interface MenuItemCardProps {
@@ -69,11 +69,11 @@ export function MenuItemCard({
                 {item.name}
               </Text>
               <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                {item.category}
+                {item.category?.name || ''}
               </Text>
             </YStack>
             <Text fontSize="$4" fontWeight="800" fontFamily="$heading" color="$primary">
-              {formatPriceFromMinor(item.price_minor)}
+              {formatPriceFromMinor(item.basePrice?.amountMinor || 0)}
             </Text>
           </XStack>
 
@@ -105,13 +105,13 @@ export function MenuItemCard({
           )}
 
           {/* Variants / addons summary */}
-          {(item.variants?.length > 0 || item.addons?.length > 0) && (
+          {(item.variants?.length > 0 || item.extras?.length > 0) && (
             <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" mt="$1">
               {[
                 item.variants.length > 0 &&
                   `${item.variants.length} size${item.variants.length > 1 ? 's' : ''}`,
-                item.addons.length > 0 &&
-                  `${item.addons.length} add-on${item.addons.length > 1 ? 's' : ''}`,
+                item.extras.length > 0 &&
+                  `${item.extras.length} add-on${item.extras.length > 1 ? 's' : ''}`,
               ]
                 .filter(Boolean)
                 .join(' · ')}

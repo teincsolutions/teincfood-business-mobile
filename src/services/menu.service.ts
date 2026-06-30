@@ -21,7 +21,7 @@ export const EMPTY_FORM: MenuItemForm = {
   name: '',
   description: '',
   price: '',
-  category: 'Main',
+  category: '',
   dietaryTags: [],
   variants: [],
   extras: [],
@@ -44,8 +44,14 @@ export async function fetchBusinessMenu(businessId: string): Promise<MenuItemLis
   return api.get<MenuItemListResponse>(`/businesses/${businessId}/menu`);
 }
 
-export async function fetchBusinessMenuItems(businessId: string): Promise<MenuItemListResponse> {
-  return api.get<MenuItemListResponse>(`/businesses/${businessId}/menu/items`);
+export async function fetchBusinessMenuItems(
+  businessId: string,
+  page: number = 1,
+  filters?: { search?: string; category_ids?: string; sort?: string },
+): Promise<MenuItemListResponse> {
+  return api.get<MenuItemListResponse>(`/businesses/${businessId}/menu/items`, {
+    params: { page, page_size: 20, ...filters },
+  });
 }
 
 export async function fetchCatalogItems(): Promise<MenuItemListResponse> {
