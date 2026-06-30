@@ -112,8 +112,7 @@ export function KycCard({
   const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const isImage = previewUri
-    ? /\.(jpe?g|png|gif|webp|bmp)$/i.test(previewUri) ||
-      previewUri.startsWith("http")
+    ? /\.(jpe?g|png|gif|webp|bmp)(\?|#|$)/i.test(previewUri)
     : false;
 
   const selectedLabel =

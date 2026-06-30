@@ -4,6 +4,7 @@ import { YStack, XStack, Text } from 'tamagui';
 import { AlertTriangle, Clock, ShieldCheck, ShieldOff, FileText } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
+import { useBusinessStore } from '@/stores/business.store';
 
 interface Props {
   kyc_status?: string;
@@ -19,16 +20,22 @@ interface Props {
 export function ServiceStatusBanner({ kyc_status, hasCompletedKyc }: Props) {
   const router = useRouter();
   const role = useAuthStore((s) => s.user?.role);
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const effectiveStatus = kyc_status || 'pending';
 
   // Hide if KYC is approved and user has completed KYC
   if (effectiveStatus === 'approved' && hasCompletedKyc) return null;
 
   // Determine banner content based on KYC status
-  const isPending = effectiveStatus === 'pending' || effectiveStatus === 'not_uploaded';
+  const isPending = effectiveStatus === 'pending' || effectiveStatus === 'not_uploaded' || effectiveStatus === 'rejected';
   const isSubmitted = effectiveStatus === 'submitted';
 
-  const kycRoute = role === 'rider' ? '/(shared)/kyc?type=user&role=rider' : null;
+  // Show KYC button for all roles — riders go directly to KYC, business users go to their active business KYC
+  const kycRoute = role === 'rider'
+    ? '/(shared)/kyc?type=user&role=rider'
+    : activeBusinessId
+      ? `/(shared)/kyc?type=business&id=${activeBusinessId}`
+      : '/(shared)/businesses';
 
   return (
     <YStack backgroundColor="$yellow2" borderWidth={1} borderColor="$yellow7" borderRadius="$4" padding="$3" gap="$2">

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { api } from './api';
 
 interface UploadResponse {
@@ -63,21 +63,16 @@ export async function uploadImage(
   const { upload_url, download_url, key } = data;
   console.log('[Upload] Got URLs', { key });
 
-  // Read local file as blob
-  const fileResp = await fetch(localUri);
-  const blob = await fileResp.blob();
-  const totalSize = blob.size;
-
-  // Upload to S3 via axios (clean instance — no auth interceptor to break presigned URL)
-  await axios.put(upload_url, blob, {
+  // Upload to S3 via expo-file-system (reliable on all RN URI schemes)
+  const response = await uploadAsync(upload_url, localUri, {
+    httpMethod: 'PUT',
     headers: { 'Content-Type': contentType },
-    timeout: 30000,
-    onUploadProgress: (e) => {
-      if (onProgress && totalSize > 0) {
-        onProgress(Math.round((e.loaded * 100) / totalSize));
-      }
-    },
+    uploadType: FileSystemUploadType.BINARY_CONTENT,
   });
+
+  if (response.status >= 400) {
+    throw new Error(`Upload failed with status ${response.status}`);
+  }
 
   console.log('[Upload] S3 PUT succeeded');
 

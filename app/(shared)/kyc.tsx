@@ -63,6 +63,7 @@ export default function KycScreen() {
         merged[docId] = {
           status: "pending",
           uri: d.url || d.document_id || d.key,
+          previewUri: d.signed_url,
           idType: d.id_type,
           idNumber: d.id_number,
           issuedDate: d.issued_date ? new Date(d.issued_date) : undefined,

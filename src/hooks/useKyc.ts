@@ -34,7 +34,7 @@ export function useBusinessKycQuery(businessId?: string, enabled = true) {
 export function useSubmitUserKycMutation() {
   return useMutation({
     mutationFn: async ({ documents, userType, partial }: { documents: Record<string, any>; userType: string; partial?: boolean }) => {
-      return api.post('/users/me/kyc', { documents, user_type: userType, partial: partial ? 'true' : 'false' });
+      return api.post('/users/me/kyc', { documents, user_type: userType, partial: !!partial });
     },
   });
 }
@@ -42,7 +42,7 @@ export function useSubmitUserKycMutation() {
 export function useSubmitBusinessKycMutation() {
   return useMutation({
     mutationFn: async ({ businessId, documents, partial }: { businessId: string; documents: Record<string, any>; partial?: boolean }) => {
-      return businessService.submitBusinessKyc(businessId, { documents, user_type: 'business_owner', partial: partial ? 'true' : 'false' });
+      return businessService.submitBusinessKyc(businessId, { documents, user_type: 'business_owner', partial: !!partial });
     },
   });
 }
