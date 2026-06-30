@@ -11,26 +11,26 @@ import { api } from "@/services/api";
 
 const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
   business: [
-    { id: "national_id", name: "National ID", description: "Government-issued ID (Ghana Card, Passport, Driver's License)", required: true, hasIdType: true, hasIdNumber: true },
-    { id: "business_license", name: "Business License", description: "Valid business operating license", required: true, hasIdNumber: true },
-    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true },
+    { id: "national_id", name: "National ID", description: "Government-issued ID (Ghana Card, Passport, Driver's License)", required: true, hasIdType: true, hasIdNumber: true, hasDates: true },
+    { id: "business_license", name: "Business License", description: "Valid business operating license", required: true, hasIdNumber: true, hasDates: true },
+    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true, hasDates: true },
   ],
   seller: [
-    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true },
+    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true, hasDates: true },
     { id: "profile_photo", name: "Profile Photo", description: "Clear photo of your face", required: true },
-    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true },
+    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true, hasDates: true },
   ],
   rider: [
-    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true },
+    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true, hasDates: true },
     { id: "profile_photo", name: "Profile Photo", description: "Clear photo of your face", required: true },
-    { id: "drivers_license", name: "Driver's License", description: "Valid driving license", required: true, hasIdNumber: true },
-    { id: "vehicle_insurance", name: "Vehicle Insurance", description: "Current vehicle insurance certificate", required: true, hasIdNumber: true },
-    { id: "vehicle_registration", name: "Vehicle Registration", description: "Vehicle registration certificate", required: true, hasIdNumber: true },
+    { id: "drivers_license", name: "Driver's License", description: "Valid driving license", required: true, hasIdNumber: true, hasDates: true },
+    { id: "vehicle_insurance", name: "Vehicle Insurance", description: "Current vehicle insurance certificate", required: true, hasIdNumber: true, hasDates: true },
+    { id: "vehicle_registration", name: "Vehicle Registration", description: "Vehicle registration certificate", required: true, hasIdNumber: true, hasDates: true },
   ],
   fleet_manager: [
-    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true },
+    { id: "national_id", name: "National ID", description: "Government-issued ID", required: true, hasIdType: true, hasIdNumber: true, hasDates: true },
     { id: "profile_photo", name: "Profile Photo", description: "Clear photo of your face", required: true },
-    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true },
+    { id: "business_cert", name: "Business Certificate", description: "Certificate of incorporation or business registration", required: true, hasIdNumber: true, hasDates: true },
   ],
 };
 

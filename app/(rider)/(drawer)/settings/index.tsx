@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { useCallback } from "react";
 import { ScrollView } from "react-native";
 import { YStack, Text, Card, Button, XStack, Separator, Switch } from "tamagui";
 import { useRouter } from "expo-router";
@@ -11,44 +10,23 @@ import {
   Clock,
   FileText,
 } from "@tamagui/lucide-icons";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/services/api";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
-
-const RIDER_SETTINGS_KEYS = { profile: ["rider", "profile"] as const, vehicle: ["rider", "vehicle"] as const };
+import { useRiderProfileQuery, useVehicleInfoQuery, useToggleOnlineMutation } from "@/hooks/useRider";
 
 export default function RiderSettings() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-
-  const { data: profile } = useQuery({
-    queryKey: RIDER_SETTINGS_KEYS.profile,
-    queryFn: async () => {
-      const res = await api.get<any>("/riders/profile");
-      return res.data;
-    },
-  });
-
-  const { data: vehicle } = useQuery({
-    queryKey: RIDER_SETTINGS_KEYS.vehicle,
-    queryFn: async () => {
-      const res = await api.get<any>("/riders/vehicle");
-      return res.data;
-    },
-  });
-
-  const toggleOnline = useMutation({
-    mutationFn: () => api.patch("/riders/profile", { is_online: !profile?.is_online }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: RIDER_SETTINGS_KEYS.profile });
-      toast.success(profile?.is_online ? "You are now offline" : "You are now online");
-    },
-    onError: (e) => toast.error(extractApiErrorMessage(e)),
-  });
+  const { data: profile } = useRiderProfileQuery();
+  const { data: vehicle } = useVehicleInfoQuery();
+  const toggleOnlineMutation = useToggleOnlineMutation();
 
   const isOnline = profile?.is_online ?? false;
-  const vehicleInfo = vehicle ? `${vehicle.type || ""} · ${vehicle.plate_number || ""}` : "Not set";
+  const vehicleInfo = vehicle?.data ? `${vehicle.data.type || ""} · ${vehicle.data.plate_number || ""}` : "Not set";
+
+  const handleToggleOnline = () => {
+    toggleOnlineMutation.mutate(!isOnline, {
+      onSuccess: () => toast.success(isOnline ? "You are now offline" : "You are now online"),
+    });
+  };
 
   const settingsItems = [
     { icon: Clock, label: "Operating Hours", description: "Set your availability schedule", route: "/(shared)/settings/operating-hours" },

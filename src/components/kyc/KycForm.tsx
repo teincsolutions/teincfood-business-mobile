@@ -17,6 +17,8 @@ export interface KycDocumentState {
   uri?: string;
   idType?: string;
   idNumber?: string;
+  issuedDate?: string;
+  expirationDate?: string;
 }
 
 export interface KycFormProps {
@@ -98,8 +100,8 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
 
     const payload: Record<string, any> = {
       url: doc.uri,
-      issued_date: doc.uploadedAt || new Date().toISOString().split('T')[0],
-      expiration_date: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+      issued_date: doc.issuedDate || doc.uploadedAt || new Date().toISOString().split('T')[0],
+      expiration_date: doc.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
     };
     if (doc.idNumber) payload.id_number = doc.idNumber;
     if (doc.idType) payload.id_type = doc.idType;
@@ -154,8 +156,12 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
                   uploadProgress={uploadProgress}
                   idType={doc.idType}
                   idNumber={doc.idNumber}
+                  issuedDate={doc.issuedDate}
+                  expirationDate={doc.expirationDate}
                   onIdTypeChange={(val) => updateDoc(config.id, { idType: val })}
                   onIdNumberChange={(val) => updateDoc(config.id, { idNumber: val })}
+                  onIssuedDateChange={(val) => updateDoc(config.id, { issuedDate: val })}
+                  onExpirationDateChange={(val) => updateDoc(config.id, { expirationDate: val })}
                   onUpload={handleUpload}
                   onSubmitDoc={handleSubmitDoc}
                   onRemove={() => updateDoc(config.id, { status: 'not_uploaded', uri: undefined, previewUri: undefined })}

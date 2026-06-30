@@ -349,5 +349,17 @@ export function useVehicleTypesQuery(enabled = true) {
   });
 }
 
+// ─── Toggle Online Status ───
+
+export function useToggleOnlineMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (isOnline: boolean) => riderService.updateRiderProfile({ is_online: isOnline }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RIDER_KEYS.profile() });
+    },
+  });
+}
+
 // Export query keys for external use
 export { RIDER_KEYS };
