@@ -112,9 +112,9 @@ module.exports = {
       [
         "expo-document-picker",
         {
-          "iCloudContainerEnvironment": "Production"
-        }
-      ]
+          iCloudContainerEnvironment: "Production",
+        },
+      ],
       [
         "expo-notifications",
         {
