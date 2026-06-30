@@ -95,7 +95,7 @@ export interface CatalogItemRequest {
   price_minor: number;
   category_id: string;
   currency_code: string;
-  dietary_tags: string[];
+  dietary_tags?: string[];
   variants: {
     name: string;
     price_adjustment: number;
@@ -105,5 +105,5 @@ export interface CatalogItemRequest {
     price_minor: number;
   }[];
   available: boolean;
-  image_url: string | null;
+  image_url?: string | null;
 }

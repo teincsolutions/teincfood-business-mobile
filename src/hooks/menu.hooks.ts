@@ -75,18 +75,22 @@ async function uploadImageForItem(
   businessId?: string,
 ): Promise<string | null> {
   if (!imageUrl) return null;
-  // Already a remote URL or S3 key — return as-is
-  if (!imageUrl.startsWith('file://') && !imageUrl.startsWith('ph://') && !imageUrl.startsWith('content://')) {
-    return imageUrl;
+  // Local file from picker — upload to S3, return the key
+  if (imageUrl.startsWith('file://') || imageUrl.startsWith('ph://') || imageUrl.startsWith('content://')) {
+    try {
+      const result = await uploadImage(imageUrl, 'menus', { business_id: businessId });
+      return result.key;
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
+      return null;
+    }
   }
-  // Local file — upload now
-  try {
-    const result = await uploadImage(imageUrl, 'menus', { business_id: businessId });
-    return result.key;
-  } catch (e) {
-    toast.error(extractApiErrorMessage(e));
-    return null;
+  // Presigned URL (http/https) from backend — unchanged, omit from payload
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return '__UNCHANGED__';
   }
+  // S3 key (e.g. "menus/biz-id/...") — already uploaded, use as-is
+  return imageUrl;
 }
 
 // ─── Create Menu Item Mutation ───────────────────────────────────────────────
@@ -107,7 +111,7 @@ export function useCreateMenuItemMutation() {
         variants: input.variants.map(({ id, ...v }) => v),
         extras: input.extras.map(({ id, ...e }) => e),
         available: input.available,
-        image_url: imageUrl,
+        ...(imageUrl !== '__UNCHANGED__' ? { image_url: imageUrl } : {}),
       });
     },
     onSuccess: () => {
@@ -145,7 +149,9 @@ export function useUpdateMenuItemMutation() {
         payload.dietary_tags = updates.dietaryTags;
       if (updates.imageUrl !== undefined) {
         const imageUrl = await uploadImageForItem(updates.imageUrl, businessId);
-        payload.image_url = imageUrl;
+        if (imageUrl !== '__UNCHANGED__') {
+          payload.image_url = imageUrl;
+        }
       }
       if (updates.variants !== undefined) {
         payload.variants = updates.variants.map(({ id, ...v }) => v);
