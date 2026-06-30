@@ -60,11 +60,11 @@ export default function DeliverySettings() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
+  const [deliveryEnabled, setDeliveryEnabled] = useState(false);
   const [deliveryRadius, setDeliveryRadius] = useState(5);
-  const [deliveryFee, setDeliveryFee] = useState("5.00");
-  const [minimumOrder, setMinimumOrder] = useState("20.00");
-  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState("50.00");
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [minimumOrder, setMinimumOrder] = useState("");
+  const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState("");
 
   const { data: settings } = useQuery({
     queryKey: [...SETTINGS_KEYS, activeBusinessId],
@@ -77,11 +77,11 @@ export default function DeliverySettings() {
 
   useEffect(() => {
     if (settings) {
-      setDeliveryEnabled(settings.delivery_enabled ?? true);
+      setDeliveryEnabled(settings.delivery_enabled ?? false);
       setDeliveryRadius(settings.max_delivery_radius_km ?? 5);
-      setDeliveryFee(fromMinor(settings.base_delivery_fee_minor ?? 0));
-      setMinimumOrder(fromMinor(settings.min_order_minor ?? 0));
-      setFreeDeliveryMinimum(fromMinor(settings.free_delivery_threshold_minor ?? 0));
+      setDeliveryFee(settings.base_delivery_fee_minor != null ? fromMinor(settings.base_delivery_fee_minor) : "");
+      setMinimumOrder(settings.min_order_minor != null ? fromMinor(settings.min_order_minor) : "");
+      setFreeDeliveryMinimum(settings.free_delivery_threshold_minor != null ? fromMinor(settings.free_delivery_threshold_minor) : "");
     }
   }, [settings]);
 

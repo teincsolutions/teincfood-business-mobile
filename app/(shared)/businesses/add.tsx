@@ -337,11 +337,6 @@ export default function AddBusinessScreen() {
                       <Text fontSize="$3" color="$color" fontFamily="$body">
                         {selectedPlace.formattedAddress}
                       </Text>
-                      {selectedPlace.latitude !== 0 && (
-                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                          {selectedPlace.latitude.toFixed(4)}, {selectedPlace.longitude.toFixed(4)}
-                        </Text>
-                      )}
                     </YStack>
                   </XStack>
                 </Card>

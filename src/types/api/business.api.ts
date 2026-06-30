@@ -18,6 +18,7 @@ export interface Business {
   cover_image_url: string | null;
   kyc_status: string;
   rating: number | null;
+  address?: { street: string; city: string; region?: string; country?: string; latitude?: number; longitude?: number } | null;
   inserted_at: string;
   updated_at: string;
 }

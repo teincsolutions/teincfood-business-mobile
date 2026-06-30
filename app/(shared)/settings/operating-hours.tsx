@@ -53,13 +53,13 @@ function dateToTime(date: Date): string {
 }
 
 const defaultSchedule: Record<number, DaySchedule> = {
-  0: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-  1: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-  2: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-  3: { isOpen: true, openTime: "08:00", closeTime: "22:00" },
-  4: { isOpen: true, openTime: "08:00", closeTime: "23:00" },
-  5: { isOpen: false, openTime: "09:00", closeTime: "23:00" },
-  6: { isOpen: false, openTime: "10:00", closeTime: "21:00" },
+  0: { isOpen: false, openTime: "", closeTime: "" },
+  1: { isOpen: false, openTime: "", closeTime: "" },
+  2: { isOpen: false, openTime: "", closeTime: "" },
+  3: { isOpen: false, openTime: "", closeTime: "" },
+  4: { isOpen: false, openTime: "", closeTime: "" },
+  5: { isOpen: false, openTime: "", closeTime: "" },
+  6: { isOpen: false, openTime: "", closeTime: "" },
 };
 
 export default function OperatingHoursSettings() {
@@ -86,8 +86,8 @@ export default function OperatingHoursSettings() {
             if (entry.day_of_week !== undefined) {
               merged[entry.day_of_week] = {
                 isOpen: !entry.is_closed,
-                openTime: entry.open_time ? entry.open_time.slice(0, 5) : "08:00",
-                closeTime: entry.close_time ? entry.close_time.slice(0, 5) : "22:00",
+                openTime: entry.open_time ? entry.open_time.slice(0, 5) : "",
+                closeTime: entry.close_time ? entry.close_time.slice(0, 5) : "",
               };
             }
           }
@@ -236,7 +236,7 @@ export default function OperatingHoursSettings() {
                             <Pressable onPress={() => setPickerTarget({ dayIndex: day.index, field: "openTime" })}>
                               <XStack padding="$3" borderWidth={1} borderColor={pickerTarget?.dayIndex === day.index && pickerTarget?.field === "openTime" ? "$primary" : "$borderColor"} borderRadius="$3" backgroundColor="$backgroundSoft" alignItems="center" gap="$2">
                                 <Clock size={14} color="$colorMuted" />
-                                <Text fontWeight="500">{schedule[day.index].openTime}</Text>
+                                <Text fontWeight="500">{schedule[day.index].openTime || "---"}</Text>
                               </XStack>
                             </Pressable>
                           </YStack>
@@ -245,7 +245,7 @@ export default function OperatingHoursSettings() {
                             <Pressable onPress={() => setPickerTarget({ dayIndex: day.index, field: "closeTime" })}>
                               <XStack padding="$3" borderWidth={1} borderColor={pickerTarget?.dayIndex === day.index && pickerTarget?.field === "closeTime" ? "$primary" : "$borderColor"} borderRadius="$3" backgroundColor="$backgroundSoft" alignItems="center" gap="$2">
                                 <Clock size={14} color="$colorMuted" />
-                                <Text fontWeight="500">{schedule[day.index].closeTime}</Text>
+                                <Text fontWeight="500">{schedule[day.index].closeTime || "---"}</Text>
                               </XStack>
                             </Pressable>
                           </YStack>

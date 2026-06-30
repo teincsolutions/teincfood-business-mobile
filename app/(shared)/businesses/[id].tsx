@@ -1,7 +1,10 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Dimensions } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import {
   YStack,
   XStack,
@@ -46,6 +49,7 @@ export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const {
     getBusinessById,
     setDefaultBusiness,
@@ -53,29 +57,33 @@ export default function BusinessDetailScreen() {
     updateBusiness,
   } = useBusinessStore();
 
-  const business = getBusinessById(id);
+  const { data: biz } = useQuery({
+    queryKey: ['business', id],
+    queryFn: async () => {
+      const res = await businessService.fetchBusinessById(id);
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const business = biz || getBusinessById(id);
   const isDefault = getDefaultBusiness()?.id === id;
   const isActive = business?.status === "active";
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
-    "idle",
-  );
-  const [logoUri, setLogoUri] = useState<string | undefined>(
-    business?.logo_url,
-  );
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [logoUri, setLogoUri] = useState<string | undefined>(business?.logo_url);
   const [editForm, setEditForm] = useState({
     name: business?.name ?? "",
     description: business?.description ?? "",
-    address: business?.address?.full_address?.split(",")[0]?.trim() ?? "",
+    address: business?.address?.street ?? "",
     city: business?.address?.city ?? "",
     phone: business?.phone ?? "",
     email: business?.email ?? "",
   });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
-  // Place search
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [placeQuery, setPlaceQuery] = useState("");
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -84,72 +92,15 @@ export default function BusinessDetailScreen() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { isLocating, getCurrentLocation } = useCurrentLocation();
 
-  // ── Detail fetch ──
-  const [fetchedBusiness, setFetchedBusiness] = useState<any>(null);
-  const [, setIsFetchingDetail] = useState(true);
-
-  const effectiveBusiness = useMemo(() => {
-    if (!fetchedBusiness) return business;
-    return { ...business, ...fetchedBusiness };
-  }, [business, fetchedBusiness]);
-
-  const displayBusinessNumber =
-    business?.business_number || fetchedBusiness?.business_number || "";
-  const displayRating = effectiveBusiness?.rating ?? 0;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await businessService.fetchBusinessById(id);
-        setFetchedBusiness(res.data);
-      } catch {
-        // fall back to store
-      } finally {
-        setIsFetchingDetail(false);
-      }
-    })();
-  }, [id]);
-
-  useEffect(() => {
-    if (fetchedBusiness && !isEditing) {
-      setEditForm({
-        name: effectiveBusiness.name ?? "",
-        description: effectiveBusiness.description ?? "",
-        address: effectiveBusiness.address?.street ?? "",
-        city: effectiveBusiness.address?.city ?? "",
-        phone: effectiveBusiness.phone ?? "",
-        email: effectiveBusiness.email ?? "",
-      });
-      if (!logoUri && effectiveBusiness.logo_url) {
-        setLogoUri(effectiveBusiness.logo_url);
-      }
-    }
-  }, [fetchedBusiness]);
-
   if (!business) {
     return (
-      <YStack
-        flex={1}
-        alignItems="center"
-        justifyContent="center"
-        gap="$4"
-        padding="$6"
-      >
+      <YStack flex={1} alignItems="center" justifyContent="center" gap="$4" padding="$6">
         <Building size={48} color="$colorMuted" />
-        <Text
-          fontSize="$5"
-          fontWeight="600"
-          fontFamily="$heading"
-          textAlign="center"
-        >
-          Business not found
-        </Text>
+        <Text fontSize="$5" fontWeight="600" fontFamily="$heading" textAlign="center">Business not found</Text>
         <Button onPress={() => router.back()}>Go Back</Button>
       </YStack>
     );
   }
-
-  // ── Edit helpers ──
 
   const updateField = (key: string, value: string) => {
     setEditForm((prev) => ({ ...prev, [key]: value }));
@@ -160,7 +111,6 @@ export default function BusinessDetailScreen() {
     const errs: Record<string, string> = {};
     if (!editForm.name.trim()) errs.name = "Business name is required";
     if (!editForm.address.trim() && !selectedPlace) errs.address = "Address is required";
-    if (!editForm.city.trim() && !selectedPlace) errs.city = "City is required";
     return errs;
   };
 
@@ -171,160 +121,105 @@ export default function BusinessDetailScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
-
-    const uri = result.assets[0].uri;
-
     try {
-      const { download_url } = await uploadImage(uri, "businesses", {
-        business_id: id,
-      });
+      const { download_url } = await uploadImage(result.assets[0].uri, "businesses", { business_id: id });
       setLogoUri(download_url);
     } catch (e: any) {
       toast.error(extractApiErrorMessage(e));
     }
   };
 
-  const handleSave = async () => {
-    const errs = validateEdit();
-    if (Object.keys(errs).length > 0) {
-      setEditErrors(errs);
-      return;
-    }
-    setIsSaving(true);
-    try {
-      const updateLat = selectedPlace?.latitude || business?.latitude;
-      const updateLng = selectedPlace?.longitude || business?.longitude;
-
-      await businessService.updateBusiness(id, {
-        business: {
-          name: editForm.name.trim(),
-          description: editForm.description.trim() || undefined,
-          phone: editForm.phone.trim() || undefined,
-          email: editForm.email.trim() || undefined,
-          logo_url:
-            logoUri !== business?.logo_url ? logoUri || undefined : undefined,
-          latitude: updateLat,
-          longitude: updateLng,
-          address_street: editForm.address.trim() || undefined,
-          address_city: editForm.city.trim() || undefined,
-          address_full: selectedPlace
-            ? selectedPlace.formattedAddress
-            : `${editForm.address.trim()}, ${editForm.city.trim()}`,
-        },
-      });
-
+  const saveMutation = useMutation({
+    mutationFn: () => businessService.updateBusiness(id, {
+      business: {
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || undefined,
+        phone: editForm.phone.trim() || undefined,
+        email: editForm.email.trim() || undefined,
+        logo_url: logoUri !== business?.logo_url ? logoUri || undefined : undefined,
+        latitude: selectedPlace?.latitude || business?.latitude,
+        longitude: selectedPlace?.longitude || business?.longitude,
+        address_street: editForm.address.trim() || undefined,
+        address_city: editForm.city.trim() || undefined,
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business', id] });
       updateBusiness(id, {
         name: editForm.name.trim(),
         description: editForm.description.trim(),
         phone: editForm.phone.trim(),
         email: editForm.email.trim() || undefined,
-        ...(logoUri ? { logo_url: logoUri } : {}),
-        address: {
-          ...(business?.address ?? {}),
-          street: editForm.address.trim(),
-          city: editForm.city.trim(),
-          full_address: `${editForm.address.trim()}, ${editForm.city.trim()}`,
-        },
+        logo_url: logoUri || undefined,
+        address: { street: editForm.address.trim(), city: editForm.city.trim() },
       });
-
       setSaveStatus("success");
-      setTimeout(() => {
-        setSaveStatus("idle");
-        setIsEditing(false);
-      }, 1800);
-    } catch (e: any) {
+      setTimeout(() => { setSaveStatus("idle"); setIsEditing(false); }, 1800);
+    },
+    onError: (e: any) => {
       toast.error(extractApiErrorMessage(e));
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 2500);
-    } finally {
-      setIsSaving(false);
-    }
+    },
+  });
+
+  const handleSave = () => {
+    const errs = validateEdit();
+    if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
+    setIsSaving(true);
+    saveMutation.mutate(undefined, { onSettled: () => setIsSaving(false) });
   };
 
   const handleCancelEdit = () => {
-    const eb = effectiveBusiness || business;
     setEditForm({
-      name: eb.name ?? "",
-      description: eb.description ?? "",
-      address: eb.address?.street ?? "",
-      city: eb.address?.city ?? "",
-      phone: eb.phone ?? "",
-      email: eb.email ?? "",
+      name: business.name ?? "",
+      description: business.description ?? "",
+      address: business.address?.street ?? "",
+      city: business.address?.city ?? "",
+      phone: business.phone ?? "",
+      email: business.email ?? "",
     });
-    setLogoUri(eb.logo_url);
-    setPlaceQuery("");
-    setSuggestions([]);
-    setSelectedPlace(null);
-    setEditErrors({});
-    setIsEditing(false);
+    setLogoUri(business.logo_url);
+    setPlaceQuery(""); setSuggestions([]); setSelectedPlace(null);
+    setEditErrors({}); setIsEditing(false);
   };
 
-  // ── Place search ──
-
   const handlePlaceSearch = (text: string) => {
-    setPlaceQuery(text);
-    setSelectedPlace(null);
-
+    setPlaceQuery(text); setSelectedPlace(null);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-
-    if (text.length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
+    if (text.length < 3) { setSuggestions([]); return; }
     setSearching(true);
     searchTimeout.current = setTimeout(async () => {
       try {
         const results = await placesService.searchPlaces(text);
         setSuggestions(results);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
+      } catch { setSuggestions([]); }
+      finally { setSearching(false); }
     }, 400);
   };
 
   const handleSelectPlace = async (suggestion: PlaceSuggestion) => {
-    setSuggestions([]);
-    setPlaceQuery(suggestion.description);
-    setLoadingDetails(true);
-
+    setSuggestions([]); setPlaceQuery(suggestion.description); setLoadingDetails(true);
     try {
       const details = await placesService.getPlaceDetails(suggestion.placeId);
       if (details) {
         setSelectedPlace(details);
-        setEditForm((prev) => ({
-          ...prev,
-          address: details.street || details.formattedAddress,
-          city: details.city || "",
-        }));
+        setEditForm((prev) => ({ ...prev, address: details.street || details.formattedAddress, city: details.city || "" }));
         setEditErrors((prev) => ({ ...prev, address: "", city: "" }));
       }
     } catch {
       toast.error("Could not get address details. Try using current location.");
-    } finally {
-      setLoadingDetails(false);
-    }
+    } finally { setLoadingDetails(false); }
   };
 
   const handleUseCurrentLocation = async () => {
     const place = await getCurrentLocation();
     if (place) {
-      setSelectedPlace(place);
-      setPlaceQuery(place.formattedAddress);
-      setSuggestions([]);
-      setEditForm((prev) => ({
-        ...prev,
-        address: place.street || place.formattedAddress,
-        city: place.city || "",
-      }));
+      setSelectedPlace(place); setPlaceQuery(place.formattedAddress); setSuggestions([]);
+      setEditForm((prev) => ({ ...prev, address: place.street || place.formattedAddress, city: place.city || "" }));
       setEditErrors((prev) => ({ ...prev, address: "", city: "" }));
     }
   };
@@ -465,11 +360,13 @@ export default function BusinessDetailScreen() {
                   {business.name}
                 </Text>
               )}
-              {displayBusinessNumber ? (
+              {business.business_number ? (
                 <XStack gap="$2" alignItems="center">
-                  <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-                    {displayBusinessNumber}
-                  </Text>
+                  <TouchableOpacity onPress={() => { Clipboard.setStringAsync(business.business_number); toast.success("Copied to clipboard"); }}>
+                    <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
+                      {business.business_number}
+                    </Text>
+                  </TouchableOpacity>
                   {business.type && !isEditing && (
                     <>
                       <Text fontSize="$3" color="$colorMuted">
@@ -517,7 +414,7 @@ export default function BusinessDetailScreen() {
                   <XStack gap="$1" alignItems="center">
                     <Star size={14} color="$star" />
                     <Text fontSize="$4" fontWeight="700" fontFamily="$heading">
-                      {displayRating.toFixed(1)}
+                      {business.rating?.toFixed(1) || "0.0"}
                     </Text>
                   </XStack>
                   <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
@@ -701,13 +598,13 @@ export default function BusinessDetailScreen() {
                 </>
               ) : (
                 <>
-                  {effectiveBusiness.description ? (
+                  {business.description ? (
                     <Text
                       fontSize="$3"
                       color="$colorSecondary"
                       fontFamily="$body"
                     >
-                      {effectiveBusiness.description}
+                      {business.description}
                     </Text>
                   ) : null}
                   <XStack gap="$3" alignItems="flex-start">
@@ -726,13 +623,13 @@ export default function BusinessDetailScreen() {
                         color="$colorSecondary"
                         fontFamily="$body"
                       >
-                        {effectiveBusiness.address?.full_address ||
-                          effectiveBusiness.address?.city ||
-                          "No address"}
+                        {[business.address?.street, business.address?.city]
+                          .filter(Boolean)
+                          .join(", ") || "No address"}
                       </Text>
                     </YStack>
                   </XStack>
-                  {effectiveBusiness.phone && (
+                  {business.phone && (
                     <XStack gap="$3" alignItems="center">
                       <Phone size={18} color="$colorMuted" />
                       <YStack flex={1}>
@@ -749,12 +646,12 @@ export default function BusinessDetailScreen() {
                           color="$colorSecondary"
                           fontFamily="$body"
                         >
-                          {effectiveBusiness.phone}
+                          {business.phone}
                         </Text>
                       </YStack>
                     </XStack>
                   )}
-                  {effectiveBusiness.email && (
+                  {business.email && (
                     <XStack gap="$3" alignItems="center">
                       <Mail size={18} color="$colorMuted" />
                       <YStack flex={1}>
@@ -771,7 +668,7 @@ export default function BusinessDetailScreen() {
                           color="$colorSecondary"
                           fontFamily="$body"
                         >
-                          {effectiveBusiness.email}
+                          {business.email}
                         </Text>
                       </YStack>
                     </XStack>
@@ -793,6 +690,43 @@ export default function BusinessDetailScreen() {
               )}
             </YStack>
           </Card>
+
+          {/* Map */}
+          {!isEditing && (
+            (() => {
+              const lat = Number(business.latitude);
+              const lng = Number(business.longitude);
+              if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return null;
+              return (
+                <Card bordered padding="$4" key={id}>
+                  <YStack gap="$2">
+                    <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
+                      Location
+                    </Text>
+                    <YStack height={180} borderRadius="$3" overflow="hidden">
+                      <MapView
+                        style={{ flex: 1, width: Dimensions.get('window').width - 48 }}
+                        provider={PROVIDER_GOOGLE}
+                        initialRegion={{
+                          latitude: lat,
+                          longitude: lng,
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }}
+                        scrollEnabled={false}
+                        zoomEnabled={false}
+                      >
+                        <Marker
+                          coordinate={{ latitude: lat, longitude: lng }}
+                          title={business.name}
+                        />
+                      </MapView>
+                    </YStack>
+                  </YStack>
+                </Card>
+              );
+            })()
+          )}
 
           {/* KYC Documents link */}
           {!isEditing && (

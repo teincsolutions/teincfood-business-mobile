@@ -95,6 +95,5 @@ export interface UpdateBusinessRequest {
 import type { Business as ApiBusiness } from '@/types/api';
 
 export interface BusinessSummary extends ApiBusiness {
-  address?: { city: string; full_address: string; };
   isDefault?: boolean;
 }
