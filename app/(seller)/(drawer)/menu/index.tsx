@@ -1,10 +1,11 @@
 // @ts-nocheck
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResponsive } from "@/utils/responsive";
+import { useLocalSearchParams } from "expo-router";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
 import { Button } from "@/components/ui";
@@ -27,11 +28,13 @@ import {
   toGHS,
   toMinor,
 } from "@/services/menu.service";
+import { useRouter } from "expo-router";
 import Drawer from "expo-router/drawer";
 
 export default function SellerMenu() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const router = useRouter();
   const { isTablet, columns, width } = useResponsive();
 
   // ── State (must be before hooks that use them) ──
@@ -61,6 +64,17 @@ export default function SellerMenu() {
 
   const allCategories = categoriesRes?.data ?? [];
   const filterCategories = [{ id: '', name: 'All' } as any, ...allCategories];
+
+  // Auto-open edit sheet when navigating back from detail screen
+  const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
+  useEffect(() => {
+    if (editParam && data) {
+      const item = data.find((i: any) => i.id === editParam);
+      if (item) {
+        openEdit(item);
+      }
+    }
+  }, [editParam, data]);
 
   // ─── Open add sheet ────────────────────────────────────────────
   const openAdd = () => {
@@ -94,6 +108,7 @@ export default function SellerMenu() {
       })),
       is_available: item.is_available,
       image_url: item.image_url || '',
+      image_key: '',
     });
     setVariantLabel("");
     setVariantPrice("");
@@ -121,7 +136,7 @@ export default function SellerMenu() {
       variants: form.variants,
       extras: form.extras,
       available: form.is_available,
-      imageUrl: form.image_url || null,
+      imageUrl: form.image_key || form.image_url || null,
     };
 
     if (editingItem) {
@@ -288,6 +303,7 @@ export default function SellerMenu() {
           <YStack flex={1} padding="$1" maxWidth={isTablet ? '50%' : '100%'}>
             <MenuItemCard
               item={item}
+              onPress={(item) => router.push(`/(shared)/menu/${item.id}`)}
               onEdit={openEdit}
               onDelete={setDeleteTarget}
               onToggleAvailability={toggleAvailability}

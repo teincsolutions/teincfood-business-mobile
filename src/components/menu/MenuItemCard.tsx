@@ -20,6 +20,7 @@ import { formatPriceFromMinor } from '@/utils/currency';
 
 interface MenuItemCardProps {
   item: MenuItem;
+  onPress?: (item: MenuItem) => void;
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
   onToggleAvailability: (id: string) => void;
@@ -27,6 +28,7 @@ interface MenuItemCardProps {
 
 export function MenuItemCard({
   item,
+  onPress,
   onEdit,
   onDelete,
   onToggleAvailability,
@@ -38,6 +40,7 @@ export function MenuItemCard({
   const s = isTablet ? { thumbnail: 96, icon: 32, textMd: '$5', textSm: '$3', textXs: '$2', btnSize: 44, iconSize: 20 } : { thumbnail: 64, icon: 26, textMd: '$4', textSm: '$2', textXs: 10, btnSize: 36, iconSize: 15 };
 
   return (
+    <TouchableOpacity onPress={() => onPress?.(item)} activeOpacity={0.7}>
     <Card
       padding={isTablet ? '$5' : '$4'}
       bordered
@@ -108,19 +111,23 @@ export function MenuItemCard({
             </XStack>
           )}
 
-          {/* Variants / addons summary */}
-          {(item.variants?.length > 0 || item.extras?.length > 0) && (
-            <Text fontSize={s.textSm} color="$colorSecondary" fontFamily="$body" mt="$1">
-              {[
-                item.variants.length > 0 &&
-                  `${item.variants.length} size${item.variants.length > 1 ? 's' : ''}`,
-                item.extras.length > 0 &&
-                  `${item.extras.length} add-on${item.extras.length > 1 ? 's' : ''}`,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </Text>
-          )}
+          {/* Variants / addons badges */}
+          <XStack gap="$1" flexWrap="wrap" mt="$1">
+            {item.variants?.length > 0 && (
+              <XStack paddingHorizontal="$2" paddingVertical={2} borderRadius="$10" backgroundColor="$backgroundSoft" borderWidth={1} borderColor="$borderColor">
+                <Text fontSize={s.textXs} fontFamily="$body" color="$colorSecondary">
+                  {item.variants.length} size{item.variants.length > 1 ? 's' : ''}
+                </Text>
+              </XStack>
+            )}
+            {item.extras?.length > 0 && (
+              <XStack paddingHorizontal="$2" paddingVertical={2} borderRadius="$10" backgroundColor="$backgroundSoft" borderWidth={1} borderColor="$borderColor">
+                <Text fontSize={s.textXs} fontFamily="$body" color="$colorSecondary">
+                  {item.extras.length} add-on{item.extras.length > 1 ? 's' : ''}
+                </Text>
+              </XStack>
+            )}
+          </XStack>
         </YStack>
       </XStack>
 
@@ -130,7 +137,7 @@ export function MenuItemCard({
       <XStack justifyContent="space-between" alignItems="center">
         {/* Availability toggle */}
         <TouchableOpacity
-          onPress={() => onToggleAvailability(item.id)}
+          onPress={(e) => { e.stopPropagation?.(); onToggleAvailability(item.id); }}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
         >
           {item.is_available ? (
@@ -151,7 +158,7 @@ export function MenuItemCard({
         <XStack gap="$2">
           {/* Edit */}
           <TouchableOpacity
-            onPress={() => onEdit(item)}
+            onPress={(e) => { e.stopPropagation?.(); onEdit(item); }}
             style={{
               width: s.btnSize,
               height: s.btnSize,
@@ -167,7 +174,7 @@ export function MenuItemCard({
 
           {/* Delete */}
           <TouchableOpacity
-            onPress={() => onDelete(item)}
+            onPress={(e) => { e.stopPropagation?.(); onDelete(item); }}
             style={{
               width: s.btnSize,
               height: s.btnSize,
@@ -183,5 +190,6 @@ export function MenuItemCard({
         </XStack>
       </XStack>
     </Card>
+    </TouchableOpacity>
   );
 }

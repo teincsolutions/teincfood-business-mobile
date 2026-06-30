@@ -25,6 +25,7 @@ export default function SharedLayout() {
       <Stack.Screen name="profile/security" />
       <Stack.Screen name="profile/terms" />
       <Stack.Screen name="profile/theme" />
+      <Stack.Screen name="menu/[id]" />
       <Stack.Screen name="settings/operating-hours" />
     </Stack>
   );

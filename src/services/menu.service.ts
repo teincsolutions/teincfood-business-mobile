@@ -27,6 +27,7 @@ export const EMPTY_FORM: MenuItemForm = {
   extras: [],
   is_available: true,
   image_url: '',
+  image_key: '',
 };
 
 export function toMinor(ghsStr: string): number {

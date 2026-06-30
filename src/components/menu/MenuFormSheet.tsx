@@ -98,9 +98,9 @@ export function MenuFormSheet({
     try {
       console.log('[MenuForm] Uploading image', localUri?.slice(0, 60));
       const result = await onImagePick(localUri);
-      // store the key — the mutation sends it as image_url, backend serializer converts to presigned URL
       console.log('[MenuForm] Upload succeeded', result);
-      updateFormField('image_url', result.key);
+      updateFormField('image_url', result.download_url);
+      updateFormField('image_key', result.key);
     } catch (e) {
       console.error('[MenuForm] Upload failed', e);
       toast.error("Could not upload image. Try again.");
