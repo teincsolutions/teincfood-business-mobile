@@ -28,18 +28,27 @@ export default function SelectBusinessScreen() {
   const dashboardRoute = isFleet
     ? "/(fleet)/(drawer)/dashboard"
     : "/(seller)/(drawer)/dashboard";
-  const { businesses, setActiveBusiness, getDefaultBusiness } =
+  const { businesses, activeBusiness, setActiveBusiness, getDefaultBusiness } =
     useBusinessStore();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
     null,
   );
 
   useEffect(() => {
+    if (activeBusiness) {
+      router.replace(dashboardRoute);
+      return;
+    }
+    if (businesses.length === 1) {
+      setActiveBusiness(businesses[0] as any);
+      router.replace(dashboardRoute);
+      return;
+    }
     const defaultBusiness = getDefaultBusiness();
     if (defaultBusiness) {
       setSelectedBusinessId(defaultBusiness.id);
     }
-  }, []);
+  }, [activeBusiness, businesses, dashboardRoute]);
 
   const handleContinue = () => {
     if (selectedBusinessId) {

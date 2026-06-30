@@ -2,21 +2,21 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { YStack, Spinner, Text } from 'tamagui';
-import { useActiveBusiness } from '@/hooks/useActiveBusiness';
+import { useBusinessesQuery } from '@/hooks/useBusinessesQuery';
+import { useBusinessStore } from '@/stores/business.store';
 
 export default function SellerIndex() {
-  const { businesses, hasBusiness, switchBusiness } = useActiveBusiness();
+  const { isFetched } = useBusinessesQuery();
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
 
   useEffect(() => {
-    if (!hasBusiness) {
-      router.push('/(shared)/select-business');
-    } else if (businesses.length === 1) {
-      switchBusiness(businesses[0].id);
+    if (!isFetched) return;
+    if (activeBusiness) {
       router.replace('/(seller)/(drawer)/dashboard');
     } else {
       router.replace('/(shared)/select-business');
     }
-  }, []);
+  }, [isFetched, activeBusiness]);
 
   return (
     <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
