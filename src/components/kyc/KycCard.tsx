@@ -2,23 +2,20 @@
 import { useState } from 'react';
 import { TouchableOpacity, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { YStack, XStack, Text, Sheet, Separator, useTheme } from 'tamagui';
-import { FileText, Check, Clock, AlertCircle, Camera, ChevronDown } from '@tamagui/lucide-icons';
+import { YStack, XStack, Text, Sheet, Separator, Progress, useTheme, Spinner } from 'tamagui';
+import { FileText, Check, Clock, AlertCircle, Camera, ChevronDown, Upload } from '@tamagui/lucide-icons';
 import { toast } from 'sonner-native';
 import { Button, FormInput } from '@/components/ui';
-import { uploadImage } from '@/services/upload.service';
-import { extractApiErrorMessage } from '@/utils/error';
 
-export type DocStatus = 'not_uploaded' | 'pending' | 'verified' | 'rejected';
+export type DocStatus = 'not_uploaded' | 'uploading' | 'pending' | 'verified' | 'rejected';
+export type FileType = 'image' | 'pdf' | 'unknown';
 
 export interface KycDocConfig {
   id: string;
   name: string;
   description: string;
   required: boolean;
-  /** Show ID number input */
   hasIdNumber?: boolean;
-  /** Show ID type picker (national_id only) */
   hasIdType?: boolean;
 }
 
@@ -26,13 +23,16 @@ interface KycCardProps {
   config: KycDocConfig;
   status: DocStatus;
   uploadedAt?: string;
+  previewUri?: string;
   rejectionReason?: string;
   uploading: boolean;
+  uploadProgress?: number;
   idType?: string;
   idNumber?: string;
   onIdTypeChange?: (type: string) => void;
   onIdNumberChange?: (val: string) => void;
   onUpload: (docId: string, useCamera: boolean) => void;
+  onSubmitDoc: (docId: string) => void;
   onRemove: (docId: string) => void;
 }
 
@@ -44,42 +44,47 @@ const ID_TYPES = [
 
 const STATUS_COLOR: Record<DocStatus, string> = {
   not_uploaded: '#95a5a6',
+  uploading: '#f39c12',
   pending: '#f39c12',
   verified: '$success',
   rejected: '#e74c3c',
+};
+
+const STATUS_LABEL: Record<DocStatus, string> = {
+  not_uploaded: 'Not uploaded',
+  uploading: 'Uploading...',
+  pending: 'Pending review',
+  verified: 'Verified',
+  rejected: 'Rejected',
 };
 
 export function KycCard({
   config,
   status,
   uploadedAt,
+  previewUri,
   rejectionReason,
   uploading,
+  uploadProgress,
   idType,
   idNumber,
   onIdTypeChange,
   onIdNumberChange,
   onUpload,
+  onSubmitDoc,
   onRemove,
 }: KycCardProps) {
   const theme = useTheme();
   const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
+  const isImage = previewUri ? /\.(jpe?g|png|gif|webp|bmp)$/i.test(previewUri) || previewUri.startsWith('http') : false;
 
   const selectedLabel = ID_TYPES.find((t) => t.value === idType)?.label || 'Select ID Type';
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'verified': return <Check size={16} color="$success" />;
-      case 'pending': return <Clock size={16} color="#f39c12" />;
-      case 'rejected': return <AlertCircle size={16} color="#e74c3c" />;
-      default: return <FileText size={16} color="#95a5a6" />;
-    }
-  };
-
   const canUpload = status === 'not_uploaded' || status === 'rejected';
+  const canSubmit = status === 'uploading' && !uploading;
 
   return (
     <YStack gap="$2" paddingVertical="$2">
+      {/* Header row */}
       <XStack justifyContent="space-between" alignItems="center">
         <XStack gap="$3" alignItems="center" flex={1}>
           <YStack width={36} height={36} borderRadius="$4" backgroundColor="$gray3" alignItems="center" justifyContent="center">
@@ -94,16 +99,14 @@ export function KycCard({
           </YStack>
         </XStack>
         <XStack gap="$1" alignItems="center">
-          {getStatusIcon()}
+          {status === 'verified' ? <Check size={16} color="$success" /> : status === 'rejected' ? <AlertCircle size={16} color="#e74c3c" /> : <Clock size={16} color="#f39c12" />}
           <YStack backgroundColor={STATUS_COLOR[status]} paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2">
-            <Text color="white" fontSize="$1" textTransform="capitalize" fontFamily="$body">
-              {status === 'not_uploaded' ? 'Not uploaded' : status}
-            </Text>
+            <Text color="white" fontSize="$1" textTransform="capitalize" fontFamily="$body">{STATUS_LABEL[status]}</Text>
           </YStack>
         </XStack>
       </XStack>
 
-      {/* ID Type picker — only for national_id */}
+      {/* ID Type picker */}
       {config.hasIdType && canUpload && (
         <YStack paddingLeft="$11" marginTop="$1">
           <TouchableOpacity onPress={() => setIdTypeSheetOpen(true)} style={{ height: 48, paddingHorizontal: 12, borderRadius: 8, backgroundColor: theme.backgroundSoft?.val || '#f3f4f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -116,20 +119,39 @@ export function KycCard({
       {/* ID Number input */}
       {config.hasIdNumber && canUpload && (
         <YStack paddingLeft="$11" marginTop="$1">
-          <FormInput
-            label=""
-            placeholder={`${config.name} number`}
-            value={idNumber || ''}
-            onChangeText={onIdNumberChange || (() => {})}
-          />
+          <FormInput label="" placeholder={`${config.name} number`} value={idNumber || ''} onChangeText={onIdNumberChange || (() => {})} />
+        </YStack>
+      )}
+
+      {/* Upload progress bar */}
+      {status === 'uploading' && (
+        <YStack paddingLeft="$11" marginTop="$1" gap="$1">
+          <Progress value={uploadProgress || 0} backgroundColor="$gray5" height={6}>
+            <Progress.Indicator animation="bouncy" backgroundColor="$primary" />
+          </Progress>
+          <Text fontSize="$2" color="$colorMuted" fontFamily="$body">Uploading... {uploadProgress || 0}%</Text>
+        </YStack>
+      )}
+
+      {/* Preview — show image if image type, otherwise show file icon */}
+      {previewUri && status !== 'not_uploaded' && status !== 'rejected' && (
+        <YStack paddingLeft="$11" marginTop="$1">
+          {isImage ? (
+            <YStack width={120} height={80} borderRadius="$3" overflow="hidden" backgroundColor="$backgroundSoft">
+              <Image source={{ uri: previewUri }} style={{ width: 120, height: 80 }} resizeMode="cover" />
+            </YStack>
+          ) : (
+            <XStack gap="$2" alignItems="center" padding="$2" backgroundColor="$backgroundSoft" borderRadius="$3">
+              <FileText size={20} color="$colorMuted" />
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">Document uploaded</Text>
+            </XStack>
+          )}
         </YStack>
       )}
 
       {/* Uploaded date */}
       {uploadedAt && (
-        <Text fontSize="$2" color="$colorMuted" paddingLeft="$11" fontFamily="$body">
-          Uploaded: {uploadedAt}
-        </Text>
+        <Text fontSize="$2" color="$colorMuted" paddingLeft="$11" fontFamily="$body">Uploaded: {uploadedAt}</Text>
       )}
 
       {/* Rejection reason */}
@@ -139,15 +161,18 @@ export function KycCard({
         </YStack>
       )}
 
-      {/* Upload buttons */}
+      {/* Buttons */}
       {canUpload && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
-          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, true)} disabled={uploading}>
-            Camera
-          </Button>
-          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, false)} disabled={uploading}>
-            Gallery
-          </Button>
+          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, true)} disabled={uploading}>Camera</Button>
+          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => onUpload(config.id, false)} disabled={uploading}>Gallery</Button>
+        </XStack>
+      )}
+
+      {status === 'uploading' && !uploading && (
+        <XStack gap="$2" paddingLeft="$11" marginTop="$1">
+          <Button size="$2" variant="primary" icon={<Upload size={14} />} onPress={() => onSubmitDoc(config.id)}>Submit</Button>
+          <Button size="$2" variant="outline" onPress={() => onRemove(config.id)}>Cancel</Button>
         </XStack>
       )}
 
@@ -156,9 +181,7 @@ export function KycCard({
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
         <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
-          <YStack px="$5" pt="$3" pb="$2">
-            <Text fontSize="$5" fontWeight="800" fontFamily="$heading">Select ID Type</Text>
-          </YStack>
+          <YStack px="$5" pt="$3" pb="$2"><Text fontSize="$5" fontWeight="800" fontFamily="$heading">Select ID Type</Text></YStack>
           <YStack px="$5" pb="$6" gap="$1">
             {ID_TYPES.map((t, i) => (
               <YStack key={t.value}>

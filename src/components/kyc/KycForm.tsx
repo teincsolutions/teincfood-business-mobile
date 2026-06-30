@@ -11,6 +11,7 @@ import { KycCard, type KycDocConfig, type DocStatus } from './KycCard';
 export interface KycDocumentState {
   status: DocStatus;
   uploadedAt?: string;
+  previewUri?: string;
   rejectionReason?: string;
   uri?: string;
   idType?: string;
@@ -23,12 +24,12 @@ export interface KycFormProps {
   docConfigs: KycDocConfig[];
   documents: Record<string, KycDocumentState>;
   onDocumentsChange: (docs: Record<string, KycDocumentState>) => void;
-  onSubmit: (docs: Record<string, any>) => Promise<void>;
+  onSubmitDoc: (docId: string, docPayload: Record<string, any>) => Promise<void>;
 }
 
-export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsChange, onSubmit }: KycFormProps) {
+export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsChange, onSubmitDoc }: KycFormProps) {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const updateDoc = useCallback((docId: string, updates: Partial<KycDocumentState>) => {
     onDocumentsChange({ ...documents, [docId]: { ...documents[docId], ...updates } });
@@ -50,50 +51,58 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
 
     if (result.canceled || !result.assets[0]) return;
 
-    const uri = result.assets[0].uri;
+    const asset = result.assets[0];
     setUploadingId(docId);
+    setUploadProgress(0);
+    updateDoc(docId, { status: 'uploading', previewUri: asset.uri });
 
     try {
-      const { key } = await uploadImage(uri, 'kyc');
-      updateDoc(docId, { uri: key, status: 'pending', uploadedAt: new Date().toISOString().split('T')[0], rejectionReason: undefined });
+      // Simulate progress for better UX
+      const progressTimer = setInterval(() => setUploadProgress((p) => Math.min(p + 15, 85)), 400);
+      const { key } = await uploadImage(asset.uri, 'kyc');
+      clearInterval(progressTimer);
+      setUploadProgress(100);
+
+      updateDoc(docId, {
+        uri: key,
+        status: 'uploading',
+        previewUri: asset.uri,
+        uploadedAt: new Date().toISOString().split('T')[0],
+        rejectionReason: undefined,
+      });
     } catch (e) {
+      updateDoc(docId, { status: 'not_uploaded', previewUri: undefined });
       toast.error(extractApiErrorMessage(e));
     } finally {
       setUploadingId(null);
+      setUploadProgress(0);
     }
   }, [updateDoc]);
+
+  const handleSubmitDoc = useCallback(async (docId: string) => {
+    const doc = documents[docId];
+    if (!doc || !doc.uri) return;
+
+    const payload: Record<string, any> = {
+      url: doc.uri,
+      issued_date: doc.uploadedAt || new Date().toISOString().split('T')[0],
+      expiration_date: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+    };
+    if (doc.idNumber) payload.id_number = doc.idNumber;
+    if (doc.idType) payload.id_type = doc.idType;
+    if (!doc.idNumber && !doc.idType) payload.document_id = doc.uri;
+
+    try {
+      await onSubmitDoc(docId, payload);
+      updateDoc(docId, { status: 'pending' });
+    } catch (e) {
+      toast.error(extractApiErrorMessage(e));
+    }
+  }, [documents, onSubmitDoc, updateDoc]);
 
   const totalRequired = docConfigs.filter((d) => d.required).length;
   const uploadedRequired = docConfigs.filter((d) => d.required && documents[d.id]?.status !== 'not_uploaded').length;
   const progress = totalRequired > 0 ? (uploadedRequired / totalRequired) * 100 : 0;
-  const verifiedCount = docConfigs.filter((d) => documents[d.id]?.status === 'verified').length;
-  const allRequiredUploaded = uploadedRequired === totalRequired;
-
-  const handleSubmit = async () => {
-    if (!allRequiredUploaded) return;
-    setSubmitting(true);
-    try {
-      const payload: Record<string, any> = {};
-      for (const config of docConfigs) {
-        const doc = documents[config.id];
-        if (!doc || doc.status === 'not_uploaded') continue;
-        const entry: Record<string, any> = {
-          url: doc.uri,
-          issued_date: doc.uploadedAt,
-          expiration_date: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
-        };
-        if (doc.idNumber) entry.id_number = doc.idNumber;
-        if (doc.idType) entry.id_type = doc.idType;
-        if (!doc.idNumber && !doc.idType) entry.document_id = doc.uri;
-        payload[config.id] = entry;
-      }
-      await onSubmit(payload);
-    } catch (e) {
-      toast.error(extractApiErrorMessage(e));
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <YStack gap="$4">
@@ -105,14 +114,11 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontSize="$4" fontWeight="bold">Progress</Text>
-            <Text fontSize="$4" fontWeight="800" color="$primary">{uploadedRequired}/{totalRequired} required</Text>
+            <Text fontSize="$4" fontWeight="800" color="$primary">{uploadedRequired}/{totalRequired}</Text>
           </XStack>
           <Progress value={progress} backgroundColor="$gray5">
             <Progress.Indicator animation="bouncy" backgroundColor="$primary" />
           </Progress>
-          <Text fontSize="$3" color="$colorMuted">
-            {verifiedCount > 0 ? `${verifiedCount} verified` : 'Upload documents to begin verification'}
-          </Text>
         </YStack>
       </Card>
 
@@ -129,14 +135,17 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
                   config={config}
                   status={doc.status}
                   uploadedAt={doc.uploadedAt}
+                  previewUri={doc.previewUri}
                   rejectionReason={doc.rejectionReason}
                   uploading={uploadingId === config.id}
+                  uploadProgress={uploadProgress}
                   idType={doc.idType}
                   idNumber={doc.idNumber}
                   onIdTypeChange={(val) => updateDoc(config.id, { idType: val })}
                   onIdNumberChange={(val) => updateDoc(config.id, { idNumber: val })}
                   onUpload={handleUpload}
-                  onRemove={() => updateDoc(config.id, { status: 'not_uploaded', uri: undefined })}
+                  onSubmitDoc={handleSubmitDoc}
+                  onRemove={() => updateDoc(config.id, { status: 'not_uploaded', uri: undefined, previewUri: undefined })}
                 />
                 {index < docConfigs.length - 1 && <Separator />}
               </YStack>
@@ -144,11 +153,6 @@ export function KycForm({ title, subtitle, docConfigs, documents, onDocumentsCha
           })}
         </YStack>
       </Card>
-
-      {/* Submit button */}
-      <Button variant="primary" width="100%" onPress={handleSubmit} disabled={!allRequiredUploaded || submitting} loading={submitting}>
-        {submitting ? 'Submitting...' : allRequiredUploaded ? 'Submit for Verification' : `Upload ${totalRequired - uploadedRequired} more document(s)`}
-      </Button>
     </YStack>
   );
 }

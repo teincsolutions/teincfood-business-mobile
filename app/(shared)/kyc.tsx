@@ -56,13 +56,14 @@ export default function KycScreen() {
     ? "Upload business documents for verification"
     : "Upload your identity documents for verification";
 
-  const handleSubmit = async (payload: Record<string, any>) => {
+  const handleSubmitDoc = async (docId: string, payload: Record<string, any>) => {
+    const singleDoc = { [docId]: payload };
     if (type === "business" && id) {
-      await businessService.submitBusinessKyc(id, { documents: payload, user_type: "business_owner" });
+      await businessService.submitBusinessKyc(id, { documents: singleDoc, user_type: "business_owner", partial: "true" });
     } else {
-      await api.post("/users/me/kyc", { documents: payload, user_type: docType });
+      await api.post("/users/me/kyc", { documents: singleDoc, user_type: docType, partial: "true" });
     }
-    router.back();
+    toast.success(`${docId.replace(/_/g, " ")} submitted for review`);
   };
 
   return (
@@ -80,7 +81,7 @@ export default function KycScreen() {
             docConfigs={configs}
             documents={documents}
             onDocumentsChange={setDocuments}
-            onSubmit={handleSubmit}
+            onSubmitDoc={handleSubmitDoc}
           />
         </YStack>
       </ScrollView>
