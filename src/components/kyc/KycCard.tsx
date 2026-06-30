@@ -10,6 +10,7 @@ import {
   Sheet,
   Separator,
   Progress,
+  Avatar,
   useTheme,
 } from "tamagui";
 import {
@@ -41,6 +42,7 @@ export interface KycDocConfig {
   hasIdNumber?: boolean;
   hasIdType?: boolean;
   hasDates?: boolean;
+  isProfilePhoto?: boolean;
 }
 
 interface KycCardProps {
@@ -117,7 +119,12 @@ export function KycCard({
   const selectedLabel =
     ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
   const canUpload = status === "not_uploaded" || status === "rejected";
-  const canSubmit = status !== "not_uploaded" && status !== "pending" && status !== "verified" && status !== "rejected" && !uploading;
+  const canSubmit =
+    status !== "not_uploaded" &&
+    status !== "pending" &&
+    status !== "verified" &&
+    status !== "rejected" &&
+    !uploading;
 
   return (
     <YStack gap="$2" paddingVertical="$2">
@@ -219,10 +226,18 @@ export function KycCard({
       {config.hasDates && canUpload && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
           <YStack flex={1}>
-            <TamaguiDateInput value={issuedDate} onChange={onIssuedDateChange || (() => {})} placeholder="Issued date" />
+            <TamaguiDateInput
+              value={issuedDate}
+              onChange={onIssuedDateChange || (() => {})}
+              placeholder="Issued date"
+            />
           </YStack>
           <YStack flex={1}>
-            <TamaguiDateInput value={expirationDate} onChange={onExpirationDateChange || (() => {})} placeholder="Expiry date" />
+            <TamaguiDateInput
+              value={expirationDate}
+              onChange={onExpirationDateChange || (() => {})}
+              placeholder="Expiry date"
+            />
           </YStack>
         </XStack>
       )}
@@ -243,8 +258,36 @@ export function KycCard({
         </YStack>
       )}
 
-      {/* Preview — show image if image type, otherwise show file icon */}
-      {previewUri && status !== "not_uploaded" && status !== "rejected" && (
+      {/* Preview — avatar is always visible for profile photo and acts as upload button */}
+      {config.isProfilePhoto ? (
+        <YStack marginTop="$1" alignItems="center">
+          <TouchableOpacity
+            onPress={() => canUpload && setPickerOpen(true)}
+            disabled={uploading}
+          >
+            <Avatar radiused size="$18" opacity={uploading ? 0.5 : 1}>
+              <Avatar.Image src={previewUri || undefined} />
+              <Avatar.Fallback
+                backgroundColor="$primary"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text color="white" fontSize="$6" fontFamily="$body">
+                  {config.name.charAt(0)}
+                </Text>
+              </Avatar.Fallback>
+            </Avatar>
+          </TouchableOpacity>
+          <Text
+            fontSize="$2"
+            color="$colorMuted"
+            fontFamily="$body"
+            marginTop="$1"
+          >
+            {previewUri ? "Tap to change" : "Tap to add photo"}
+          </Text>
+        </YStack>
+      ) : previewUri && status !== "not_uploaded" && status !== "rejected" ? (
         <YStack paddingLeft="$11" marginTop="$1">
           {isImage ? (
             <YStack
@@ -275,7 +318,7 @@ export function KycCard({
             </XStack>
           )}
         </YStack>
-      )}
+      ) : null}
 
       {/* Uploaded date */}
       {uploadedAt && (
@@ -303,8 +346,8 @@ export function KycCard({
         </YStack>
       )}
 
-      {/* Upload button */}
-      {canUpload && (
+      {/* Upload button — hidden for profile_photo since the avatar acts as the button */}
+      {canUpload && !config.isProfilePhoto && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
           <Button
             size="$2"
@@ -323,7 +366,7 @@ export function KycCard({
         modal
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        snapPoints={[45]}
+        snapPoints={config.isProfilePhoto ? [35] : [45]}
         dismissOnSnapToBottom
         zIndex={200_000}
       >
@@ -341,7 +384,7 @@ export function KycCard({
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack px="$5" pt="$3" pb="$4" gap="$2">
             <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
-              Upload Document
+              Upload {config.name}
             </Text>
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
               Choose a source
@@ -399,32 +442,36 @@ export function KycCard({
                 Photo Gallery
               </Text>
             </XStack>
-            <Separator />
-            <XStack
-              py="$4"
-              gap="$3"
-              alignItems="center"
-              onPress={() => {
-                setPickerOpen(false);
-                onUpload(config.id, "document");
-              }}
-            >
-              <YStack
-                p="$2"
-                backgroundColor="rgba(255,145,0,0.1)"
-                borderRadius="$3"
-              >
-                <FileIcon size={20} color="$primary" />
-              </YStack>
-              <Text
-                fontSize="$4"
-                fontWeight="600"
-                fontFamily="$body"
-                color="$color"
-              >
-                Document (PDF)
-              </Text>
-            </XStack>
+            {!config.isProfilePhoto && (
+              <>
+                <Separator />
+                <XStack
+                  py="$4"
+                  gap="$3"
+                  alignItems="center"
+                  onPress={() => {
+                    setPickerOpen(false);
+                    onUpload(config.id, "document");
+                  }}
+                >
+                  <YStack
+                    p="$2"
+                    backgroundColor="rgba(255,145,0,0.1)"
+                    borderRadius="$3"
+                  >
+                    <FileIcon size={20} color="$primary" />
+                  </YStack>
+                  <Text
+                    fontSize="$4"
+                    fontWeight="600"
+                    fontFamily="$body"
+                    color="$color"
+                  >
+                    Document (PDF)
+                  </Text>
+                </XStack>
+              </>
+            )}
           </YStack>
         </Sheet.Frame>
       </Sheet>
