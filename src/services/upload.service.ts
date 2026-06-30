@@ -26,6 +26,22 @@ export interface UploadResult {
   download_url: string;
 }
 
+const STORAGE_URL = process.env.EXPO_PUBLIC_STORAGE_URL || 'http://localhost:9000';
+
+function replaceStorageHost(url: string): string {
+  try {
+    const u = new URL(url);
+    const storage = new URL(STORAGE_URL);
+    // Replace host + port with configured storage endpoint
+    u.host = storage.host;
+    u.port = storage.port;
+    u.protocol = storage.protocol;
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 /**
  * Upload an image to S3/MinIO via presigned URL.
  * @param localUri - Local file URI
@@ -60,23 +76,24 @@ export async function uploadImage(
   const { data } = await api.post<UploadResponse>('/upload', body);
 
   const { upload_url, download_url, key } = data;
-  console.log('[Upload] Got URLs', { key, download_url: download_url?.slice(0, 80) });
+  // Replace localhost in the presigned URL with the configured storage endpoint
+  const resolvedUploadUrl = replaceStorageHost(upload_url);
+  console.log('[Upload] Got URLs', { key, resolved: resolvedUploadUrl?.slice(0, 120) });
 
-  console.log('[Upload] Fetching blob from', localUri?.slice(0, 80));
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-  console.log('[Upload] Blob size', blob.size, 'type', blob.type);
+  // Upload to S3 via fetch (works in RN for binary PUT to presigned URLs)
+  console.log('[Upload] Uploading file');
+  const fileResp = await fetch(localUri);
+  const blob = await fileResp.blob();
 
-  const uploadResult = await fetch(upload_url, {
+  const uploadResult = await fetch(resolvedUploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': contentType },
     body: blob,
   });
 
   if (!uploadResult.ok) {
-    const errorText = await uploadResult.text().catch(() => 'no body');
-    console.error('[Upload] S3 PUT failed', { status: uploadResult.status, statusText: uploadResult.statusText, body: errorText });
-    throw new Error(`Failed to upload image to storage (${uploadResult.status})`);
+    const errText = await uploadResult.text().catch(() => '');
+    throw new Error(`Upload failed (${uploadResult.status}): ${errText}`);
   }
 
   console.log('[Upload] S3 PUT succeeded');

@@ -87,6 +87,9 @@ export default function SplashScreen() {
 
       await new Promise((r) => setTimeout(r, minWait));
 
+      // TEMP DEBUG: log access token for manual curl testing
+      if (accessToken) console.log('[DEBUG] Access token:', accessToken);
+
       if (!accessToken) {
         // No session — check prerequisites in order: onboarding → location → role → login
         if (!hasSeenOnboarding) {
