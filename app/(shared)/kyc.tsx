@@ -6,6 +6,7 @@ import { YStack, XStack, Text } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton } from "@/components/ui";
 import { KycForm, type KycDocumentState, type KycDocConfig } from "@/components/kyc/KycForm";
+import { useAuthStore } from "@/stores/auth.store";
 import * as businessService from "@/services/business.service";
 import { api } from "@/services/api";
 
@@ -49,7 +50,8 @@ export default function KycScreen() {
 
   const docType = type === "business" ? "business" : (role as string) || "rider";
   const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.rider;
-  const uploadContext = type === "business" && id ? { entity_type: "business", entity_id: id } : { entity_type: "user" };
+  const userId = useAuthStore((s) => s.user?.id);
+  const uploadContext = type === "business" && id ? { entity_type: "business", entity_id: id } : { entity_type: "user", entity_id: userId || "unknown" };
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(() => buildInitialDocs(configs));
 
   const title = type === "business" ? "Business KYC" : "KYC Verification";
