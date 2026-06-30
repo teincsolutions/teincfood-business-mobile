@@ -66,13 +66,13 @@ export interface MenuItemListResponse {
 
 export interface MenuItemVariant {
   id: string;
-  label: string;
-  price_minor: number;
+  name: string;
+  price_adjustment: number;
 }
 
 export interface MenuItemAddon {
   id: string;
-  label: string;
+  name: string;
   price_minor: number;
 }
 

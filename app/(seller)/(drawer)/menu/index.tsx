@@ -4,7 +4,9 @@ import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useResponsive } from "@/utils/responsive";
 import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { CategoryPill } from "@/components/home/CategoryPill";
@@ -30,6 +32,7 @@ import Drawer from "expo-router/drawer";
 export default function SellerMenu() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { isTablet, columns, width } = useResponsive();
 
   // ── State (must be before hooks that use them) ──
   const [activeCategory, setActiveCategory] = useState("");
@@ -81,16 +84,16 @@ export default function SellerMenu() {
       dietaryTags: [],
       variants: (item.variants || []).map((v: any) => ({
         id: v.id,
-        label: v.name,
-        price_minor: v.price?.amount || 0,
+        name: v.name,
+        price_adjustment: v.price?.amountMinor || 0,
       })),
       extras: (item.extras || []).map((e: any) => ({
         id: e.id,
-        label: e.name,
+        name: e.name,
         price_minor: e.amountMinor || 0,
       })),
-      available: item.is_available,
-      images: item.image_url ? [item.image_url] : [],
+      is_available: item.is_available,
+      image_url: item.image_url || '',
     });
     setVariantLabel("");
     setVariantPrice("");
@@ -117,8 +120,8 @@ export default function SellerMenu() {
       dietaryTags: form.dietaryTags,
       variants: form.variants,
       extras: form.extras,
-      available: form.available,
-      images: form.images,
+      available: form.is_available,
+      imageUrl: form.image_url || null,
     };
 
     if (editingItem) {
@@ -127,6 +130,7 @@ export default function SellerMenu() {
         {
           onSuccess: () => setSheetOpen(false),
           onError: (err: any) => {
+            console.debug('[Menu] Update item error:', err?.response?.data || err);
             const details = err?.response?.data?.error?.details;
             if (details && typeof details === 'object') {
               const mapped: Record<string, string> = {};
@@ -146,6 +150,7 @@ export default function SellerMenu() {
       createMutation.mutate(baseData, {
         onSuccess: () => setSheetOpen(false),
         onError: (err: any) => {
+          console.debug('[Menu] Create item error:', err?.response?.data || err);
           const details = err?.response?.data?.error?.details;
           if (details && typeof details === 'object') {
             const mapped: Record<string, string> = {};
@@ -165,9 +170,9 @@ export default function SellerMenu() {
 
   // ─── Toggle availability ───────────────────────────────────────
   const toggleAvailability = (id: string) => {
-    const item = items.find((i) => i.id === id);
+    const item = (data ?? []).find((i: any) => i.id === id);
     if (item) {
-      toggleMutation.mutate({ id, available: !item.available });
+      toggleMutation.mutate({ id, available: !item.is_available });
     }
   };
 
@@ -197,7 +202,7 @@ export default function SellerMenu() {
     if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      variants: [...f.variants, { id: Date.now().toString(), label, price_minor: toMinor(price) }],
+      variants: [...f.variants, { id: Date.now().toString(), name: label, price_adjustment: toMinor(price) }],
     }));
     setVariantLabel("");
     setVariantPrice("");
@@ -213,7 +218,7 @@ export default function SellerMenu() {
     if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      extras: [...f.extras, { id: Date.now().toString(), label, price_minor: toMinor(price) }],
+      extras: [...f.extras, { id: Date.now().toString(), name: label, price_minor: toMinor(price) }],
     }));
     setExtraLabel("");
     setExtraPrice("");
@@ -278,13 +283,16 @@ export default function SellerMenu() {
         data={data}
         keyExtractor={(item) => item.id}
         extraData={data?.length}
+        numColumns={isTablet ? columns(400) : 1}
         renderItem={({ item }) => (
-          <MenuItemCard
-            item={item}
-            onEdit={openEdit}
-            onDelete={setDeleteTarget}
-            onToggleAvailability={toggleAvailability}
-          />
+          <YStack flex={1} padding="$1" maxWidth={isTablet ? '50%' : '100%'}>
+            <MenuItemCard
+              item={item}
+              onEdit={openEdit}
+              onDelete={setDeleteTarget}
+              onToggleAvailability={toggleAvailability}
+            />
+          </YStack>
         )}
         ListHeaderComponent={
           <XStack paddingHorizontal="$4" pb="$2">
@@ -311,7 +319,7 @@ export default function SellerMenu() {
           </YStack>
         }
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          paddingHorizontal: isTablet ? 24 : 16,
           paddingBottom: insets.bottom + 16,
         }}
         initialNumToRender={10}

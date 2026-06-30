@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { TouchableOpacity, Image } from 'react-native';
+import { TouchableOpacity, Image, useWindowDimensions } from 'react-native';
 import {
   YStack,
   XStack,
@@ -32,18 +32,22 @@ export function MenuItemCard({
   onToggleAvailability,
 }: MenuItemCardProps) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  const s = isTablet ? { thumbnail: 96, icon: 32, textMd: '$5', textSm: '$3', textXs: '$2', btnSize: 44, iconSize: 20 } : { thumbnail: 64, icon: 26, textMd: '$4', textSm: '$2', textXs: 10, btnSize: 36, iconSize: 15 };
 
   return (
     <Card
-      padding="$4"
+      padding={isTablet ? '$5' : '$4'}
       bordered
       opacity={item.is_available ? 1 : 0.55}
     >
       <XStack gap="$3" alignItems="flex-start">
         {/* Thumbnail */}
         <YStack
-          width={64}
-          height={64}
+          width={s.thumbnail}
+          height={s.thumbnail}
           backgroundColor="$backgroundSoft"
           borderRadius="$3"
           alignItems="center"
@@ -54,10 +58,10 @@ export function MenuItemCard({
           {item.image_url ? (
             <Image
               source={{ uri: item.image_url }}
-              style={{ width: 64, height: 64, borderRadius: 8 }}
+              style={{ width: s.thumbnail, height: s.thumbnail, borderRadius: 8 }}
             />
           ) : (
-            <UtensilsCrossed size={26} color="$colorSecondary" />
+            <UtensilsCrossed size={s.icon} color="$colorSecondary" />
           )}
         </YStack>
 
@@ -65,20 +69,20 @@ export function MenuItemCard({
         <YStack flex={1} gap="$1">
           <XStack justifyContent="space-between" alignItems="flex-start">
             <YStack flex={1} gap="$0.5">
-              <Text fontSize="$4" fontWeight="800" fontFamily="$heading" color="$color">
+              <Text fontSize={s.textMd} fontWeight="800" fontFamily="$heading" color="$color">
                 {item.name}
               </Text>
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+              <Text fontSize={s.textSm} color="$colorSecondary" fontFamily="$body">
                 {item.category?.name || ''}
               </Text>
             </YStack>
-            <Text fontSize="$4" fontWeight="800" fontFamily="$heading" color="$primary">
+            <Text fontSize={s.textMd} fontWeight="800" fontFamily="$heading" color="$primary">
               {formatPriceFromMinor(item.basePrice?.amountMinor || 0)}
             </Text>
           </XStack>
 
           {item.description ? (
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" numberOfLines={2}>
+            <Text fontSize={s.textSm} color="$colorSecondary" fontFamily="$body" numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
@@ -96,7 +100,7 @@ export function MenuItemCard({
                   borderWidth={1}
                   borderColor="$borderColor"
                 >
-                  <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
+                  <Text fontSize={s.textXs} fontFamily="$body" color="$colorSecondary">
                     {tag}
                   </Text>
                 </YStack>
@@ -106,7 +110,7 @@ export function MenuItemCard({
 
           {/* Variants / addons summary */}
           {(item.variants?.length > 0 || item.extras?.length > 0) && (
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" mt="$1">
+            <Text fontSize={s.textSm} color="$colorSecondary" fontFamily="$body" mt="$1">
               {[
                 item.variants.length > 0 &&
                   `${item.variants.length} size${item.variants.length > 1 ? 's' : ''}`,
@@ -127,15 +131,15 @@ export function MenuItemCard({
         {/* Availability toggle */}
         <TouchableOpacity
           onPress={() => onToggleAvailability(item.id)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
         >
           {item.is_available ? (
-            <Eye size={15} color={theme.primary?.val || '#F97316'} />
+            <Eye size={s.iconSize} color={theme.primary?.val || '#F97316'} />
           ) : (
-            <EyeOff size={15} color={theme.colorSecondary?.val || '#6b7280'} />
+            <EyeOff size={s.iconSize} color={theme.colorSecondary?.val || '#6b7280'} />
           )}
           <Text
-            fontSize="$3"
+            fontSize={s.textSm}
             fontFamily="$body"
             fontWeight="600"
             color={item.is_available ? '$primary' : '$colorSecondary'}
@@ -149,32 +153,32 @@ export function MenuItemCard({
           <TouchableOpacity
             onPress={() => onEdit(item)}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: s.btnSize,
+              height: s.btnSize,
+              borderRadius: s.btnSize / 2,
               borderWidth: 1,
               borderColor: theme.borderColor?.val || '#e5e7eb',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Edit3 size={15} color={theme.color?.val} />
+            <Edit3 size={s.iconSize} color={theme.color?.val} />
           </TouchableOpacity>
 
           {/* Delete */}
           <TouchableOpacity
             onPress={() => onDelete(item)}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: s.btnSize,
+              height: s.btnSize,
+              borderRadius: s.btnSize / 2,
               borderWidth: 1,
               borderColor: '#fca5a5',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Trash2 size={15} color="#ef4444" />
+            <Trash2 size={s.iconSize} color="#ef4444" />
           </TouchableOpacity>
         </XStack>
       </XStack>

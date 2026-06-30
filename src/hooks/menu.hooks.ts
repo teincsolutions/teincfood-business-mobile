@@ -65,32 +65,23 @@ type CreateInput = {
   variants: any[];
   extras: any[];
   available: boolean;
-  images: string[];
+  imageUrl: string | null;
 };
 
 type UpdateInput = CreateInput & { id: string };
 
-async function uploadFirstImage(
-  images: string[],
+async function uploadImageForItem(
+  imageUrl: string | null,
   businessId?: string,
 ): Promise<string | null> {
-  if (!images || images.length === 0) return null;
-  // Image 0 is the S3 key (already uploaded), image 1 is the preview URL
-  const keyOrUri = images[0];
-  // If it starts with a path like "menus/...", it's already an uploaded key — return as-is
-  if (
-    typeof keyOrUri === "string" &&
-    !keyOrUri.startsWith("file://") &&
-    !keyOrUri.startsWith("ph://") &&
-    !keyOrUri.startsWith("content://")
-  ) {
-    return keyOrUri;
+  if (!imageUrl) return null;
+  // Already a remote URL or S3 key — return as-is
+  if (!imageUrl.startsWith('file://') && !imageUrl.startsWith('ph://') && !imageUrl.startsWith('content://')) {
+    return imageUrl;
   }
-  // Local file that wasn't pre-uploaded — upload now
+  // Local file — upload now
   try {
-    const result = await uploadImage(keyOrUri, "menus", {
-      business_id: businessId,
-    });
+    const result = await uploadImage(imageUrl, 'menus', { business_id: businessId });
     return result.key;
   } catch (e) {
     toast.error(extractApiErrorMessage(e));
@@ -105,22 +96,16 @@ export function useCreateMenuItemMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateInput) => {
-      const imageUrl = await uploadFirstImage(input.images, businessId);
+      const imageUrl = await uploadImageForItem(input.imageUrl, businessId);
       return menuService.createBusinessMenuItem(businessId!, {
         name: input.name,
         description: input.description,
         price_minor: input.priceMinor,
         category_id: input.categoryId,
-        currency_code: "GHS",
+        currency_code: 'GHS',
         dietary_tags: input.dietaryTags,
-        variants: input.variants.map((v: any) => ({
-          name: v.label,
-          price_adjustment: v.price_minor,
-        })),
-        extras: input.extras.map((e: any) => ({
-          name: e.label,
-          price_minor: e.price_minor,
-        })),
+        variants: input.variants.map(({ id, ...v }) => v),
+        extras: input.extras.map(({ id, ...e }) => e),
         available: input.available,
         image_url: imageUrl,
       });
@@ -158,21 +143,15 @@ export function useUpdateMenuItemMutation() {
         payload.available = updates.available;
       if (updates.dietaryTags !== undefined)
         payload.dietary_tags = updates.dietaryTags;
-      if (updates.images !== undefined) {
-        const imageUrl = await uploadFirstImage(updates.images, businessId);
+      if (updates.imageUrl !== undefined) {
+        const imageUrl = await uploadImageForItem(updates.imageUrl, businessId);
         payload.image_url = imageUrl;
       }
       if (updates.variants !== undefined) {
-        payload.variants = updates.variants.map((v: any) => ({
-          name: v.label,
-          price_adjustment: v.price_minor,
-        }));
+        payload.variants = updates.variants.map(({ id, ...v }) => v);
       }
       if (updates.extras !== undefined) {
-        payload.extras = updates.extras.map((e: any) => ({
-          name: e.label,
-          price_minor: e.price_minor,
-        }));
+        payload.extras = updates.extras.map(({ id, ...e }) => e);
       }
       return menuService.updateMenuItem(id, payload);
     },

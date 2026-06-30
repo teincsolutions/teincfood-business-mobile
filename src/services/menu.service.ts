@@ -9,12 +9,12 @@ import type {
   MenuItemAddon as ApiMenuItemAddon,
   CatalogItemRequest,
 } from '@/types/api';
-import type { Variant, Extra, MenuItemForm } from '@/types/menu.types';
+import type { MenuItemForm } from '@/types/menu.types';
 
 // ─── Re-export API types for consumers ───
 
 export type MenuItem = ApiMenuItem;
-export type { Variant, Extra, MenuItemForm };
+export type { MenuItemForm };
 
 export const DIETARY_TAGS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Halal'];
 export const EMPTY_FORM: MenuItemForm = {
@@ -25,8 +25,8 @@ export const EMPTY_FORM: MenuItemForm = {
   dietaryTags: [],
   variants: [],
   extras: [],
-  available: true,
-  images: [],
+  is_available: true,
+  image_url: '',
 };
 
 export function toMinor(ghsStr: string): number {

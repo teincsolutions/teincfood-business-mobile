@@ -16,7 +16,7 @@ import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucid
 import { toast } from 'sonner-native';
 import { Button, FormInput } from '@/components/ui';
 import type { MenuItem } from '@/types/api/menu.api';
-import type { MenuItemForm, Variant, Extra } from '@/types/menu.types';
+import type { MenuItemForm } from '@/types/menu.types';
 import type { UploadResult } from '@/services/upload.service';
 import type { MenuCategory } from '@/types/api';
 import {
@@ -98,10 +98,9 @@ export function MenuFormSheet({
     try {
       console.log('[MenuForm] Uploading image', localUri?.slice(0, 60));
       const result = await onImagePick(localUri);
-      // Store preview URL for the UI, and key for the API save
-      // The mutation hooks will use the first image that starts with a path (key)
+      // store the key — the mutation sends it as image_url, backend serializer converts to presigned URL
       console.log('[MenuForm] Upload succeeded', result);
-      updateFormField('images', [result.key, result.download_url]);
+      updateFormField('image_url', result.key);
     } catch (e) {
       console.error('[MenuForm] Upload failed', e);
       toast.error("Could not upload image. Try again.");
@@ -163,11 +162,6 @@ export function MenuFormSheet({
         style: "cancel",
       },
     ]);
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = form.images.filter((_, i) => i !== index);
-    updateFormField('images', newImages);
   };
 
   return (
@@ -276,11 +270,11 @@ export function MenuFormSheet({
                       Show this item to customers
                     </Text>
                   </YStack>
-                  <Switch
-                    size="$6"
-                    checked={form.available}
-                    onCheckedChange={(v) => updateFormField('available', v)}
-                    backgroundColor={form.available ? '$primary' : '$color.gray900'}
+                      <Switch
+                        size="$6"
+                        checked={form.is_available}
+                        onCheckedChange={(v) => updateFormField('is_available', v)}
+                        backgroundColor={form.is_available ? '$primary' : '$color.gray900'}
                   >
                     <Switch.Thumb animation="quick" backgroundColor="white" />
                   </Switch>
@@ -294,14 +288,14 @@ export function MenuFormSheet({
                     Item Image
                   </Text>
                   
-                  {form.images.length > 0 ? (
+                  {form.image_url ? (
                     <YStack position="relative" width={120} height={120}>
                       <Image
-                        source={{ uri: form.images[1] || form.images[0] }}
+                        source={{ uri: form.image_url }}
                         style={{ width: 120, height: 120, borderRadius: 8 }}
                       />
                       <TouchableOpacity
-                        onPress={() => removeImage(0)}
+                        onPress={() => updateFormField('image_url', '')}
                         style={{
                           position: 'absolute', top: -6, right: -6,
                           width: 20, height: 20, borderRadius: 10,
@@ -409,7 +403,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {v.label} — {formatPrice(v.price_minor / 100)}
+                          {v.name} — {formatPrice(v.price_adjustment / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveVariant(v.id)}>
@@ -470,7 +464,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {e.label} — {formatPrice(e.price_minor / 100)}
+                          {e.name} — {formatPrice(e.price_minor / 100)}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveExtra(e.id)}>

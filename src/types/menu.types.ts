@@ -1,20 +1,13 @@
-import type {
-  MenuItemVariant,
-  MenuItemAddon,
-} from '@/types/api/menu.api';
-
-export type Variant = MenuItemVariant;
-export type Extra = MenuItemAddon;
-
 export interface MenuItemForm {
   name: string;
   description: string;
+  /** Price as string input (e.g. "25.00") */
   price: string;
   /** Category ID (UUID) */
   category: string;
   dietaryTags: string[];
-  variants: Variant[];
-  extras: Extra[];
-  available: boolean;
-  images: string[];
+  variants: { id: string; name: string; price_minor: number }[];
+  extras: { id: string; name: string; price_minor: number }[];
+  is_available: boolean;
+  image_url: string;
 }
