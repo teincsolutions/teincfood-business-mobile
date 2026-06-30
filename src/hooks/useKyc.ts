@@ -17,6 +17,8 @@ export function useUserKycQuery(enabled = true) {
       return res.data || {};
     },
     enabled: enabled && !!userId,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -28,6 +30,8 @@ export function useBusinessKycQuery(businessId?: string, enabled = true) {
       return res.data || {};
     },
     enabled: enabled && !!businessId,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 

@@ -56,12 +56,14 @@ export default function KycScreen() {
     if (!kycData) return;
     const existing = kycData.kyc_documents || {};
     if (Object.keys(existing).length === 0) return;
+    const overallStatus = kycData.kyc_status || "pending";
+    const docStatus = overallStatus === "approved" ? "verified" : overallStatus === "rejected" ? "rejected" : "pending";
     const merged = { ...buildInitialDocs(configs) };
     for (const [docId, docData] of Object.entries(existing)) {
       const d = docData as Record<string, any>;
       if (configs.find((c) => c.id === docId)) {
         merged[docId] = {
-          status: "pending",
+          status: docStatus,
           uri: d.url || d.document_id || d.key,
           previewUri: d.signed_url,
           idType: d.id_type,

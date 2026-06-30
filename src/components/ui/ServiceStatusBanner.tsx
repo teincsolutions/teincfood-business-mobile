@@ -5,6 +5,7 @@ import { AlertTriangle, Clock, ShieldCheck, ShieldOff, FileText } from '@tamagui
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
+import { useBusinessKycQuery } from '@/hooks/useKyc';
 
 interface Props {
   kyc_status?: string;
@@ -15,16 +16,22 @@ interface Props {
  * ServiceStatusBanner
  * Displays a contextual banner based on the user's KYC status and account status.
  * Uses kyc_status from the backend (pending | submitted | approved | rejected).
- * Also handles account status via user.kyc_documents presence.
+ * For sellers/fleet managers, reads the active business's KYC status via a fresh query.
  */
 export function ServiceStatusBanner({ kyc_status, hasCompletedKyc }: Props) {
   const router = useRouter();
   const role = useAuthStore((s) => s.user?.role);
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const effectiveStatus = kyc_status || 'pending';
 
-  // Hide if KYC is approved and user has completed KYC
-  if (effectiveStatus === 'approved' && hasCompletedKyc) return null;
+  // For non-riders, fetch the business KYC status fresh from the backend
+  const { data: bizKycData } = useBusinessKycQuery(role !== 'rider' ? activeBusinessId : undefined);
+  const bizKycStatus = role !== 'rider' ? (bizKycData?.kyc_status || 'pending') : null;
+
+  const effectiveStatus = role === 'rider' ? (kyc_status || 'pending') : bizKycStatus;
+
+  // For non-riders, treat "approved" as complete even without hasCompletedKyc
+  const isComplete = role === 'rider' ? (effectiveStatus === 'approved' && hasCompletedKyc) : effectiveStatus === 'approved';
+  if (isComplete) return null;
 
   // Determine banner content based on KYC status
   const isPending = effectiveStatus === 'pending' || effectiveStatus === 'not_uploaded' || effectiveStatus === 'rejected';
