@@ -6,6 +6,7 @@ import { YStack, XStack, Text } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton } from "@/components/ui";
 import { KycForm, type KycDocumentState, type KycDocConfig } from "@/components/kyc/KycForm";
+import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
 import * as businessService from "@/services/business.service";
 import { api } from "@/services/api";

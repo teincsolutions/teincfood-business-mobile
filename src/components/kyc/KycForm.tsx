@@ -105,48 +105,6 @@ export function KycForm({
     [],
   );
 
-  const handleUpload = useCallback(
-    async (docId: string, source: "camera" | "gallery" | "document") => {
-      const asset = await pickAsset(source);
-      if (!asset) return;
-
-      setUploadingId(docId);
-      setUploadProgress(0);
-      updateDoc(docId, { status: "uploading", previewUri: asset.uri });
-
-      try {
-        const progressTimer = setInterval(
-          () => setUploadProgress((p) => Math.min(p + 15, 85)),
-          400,
-        );
-        const ctx = {
-          entity_type: "unknown",
-          entity_id: "unknown",
-          document_type: docId,
-          ...(uploadContext || {}),
-        };
-        const { key } = await uploadImage(asset.uri, "kyc", ctx);
-        clearInterval(progressTimer);
-        setUploadProgress(100);
-
-        updateDoc(docId, {
-          uri: key,
-          status: "uploading",
-          previewUri: asset.uri,
-          uploadedAt: new Date().toISOString().split("T")[0],
-          rejectionReason: undefined,
-        });
-      } catch (e) {
-        updateDoc(docId, { status: "not_uploaded", previewUri: undefined });
-        toast.error(extractApiErrorMessage(e));
-      } finally {
-        setUploadingId(null);
-        setUploadProgress(0);
-      }
-    },
-    [pickAsset, updateDoc, uploadContext],
-  );
-
   const handleSubmitDoc = useCallback(
     async (docId: string) => {
       const doc = documents[docId];
@@ -176,6 +134,44 @@ export function KycForm({
       }
     },
     [documents, onSubmitDoc, updateDoc],
+  );
+
+  const handleUpload = useCallback(
+    async (docId: string, source: "camera" | "gallery" | "document") => {
+      const asset = await pickAsset(source);
+      if (!asset) return;
+
+      setUploadingId(docId);
+      setUploadProgress(0);
+      updateDoc(docId, { status: "uploading", previewUri: asset.uri });
+
+      try {
+        const ctx = { entity_type: 'unknown', entity_id: 'unknown', document_type: docId, ...(uploadContext || {}) };
+        const { key } = await uploadImage(asset.uri, 'kyc', ctx, (p) => setUploadProgress(p));
+
+        updateDoc(docId, {
+          uri: key,
+          status: "uploading",
+          previewUri: asset.uri,
+          uploadedAt: new Date().toISOString().split("T")[0],
+          rejectionReason: undefined,
+        });
+        setUploadProgress(100);
+
+        // Profile photo — auto-submit immediately after upload
+        const config = docConfigs.find((c) => c.id === docId);
+        if (config?.isProfilePhoto) {
+          setTimeout(() => handleSubmitDoc(docId), 300);
+        }
+      } catch (e) {
+        updateDoc(docId, { status: "not_uploaded", previewUri: undefined });
+        toast.error(extractApiErrorMessage(e));
+      } finally {
+        setUploadingId(null);
+        setUploadProgress(0);
+      }
+    },
+    [pickAsset, updateDoc, uploadContext, docConfigs, handleSubmitDoc],
   );
 
   const totalRequired = docConfigs.filter((d) => d.required).length;

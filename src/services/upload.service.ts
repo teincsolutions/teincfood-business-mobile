@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { api } from './api';
 
 interface UploadResponse {
@@ -26,33 +27,19 @@ export interface UploadResult {
   download_url: string;
 }
 
-const STORAGE_URL = process.env.EXPO_PUBLIC_STORAGE_URL || 'http://localhost:9000';
-
-function replaceStorageHost(url: string): string {
-  try {
-    const u = new URL(url);
-    const storage = new URL(STORAGE_URL);
-    // Replace host + port with configured storage endpoint
-    u.host = storage.host;
-    u.port = storage.port;
-    u.protocol = storage.protocol;
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
-
 /**
  * Upload an image to S3/MinIO via presigned URL.
  * @param localUri - Local file URI
  * @param domain - Storage domain (avatars, businesses, kyc, menus, chat)
  * @param context - Optional context with business_id, item_id
+ * @param onProgress - Optional callback for upload progress (0-100)
  * @returns UploadResult with key (store) and download_url (preview)
  */
 export async function uploadImage(
   localUri: string,
   domain: string = 'menus',
   context?: UploadContext,
+  onProgress?: (percent: number) => void,
 ): Promise<UploadResult> {
   const filename = localUri.split('/').pop() || 'image.jpg';
   const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
@@ -71,30 +58,26 @@ export async function uploadImage(
     body.context = context;
   }
 
-  console.log('[Upload] Requesting presigned URL', { domain, filename, contentType });
-
   const { data } = await api.post<UploadResponse>('/upload', body);
 
   const { upload_url, download_url, key } = data;
-  // Replace localhost in the presigned URL with the configured storage endpoint
-  const resolvedUploadUrl = replaceStorageHost(upload_url);
-  console.log('[Upload] Got URLs', { key, resolved: resolvedUploadUrl?.slice(0, 120) });
+  console.log('[Upload] Got URLs', { key });
 
-  // Upload to S3 via fetch (works in RN for binary PUT to presigned URLs)
-  console.log('[Upload] Uploading file');
+  // Read local file as blob
   const fileResp = await fetch(localUri);
   const blob = await fileResp.blob();
+  const totalSize = blob.size;
 
-  const uploadResult = await fetch(resolvedUploadUrl, {
-    method: 'PUT',
+  // Upload to S3 via axios (clean instance — no auth interceptor to break presigned URL)
+  await axios.put(upload_url, blob, {
     headers: { 'Content-Type': contentType },
-    body: blob,
+    timeout: 30000,
+    onUploadProgress: (e) => {
+      if (onProgress && totalSize > 0) {
+        onProgress(Math.round((e.loaded * 100) / totalSize));
+      }
+    },
   });
-
-  if (!uploadResult.ok) {
-    const errText = await uploadResult.text().catch(() => '');
-    throw new Error(`Upload failed (${uploadResult.status}): ${errText}`);
-  }
 
   console.log('[Upload] S3 PUT succeeded');
 
