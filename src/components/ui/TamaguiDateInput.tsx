@@ -8,9 +8,10 @@ interface TamaguiDateInputProps {
   value?: Date;
   onChange: (date: Date) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export function TamaguiDateInput({ value, onChange, placeholder }: TamaguiDateInputProps) {
+export function TamaguiDateInput({ value, onChange, placeholder, disabled }: TamaguiDateInputProps) {
   const theme = useTheme();
   const [showPicker, setShowPicker] = useState(false);
   const displayText = value ? value.toISOString().split('T')[0] : '';
@@ -26,8 +27,9 @@ export function TamaguiDateInput({ value, onChange, placeholder }: TamaguiDateIn
         borderColor="$borderColor"
         alignItems="center"
         gap="$2"
-        onPress={() => setShowPicker(true)}
+        onPress={() => !disabled && setShowPicker(true)}
         pressStyle={{ opacity: 0.8 }}
+        opacity={disabled ? 0.5 : 1}
       >
         <Calendar size={18} color="$colorMuted" />
         <Text fontFamily="$body" fontSize="$3" color={value ? '$color' : '$colorMuted'} flex={1}>
@@ -36,7 +38,7 @@ export function TamaguiDateInput({ value, onChange, placeholder }: TamaguiDateIn
       </XStack>
 
       <DateTimePickerModal
-        isVisible={showPicker}
+        isVisible={showPicker && !disabled}
         mode="date"
         date={value || new Date()}
         onConfirm={(date: Date) => { setShowPicker(false); onChange(date); }}
