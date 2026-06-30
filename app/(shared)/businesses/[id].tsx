@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from "react";
-import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
   YStack,
@@ -19,6 +18,7 @@ import { FormTextArea } from "@/components/ui/FormTextArea";
 import { useBusinessStore } from "@/stores/business.store";
 import * as businessService from "@/services/business.service";
 import { uploadImage } from "@/services/upload.service";
+import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
 import {
   Building,
@@ -183,7 +183,7 @@ export default function BusinessDetailScreen() {
   const uploadLogo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Required", "Photo library access is required to change the logo.");
+      toast.error("Photo library access is required to change the logo.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -200,7 +200,7 @@ export default function BusinessDetailScreen() {
       const { download_url } = await uploadImage(uri, 'businesses', { business_id: id });
       setLogoUri(download_url);
     } catch (e: any) {
-      Alert.alert("Upload Failed", extractApiErrorMessage(e));
+      toast.error(extractApiErrorMessage(e));
     }
   };
 
@@ -241,7 +241,7 @@ export default function BusinessDetailScreen() {
       setSaveStatus("success");
       setTimeout(() => { setSaveStatus("idle"); setIsEditing(false); }, 1800);
     } catch (e: any) {
-      Alert.alert("Save Failed", extractApiErrorMessage(e));
+      toast.error(extractApiErrorMessage(e));
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 2500);
     } finally {
@@ -272,18 +272,14 @@ export default function BusinessDetailScreen() {
       : ImagePicker.requestMediaLibraryPermissionsAsync;
     const { status } = await permFn();
     if (status !== "granted") {
-      Alert.alert("Permission Required", useCamera ? "Camera access is required." : "Photo library access is required.");
+      toast.error(useCamera ? "Camera access is required." : "Photo library access is required.");
       return;
     }
     const launchFn = useCamera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
     const result = await launchFn({ mediaTypes: ["images"], allowsEditing: true, quality: 0.85 });
     if (result.canceled || !result.assets[0]) return;
 
-    const asset = result.assets[0];
-    const uri = asset.uri;
-    const filename = uri.split("/").pop() || `${docId}.jpg`;
-    const contentType = asset.mimeType || "image/jpeg";
-
+    const uri = result.assets[0].uri;
     setUploadingDocId(docId);
 
     try {
@@ -310,7 +306,7 @@ export default function BusinessDetailScreen() {
         ),
       );
     } catch (e: any) {
-      Alert.alert("Upload Failed", extractApiErrorMessage(e));
+      toast.error(extractApiErrorMessage(e));
       setDocs((prev) => prev.map((d) => (d.id === docId ? { ...d, status: "not_uploaded" as DocStatus } : d)));
     } finally {
       setUploadingDocId(null);

@@ -10,7 +10,6 @@ import {
   Switch,
   Slider,
   Input,
-  Form,
   styled,
 } from "tamagui";
 import {
