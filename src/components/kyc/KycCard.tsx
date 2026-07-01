@@ -118,12 +118,11 @@ export function KycCard({
   const selectedLabel =
     ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
   const canUpload = status === "not_uploaded" || status === "rejected";
-  const displayFilename = previewUri ? previewUri.split("/").pop() || "file" : "";
+  const displayFilename = previewUri
+    ? previewUri.split("/").pop() || "file"
+    : "";
   const canSubmit =
-    previewUri &&
-    status !== "pending" &&
-    status !== "verified" &&
-    !uploading;
+    previewUri && status !== "pending" && status !== "verified" && !uploading;
 
   return (
     <YStack gap="$2" paddingVertical="$2">
@@ -185,8 +184,26 @@ export function KycCard({
       {/* ID Type picker — disabled when verified */}
       {config.hasIdType && (
         <YStack paddingLeft="$11" marginTop="$1">
-          <TouchableOpacity onPress={() => status !== "verified" && setIdTypeSheetOpen(true)} style={{ height: 48, paddingHorizontal: 12, borderRadius: 8, backgroundColor: theme.backgroundSoft?.val || '#f3f4f6', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', opacity: status === "verified" ? 0.5 : 1 }}>
-            <Text fontFamily="$body" fontSize="$3" color={idType ? '$color' : '$colorMuted'}>{selectedLabel}</Text>
+          <TouchableOpacity
+            onPress={() => status !== "verified" && setIdTypeSheetOpen(true)}
+            style={{
+              height: 48,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              backgroundColor: theme.backgroundSoft?.val || "#f3f4f6",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              opacity: status === "verified" ? 0.5 : 1,
+            }}
+          >
+            <Text
+              fontFamily="$body"
+              fontSize="$3"
+              color={idType ? "$color" : "$colorMuted"}
+            >
+              {selectedLabel}
+            </Text>
             <ChevronDown size={16} color="$colorMuted" />
           </TouchableOpacity>
         </YStack>
@@ -195,7 +212,13 @@ export function KycCard({
       {/* ID Number input — disabled when verified */}
       {config.hasIdNumber && (
         <YStack paddingLeft="$11" marginTop="$1">
-          <FormInput label="" placeholder={`${config.name} number`} value={idNumber || ''} onChangeText={onIdNumberChange || (() => {})} editable={status !== "verified"} />
+          <FormInput
+            label=""
+            placeholder={`${config.name} number`}
+            value={idNumber || ""}
+            onChangeText={onIdNumberChange || (() => {})}
+            editable={status !== "verified"}
+          />
         </YStack>
       )}
 
@@ -203,10 +226,20 @@ export function KycCard({
       {config.hasDates && (
         <XStack gap="$2" paddingLeft="$11" marginTop="$1">
           <YStack flex={1}>
-            <TamaguiDateInput value={issuedDate} onChange={onIssuedDateChange || (() => {})} placeholder="Issued date" disabled={status === "verified"} />
+            <TamaguiDateInput
+              value={issuedDate}
+              onChange={onIssuedDateChange || (() => {})}
+              placeholder="Issued date"
+              disabled={status === "verified"}
+            />
           </YStack>
           <YStack flex={1}>
-            <TamaguiDateInput value={expirationDate} onChange={onExpirationDateChange || (() => {})} placeholder="Expiry date" disabled={status === "verified"} />
+            <TamaguiDateInput
+              value={expirationDate}
+              onChange={onExpirationDateChange || (() => {})}
+              placeholder="Expiry date"
+              disabled={status === "verified"}
+            />
           </YStack>
         </XStack>
       )}
@@ -281,7 +314,12 @@ export function KycCard({
               borderRadius="$3"
             >
               <FileText size={20} color="$colorMuted" />
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
+              <Text
+                fontSize="$2"
+                color="$colorSecondary"
+                fontFamily="$body"
+                numberOfLines={1}
+              >
                 {displayFilename}
               </Text>
             </XStack>
@@ -318,7 +356,13 @@ export function KycCard({
       {/* Upload + Save buttons side by side — always visible until verified */}
       <XStack gap="$2" paddingLeft="$11" marginTop="$1">
         {!config.isProfilePhoto && (
-          <Button size="$2" variant="outline" icon={<Camera size={14} />} onPress={() => setPickerOpen(true)} disabled={uploading || status === "verified"}>
+          <Button
+            size="$2"
+            variant="outline"
+            icon={<Camera size={14} />}
+            onPress={() => setPickerOpen(true)}
+            disabled={uploading || status === "verified"}
+          >
             Upload
           </Button>
         )}
@@ -447,8 +491,6 @@ export function KycCard({
           </YStack>
         </Sheet.Frame>
       </Sheet>
-
-
 
       {/* ID Type bottom sheet */}
       <Sheet
