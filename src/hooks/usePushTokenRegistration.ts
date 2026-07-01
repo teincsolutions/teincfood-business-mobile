@@ -4,6 +4,10 @@ import messaging from '@react-native-firebase/messaging';
 import { devicesService } from '@/services/devices.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { mmkvStorage } from '@/utils/storage';
+import {
+  registerBackgroundPushHandler,
+  registerForegroundPushHandler,
+} from '@/services/background-push-handler.service';
 
 let currentToken: string | null = null;
 
@@ -89,6 +93,10 @@ export function usePushTokenRegistration(enabled = true): void {
       }
 
       try {
+        // Register push notification handlers for background/foreground display
+        registerBackgroundPushHandler();
+        registerForegroundPushHandler();
+
         console.log('[PushToken] Getting FCM token...');
         const fcmToken = await messaging().getToken();
         console.log('[PushToken] FCM token obtained successfully:', fcmToken);

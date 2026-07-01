@@ -118,7 +118,18 @@ module.exports = {
       [
         "expo-notifications",
         {
-          sounds: ["./assets/notification_sound.wav"],
+          sounds: [
+            "./assets/notification_sound.wav",
+            "./src/sounds/order_new.wav",
+            "./src/sounds/order_status.wav",
+            "./src/sounds/order_alert.wav",
+            "./src/sounds/order_complete.wav",
+            "./src/sounds/order_cancelled.wav",
+            "./src/sounds/rider_pickup.wav",
+            "./src/sounds/rider_opportunity.wav",
+            "./src/sounds/timer_alert.wav",
+            "./src/sounds/notification_default.wav",
+          ],
         },
       ],
       ["@react-native-firebase/app"],

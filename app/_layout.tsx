@@ -1,12 +1,13 @@
 // @ts-nocheck
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { YStack } from 'tamagui';
 import {
   useFonts,
@@ -16,6 +17,7 @@ import {
   Sen_700Bold,
   Sen_800ExtraBold,
 } from '@expo-google-fonts/sen';
+import notifee, { EventType } from '@notifee/react-native';
 
 import tamaguiConfig from '../tamagui.config';
 import { Toaster } from 'sonner-native';
@@ -30,6 +32,10 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
+import {
+  registerBackgroundPushHandler,
+  registerForegroundPushHandler,
+} from '../src/services/background-push-handler.service';
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
@@ -59,6 +65,43 @@ function AppShell() {
 
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
+
+  // Register push notification handlers for background/foreground display
+  useEffect(() => {
+    registerBackgroundPushHandler();
+    registerForegroundPushHandler();
+  }, []);
+
+  // Handle Notifee notification tap (Android foreground)
+  const handleNotifeeAction = useCallback(
+    (actionId: string, data: Record<string, string> | undefined) => {
+      const orderId = data?.orderId;
+      if (orderId) {
+        router.push(`/order/${orderId}`);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
+      const actionId = detail.pressAction?.id;
+      const ndata = detail.notification?.data as Record<string, string> | undefined;
+
+      switch (type) {
+        case EventType.PRESS:
+          handleNotifeeAction(actionId || 'view_order', ndata);
+          break;
+        case EventType.ACTION_PRESS:
+          if (actionId) handleNotifeeAction(actionId, ndata);
+          break;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isAuthenticated, handleNotifeeAction]);
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);
