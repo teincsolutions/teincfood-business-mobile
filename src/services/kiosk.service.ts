@@ -1,6 +1,15 @@
 import { api } from './api';
 import type { KioskOrder, KioskOrdersResponse } from '@/types/api';
 
+export interface AvailableRider {
+  id: string;
+  name: string;
+  phone: string | null;
+  vehicle_type: string | null;
+  rating: number | null;
+  distance: number | null;
+}
+
 export async function fetchKioskOrders(businessId?: string): Promise<KioskOrdersResponse> {
   if (businessId) {
     return api.get<KioskOrdersResponse>(`/businesses/${businessId}/orders`);

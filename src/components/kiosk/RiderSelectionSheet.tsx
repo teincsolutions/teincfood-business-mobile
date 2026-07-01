@@ -94,23 +94,26 @@ export function RiderSelectionSheet({
                     <XStack alignItems="center" gap="$2">
                       <Text fontSize="$4" fontWeight="bold">{rider.name}</Text>
                       <XStack alignItems="center" gap="$0.5">
-                        <Star size={12} color="$color.starOrange" />
+                        <Star size={12} color="$yellow10" />
                         <Text fontSize="$2" color="$colorMuted">{rider.rating}</Text>
                       </XStack>
                     </XStack>
 
                     <XStack alignItems="center" gap="$2">
-                      {getVehicleIcon(rider.vehicleType)}
+                      {getVehicleIcon(rider.vehicle_type)}
                       <Text fontSize="$3" color="$colorSecondary">
-                        {rider.vehicleType === 'motorcycle' ? 'Motorcycle' : rider.vehicleType === 'car' ? 'Car' : 'Bicycle'}
-                        {rider.plateNumber ? ` • ${rider.plateNumber}` : ''}
+                        {rider.vehicle_type === 'motorcycle' ? 'Motorcycle' : rider.vehicle_type === 'car' ? 'Car' : 'Bicycle'}
                       </Text>
                     </XStack>
 
                     <XStack alignItems="center" gap="$1">
                       <Navigation size={12} color="$success" />
                       <Text fontSize="$2" color="$success" fontWeight="600">
-                        {rider.distanceKm < 1 ? `${(rider.distanceKm * 1000).toFixed(0)}m away` : `${rider.distanceKm.toFixed(1)}km away`}
+                        {rider.distance != null && rider.distance < 1
+                          ? `${(rider.distance * 1000).toFixed(0)}m away`
+                          : rider.distance != null
+                            ? `${rider.distance.toFixed(1)}km away`
+                            : 'Unknown distance'}
                       </Text>
                     </XStack>
                   </YStack>

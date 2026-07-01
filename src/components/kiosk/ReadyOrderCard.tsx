@@ -1,15 +1,15 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack, Separator } from 'tamagui';
-import { Truck, FileText } from '@tamagui/lucide-icons';
+import { Truck, FileText, User } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatPrice } from '@/utils/currency';
-import type { KioskOrder } from '@/types/kiosk.model';
+import { formatPriceFromMinor } from '@/utils/currency';
+import type { SellerOrder } from '@/types/api';
 
 interface ReadyOrderCardProps {
-  order: KioskOrder;
+  order: SellerOrder;
   onAssignRider: (orderId: string) => void;
-  onViewDetails: (order: KioskOrder) => void;
+  onViewDetails: (order: SellerOrder) => void;
 }
 
 export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrderCardProps) {
@@ -26,26 +26,35 @@ export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrd
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$6" fontWeight="bold">{order.orderNumber}</Text>
+          <Text fontSize="$6" fontWeight="bold">{order.order_number}</Text>
           <Badge backgroundColor="$success" size="$2">
             <Text color="white" fontSize="$1">READY</Text>
           </Badge>
         </XStack>
 
-        {order.specialInstructions && (
+        {order.user?.full_name && (
+          <XStack gap="$1" alignItems="center">
+            <User size={14} color="$colorMuted" />
+            <Text fontSize="$3" color="$colorMuted">
+              {order.user.full_name}
+            </Text>
+          </XStack>
+        )}
+
+        {order.notes && (
           <XStack gap="$2" alignItems="flex-start">
             <FileText size={14} color="$info" />
             <Text fontSize="$2" color="$info" flex={1}>
-              {order.specialInstructions}
+              {order.notes}
             </Text>
           </XStack>
         )}
 
         <YStack gap="$1">
           {order.items.map((item, index) => (
-            <XStack key={index} justifyContent="space-between">
-              <Text fontSize="$3">{item.quantity}x {item.name}</Text>
-              <Text fontSize="$3" color="$colorMuted">{formatPrice(item.price * item.quantity, order.currency)}</Text>
+            <XStack key={item.id} justifyContent="space-between">
+              <Text fontSize="$3">{item.quantity}x {item.menu_item?.name}</Text>
+              <Text fontSize="$3" color="$colorMuted">{formatPriceFromMinor(item.subtotal, order.currency)}</Text>
             </XStack>
           ))}
         </YStack>
@@ -53,7 +62,7 @@ export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrd
         <Separator />
 
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold">{formatPrice(order.total, order.currency)}</Text>
+          <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
           <Button
             height="$12"
             $lg={{ height: "$12" }}

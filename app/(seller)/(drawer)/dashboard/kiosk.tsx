@@ -47,7 +47,7 @@ import { useSecurityStore } from "@/stores/security.store";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
-import type { KioskOrder } from "@/models/kiosk.model";
+import type { SellerOrder } from "@/types/api";
 import type { AvailableRider } from "@/services/kiosk.service";
 import {
   useKioskOrdersQuery,
@@ -59,6 +59,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { useResponsive } from "@/utils/responsive";
 import { Button } from "@/components/ui";
+import { formatPriceFromMinor } from "@/utils/currency";
 
 interface DialogState {
   open: boolean;
@@ -156,7 +157,7 @@ export default function KioskMode() {
 
   // Order details sheet
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<KioskOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
 
   // TanStack Query
   const { data, isRefetching, refetch } = useKioskOrdersQuery(autoRefresh);
@@ -166,9 +167,10 @@ export default function KioskMode() {
   const assignRider = useAssignRiderMutation();
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
 
-  const pendingOrders = data?.pendingOrders ?? [];
-  const preparingOrders = data?.preparingOrders ?? [];
-  const readyOrders = data?.readyOrders ?? [];
+  const allOrders = data?.data ?? [];
+  const pendingOrders = allOrders.filter((o) => o.status === "pending");
+  const preparingOrders = allOrders.filter((o) => o.status === "accepted" || o.status === "preparing");
+  const readyOrders = allOrders.filter((o) => o.status === "ready");
 
   const playSound = (type: "success" | "alert" | "error") => {
     if (!soundEnabled) return;
@@ -192,7 +194,7 @@ export default function KioskMode() {
     setDialog({
       open: true,
       title: "Accept Order",
-      description: `Are you sure you want to accept ${order.orderNumber}?`,
+      description: `Are you sure you want to accept ${order.order_number}?`,
       confirmText: "Accept",
       cancelText: "Cancel",
       onConfirm: () => {
@@ -237,7 +239,7 @@ export default function KioskMode() {
     setDialog({
       open: true,
       title: "Mark as Ready",
-      description: `Is ${order.orderNumber} ready for pickup?`,
+      description: `Is ${order.order_number} ready for pickup?`,
       confirmText: "Mark Ready",
       cancelText: "Cancel",
       onConfirm: () => {
@@ -254,7 +256,7 @@ export default function KioskMode() {
     setShowRiderSheet(true);
   };
 
-  const handleViewDetails = (order: KioskOrder) => {
+  const handleViewDetails = (order: SellerOrder) => {
     setSelectedOrder(order);
     setShowOrderDetails(true);
   };
@@ -283,7 +285,7 @@ export default function KioskMode() {
     });
   };
 
-  const getTimeSince = (dateString: string) => {
+  const getTimeSince = (dateString: string | null | undefined) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffMs = now.getTime() - date.getTime();
@@ -323,7 +325,7 @@ export default function KioskMode() {
     }
   };
 
-  const getPaymentIcon = (method: string) => {
+  const getPaymentIcon = (method: string | undefined) => {
     switch (method) {
       case "mobile_money":
         return <DollarSign size={16} />;
@@ -759,21 +761,22 @@ export default function KioskMode() {
           <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
               <Text fontSize="$7" fontWeight="bold" color="$info">
-                {preparingOrders.reduce((sum, o) => sum + o.estimatedTime, 0)}m
+                {preparingOrders.length} preparing
               </Text>
               <Text fontSize="$3" color="$colorMuted">
-                Total ETA
+                In Progress
               </Text>
             </YStack>
           </Card>
 
           <Card flex={1} padding="$4" backgroundColor="$backgroundSoft">
             <YStack alignItems="center" gap="$1">
-              <Text fontSize="$7" fontWeight="bold" color="$color.starOrange">
-                GHS{" "}
-                {[...pendingOrders, ...preparingOrders, ...readyOrders]
-                  .reduce((sum, o) => sum + o.total, 0)
-                  .toFixed(0)}
+              <Text fontSize="$7" fontWeight="bold" color="$starOrange">
+                {formatPriceFromMinor(
+                  [...pendingOrders, ...preparingOrders, ...readyOrders]
+                    .reduce((sum, o) => sum + (o.total_minor || 0), 0),
+                  allOrders[0]?.currency,
+                )}
               </Text>
               <Text fontSize="$3" color="$colorMuted">
                 Total Value

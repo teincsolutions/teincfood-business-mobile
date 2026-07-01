@@ -8,18 +8,22 @@ import {
   Utensils,
   Truck,
   FileText,
+  User,
+  DollarSign,
+  CreditCard,
+  Banknote,
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useResponsive } from "@/utils/responsive";
-import { formatPrice } from "@/utils/currency";
-import type { KioskOrder } from "@/models/kiosk.model";
+import { formatPriceFromMinor } from "@/utils/currency";
+import type { SellerOrder } from "@/types/api";
 
 interface OrderDetailsSheetProps {
   visible: boolean;
   onClose: () => void;
-  order: KioskOrder | null;
-  getTimeSince: (dateString: string) => number;
+  order: SellerOrder | null;
+  getTimeSince: (dateString: string | null | undefined) => number;
 }
 
 export function OrderDetailsSheet({
@@ -32,43 +36,24 @@ export function OrderDetailsSheet({
 
   if (!order) return null;
 
-  const getPaymentIcon = (method: string) => {
-    switch (method) {
-      case "mobile_money":
-        return <DollarSign size={16} />;
-      case "card":
-        return <CreditCard size={16} />;
-      case "cash":
-        return <Banknote size={16} />;
-      default:
-        return <DollarSign size={16} />;
-    }
-  };
-
   const getStatusBadge = () => {
     switch (order.status) {
       case "pending":
         return (
           <Badge backgroundColor="$orangeLight" size="$3">
-            <Text color="$primary" fontWeight="bold">
-              PENDING
-            </Text>
+            <Text color="$primary" fontWeight="bold">PENDING</Text>
           </Badge>
         );
       case "preparing":
         return (
           <Badge backgroundColor="$blue2" size="$3">
-            <Text color="$info" fontWeight="bold">
-              PREPARING
-            </Text>
+            <Text color="$info" fontWeight="bold">PREPARING</Text>
           </Badge>
         );
       case "ready":
         return (
           <Badge backgroundColor="$green2" size="$3">
-            <Text color="$success" fontWeight="bold">
-              READY
-            </Text>
+            <Text color="$success" fontWeight="bold">READY</Text>
           </Badge>
         );
       default:
@@ -86,6 +71,19 @@ export function OrderDetailsSheet({
         return <Truck size={24} color="$success" />;
       default:
         return <Clock size={24} color="$primary" />;
+    }
+  };
+
+  const getPaymentIcon = (method: string | undefined) => {
+    switch (method) {
+      case "mobile_money":
+        return <DollarSign size={16} />;
+      case "card":
+        return <CreditCard size={16} />;
+      case "cash":
+        return <Banknote size={16} />;
+      default:
+        return <DollarSign size={16} />;
     }
   };
 
@@ -118,7 +116,7 @@ export function OrderDetailsSheet({
               {getStatusIcon()}
               <YStack>
                 <Text fontSize="$6" fontWeight="bold">
-                  {order.orderNumber}
+                  {order.order_number}
                 </Text>
                 {getStatusBadge()}
               </YStack>
@@ -137,8 +135,21 @@ export function OrderDetailsSheet({
 
           <Separator marginBottom="$4" />
 
+          {/* Customer */}
+          {order.user?.full_name && (
+            <YStack gap="$2" marginBottom="$4">
+              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
+                Customer
+              </Text>
+              <XStack gap="$2" alignItems="center">
+                <User size={16} color="$colorMuted" />
+                <Text fontSize="$4">{order.user.full_name}</Text>
+              </XStack>
+            </YStack>
+          )}
+
           {/* Special Instructions */}
-          {order.specialInstructions && (
+          {order.notes && (
             <YStack gap="$2" marginBottom="$4">
               <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
                 Special Instructions
@@ -146,7 +157,7 @@ export function OrderDetailsSheet({
               <XStack gap="$2" alignItems="flex-start">
                 <FileText size={16} color="$info" />
                 <Text fontSize="$4" color="$info" flex={1}>
-                  {order.specialInstructions}
+                  {order.notes}
                 </Text>
               </XStack>
             </YStack>
@@ -160,25 +171,10 @@ export function OrderDetailsSheet({
             <XStack gap="$2" alignItems="center">
               <Clock size={16} color="$colorMuted" />
               <Text fontSize="$4">
-                {getTimeSince(order.createdAt)} minutes ago
+                {getTimeSince(order.inserted_at)} minutes ago
               </Text>
             </XStack>
           </YStack>
-
-          {/* ETA (if preparing) */}
-          {order.status === "preparing" && (
-            <YStack gap="$2" marginBottom="$4">
-              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-                Estimated Time
-              </Text>
-              <XStack gap="$2" alignItems="center">
-                <Clock size={16} color="$info" />
-                <Text fontSize="$4" color="$info" fontWeight="bold">
-                  {order.estimatedTime} minutes
-                </Text>
-              </XStack>
-            </YStack>
-          )}
 
           <Separator marginBottom="$4" />
 
@@ -188,9 +184,9 @@ export function OrderDetailsSheet({
               Order Items
             </Text>
             <YStack gap="$2">
-              {order.items.map((item, index) => (
+              {order.items.map((item) => (
                 <XStack
-                  key={index}
+                  key={item.id}
                   justifyContent="space-between"
                   alignItems="center"
                 >
@@ -198,14 +194,35 @@ export function OrderDetailsSheet({
                     <Text fontSize="$4" fontWeight="bold">
                       {item.quantity}x
                     </Text>
-                    <Text fontSize="$4">{item.name}</Text>
+                    <Text fontSize="$4">{item.menu_item?.name}</Text>
                   </XStack>
                   <Text fontSize="$4" color="$colorMuted">
-                    {formatPrice(item.price * item.quantity, order.currency)}
+                    {formatPriceFromMinor(item.subtotal, order.currency)}
                   </Text>
                 </XStack>
               ))}
             </YStack>
+          </YStack>
+
+          <Separator marginBottom="$4" />
+
+          {/* Payment */}
+          <YStack gap="$2" marginBottom="$4">
+            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
+              Payment
+            </Text>
+            <XStack gap="$2" alignItems="center">
+              {getPaymentIcon(order.payment_mode)}
+              <Text fontSize="$4" textTransform="capitalize">
+                {order.payment_mode?.replace("_", " ")}
+              </Text>
+              {order.is_paid && (
+                <XStack gap="$1" alignItems="center" marginLeft="$2">
+                  <CheckCircle size={14} color="$green10" />
+                  <Text fontSize="$3" color="$green10" fontWeight="600">Paid</Text>
+                </XStack>
+              )}
+            </XStack>
           </YStack>
 
           <Separator marginBottom="$4" />
@@ -220,7 +237,7 @@ export function OrderDetailsSheet({
               Total
             </Text>
             <Text fontSize="$6" fontWeight="bold" color="$primary">
-              {formatPrice(order.total, order.currency)}
+              {formatPriceFromMinor(order.total_minor, order.currency)}
             </Text>
           </XStack>
 

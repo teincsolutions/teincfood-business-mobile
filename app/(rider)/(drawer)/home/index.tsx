@@ -293,7 +293,7 @@ export default function RiderHome() {
                 </XStack>
                 <XStack gap="$2" alignItems="center">
                   <Clock size={16} color="$colorMuted" />
-                  <Text fontSize="$3">ETA: {activeDelivery.estimatedTime}</Text>
+                  <Text fontSize="$3">ETA: {activeDelivery.eta_minutes ?? "---"} min</Text>
                 </XStack>
               </YStack>
 
@@ -384,7 +384,7 @@ export default function RiderHome() {
               <YStack key={delivery.id} gap="$2">
                 <XStack justifyContent="space-between" alignItems="center">
                   <YStack>
-                    <Text fontWeight="bold">{delivery.orderId}</Text>
+                    <Text fontWeight="bold">{delivery.order_number}</Text>
                     <Text fontSize="$3" color="$colorMuted">
                       Delivered
                     </Text>

@@ -1,25 +1,9 @@
-// ─── Kiosk Order ───
+import type { PaginatedResponse } from './pagination';
+import type { SellerOrder } from './seller.api';
 
-export interface KioskOrder {
-  id: string;
-  order_number: string;
-  status: string;
-  total_minor: number;
-  currency: string;
-  customer_name: string;
-  payment_status: string;
-  payment_method: string;
-  items: KioskOrderItem[];
-  created_at: string;
-  updated_at: string;
-}
+// The kiosk uses the same order endpoint as seller orders.
+// KioskOrder is an alias for SellerOrder — same shape, fields match backend.
 
-export interface KioskOrderItem {
-  name: string;
-  quantity: number;
-  price_minor: number;
-}
+export type KioskOrder = SellerOrder;
 
-export interface KioskOrdersResponse {
-  data: KioskOrder[];
-}
+export type KioskOrdersResponse = PaginatedResponse<KioskOrder>;

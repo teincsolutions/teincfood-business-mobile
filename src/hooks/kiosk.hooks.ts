@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { KioskOrder } from '@/types/kiosk.model';
 import * as kioskService from '@/services/kiosk.service';
 import { useBusinessStore } from '@/stores/business.store';
 

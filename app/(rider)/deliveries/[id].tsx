@@ -370,7 +370,7 @@ export default function RiderDeliveryDetails() {
                   <Text fontWeight="bold">
                     {formatPrice(
                       (item.price * item.quantity) / 100,
-                      item.currency || DEFAULT_CURRENCY,
+                      delivery.currency || DEFAULT_CURRENCY,
                     )}
                   </Text>
                 </XStack>

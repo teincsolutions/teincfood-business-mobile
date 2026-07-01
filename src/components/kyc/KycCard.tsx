@@ -117,7 +117,7 @@ export function KycCard({
 
   const selectedLabel =
     ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
-  const canUpload = status === "not_uploaded" || status === "rejected";
+  const canUpload = status !== "verified";
   const displayFilename = previewUri
     ? previewUri.split("/").pop() || "file"
     : "";

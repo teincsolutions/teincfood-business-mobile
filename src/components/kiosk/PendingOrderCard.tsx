@@ -5,18 +5,19 @@ import {
   CheckCircle,
   XCircle,
   FileText,
+  User,
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/utils/currency";
-import type { KioskOrder } from "@/models/kiosk.model";
+import { formatPriceFromMinor } from "@/utils/currency";
+import type { SellerOrder } from "@/types/api";
 
 interface PendingOrderCardProps {
-  order: KioskOrder;
+  order: SellerOrder;
   onAccept: (orderId: string) => void;
   onReject: (orderId: string) => void;
-  onViewDetails: (order: KioskOrder) => void;
-  getTimeSince: (dateString: string) => number;
+  onViewDetails: (order: SellerOrder) => void;
+  getTimeSince: (dateString: string | null | undefined) => number;
 }
 
 export function PendingOrderCard({
@@ -40,12 +41,12 @@ export function PendingOrderCard({
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$6" fontWeight="bold">
-            {order.orderNumber}
+            {order.order_number}
           </Text>
           <XStack gap="$2" alignItems="center">
             <Clock size={14} color="$colorMuted" />
             <Text fontSize="$2" color="$colorMuted">
-              {getTimeSince(order.createdAt)}m ago
+              {getTimeSince(order.inserted_at)}m ago
             </Text>
           </XStack>
         </XStack>
@@ -60,24 +61,33 @@ export function PendingOrderCard({
           </Text>
         </Badge>
 
+        {order.user?.full_name && (
+          <XStack gap="$1" alignItems="center">
+            <User size={14} color="$colorMuted" />
+            <Text fontSize="$3" color="$colorMuted">
+              {order.user.full_name}
+            </Text>
+          </XStack>
+        )}
+
         <YStack gap="$1">
           {order.items.map((item, index) => (
-            <XStack key={index} justifyContent="space-between">
+            <XStack key={item.id} justifyContent="space-between">
               <Text fontSize="$3">
-                {item.quantity}x {item.name}
+                {item.quantity}x {item.menu_item?.name}
               </Text>
               <Text fontSize="$3" color="$colorMuted">
-                {formatPrice(item.price * item.quantity, order.currency)}
+                {formatPriceFromMinor(item.subtotal, order.currency)}
               </Text>
             </XStack>
           ))}
         </YStack>
 
-        {order.specialInstructions && (
+        {order.notes && (
           <XStack gap="$2" alignItems="flex-start">
             <FileText size={14} color="$info" />
             <Text fontSize="$2" color="$info" flex={1}>
-              {order.specialInstructions}
+              {order.notes}
             </Text>
           </XStack>
         )}
@@ -86,7 +96,7 @@ export function PendingOrderCard({
 
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$5" fontWeight="bold">
-            {formatPrice(order.total, order.currency)}
+            {formatPriceFromMinor(order.total_minor, order.currency)}
           </Text>
           <XStack gap="$2">
             <Button
