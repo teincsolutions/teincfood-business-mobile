@@ -129,7 +129,11 @@ function CustomDrawerContent(props: any) {
       </YStack>
 
       {/* Menu Items */}
-      <DrawerContentScrollView {...props} style={{ flex: 1 }}>
+      <DrawerContentScrollView
+        {...props}
+        contentContainerStyle={{ paddingTop: 0 }}
+        style={{ flex: 1 }}
+      >
         <YStack padding="$2" gap="$1">
           {/* Home */}
           <Button
@@ -144,7 +148,7 @@ function CustomDrawerContent(props: any) {
             icon={<Home size={20} color={theme.color.val} />}
           >
             <Text flex={1} fontSize="$4">
-              Home
+              Dashboard
             </Text>
           </Button>
 

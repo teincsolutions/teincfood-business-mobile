@@ -21,7 +21,9 @@ const PERIODS = [
 export default function RiderEarningsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [period, setPeriod] = useState<"today" | "this_week" | "this_month">("today");
+  const [period, setPeriod] = useState<"today" | "this_week" | "this_month">(
+    "today",
+  );
 
   const { data: earningsSummary } = useRiderEarningsSummaryQuery(period);
   const { data: transactionsData = [] } = useWalletHistoryQuery();
@@ -29,7 +31,8 @@ export default function RiderEarningsScreen() {
   const summary = earningsSummary?.data;
   const totalEarningsMinor = summary?.total_earnings_minor ?? 0;
   const totalPeriodDeliveries = summary?.total_deliveries ?? 0;
-  const avgPerDelivery = totalPeriodDeliveries > 0 ? totalEarningsMinor / totalPeriodDeliveries : 0;
+  const avgPerDelivery =
+    totalPeriodDeliveries > 0 ? totalEarningsMinor / totalPeriodDeliveries : 0;
 
   const periodLabel = PERIODS.find((p) => p.key === period)?.label ?? "Today";
 
@@ -149,7 +152,9 @@ export default function RiderEarningsScreen() {
             </YStack>
             <YStack alignItems="center">
               <Text fontSize="$6" fontWeight="600" fontFamily="$heading">
-                {avgPerDelivery > 0 ? formatPriceFromMinor(Math.round(avgPerDelivery)) : "---"}
+                {avgPerDelivery > 0
+                  ? formatPriceFromMinor(Math.round(avgPerDelivery))
+                  : "---"}
               </Text>
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 Avg / delivery
@@ -198,7 +203,7 @@ export default function RiderEarningsScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background">
       <FlatList
         data={transactionsData}
         keyExtractor={(item) => item.id}
