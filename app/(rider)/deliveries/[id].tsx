@@ -25,6 +25,7 @@ import {
 import type { RiderDeliveryDetail } from "@/types/api/rider.api";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
+import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
 import { extractApiErrorMessage } from "@/utils/error";
 import { toast } from "sonner-native";
 
@@ -35,6 +36,9 @@ export default function RiderDeliveryDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+
+  // Real-time delivery status updates
+  useRiderDeliveryRealtimeUpdates();
 
   // TanStack Query hooks
   const { data: response, isLoading } = useDeliveryDetailQuery(id as string);

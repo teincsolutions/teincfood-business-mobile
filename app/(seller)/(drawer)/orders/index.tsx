@@ -10,39 +10,43 @@ import {
   Spinner,
 } from "tamagui";
 import { Filter, X, Check, Search } from "@tamagui/lucide-icons";
-import { FlatList, Modal, Pressable, RefreshControl, TextInput } from "react-native";
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  RefreshControl,
+  TextInput,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { useQueryClient } from '@tanstack/react-query';
-import { useSellerOrdersQuery, useAcceptOrderMutation, useRejectOrderMutation, useStartPreparingOrderMutation, useMarkOrderReadyMutation, SELLER_KEYS } from "@/hooks/seller.hooks";
-import { orderEventsService } from "@/services/order-events.service";
+import {
+  useSellerOrdersQuery,
+  useAcceptOrderMutation,
+  useRejectOrderMutation,
+  useStartPreparingOrderMutation,
+  useMarkOrderReadyMutation,
+  SELLER_KEYS,
+} from "@/hooks/seller.hooks";
+import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { useResponsive } from "@/utils/responsive";
-import { formatPriceFromMinor } from "@/utils/currency";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import type { SellerOrder } from "@/types/api";
+import { SellerOrderCard } from "@/components/orders/SellerOrderCard";
 
-const FILTER_OPTIONS = ["pending", "accepted", "preparing", "ready", "delivered"];
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "pending": return "$yellow9";
-    case "accepted": return "$orange9";
-    case "preparing": return "$blue9";
-    case "ready": return "$green9";
-    case "delivered": return "$gray9";
-    default: return "$gray9";
-  }
-}
+const FILTER_OPTIONS = [
+  "pending",
+  "accepted",
+  "preparing",
+  "ready",
+  "delivered",
+];
 
 export default function SellerOrders() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { isTablet, isLargeTablet } = useResponsive();
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const queryClient = useQueryClient();
   const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
   const acceptMutation = useAcceptOrderMutation();
   const rejectMutation = useRejectOrderMutation();
@@ -50,17 +54,7 @@ export default function SellerOrders() {
   const markReadyMutation = useMarkOrderReadyMutation();
 
   // Real-time order updates via WebSocket
-  useEffect(() => {
-    const unsub = orderEventsService.onOrderUpdates((event) => {
-      // Invalidate orders list
-      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.orders() });
-      // Invalidate specific order detail if event carries an order_id
-      if (event.order_id) {
-        queryClient.invalidateQueries({ queryKey: SELLER_KEYS.order(event.order_id) });
-      }
-    });
-    return unsub;
-  }, [queryClient]);
+  useOrderRealtimeUpdates(SELLER_KEYS.all);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -82,15 +76,19 @@ export default function SellerOrders() {
       result = result.filter(
         (o) =>
           o.order_number.toLowerCase().includes(q) ||
-          o.customer_name.toLowerCase().includes(q),
+          o.user?.full_name?.toLowerCase().includes(q),
       );
     }
     return result;
   }, [orders, selectedFilters, searchQuery]);
 
   const pendingOrders = filteredOrders.filter((o) => o.status === "pending");
-  const acceptedOrders = filteredOrders.filter((o) => ["accepted", "preparing"].includes(o.status));
-  const doneOrders = filteredOrders.filter((o) => ["ready", "delivered"].includes(o.status));
+  const acceptedOrders = filteredOrders.filter((o) =>
+    ["accepted", "preparing"].includes(o.status),
+  );
+  const doneOrders = filteredOrders.filter((o) =>
+    ["ready", "delivered"].includes(o.status),
+  );
 
   const toggleFilter = (status: string) => {
     setSelectedFilters((prev) =>
@@ -102,121 +100,42 @@ export default function SellerOrders() {
 
   const clearFilters = () => setSelectedFilters([]);
 
-  const showDialog = (title: string, description: string, onConfirm: () => void, isDestructive = false) => {
+  const showDialog = (
+    title: string,
+    description: string,
+    onConfirm: () => void,
+    isDestructive = false,
+  ) => {
     setDialogConfig({ title, description, onConfirm, isDestructive });
     setDialogOpen(true);
   };
 
-  const renderOrderCard = useCallback(({ item }: { item: SellerOrder }) => {
-    const status = item.status;
+  const renderOrderCard = useCallback(
+    ({ item }: { item: SellerOrder }) => renderOrder(item),
+    [renderOrder],
+  );
 
-    return (
-      <Card padding="$4" bordered marginBottom="$3">
-        <YStack gap="$3">
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontWeight="bold" fontSize="$5">{item.order_number}</Text>
-            <YStack
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-              borderRadius="$2"
-              backgroundColor={getStatusColor(status)}
-            >
-              <Text
-                color="$background"
-                fontSize="$2"
-                textTransform="capitalize"
-              >
-                {status}
-              </Text>
-            </YStack>
-          </XStack>
-          <XStack justifyContent="space-between">
-            <Text color="$colorMuted">{item.customer_name}</Text>
-            <Text color="$colorMuted">{item.items?.length || 0} items</Text>
-          </XStack>
-          <Separator />
-          <XStack justifyContent="space-between" alignItems="center" flexWrap="wrap" gap="$2">
-            <Text fontWeight="bold">
-              {formatPriceFromMinor(item.total_minor, item.currency)}
-            </Text>
-            <XStack gap="$2" flexWrap="wrap">
-              {status === "pending" && (
-                <>
-                  <Button
-                    size="$3"
-                    variant="info"
-                    paddingHorizontal="$2"
-                    onPress={() =>
-                      showDialog("Accept Order", `Accept ${item.order_number}?`, () =>
-                        acceptMutation.mutate(item.id),
-                      )
-                    }
-                  >
-                    Accept
-                  </Button>
-                  <Button
-                    size="$3"
-                    variant="outline"
-                    borderColor="$red10"
-                    color="$red10"
-                    paddingHorizontal="$2"
-                    onPress={() =>
-                      showDialog("Reject Order", `Reject ${item.order_number}?`, () =>
-                        rejectMutation.mutate(item.id),
-                        true,
-                      )
-                    }
-                  >
-                    Reject
-                  </Button>
-                </>
-              )}
-              {status === "accepted" && (
-                <Button
-                  size="$3"
-                  variant="info"
-                  paddingHorizontal="$2"
-                  onPress={() =>
-                    showDialog("Start Preparing", `Start preparing ${item.order_number}?`, () =>
-                      startPreparingMutation.mutate(item.id),
-                    )
-                  }
-                >
-                  Prepare
-                </Button>
-              )}
-              {status === "preparing" && (
-                <Button
-                  size="$3"
-                  variant="success"
-                  paddingHorizontal="$2"
-                  onPress={() =>
-                    showDialog("Mark Ready", `Mark ${item.order_number} as ready?`, () =>
-                      markReadyMutation.mutate(item.id),
-                    )
-                  }
-                >
-                  Mark Ready
-                </Button>
-              )}
-              <Button
-                size="$3"
-                variant="outline"
-                paddingHorizontal="$2"
-                onPress={() =>
-                  router.push(`/(seller)/orders/${item.id}`)
-                }
-              >
-                Details
-              </Button>
-            </XStack>
-          </XStack>
-        </YStack>
-      </Card>
-    );
-  }, [acceptMutation, rejectMutation, startPreparingMutation, markReadyMutation, router]);
+  const renderOrder = useCallback(
+    (order: SellerOrder) => (
+      <SellerOrderCard
+        key={order.id}
+        item={order}
+        onAccept={(id) => acceptMutation.mutate(id)}
+        onReject={(id) => rejectMutation.mutate(id)}
+        onPrepare={(id) => startPreparingMutation.mutate(id)}
+        onMarkReady={(id) => markReadyMutation.mutate(id)}
+        showDialog={showDialog}
+      />
+    ),
+    [acceptMutation, rejectMutation, startPreparingMutation, markReadyMutation],
+  );
 
-  const renderColumn = (title: string, color: string, items: SellerOrder[], emptyText: string) => (
+  const renderColumn = (
+    title: string,
+    color: string,
+    items: SellerOrder[],
+    emptyText: string,
+  ) => (
     <YStack flex={1} gap="$3">
       <XStack justifyContent="space-between" alignItems="center">
         <Text fontSize="$5" fontWeight="bold" color={color}>
@@ -227,18 +146,27 @@ export default function SellerOrders() {
         </Text>
       </XStack>
       {items.length === 0 ? (
-        <Card padding="$5" alignItems="center" backgroundColor="$backgroundSoft">
+        <Card
+          padding="$5"
+          alignItems="center"
+          backgroundColor="$backgroundSoft"
+        >
           <Text color="$colorMuted">{emptyText}</Text>
         </Card>
       ) : (
-        items.map((order) => renderOrderCard({ item: order }))
+        items.map(renderOrder)
       )}
     </YStack>
   );
 
   if (isLoading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+      <YStack
+        flex={1}
+        justifyContent="center"
+        alignItems="center"
+        backgroundColor="$background"
+      >
         <Spinner size="large" color="$primary" />
       </YStack>
     );
@@ -274,9 +202,16 @@ export default function SellerOrders() {
             borderWidth={1}
             borderColor={selectedFilters.length > 0 ? "$blue9" : "$borderColor"}
             borderRadius="$3"
-            backgroundColor={selectedFilters.length > 0 ? "$blue2" : "$background"}
+            backgroundColor={
+              selectedFilters.length > 0 ? "$blue2" : "$background"
+            }
             onPress={() => setFilterModalVisible(true)}
-            icon={<Filter size={16} color={selectedFilters.length > 0 ? "$blue9" : "$color"} />}
+            icon={
+              <Filter
+                size={16}
+                color={selectedFilters.length > 0 ? "$blue9" : "$color"}
+              />
+            }
           >
             <Text
               fontFamily="$body"
@@ -284,7 +219,8 @@ export default function SellerOrders() {
               fontSize="$3"
               color={selectedFilters.length > 0 ? "$blue9" : "$color"}
             >
-              Filter{selectedFilters.length > 0 ? ` (${selectedFilters.length})` : ""}
+              Filter
+              {selectedFilters.length > 0 ? ` (${selectedFilters.length})` : ""}
             </Text>
           </Button>
         </XStack>
@@ -292,17 +228,42 @@ export default function SellerOrders() {
 
       {isTablet ? (
         <XStack padding="$4" gap="$4" alignItems="flex-start" flex={1}>
-          {renderColumn("Pending", "$yellow9", pendingOrders, "No pending orders")}
+          {renderColumn(
+            "Pending",
+            "$yellow9",
+            pendingOrders,
+            "No pending orders",
+          )}
 
           {isLargeTablet ? (
             <>
-              {renderColumn("In Progress", "$blue9", acceptedOrders, "No orders in progress")}
-              {renderColumn("Completed", "$green9", doneOrders, "No completed orders")}
+              {renderColumn(
+                "In Progress",
+                "$blue9",
+                acceptedOrders,
+                "No orders in progress",
+              )}
+              {renderColumn(
+                "Completed",
+                "$green9",
+                doneOrders,
+                "No completed orders",
+              )}
             </>
           ) : (
             <YStack flex={1} gap="$4">
-              {renderColumn("In Progress", "$blue9", acceptedOrders, "No orders in progress")}
-              {renderColumn("Completed", "$green9", doneOrders, "No completed orders")}
+              {renderColumn(
+                "In Progress",
+                "$blue9",
+                acceptedOrders,
+                "No orders in progress",
+              )}
+              {renderColumn(
+                "Completed",
+                "$green9",
+                doneOrders,
+                "No completed orders",
+              )}
             </YStack>
           )}
         </XStack>
@@ -316,14 +277,26 @@ export default function SellerOrders() {
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
           }
           ListEmptyComponent={
-            <YStack flex={1} justifyContent="center" alignItems="center" padding="$6">
+            <YStack
+              flex={1}
+              justifyContent="center"
+              alignItems="center"
+              padding="$6"
+            >
               <Text color="$colorMuted" fontSize="$4" textAlign="center">
                 {searchQuery || selectedFilters.length > 0
                   ? "No orders match your search or filters"
                   : "No orders yet"}
               </Text>
               {(searchQuery || selectedFilters.length > 0) && (
-                <Button variant="outline" marginTop="$3" onPress={() => { setSearchQuery(""); clearFilters(); }}>
+                <Button
+                  variant="outline"
+                  marginTop="$3"
+                  onPress={() => {
+                    setSearchQuery("");
+                    clearFilters();
+                  }}
+                >
                   Clear All
                 </Button>
               )}
@@ -356,37 +329,63 @@ export default function SellerOrders() {
             padding="$4"
             paddingBottom={insets.bottom + 16}
           >
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
-              <Text fontSize="$5" fontWeight="bold">Filter Orders</Text>
+            <XStack
+              justifyContent="space-between"
+              alignItems="center"
+              marginBottom="$4"
+            >
+              <Text fontSize="$5" fontWeight="bold">
+                Filter Orders
+              </Text>
               <Pressable onPress={() => setFilterModalVisible(false)}>
                 <X size={24} color="$color" />
               </Pressable>
             </XStack>
 
             <YStack gap="$3">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">Order Status</Text>
+              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
+                Order Status
+              </Text>
               {FILTER_OPTIONS.map((status) => (
                 <Pressable key={status} onPress={() => toggleFilter(status)}>
                   <XStack
                     padding="$3"
                     borderWidth={1}
-                    borderColor={selectedFilters.includes(status) ? "$blue9" : "$borderColor"}
+                    borderColor={
+                      selectedFilters.includes(status)
+                        ? "$blue9"
+                        : "$borderColor"
+                    }
                     borderRadius="$3"
                     alignItems="center"
                     justifyContent="space-between"
-                    backgroundColor={selectedFilters.includes(status) ? "$blue2" : "transparent"}
+                    backgroundColor={
+                      selectedFilters.includes(status)
+                        ? "$blue2"
+                        : "transparent"
+                    }
                   >
                     <XStack alignItems="center" gap="$3">
                       <YStack
                         width={20}
                         height={20}
                         borderRadius="$2"
-                        backgroundColor={getStatusColor(status)}
+                        backgroundColor={
+                          {
+                            pending: "$yellow9",
+                            accepted: "$orange9",
+                            preparing: "$blue9",
+                            ready: "$green9",
+                            delivered: "$gray9",
+                          }[status] || "$gray9"
+                        }
                       />
                       <Text
                         textTransform="capitalize"
                         fontWeight="500"
-                        color={selectedFilters.includes(status) ? "$blue9" : "$color"}
+                        color={
+                          selectedFilters.includes(status) ? "$blue9" : "$color"
+                        }
                       >
                         {status}
                       </Text>
@@ -400,8 +399,12 @@ export default function SellerOrders() {
             </YStack>
 
             <XStack gap="$3" marginTop="$4">
-              <Button flex={1} variant="outline" onPress={clearFilters}>Clear All</Button>
-              <Button flex={1} onPress={() => setFilterModalVisible(false)}>Apply Filters</Button>
+              <Button flex={1} variant="outline" onPress={clearFilters}>
+                Clear All
+              </Button>
+              <Button flex={1} onPress={() => setFilterModalVisible(false)}>
+                Apply Filters
+              </Button>
             </XStack>
           </YStack>
         </YStack>

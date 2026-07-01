@@ -21,6 +21,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
+import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
 import {
   useRiderMetricsQuery,
   useRiderProfileQuery,
@@ -41,6 +42,9 @@ export default function RiderHome() {
   const { isTablet } = useResponsive();
   const user = useAuthStore((state) => state.user);
   const [dismissNoProfile, setDismissNoProfile] = useState(false);
+
+  // Real-time delivery event updates
+  useRiderDeliveryRealtimeUpdates();
 
   // TanStack Query hooks
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();

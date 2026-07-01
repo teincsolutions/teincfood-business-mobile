@@ -11,10 +11,11 @@ import {
   CreditCard,
   FileText,
   Check,
+  Bike,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
+import { formatPriceFromMinor } from "@/utils/currency";
 import {
   useSellerOrderQuery,
   useAcceptOrderMutation,
@@ -23,11 +24,31 @@ import {
   useMarkOrderReadyMutation,
   useConfirmHandoverMutation,
 } from "@/hooks/seller.hooks";
+import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "$yellow9",
+  accepted: "$orange9",
+  preparing: "$blue9",
+  ready: "$green9",
+  delivered: "$gray9",
+  cancelled: "$red9",
+};
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
 
 export default function OrderDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Live order updates for this specific order
+  useOrderRealtimeUpdates(['seller']);
 
   const { data, isLoading, error } = useSellerOrderQuery(id as string);
   const acceptMutation = useAcceptOrderMutation();
@@ -44,10 +65,11 @@ export default function OrderDetails() {
     onConfirm: () => void;
   } | null>(null);
 
-  const orderData = data?.data ?? data?.order;
-  if (!orderData && data && !data?.order && !data?.data) {
-    // fallback if response structure differs
-  }
+  const order = data?.data;
+  const showDialog = (title: string, description: string, onConfirm: () => void, isDestructive = false) => {
+    setDialogConfig({ title, description, onConfirm, isDestructive });
+    setDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -57,7 +79,7 @@ export default function OrderDetails() {
     );
   }
 
-  if (error || !orderData) {
+  if (error || !order) {
     return (
       <YStack flex={1} backgroundColor="$background" justifyContent="center" alignItems="center" padding="$4">
         <Text fontSize="$5" color="$colorMuted">Order not found</Text>
@@ -66,55 +88,6 @@ export default function OrderDetails() {
     );
   }
 
-  const showDialog = (title: string, description: string, onConfirm: () => void, isDestructive = false) => {
-    setDialogConfig({ title, description, onConfirm, isDestructive });
-    setDialogOpen(true);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "$yellow9";
-      case "preparing": return "$blue9";
-      case "ready": return "$green9";
-      case "delivered": return "$gray9";
-      default: return "$gray9";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-GB", {
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  };
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case "mobile_money": return "Mobile Money";
-      case "card": return "Card";
-      case "cash": return "Cash";
-      default: return method;
-    }
-  };
-
-  const status = orderData.status || orderData.order_status;
-  const customerName = orderData.customer_name || orderData.customer;
-  const customerPhone = orderData.customer_phone || orderData.customerPhone;
-  const orderNumber = orderData.order_number || orderData.orderNumber;
-  const orderCurrency = orderData.currency || DEFAULT_CURRENCY;
-  const deliveryAddress = orderData.delivery_address || orderData.deliveryAddress;
-  const orderNotes = orderData.notes;
-  const orderDate = orderData.inserted_at || orderData.orderDate || orderData.created_at;
-  const paymentMethod = orderData.payment_method || orderData.paymentMethod;
-  const paymentStatus = orderData.payment_status || orderData.paymentStatus;
-  const orderItems = orderData.order_items || orderData.orderItems || orderData.items;
-  const totalMinor = orderData.total_minor ?? (orderData.total ? orderData.total * 100 : 0);
-  const subtotalMinor = orderData.subtotal_minor ?? (orderData.subtotal ? orderData.subtotal * 100 : undefined);
-  const deliveryFeeMinor = orderData.delivery_fee_minor ?? (orderData.deliveryFee ? orderData.deliveryFee * 100 : undefined);
-  const deliveryInfo = orderData.delivery;
-
-  const riderAssigned = deliveryInfo && (deliveryInfo.id || deliveryInfo.rider_name);
-
   return (
     <YStack flex={1} paddingTop={Math.max(insets.top + 8, 24)} paddingBottom={insets.bottom + 16} backgroundColor="$background">
       {/* Header */}
@@ -122,10 +95,10 @@ export default function OrderDetails() {
         <BackButton />
         <YStack flex={1}>
           <Text fontSize="$6" fontWeight="bold">Order Details</Text>
-          <Text fontSize="$3" color="$colorMuted">{orderNumber}</Text>
+          <Text fontSize="$3" color="$colorMuted">{order.order_number}</Text>
         </YStack>
-        <YStack paddingHorizontal="$3" paddingVertical="$1" borderRadius="$2" backgroundColor={getStatusColor(status)}>
-          <Text color="$background" fontSize="$3" textTransform="capitalize" fontWeight="600">{status}</Text>
+        <YStack paddingHorizontal="$3" paddingVertical="$1" borderRadius="$2" backgroundColor={STATUS_COLORS[order.status] || "$gray9"}>
+          <Text color="$background" fontSize="$3" textTransform="capitalize" fontWeight="600">{order.status}</Text>
         </YStack>
       </XStack>
 
@@ -140,24 +113,26 @@ export default function OrderDetails() {
                 <YStack width={24} alignItems="center"><Text fontSize="$5">👤</Text></YStack>
                 <YStack flex={1}>
                   <Text fontSize="$2" color="$colorMuted">Name</Text>
-                  <Text fontSize="$4" fontWeight="500">{customerName}</Text>
+                  <Text fontSize="$4" fontWeight="500">{order.user?.full_name}</Text>
                 </YStack>
               </XStack>
-              {customerPhone && (
+              {order.user?.phone && (
                 <XStack alignItems="center" gap="$3">
                   <YStack width={24} alignItems="center"><Phone size={18} color="$colorMuted" /></YStack>
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorMuted">Phone</Text>
-                    <Text fontSize="$4" fontWeight="500">{customerPhone}</Text>
+                    <Text fontSize="$4" fontWeight="500">{order.user.phone}</Text>
                   </YStack>
                 </XStack>
               )}
-              {deliveryAddress && (
+              {order.delivery_address && (
                 <XStack alignItems="flex-start" gap="$3">
                   <YStack width={24} alignItems="center" paddingTop="$1"><MapPin size={18} color="$colorMuted" /></YStack>
                   <YStack flex={1}>
                     <Text fontSize="$2" color="$colorMuted">Delivery Address</Text>
-                    <Text fontSize="$4" fontWeight="500">{deliveryAddress}</Text>
+                    <Text fontSize="$4" fontWeight="500">
+                      {order.delivery_address.full_address || `${order.delivery_address.street}, ${order.delivery_address.city}`}
+                    </Text>
                   </YStack>
                 </XStack>
               )}
@@ -165,16 +140,18 @@ export default function OrderDetails() {
           </Card>
 
           {/* Rider Info */}
-          {riderAssigned && (
+          {order.delivery_person && (
             <Card padding="$4" bordered backgroundColor="$blue2">
               <YStack gap="$2">
                 <XStack alignItems="center" gap="$2">
-                  <Check size={16} color="$primary" />
+                  <Bike size={16} color="$primary" />
                   <Text fontSize="$4" fontWeight="bold">Rider Assigned</Text>
                 </XStack>
-                <Text fontSize="$3">{deliveryInfo.rider_name || deliveryInfo.riderName}</Text>
-                {deliveryInfo.rider_phone && (
-                  <Button variant="outline" size="$3" icon={<Phone size={14} />} width="50%" onPress={() => Linking.openURL(`tel:${deliveryInfo.rider_phone}`)}>
+                {order.delivery_person.name && (
+                  <Text fontSize="$3">{order.delivery_person.name}</Text>
+                )}
+                {order.delivery_person.phone && (
+                  <Button variant="outline" size="$3" icon={<Phone size={14} />} width="50%" onPress={() => Linking.openURL(`tel:${order.delivery_person.phone}`)}>
                     Call Rider
                   </Button>
                 )}
@@ -183,23 +160,20 @@ export default function OrderDetails() {
           )}
 
           {/* Order Items */}
-          {orderItems && orderItems.length > 0 && (
+          {order.items.length > 0 && (
             <Card padding="$4" bordered>
               <YStack gap="$3">
                 <Text fontSize="$4" fontWeight="bold">Order Items</Text>
                 <Separator />
-                {orderItems.map((item, index) => (
-                  <YStack key={index} gap="$1">
+                {order.items.map((item) => (
+                  <YStack key={item.id} gap="$1">
                     <XStack justifyContent="space-between" alignItems="center">
                       <YStack flex={1}>
-                        <Text fontSize="$4" fontWeight="500">{item.name}</Text>
+                        <Text fontSize="$4" fontWeight="500">{item.menu_item?.name}</Text>
                         <Text fontSize="$3" color="$colorMuted">Qty: {item.quantity}</Text>
                       </YStack>
                       <Text fontSize="$4" fontWeight="600">
-                        {formatPrice(
-                          ((item.price_minor ?? item.price) * item.quantity) / (item.price_minor ? 1 : 1),
-                          orderCurrency
-                        )}
+                        {formatPriceFromMinor(item.subtotal, order.currency)}
                       </Text>
                     </XStack>
                   </YStack>
@@ -216,83 +190,93 @@ export default function OrderDetails() {
               <XStack alignItems="center" gap="$3">
                 <YStack width={24} alignItems="center"><CreditCard size={18} color="$colorMuted" /></YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$2" color="$colorMuted">Payment Method</Text>
-                  <Text fontSize="$4" fontWeight="500">{getPaymentMethodLabel(paymentMethod)}</Text>
+                  <Text fontSize="$2" color="$colorMuted">Payment</Text>
+                  <Text fontSize="$4" fontWeight="500" textTransform="capitalize">
+                    {order.payment_mode?.replace("_", " ")}
+                  </Text>
                 </YStack>
-                <YStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" backgroundColor={paymentStatus === "paid" ? "$success" : "$starOrange"}>
-                  <Text fontSize="$2" fontWeight="600" color={paymentStatus === "paid" ? "$white" : "$color"} textTransform="capitalize">
-                    {paymentStatus}
+                <YStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" backgroundColor={order.is_paid ? "$green9" : "$orange9"}>
+                  <Text fontSize="$2" fontWeight="600" color="white" textTransform="capitalize">
+                    {order.is_paid ? "Paid" : "Unpaid"}
                   </Text>
                 </YStack>
               </XStack>
               <Separator />
               <YStack gap="$2">
-                {subtotalMinor !== undefined && (
+                <XStack justifyContent="space-between">
+                  <Text color="$colorMuted">Subtotal</Text>
+                  <Text>{formatPriceFromMinor(order.subtotal_minor, order.currency)}</Text>
+                </XStack>
+                <XStack justifyContent="space-between">
+                  <Text color="$colorMuted">Delivery Fee</Text>
+                  <Text>{formatPriceFromMinor(order.delivery_fee_minor, order.currency)}</Text>
+                </XStack>
+                {order.tip_minor != null && order.tip_minor > 0 && (
                   <XStack justifyContent="space-between">
-                    <Text color="$colorMuted">Subtotal</Text>
-                    <Text>{formatPrice(subtotalMinor / 100, orderCurrency)}</Text>
+                    <Text color="$colorMuted">Tip</Text>
+                    <Text>{formatPriceFromMinor(order.tip_minor, order.currency)}</Text>
                   </XStack>
                 )}
-                {deliveryFeeMinor !== undefined && (
+                {order.discount_minor > 0 && (
                   <XStack justifyContent="space-between">
-                    <Text color="$colorMuted">Delivery Fee</Text>
-                    <Text>{formatPrice(deliveryFeeMinor / 100, orderCurrency)}</Text>
+                    <Text color="$green10">Discount</Text>
+                    <Text color="$green10">-{formatPriceFromMinor(order.discount_minor, order.currency)}</Text>
                   </XStack>
                 )}
                 <Separator />
                 <XStack justifyContent="space-between">
                   <Text fontSize="$5" fontWeight="bold">Total</Text>
-                  <Text fontSize="$5" fontWeight="bold" color="$info">{formatPrice(totalMinor / 100, orderCurrency)}</Text>
+                  <Text fontSize="$5" fontWeight="bold" color="$info">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
                 </XStack>
               </YStack>
             </YStack>
           </Card>
 
           {/* Notes */}
-          {orderNotes && (
+          {order.notes && (
             <Card padding="$4" bordered>
               <YStack gap="$2">
                 <XStack alignItems="center" gap="$2"><FileText size={18} color="$colorMuted" /><Text fontSize="$4" fontWeight="bold">Special Instructions</Text></XStack>
                 <Separator />
-                <Text color="$colorMuted">{orderNotes}</Text>
+                <Text color="$colorMuted">{order.notes}</Text>
               </YStack>
             </Card>
           )}
 
           {/* Action Buttons */}
           <YStack gap="$3" marginTop="$2">
-            {status === "pending" && (
+            {order.status === "pending" && (
               <>
-                <Button variant="info" width="100%" onPress={() => showDialog("Accept Order", "Accept this order and start preparing?", () => acceptMutation.mutate(orderData.id))}>
+                <Button variant="info" width="100%" onPress={() => showDialog("Accept Order", "Accept this order and start preparing?", () => acceptMutation.mutate(order.id))}>
                   Accept Order
                 </Button>
-                <Button variant="outline" borderColor="$red10" color="$red10" width="100%" onPress={() => showDialog("Reject Order", "Are you sure you want to reject this order?", () => rejectMutation.mutate(orderData.id), true)}>
+                <Button variant="dangerOutline" width="100%" onPress={() => showDialog("Reject Order", "Are you sure you want to reject this order?", () => rejectMutation.mutate(order.id), true)}>
                   Reject Order
                 </Button>
               </>
             )}
-            {status === "accepted" && (
-              <Button variant="info" width="100%" onPress={() => showDialog("Start Preparing", "Start preparing this order?", () => startPreparingMutation.mutate(orderData.id))}>
+            {order.status === "accepted" && (
+              <Button variant="info" width="100%" onPress={() => showDialog("Start Preparing", "Start preparing this order?", () => startPreparingMutation.mutate(order.id))}>
                 Start Preparing
               </Button>
             )}
-            {status === "preparing" && (
-              <Button variant="success" width="100%" onPress={() => showDialog("Mark as Ready", "Mark this order as ready for pickup?", () => markReadyMutation.mutate(orderData.id))}>
+            {order.status === "preparing" && (
+              <Button variant="success" width="100%" onPress={() => showDialog("Mark as Ready", "Mark this order as ready?", () => markReadyMutation.mutate(order.id))}>
                 Mark as Ready
               </Button>
             )}
-            {status === "ready" && riderAssigned && (
-              <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(deliveryInfo.id || deliveryInfo.id))}>
+            {order.status === "ready" && order.delivery_person && (
+              <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_person.id))}>
                 Confirm Handover to Rider
               </Button>
             )}
-            {status === "ready" && !riderAssigned && (
+            {order.status === "ready" && !order.delivery_person && (
               <YStack backgroundColor="$gray2" padding="$4" borderRadius="$4" alignItems="center">
                 <Text color="$colorMuted">Awaiting rider assignment</Text>
               </YStack>
             )}
-            {customerPhone && (
-              <Button variant="outline" width="100%" icon={<Phone size={18} />} onPress={() => Linking.openURL(`tel:${customerPhone}`)}>
+            {order.user?.phone && (
+              <Button variant="outline" width="100%" icon={<Phone size={18} />} onPress={() => Linking.openURL(`tel:${order.user.phone}`)}>
                 Call Customer
               </Button>
             )}
@@ -300,7 +284,6 @@ export default function OrderDetails() {
         </YStack>
       </ScrollView>
 
-      {/* Confirmation Dialog */}
       <AppAlertDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

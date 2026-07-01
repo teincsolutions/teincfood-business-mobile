@@ -21,6 +21,7 @@ import {
   useAvailableOrdersQuery,
   useClaimOrderMutation,
 } from '@/hooks/useRider';
+import { useRiderDeliveryRealtimeUpdates } from '@/hooks/useRiderDeliveryRealtimeUpdates';
 
 type FilterOption = 'all' | 'active' | 'completed';
 
@@ -51,6 +52,8 @@ export default function RiderDeliveries() {
   const [filter, setFilter] = useState<FilterOption>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useRiderDeliveryRealtimeUpdates();
 
   const { data: profileData } = useRiderProfileQuery();
   const {

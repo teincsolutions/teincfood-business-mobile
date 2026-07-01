@@ -99,10 +99,18 @@ export default function OperatingHoursSettings() {
   }, [activeBusinessId]);
 
   const toggleDay = (dayIndex: number) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [dayIndex]: { ...prev[dayIndex], isOpen: !prev[dayIndex].isOpen },
-    }));
+    setSchedule((prev) => {
+      const wasOpen = prev[dayIndex].isOpen;
+      return {
+        ...prev,
+        [dayIndex]: {
+          ...prev[dayIndex],
+          isOpen: !wasOpen,
+          openTime: wasOpen ? "" : prev[dayIndex].openTime || "09:00",
+          closeTime: wasOpen ? "" : prev[dayIndex].closeTime || "17:00",
+        },
+      };
+    });
   };
 
   const handleTimeConfirm = (date: Date) => {
@@ -125,12 +133,23 @@ export default function OperatingHoursSettings() {
         toast.error("No business selected. Please select a business first.");
         return;
       }
+      const invalidDay = Object.entries(schedule).find(
+        ([, s]) => s.isOpen && (!s.openTime || !s.closeTime),
+      );
+      if (invalidDay) {
+        const dayIndex = parseInt(invalidDay[0], 10);
+        const dayLabel = DAYS[dayIndex]?.label || "Unknown";
+        toast.error(`${dayLabel} is open but has no time set. Please tap the time to set it.`);
+        setIsSaving(false);
+        return;
+      }
+
       const hours: OperatingHoursEntry[] = Object.entries(schedule).map(([dayIndexStr, s]) => {
         const dayIndex = parseInt(dayIndexStr, 10);
         return {
           day_of_week: dayIndex,
-          open_time: s.isOpen ? `${s.openTime}:00` : null,
-          close_time: s.isOpen ? `${s.closeTime}:00` : null,
+          open_time: s.isOpen && s.openTime ? `${s.openTime}:00` : null,
+          close_time: s.isOpen && s.closeTime ? `${s.closeTime}:00` : null,
           is_closed: !s.isOpen,
         };
       });

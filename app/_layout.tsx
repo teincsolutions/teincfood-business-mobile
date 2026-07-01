@@ -29,6 +29,7 @@ import { useSecurityStore } from '../src/stores/security.store';
 import { BiometricLockOverlay } from '../src/components/security/BiometricLockOverlay';
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
+import { useEventsConnection } from '../src/hooks/useEventsConnection';
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
@@ -55,6 +56,9 @@ function AppShell() {
   const locationHydrated = useLocationStore((state) => state.isHydrated);
   const roleHydrated = useRoleStore((state) => state.isHydrated);
   const hasLocation = useLocationStore((state) => state.hasLocation());
+
+  // Connect global events channel for real-time updates (all authenticated roles)
+  useEventsConnection();
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);
