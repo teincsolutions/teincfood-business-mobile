@@ -18,10 +18,7 @@ export function useKioskOrdersQuery(enabled = true) {
     queryKey: KIOSK_KEYS.orders(businessId),
     queryFn: () => kioskService.fetchKioskOrders(businessId),
     enabled,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    staleTime: 3000,
+    staleTime: 30 * 1000,
   });
 }
 

@@ -12,9 +12,11 @@ import {
   FileText,
   Check,
   Bike,
+  Truck,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { toast } from "sonner-native";
 import { formatPriceFromMinor } from "@/utils/currency";
 import {
   useSellerOrderQuery,
@@ -25,6 +27,8 @@ import {
   useConfirmHandoverMutation,
 } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useAvailableRidersQuery, useAssignRiderMutation } from "@/hooks/kiosk.hooks";
+import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "$yellow9",
@@ -56,6 +60,8 @@ export default function OrderDetails() {
   const startPreparingMutation = useStartPreparingOrderMutation();
   const markReadyMutation = useMarkOrderReadyMutation();
   const confirmHandoverMutation = useConfirmHandoverMutation();
+  const assignRider = useAssignRiderMutation();
+  const { data: riders } = useAvailableRidersQuery();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -64,6 +70,7 @@ export default function OrderDetails() {
     isDestructive?: boolean;
     onConfirm: () => void;
   } | null>(null);
+  const [showRiderSheet, setShowRiderSheet] = useState(false);
 
   const order = data?.data;
   const showDialog = (title: string, description: string, onConfirm: () => void, isDestructive = false) => {
@@ -271,9 +278,9 @@ export default function OrderDetails() {
               </Button>
             )}
             {order.status === "ready" && !order.delivery_person && (
-              <YStack backgroundColor="$gray2" padding="$4" borderRadius="$4" alignItems="center">
-                <Text color="$colorMuted">Awaiting rider assignment</Text>
-              </YStack>
+              <Button variant="primary" width="100%" icon={<Truck size={18} />} onPress={() => setShowRiderSheet(true)}>
+                Assign Rider
+              </Button>
             )}
             {order.user?.phone && (
               <Button variant="outline" width="100%" icon={<Phone size={18} />} onPress={() => Linking.openURL(`tel:${order.user.phone}`)}>
@@ -283,6 +290,17 @@ export default function OrderDetails() {
           </YStack>
         </YStack>
       </ScrollView>
+
+      <RiderSelectionSheet
+        visible={showRiderSheet}
+        onClose={() => setShowRiderSheet(false)}
+        riders={riders ?? []}
+        onSelectRider={(riderId) => {
+          assignRider.mutate({ orderId: order!.id, riderId });
+          setShowRiderSheet(false);
+          toast.success("Rider assigned successfully");
+        }}
+      />
 
       <AppAlertDialog
         open={dialogOpen}

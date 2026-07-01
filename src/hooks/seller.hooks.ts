@@ -23,10 +23,7 @@ export function useSellerOrdersQuery(enabled = true) {
       return sellerService.fetchSellerOrders();
     },
     enabled: enabled,
-    refetchInterval: 60000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    staleTime: 5000,
+    staleTime: 30 * 1000,
   });
 }
 

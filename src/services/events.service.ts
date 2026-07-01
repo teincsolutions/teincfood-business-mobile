@@ -15,10 +15,13 @@ class EventsService {
     this.refCount++;
     const topic = `events:${userId}`;
 
+    console.log('[EventsService] connect called', { userId, topic, refCount: this.refCount });
+
     if (this.refCount === 1) {
       this.topic = topic;
 
       this.frameHandlerUnsub = phoenixSocket.onFrame(topic, ([_joinRef, _ref, _topic, event, payload]) => {
+        console.log('[EventsService] received event', { event, payload });
         this.recordSequence(payload as Record<string, unknown>);
         const typeListeners = this.listeners.get(event);
         if (typeListeners) {
@@ -30,11 +33,17 @@ class EventsService {
       const joinPayload = this.lastSequence > 0 ? { last_sequence: this.lastSequence } : {};
 
       phoenixSocket.connect()
-        .then(() => phoenixSocket.joinChannel(topic, joinPayload))
+        .then(() => {
+          console.log('[EventsService] socket connected, joining channel', { topic });
+          return phoenixSocket.joinChannel(topic, joinPayload);
+        })
         .then(() => {
           this.joined = true;
+          console.log('[EventsService] channel joined successfully', { topic });
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.log('[EventsService] failed to join channel', { topic, error: err });
+        });
     }
 
     let disconnected = false;
@@ -43,9 +52,11 @@ class EventsService {
       disconnected = true;
 
       this.refCount = Math.max(0, this.refCount - 1);
+      console.log('[EventsService] disconnect called', { refCount: this.refCount });
 
       if (this.refCount === 0) {
         if (this.topic && this.joined) {
+          console.log('[EventsService] leaving channel', { topic: this.topic });
           phoenixSocket.leaveChannel(this.topic);
         }
         this.frameHandlerUnsub?.();
@@ -62,6 +73,8 @@ class EventsService {
     }
     this.listeners.get(eventType)!.add(callback);
 
+    console.log('[EventsService] registered listener', { eventType, totalListeners: this.listeners.size });
+
     return () => {
       this.listeners.get(eventType)?.delete(callback);
     };
@@ -75,7 +88,9 @@ class EventsService {
   }
 
   isConnected(): boolean {
-    return this.joined && phoenixSocket.isConnected();
+    const connected = this.joined && phoenixSocket.isConnected();
+    console.log('[EventsService] isConnected check', { joined: this.joined, socketConnected: phoenixSocket.isConnected(), connected });
+    return connected;
   }
 
   private recordSequence(payload: Record<string, unknown>): void {

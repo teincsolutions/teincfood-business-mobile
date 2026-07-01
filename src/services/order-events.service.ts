@@ -25,20 +25,25 @@ class OrderEventsService {
   onOrderUpdates(callback: OrderEventHandler): () => void {
     const unsubscribers: Array<() => void> = [];
 
+    console.log('[OrderEventsService] subscribing to events', { events: ORDER_RELATED_EVENTS });
+
     for (const eventType of ORDER_RELATED_EVENTS) {
       unsubscribers.push(
         eventsService.on(eventType, (data) => {
-          callback({
+          const payload: OrderEventPayload = {
             type: eventType,
             order_id: data.order_id as string | undefined,
             status: data.to_status as string | undefined,
             ...data,
-          });
+          };
+          console.log('[OrderEventsService] dispatching event', { eventType, payload });
+          callback(payload);
         }),
       );
     }
 
     return () => {
+      console.log('[OrderEventsService] unsubscribing from all events');
       unsubscribers.forEach((unsub) => unsub());
     };
   }
