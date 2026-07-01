@@ -24,6 +24,7 @@ import {
   DrawerItemList,
 } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
+import { useDeliveryRealtimeUpdates } from "@/hooks/useDeliveryRealtimeUpdates";
 
 /**
  * Custom Drawer Content for Fleet Manager
@@ -249,6 +250,8 @@ export default function FleetDrawerLayout() {
   const { isTablet, isLandscape } = useResponsive();
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+
+  useDeliveryRealtimeUpdates(['fleet']);
 
   const handleProtectedRoute = (e: any) => {
     if (!isAuthenticated) {

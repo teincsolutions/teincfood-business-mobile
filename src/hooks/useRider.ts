@@ -324,6 +324,11 @@ export function useUpdateOnlineStatusMutation() {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.profile() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
     },
+    onError: (error) => {
+      console.debug('[useUpdateOnlineStatus] error', error);
+      const msg = extractApiErrorMessage(error);
+      toast.error(msg);
+    },
   });
 }
 

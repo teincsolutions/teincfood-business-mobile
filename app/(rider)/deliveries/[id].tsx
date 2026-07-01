@@ -26,6 +26,7 @@ import type { RiderDeliveryDetail } from "@/types/api/rider.api";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@/utils/currency";
 import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
+import { DeliveryTimeline, getDeliveryStepIndex } from "@/components/tracking/DeliveryTimeline";
 import { extractApiErrorMessage } from "@/utils/error";
 import { toast } from "sonner-native";
 
@@ -410,96 +411,10 @@ export default function RiderDeliveryDetails() {
 
           {/* Delivery Timeline */}
           <Card padding="$4" bordered>
-            <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">
-                Delivery Timeline
-              </Text>
-              <Separator />
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={12}
-                  height={12}
-                  borderRadius="$10"
-                  backgroundColor={
-                    delivery.status !== "assigned" ? "$success" : "$gray800"
-                  }
-                />
-                <YStack flex={1}>
-                  <Text fontWeight="bold">Assigned</Text>
-                  <Text fontSize="$2" color="$colorMuted">
-                    {delivery.inserted_at
-                      ? new Date(delivery.inserted_at).toLocaleString()
-                      : "--"}
-                  </Text>
-                </YStack>
-              </XStack>
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={12}
-                  height={12}
-                  borderRadius="$10"
-                  backgroundColor={
-                    ["picked_up", "en_route", "arrived", "delivered"].includes(
-                      delivery.status,
-                    )
-                      ? "#3498db"
-                      : "$gray800"
-                  }
-                />
-                <YStack flex={1}>
-                  <Text fontWeight="bold">Picked Up</Text>
-                  <Text fontSize="$2" color="$colorMuted">
-                    {["picked_up", "en_route", "arrived", "delivered"].includes(
-                      delivery.status,
-                    )
-                      ? "Confirmed"
-                      : "Pending"}
-                  </Text>
-                </YStack>
-              </XStack>
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={12}
-                  height={12}
-                  borderRadius="$10"
-                  backgroundColor={
-                    ["en_route", "arrived", "delivered"].includes(
-                      delivery.status,
-                    )
-                      ? "#3498db"
-                      : "$gray800"
-                  }
-                />
-                <YStack flex={1}>
-                  <Text fontWeight="bold">En Route</Text>
-                  <Text fontSize="$2" color="$colorMuted">
-                    {["en_route", "arrived", "delivered"].includes(
-                      delivery.status,
-                    )
-                      ? "In transit"
-                      : "Pending"}
-                  </Text>
-                </YStack>
-              </XStack>
-              <XStack gap="$3" alignItems="center">
-                <YStack
-                  width={12}
-                  height={12}
-                  borderRadius="$10"
-                  backgroundColor={
-                    ["arrived", "delivered"].includes(delivery.status)
-                      ? "#3498db"
-                      : "$gray800"
-                  }
-                />
-                <YStack flex={1}>
-                  <Text fontWeight="bold">Delivered</Text>
-                  <Text fontSize="$2" color="$colorMuted">
-                    {delivery.status === "delivered" ? "Completed" : "Pending"}
-                  </Text>
-                </YStack>
-              </XStack>
-            </YStack>
+            <DeliveryTimeline
+              currentStep={getDeliveryStepIndex(delivery.status)}
+              status={delivery.status}
+            />
           </Card>
 
           {/* Action Buttons */}

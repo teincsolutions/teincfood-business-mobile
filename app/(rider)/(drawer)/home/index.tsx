@@ -52,8 +52,11 @@ export default function RiderHome() {
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
 
-  // Online status from rider profile (backend source of truth)
-  const isOnline = metricsData?.status !== 'offline';
+  // Rider status from backend: 'available' | 'busy' | 'offline'
+  const riderStatus = metricsData?.status || 'offline';
+  const isAvailable = riderStatus === 'available';
+  const statusLabel = riderStatus === 'available' ? 'Available' : riderStatus === 'busy' ? 'On Delivery' : 'Offline';
+  const statusColor = riderStatus === 'available' ? '$success' : riderStatus === 'busy' ? '$blue9' : '$colorMuted';
 
   // Use query data or fallback to defaults
   const metrics = {
@@ -120,17 +123,18 @@ export default function RiderHome() {
               width={10}
               height={10}
               borderRadius={5}
-              backgroundColor={isOnline ? "$success" : "$colorMuted"}
+              backgroundColor={statusColor}
             />
             <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
-              {isOnline ? "Online" : "Offline"}
+              {statusLabel}
             </Text>
           </XStack>
           <Switch
             size="$8"
-            checked={isOnline}
+            checked={isAvailable}
+            disabled={riderStatus === 'busy'}
             onCheckedChange={(val) => updateOnlineStatus.mutate(val)}
-            backgroundColor={isOnline ? "$success" : "$colorMuted"}
+            backgroundColor={isAvailable ? "$success" : "$colorMuted"}
           >
             <Switch.Thumb animation="quick" backgroundColor="white" />
           </Switch>
@@ -207,7 +211,7 @@ export default function RiderHome() {
         )}
 
         {/* Online Status Card */}
-        {!isOnline ? (
+        {riderStatus === 'offline' ? (
           <Card padding="$4" bordered backgroundColor="$backgroundSoft">
             <YStack gap="$3" alignItems="center">
               <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
@@ -263,7 +267,7 @@ export default function RiderHome() {
         </Card>
 
         {/* Active Delivery */}
-        {isOnline && activeDelivery ? (
+        {activeDelivery ? (
           <Card padding="$4" bordered backgroundColor="$primaryLight">
             <YStack gap="$3">
               <XStack justifyContent="space-between" alignItems="center">
@@ -334,7 +338,7 @@ export default function RiderHome() {
         ) : null}
 
         {/* Quick Actions */}
-        {isOnline && !activeDelivery ? (
+        {isAvailable ? (
           <Card padding="$4" bordered>
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold">
@@ -403,7 +407,7 @@ export default function RiderHome() {
         </Card>
 
         {/* Map Preview */}
-        {isOnline ? (
+        {riderStatus !== 'offline' ? (
           <Card padding="$4" bordered>
             <YStack gap="$3" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
