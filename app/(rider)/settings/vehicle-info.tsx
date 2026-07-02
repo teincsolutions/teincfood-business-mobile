@@ -1,54 +1,47 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, Pressable } from "react-native";
-import { YStack, XStack, Text, Card, Separator } from "tamagui";
-import { Save, Check, ArrowLeft } from "@tamagui/lucide-icons";
+import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { YStack, XStack, Text, Card } from "tamagui";
+import { Pressable } from "react-native";
+import { Save, Check } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import {
   useVehicleInfoQuery,
   useCreateVehicleMutation,
-  useVehicleTypesQuery,
 } from "@/hooks/useRider";
+import type { RiderVehicleRequest } from "@/types/api/rider.api";
+import { extractApiErrorMessage } from "@/utils/error";
+import { toast } from "sonner-native";
 
-/**
- * Rider Vehicle Information Screen
- */
+const VEHICLE_TYPES: { value: string; label: string }[] = [
+  { value: "bicycle", label: "Bicycle" },
+  { value: "motorcycle", label: "Motorcycle" },
+  { value: "car", label: "Car" },
+];
+
 export default function VehicleInfo() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // TanStack Query hooks
-  const { data: vehicleInfo, isLoading } = useVehicleInfoQuery();
-  const updateVehicle = useCreateVehicleMutation();
-  const { data: vehicleTypes = [] } = useVehicleTypesQuery();
+  const { data: vehicleInfo } = useVehicleInfoQuery();
+  const vehicle = vehicleInfo?.data;
+  const createVehicle = useCreateVehicleMutation();
 
-  const [vehicleType, setVehicleType] = useState(
-    vehicleInfo?.type || 'motorcycle',
-  );
-  const [plateNumber, setPlateNumber] = useState(
-    vehicleInfo?.plateNumber || '',
-  );
-  const [vehicleColor, setVehicleColor] = useState(
-    vehicleInfo?.color || '',
-  );
-  const [vehicleBrand, setVehicleBrand] = useState(
-    vehicleInfo?.brand || '',
-  );
-  const [vehicleModel, setVehicleModel] = useState(
-    vehicleInfo?.model || '',
+  const [vehicleType, setVehicleType] = useState(vehicle?.type || "motorcycle");
+  const [plateNumber, setPlateNumber] = useState(vehicle?.plate_number || "");
+  const [vehicleColor, setVehicleColor] = useState(vehicle?.color || "");
+  const [vehicleBrand, setVehicleBrand] = useState(vehicle?.brand || "");
+  const [vehicleModel, setVehicleModel] = useState(vehicle?.model || "");
+  const [vehicleYear, setVehicleYear] = useState(
+    vehicle?.year ? String(vehicle.year) : "",
   );
 
-  const [errors, setErrors] = useState<{
-    plateNumber?: string;
-    color?: string;
-    brand?: string;
-    model?: string;
-  }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSave = () => {
-    const newErrors: typeof errors = {};
+    const newErrors: Record<string, string> = {};
 
     if (!plateNumber.trim()) newErrors.plateNumber = "Plate number is required";
     if (!vehicleColor.trim()) newErrors.color = "Color is required";
@@ -61,23 +54,34 @@ export default function VehicleInfo() {
     }
 
     setErrors({});
-    updateVehicle.mutate(
-      {
-        type: vehicleType as any,
-        plateNumber,
-        color: vehicleColor,
-        brand: vehicleBrand,
-        model: vehicleModel,
+
+    const payload: RiderVehicleRequest = {
+      type: vehicleType,
+      plate_number: plateNumber.trim(),
+      brand: vehicleBrand.trim(),
+      model: vehicleModel.trim(),
+      color: vehicleColor.trim(),
+    };
+
+    const parsedYear = parseInt(vehicleYear, 10);
+    if (vehicleYear.trim() && !isNaN(parsedYear)) {
+      payload.year = parsedYear;
+    }
+
+    createVehicle.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Vehicle information saved");
+        router.back();
       },
-      {
-        onSuccess: () => router.back(),
+      onError: (error) => {
+        console.debug("[VehicleInfo] save error", error);
+        toast.error(extractApiErrorMessage(error));
       },
-    );
+    });
   };
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Header */}
       <XStack
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
@@ -95,18 +99,29 @@ export default function VehicleInfo() {
           $lg={{ height: "$10" }}
           variant="primary"
           onPress={handleSave}
-          disabled={updateVehicle.isPending}
+          disabled={createVehicle.isPending}
         >
-          {updateVehicle.isPending ? "Saving..." : "Save"}
+          {createVehicle.isPending ? "Saving..." : "Save"}
         </Button>
       </XStack>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : undefined}
+        style={{ flex: 1 }}
+      >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
           {/* Vehicle Type */}
           <Card padding="$4" bordered>
             <YStack gap="$2">
-              {vehicleTypes.map((type) => (
+              <Text fontSize="$5" fontWeight="bold" paddingBottom="$2">
+                Vehicle Type
+              </Text>
+              {VEHICLE_TYPES.map((type) => (
                 <Pressable
                   key={type.value}
                   onPress={() => setVehicleType(type.value)}
@@ -198,34 +213,18 @@ export default function VehicleInfo() {
                 }}
                 error={errors.model}
               />
-            </YStack>
-          </Card>
 
-          {/* Verification Status */}
-          <Card padding="$4" bordered backgroundColor="$yellow2">
-            <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">
-                Verification Status
-              </Text>
-              <Separator />
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text color="$colorMuted">Vehicle Verified</Text>
-                <YStack
-                  backgroundColor="$yellow10"
-                  paddingHorizontal="$3"
-                  paddingVertical="$1"
-                  borderRadius="$10"
-                >
-                  <Text color="white" fontSize="$2" fontWeight="bold">
-                    {vehicleInfo?.verificationStatus === "verified"
-                      ? "Verified"
-                      : "Pending"}
-                  </Text>
-                </YStack>
-              </XStack>
-              <Text fontSize="$3" color="$colorMuted">
-                Your vehicle information is pending verification by our team.
-              </Text>
+              <FormInput
+                label="Year"
+                placeholder="e.g., 2020"
+                value={vehicleYear}
+                onChangeText={(v) => {
+                  setVehicleYear(v);
+                  setErrors((e) => ({ ...e, year: undefined }));
+                }}
+                keyboardType="number-pad"
+                maxLength={4}
+              />
             </YStack>
           </Card>
 
@@ -236,13 +235,14 @@ export default function VehicleInfo() {
             variant="primary"
             icon={<Save size={18} />}
             onPress={handleSave}
-            disabled={updateVehicle.isPending}
-            opacity={updateVehicle.isPending ? 0.7 : 1}
+            disabled={createVehicle.isPending}
+            opacity={createVehicle.isPending ? 0.7 : 1}
           >
-            {updateVehicle.isPending ? "Saving..." : "Save Changes"}
+            {createVehicle.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </YStack>
       </ScrollView>
+      </KeyboardAvoidingView>
     </YStack>
   );
 }

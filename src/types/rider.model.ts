@@ -106,15 +106,6 @@ export interface RiderStatistics {
   currency: string;
 }
 
-export interface VehicleInfo {
-  type: 'motorcycle' | 'bicycle' | 'scooter' | 'car';
-  plateNumber: string;
-  color: string;
-  brand: string;
-  model: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
-}
-
 export interface DeliveryZone {
   id: string;
   name: string;

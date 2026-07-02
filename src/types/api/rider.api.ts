@@ -85,7 +85,21 @@ export interface RiderVehicle {
   plate_number: string;
   type: string;
   ownership: string;
+  brand: string | null;
+  model: string | null;
+  color: string | null;
+  year: number | null;
   inserted_at: string;
+}
+
+export interface RiderVehicleRequest {
+  type: string;
+  plate_number: string;
+  brand: string;
+  model: string;
+  color: string;
+  year?: number;
+  ownership?: string;
 }
 
 export interface RiderVehicleResponse {

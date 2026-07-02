@@ -7,6 +7,7 @@ import type {
   RiderDeliveryDetailResponse,
   RiderEarningsResponse,
   RiderVehicleResponse,
+  RiderVehicleRequest,
   AvailableOrdersResponse,
   RiderDashboardResponse,
   PaginationMeta,
@@ -150,8 +151,8 @@ export async function fetchVehicleInfo(): Promise<RiderVehicleResponse> {
   return api.get<RiderVehicleResponse>('/riders/vehicle');
 }
 
-export async function createVehicle(data: Record<string, unknown>): Promise<RiderVehicleResponse> {
-  return api.post<RiderVehicleResponse>('/riders/vehicles', data);
+export async function createVehicle(data: RiderVehicleRequest): Promise<RiderVehicleResponse> {
+  return api.post<RiderVehicleResponse>('/riders/vehicles', data as unknown as Record<string, unknown>);
 }
 
 // ─── Metrics (from profile) ───
@@ -194,6 +195,12 @@ export async function fetchNavigationApps(): Promise<never> {
   return Promise.reject(new Error('Not implemented on backend'));
 }
 
-export async function fetchVehicleTypes(): Promise<never> {
-  return Promise.reject(new Error('Not implemented on backend'));
+const VEHICLE_TYPES = [
+  { value: 'bicycle', label: 'Bicycle' },
+  { value: 'motorcycle', label: 'Motorcycle' },
+  { value: 'car', label: 'Car' },
+] as const;
+
+export async function fetchVehicleTypes(): Promise<{ data: typeof VEHICLE_TYPES }> {
+  return { data: VEHICLE_TYPES };
 }

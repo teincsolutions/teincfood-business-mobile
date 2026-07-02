@@ -7,12 +7,11 @@ import type {
   RiderTransaction,
   EarningsBreakdown,
   RiderStatistics,
-  VehicleInfo,
   DeliveryZone,
   NavigationSettings,
   NavigationApp,
 } from '@/types/rider.model';
-import type { RiderDashboard } from '@/types/api/rider.api';
+import type { RiderDashboard, RiderVehicleRequest } from '@/types/api/rider.api';
 import * as riderService from '@/services/rider.service';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
@@ -254,10 +253,13 @@ export function useVehicleInfoQuery(enabled = true) {
 export function useCreateVehicleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vehicleInfo: any) =>
+    mutationFn: (vehicleInfo: RiderVehicleRequest) =>
       riderService.createVehicle(vehicleInfo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.vehicleInfo() });
+    },
+    onError: (error) => {
+      console.debug('[useCreateVehicleMutation] error', error);
     },
   });
 }
