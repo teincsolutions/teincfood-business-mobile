@@ -30,13 +30,40 @@ import {
   Clock,
   AlertCircle,
 } from '@tamagui/lucide-icons';
+import * as Clipboard from 'expo-clipboard';
 import { BackButton } from '@/components/ui';
 import { useChat } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth.store';
 import { useChatStore } from '@/stores/chat.store';
 import { chatService } from '@/services/chat.service';
 import { messagesService } from '@/services/messages.service';
+import { toast } from 'sonner-native';
 import type { StoredMessage, ChatMessageStatus, ConnectionState } from '@/types/chat';
+
+// ─── HTML entity decoding ──────────────────────────────────────────────────
+
+const ENTITY_MAP: Record<string, string> = {
+  '&#39;': "'",
+  '&#x27;': "'",
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#x2F;': '/',
+  '&#x60;': '`',
+  '&#x3D;': '=',
+};
+
+function decodeEntities(text: string): string {
+  let result = text;
+  for (const [entity, char] of Object.entries(ENTITY_MAP)) {
+    result = result.split(entity).join(char);
+  }
+  // Also handle numeric HTML entities like &#39; (already in map) 
+  // and any remaining &#NNN; patterns
+  result = result.replace(/&#(\d+);/g, (_match, num) => String.fromCharCode(parseInt(num, 10)));
+  return result;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -551,6 +578,11 @@ export function ChatConversationScreen({
                     setRetryTargetId(msg.localId);
                   }
                 }}
+                onLongPress={() => {
+                  Clipboard.setStringAsync(msg.text);
+                  toast.success('Copied to clipboard');
+                }}
+                delayLongPress={400}
                 activeOpacity={isFailed || isQueued ? 0.6 : 1}
               >
                 <YStack
@@ -569,7 +601,7 @@ export function ChatConversationScreen({
                     borderBottomLeftRadius={isMe ? '$3' : 2}
                   >
                     <Text fontSize="$4" fontFamily="$body" color={isMe ? '#111' : '#111'}>
-                      {msg.text}
+                      {decodeEntities(msg.text)}
                     </Text>
                     <XStack gap={3} alignItems="center" justifyContent="flex-end" marginTop={2}>
                       <Text fontSize={10} color="#667781" fontFamily="$body">

@@ -377,7 +377,7 @@ export function useChatSocket(
             : Array.isArray(reply)
               ? (reply[1] as Record<string, unknown>)?.id
               : undefined) ?? localId;
-        store.getState().updateMessageStatus(cid, localId, 'sent', serverId as string);
+        store.getState().updateMessageStatus(cid, localId, 'delivered', serverId as string);
         return true;
       } catch (err) {
         console.warn('[Chat] Send on wire failed, queuing:', err);
