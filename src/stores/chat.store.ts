@@ -12,6 +12,7 @@ interface ChatState {
   sortKeyCounter: number;
 
   upsertMessage: (conversationId: string, msg: StoredMessage, sortKey?: number) => void;
+  markConversationRead: (conversationId: string, userId: string) => void;
   updateMessageStatus: (
     conversationId: string,
     localId: string,
@@ -55,9 +56,14 @@ export const useChatStore = create<ChatState>()(
             next[idx] = { ...next[idx], ...msg, sortKey: next[idx].sortKey ?? msg.sortKey };
           } else {
             const nextKey = state.sortKeyCounter + 1;
-            next.push({ ...msg, sortKey: msg.sortKey ?? nextKey });
+            // Deduplicate: remove any existing entry with same id or localId
+            // before adding new one (handles race where updateMessageStatus already set serverId)
+            const clean = next.filter(
+              (m) => m.id !== msg.id && m.localId !== msg.id && m.id !== msg.localId && m.localId !== msg.localId,
+            );
+            clean.push({ ...msg, sortKey: msg.sortKey ?? nextKey });
             return {
-              messages: { ...state.messages, [conversationId]: next },
+              messages: { ...state.messages, [conversationId]: clean },
               sortKeyCounter: nextKey,
             };
           }
@@ -69,8 +75,10 @@ export const useChatStore = create<ChatState>()(
       updateMessageStatus: (conversationId, localId, status, serverId, sentAt) =>
         set((state) => {
           const existing = state.messages[conversationId] ?? [];
+          let found = false;
           const next = existing.map((m) => {
             if (m.localId !== localId && m.id !== localId) return m;
+            found = true;
             return {
               ...m,
               status,
@@ -78,9 +86,38 @@ export const useChatStore = create<ChatState>()(
               ...(sentAt ? { sentAt } : {}),
             };
           });
+          // If not found by localId, try finding by serverId (in case the
+          // message was upserted from broadcast before updateMessageStatus ran)
+          if (!found && serverId) {
+            const sidx = next.findIndex((m) => m.id === serverId);
+            if (sidx >= 0) {
+              next[sidx] = {
+                ...next[sidx],
+                localId,
+                status,
+                ...(sentAt ? { sentAt } : {}),
+              };
+              // Remove the stale optimistic entry with the old localId
+              const lidx = next.findIndex(
+                (m, i) => i !== sidx && (m.id === localId || m.localId === localId),
+              );
+              if (lidx >= 0) {
+                next.splice(lidx, 1);
+              }
+            }
+          }
           return {
             messages: { ...state.messages, [conversationId]: next },
           };
+        }),
+
+      markConversationRead: (conversationId, userId) =>
+        set((state) => {
+          const existing = state.messages[conversationId] ?? [];
+          const next = existing.map((m) =>
+            m.senderId === userId && m.status !== 'read' ? { ...m, status: 'read' as ChatMessageStatus, readAt: new Date().toISOString() } : m,
+          );
+          return { messages: { ...state.messages, [conversationId]: next } };
         }),
 
       getConversationMessages: (conversationId) =>

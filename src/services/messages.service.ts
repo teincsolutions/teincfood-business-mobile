@@ -243,21 +243,27 @@ export function useChatSocket(
           const cid = payload.conversation_id as string;
           if (!cid) return;
 
-          const isOwnEcho = payload.sender_id === currentUserIdRef.current;
+          const isFromOther = payload.sender_id !== currentUserIdRef.current;
 
-          // Store all incoming messages (including own echoes for correct sentAt/sorting).
-          // Own echoes update the optimistic message with the server timestamp.
-          store.getState().upsertMessage(cid, {
-            id: payload.id,
-            localId: payload.id,
-            conversationId: cid,
-            senderId: payload.sender_id,
-            text: payload.text,
-            status: isOwnEcho ? 'sent' : 'delivered',
-            channel: payload.channel ?? 'app',
-            sentAt: payload.sent_at,
-            ...(isOwnEcho ? {} : { deliveredAt: new Date().toISOString() }),
-          });
+          // Only store incoming messages from OTHER users (bot replies, agent replies).
+          // Own message echoes are skipped — they arrive via PubSub before the phx_reply
+          // and would create duplicates (optimistic message still has localId at that point).
+          if (isFromOther) {
+            store.getState().upsertMessage(cid, {
+              id: payload.id,
+              localId: payload.id,
+              conversationId: cid,
+              senderId: payload.sender_id,
+              text: payload.text,
+              status: 'delivered',
+              channel: payload.channel ?? 'app',
+              sentAt: payload.sent_at,
+              deliveredAt: new Date().toISOString(),
+            });
+
+            // Mark all own messages as read when a reply arrives (blue double check)
+            store.getState().markConversationRead(cid, currentUserIdRef.current);
+          }
 
           onEvent({ type: 'chat.message', payload, occurredAt: payload.sent_at });
         });

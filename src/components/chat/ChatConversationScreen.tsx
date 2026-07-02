@@ -250,9 +250,24 @@ export function ChatConversationScreen({
   // ---------------------------------------------------------------------------
 
   const messages = useMemo(() => {
-    const sorted = [...storedMessages].sort(
-      (a, b) => (a.sortKey ?? 0) - (b.sortKey ?? 0),
-    );
+    // Deduplicate by id (keep the entry with higher sortKey / newer status)
+    const seen = new Map<string, StoredMessage>();
+    for (const msg of storedMessages) {
+      const key = msg.id || msg.localId;
+      const existing = seen.get(key);
+      if (!existing || (msg.sortKey ?? 0) > (existing.sortKey ?? 0)) {
+        seen.set(key, msg);
+      }
+    }
+
+    const sorted = Array.from(seen.values()).sort((a, b) => {
+      // Primary sort by sentAt timestamp (handles REST-loaded older messages correctly)
+      const ta = new Date(a.sentAt).getTime();
+      const tb = new Date(b.sentAt).getTime();
+      if (ta !== tb) return ta - tb;
+      // Tiebreaker by sortKey (preserves insertion order for same-timestamp messages)
+      return (a.sortKey ?? 0) - (b.sortKey ?? 0);
+    });
 
     // Inject date separators
     const withSeparators: Array<{ type: 'message'; msg: StoredMessage } | { type: 'separator'; date: string }> = [];
@@ -266,7 +281,7 @@ export function ChatConversationScreen({
     }
 
     return withSeparators;
-  }, [storedMessages, initialMessages]);
+  }, [storedMessages]);
 
   // Auto-scroll to bottom when new messages arrive (not on pagination load)
   const prevCountRef = useRef(0);
