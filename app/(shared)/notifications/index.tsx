@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Card, Spinner } from "tamagui";
@@ -20,6 +20,7 @@ import {
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
 } from "@/hooks/useNotifications";
+import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
 
 function getIconComponent(type: string) {
   switch (type) {
@@ -149,6 +150,10 @@ export default function NotificationsScreen() {
                     ? new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                     : ""}
                 </Text>
+                <NotificationActionCard
+                  notification={item}
+                  onDone={() => {}}
+                />
               </YStack>
             </XStack>
           </Card>

@@ -7,6 +7,18 @@ export interface Notification {
   read: boolean;
   type: string;
   created_at: string;
+  payload: {
+    action_required?: string;
+    action_type?: string;
+    notification_category?: string;
+    invitation_id?: string;
+    code?: string;
+    business_id?: string;
+    business_name?: string;
+    order_id?: string;
+    order_number?: string;
+    [key: string]: unknown;
+  };
 }
 
 interface BackendNotification {
@@ -16,6 +28,7 @@ interface BackendNotification {
   type: string;
   is_read: boolean;
   inserted_at: string;
+  payload?: Record<string, unknown>;
 }
 
 function mapNotification(backend: BackendNotification): Notification {
@@ -26,6 +39,7 @@ function mapNotification(backend: BackendNotification): Notification {
     type: backend.type,
     read: backend.is_read,
     created_at: backend.inserted_at,
+    payload: (backend.payload as Notification['payload']) ?? {},
   };
 }
 

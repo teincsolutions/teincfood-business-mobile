@@ -76,6 +76,21 @@ function AppShell() {
   const handleNotifeeAction = useCallback(
     (actionId: string, data: Record<string, string> | undefined) => {
       const orderId = data?.orderId;
+      const actionType = data?.action_type;
+      const notificationCategory = data?.notification_category;
+      const code = data?.code;
+
+      if (actionType === 'accept_invitation' && code) {
+        // Navigate to invitations screen where the accept mutation lives
+        router.push('/(shared)/invitations');
+        return;
+      }
+
+      if (actionId === 'decline_invitation' || actionType === 'decline_invitation') {
+        // Decline — no backend endpoint, just dismiss
+        return;
+      }
+
       if (orderId) {
         router.push(`/order/${orderId}`);
       }

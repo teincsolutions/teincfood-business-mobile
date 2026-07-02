@@ -110,8 +110,8 @@ export async function removeVehicle(vehicleId: string, businessId?: string): Pro
 
 // ─── Fleet Invitation ───
 
-export async function acceptFleetInvitation(data: Record<string, unknown>): Promise<{ data: Record<string, unknown> }> {
-  return api.post('/fleet/accept-invitation', data);
+export async function acceptFleetInvitation(data: { code: string } | { token: string }): Promise<{ data: FleetRider; message: string }> {
+  return api.post<{ data: FleetRider; message: string }>('/fleet/accept-invitation', data);
 }
 
 // ─── Dashboard ───

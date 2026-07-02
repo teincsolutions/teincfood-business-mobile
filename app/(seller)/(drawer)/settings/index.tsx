@@ -7,6 +7,7 @@ import {
   CreditCard,
   Palette,
   ChevronRight,
+  MailOpen,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -91,6 +92,12 @@ export default function SellerSettings() {
       label: "Operating Hours",
       description: "Set your business hours",
       route: "/(shared)/settings/operating-hours",
+    },
+    {
+      icon: MailOpen,
+      label: "Invitations",
+      description: "Pending member invitations",
+      route: "/(shared)/invitations",
     },
     {
       icon: MapPin,

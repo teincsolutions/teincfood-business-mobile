@@ -9,6 +9,7 @@ import {
   Navigation,
   Clock,
   FileText,
+  MailOpen,
 } from "@tamagui/lucide-icons";
 import { toast } from "sonner-native";
 import { useRiderProfileQuery, useVehicleInfoQuery, useToggleOnlineMutation } from "@/hooks/useRider";
@@ -29,6 +30,7 @@ export default function RiderSettings() {
   };
 
   const settingsItems = [
+    { icon: MailOpen, label: "Invitations", description: "Pending business invitations", route: "/(shared)/invitations" },
     { icon: Clock, label: "Operating Hours", description: "Set your availability schedule", route: "/(shared)/settings/operating-hours" },
     { icon: Truck, label: "Vehicle Information", description: vehicleInfo, route: "/(rider)/settings/vehicle-info" },
     { icon: MapPin, label: "Delivery Zones", description: "Preferred delivery areas", route: "/(rider)/settings/delivery-zones" },

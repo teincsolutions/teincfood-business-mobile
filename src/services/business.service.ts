@@ -73,8 +73,8 @@ export async function removeBusinessMember(businessId: string, userId: string): 
   return api.delete(`/businesses/${businessId}/members/${userId}`);
 }
 
-export async function acceptBusinessInvitation(data: Record<string, unknown>): Promise<{ data: Record<string, unknown> }> {
-  return api.post('/businesses/memberships/accept', data);
+export async function acceptBusinessInvitation(data: { code: string }): Promise<{ data: Record<string, unknown> }> {
+  return api.post<{ data: Record<string, unknown> }>('/businesses/memberships/accept', data);
 }
 
 // ─── Operating Hours ───

@@ -179,18 +179,6 @@ export function useRemoveVehicleMutation() {
   });
 }
 
-// ─── Fleet Invitation ───
-
-export function useAcceptFleetInvitationMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: any) => fleetService.acceptFleetInvitation(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: FLEET_KEYS.all });
-    },
-  });
-}
-
 // ─── Dashboard ───
 
 export function useFleetDashboardQuery(enabled = true) {

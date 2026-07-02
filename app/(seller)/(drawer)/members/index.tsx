@@ -35,23 +35,27 @@ export default function MembersScreen() {
   const members = response?.data ?? [];
   const roles = rolesData?.data ?? {};
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteIdentifier, setInviteIdentifier] = useState("");
   const [inviteRole, setInviteRole] = useState("manager");
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState(null);
 
   const handleInvite = () => {
-    if (!inviteEmail.trim()) return;
-    inviteMember.mutate(
-      { email: inviteEmail.trim(), role: inviteRole },
-      {
-        onSuccess: () => {
-          setInviteSheetOpen(false);
-          setInviteEmail("");
-          setInviteRole("manager");
-        },
+    const identifier = inviteIdentifier.trim();
+    if (!identifier) return;
+    const data: Record<string, string> = { role: inviteRole };
+    if (identifier.includes("@")) {
+      data.email = identifier;
+    } else {
+      data.phone = identifier;
+    }
+    inviteMember.mutate(data, {
+      onSuccess: () => {
+        setInviteSheetOpen(false);
+        setInviteIdentifier("");
+        setInviteRole("manager");
       },
-    );
+    });
   };
 
   const handleRemove = () => {
@@ -114,24 +118,24 @@ export default function MembersScreen() {
       />
 
       {/* Invite Sheet */}
-      <Sheet modal open={inviteSheetOpen} onOpenChange={setInviteSheetOpen} snapPoints={[85]} dismissOnSnapToBottom zIndex={200_000}>
+      <Sheet modal open={inviteSheetOpen} onOpenChange={setInviteSheetOpen} snapPoints={[75]} dismissOnSnapToBottom zIndex={200_000}>
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
         <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <ScrollView>
             <YStack padding="$6" gap="$4">
               <Text fontSize="$6" fontWeight="bold">Invite Member</Text>
+              <Text fontSize="$3" color="$colorMuted">
+                Enter the member's email or phone number
+              </Text>
 
-              <YStack gap="$1">
-                <XStack gap="$2" alignItems="center"><Mail size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Email</Text></XStack>
-                <Input
-                  placeholder="member@example.com"
-                  value={inviteEmail}
-                  onChangeText={setInviteEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </YStack>
+              <Input
+                placeholder="Email or phone number"
+                value={inviteIdentifier}
+                onChangeText={setInviteIdentifier}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
               <YStack gap="$2">
                 <Text fontSize="$3" color="$colorMuted">Role</Text>
@@ -167,7 +171,7 @@ export default function MembersScreen() {
                 </YStack>
               </YStack>
 
-              {/* Permissions for selected role — fetched from backend */}
+              {/* Permissions for selected role */}
               {inviteRole && roles[inviteRole] && (
                 <YStack gap="$3" backgroundColor="$backgroundSoft" borderRadius="$3" padding="$3">
                   <Text fontSize="$3" fontWeight="600" color="$colorMuted">Capabilities</Text>
@@ -184,7 +188,7 @@ export default function MembersScreen() {
                 </YStack>
               )}
 
-              <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteEmail.trim() && !invitePhone.trim()}>
+              <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteIdentifier.trim()}>
                 {inviteMember.isPending ? "Sending..." : "Send Invitation"}
               </Button>
               <Button variant="outline" onPress={() => setInviteSheetOpen(false)}>Cancel</Button>

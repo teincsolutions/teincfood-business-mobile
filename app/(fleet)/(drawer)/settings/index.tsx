@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Edit,
   Save,
+  MailOpen,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -55,6 +56,12 @@ export default function FleetSettingsScreen() {
       title: "Notifications",
       description: "Manage notification preferences",
       onPress: () => router.push("/(shared)/notifications"),
+    },
+    {
+      icon: MailOpen,
+      title: "Invitations",
+      description: "Pending rider invitations",
+      onPress: () => router.push("/(shared)/invitations"),
     },
     {
       icon: Shield,
