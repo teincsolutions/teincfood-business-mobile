@@ -270,11 +270,14 @@ export default function RiderDeliveryDetails() {
                   flex={1}
                   variant="outline"
                   icon={<MessageCircle size={18} />}
-                    onPress={() =>
-                      router.push(
-                        `/(communication)/chat/order?userId=${delivery.customer.user_id}&orderId=${delivery.order_id}&name=${encodeURIComponent(delivery.customer.name || "")}&phone=${encodeURIComponent(delivery.customer.phone || "")}`,
-                      )
-                    }
+                    onPress={() => {
+                      const uid = delivery.customer?.user_id;
+                      if (uid) {
+                        router.push(`/(communication)/chat/${uid}?orderId=${delivery.order_id}&name=${encodeURIComponent(delivery.customer.name || "")}&phone=${encodeURIComponent(delivery.customer.phone || "")}`);
+                      } else {
+                        router.push('/(communication)/chat/support');
+                      }
+                    }}
                 >
                   Message
                 </Button>

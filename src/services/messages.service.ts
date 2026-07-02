@@ -240,22 +240,24 @@ export function useChatSocket(
         // Subscribe to incoming messages
         unsubscribe = chatService.onMessage(topic, (msg) => {
           const payload = normalizeMessage(msg as unknown as Record<string, unknown>);
+          const cid = payload.conversation_id as string;
+          if (!cid) return;
 
-          // Persist incoming messages to store
-          // Skip broadcast for own messages — already handled by optimistic insert + phx_reply
-          if (payload.conversation_id && payload.sender_id !== currentUserIdRef.current) {
-            store.getState().upsertMessage(payload.conversation_id, {
-              id: payload.id,
-              localId: payload.id,
-              conversationId: payload.conversation_id,
-              senderId: payload.sender_id,
-              text: payload.text,
-              status: 'delivered',
-              channel: payload.channel ?? 'app',
-              sentAt: payload.sent_at,
-              deliveredAt: new Date().toISOString(),
-            });
-          }
+          const isOwnEcho = payload.sender_id === currentUserIdRef.current;
+
+          // Store all incoming messages (including own echoes for correct sentAt/sorting).
+          // Own echoes update the optimistic message with the server timestamp.
+          store.getState().upsertMessage(cid, {
+            id: payload.id,
+            localId: payload.id,
+            conversationId: cid,
+            senderId: payload.sender_id,
+            text: payload.text,
+            status: isOwnEcho ? 'sent' : 'delivered',
+            channel: payload.channel ?? 'app',
+            sentAt: payload.sent_at,
+            ...(isOwnEcho ? {} : { deliveredAt: new Date().toISOString() }),
+          });
 
           onEvent({ type: 'chat.message', payload, occurredAt: payload.sent_at });
         });
@@ -369,8 +371,13 @@ export function useChatSocket(
 
       try {
         const reply = await chatService.sendMessage(topic, text, localId);
-        const serverId = (reply?.id as string) ?? localId;
-        store.getState().updateMessageStatus(cid, localId, 'sent', serverId);
+        const serverId =
+          (typeof reply === 'object' && !Array.isArray(reply)
+            ? (reply as Record<string, unknown>)?.id
+            : Array.isArray(reply)
+              ? (reply[1] as Record<string, unknown>)?.id
+              : undefined) ?? localId;
+        store.getState().updateMessageStatus(cid, localId, 'sent', serverId as string);
         return true;
       } catch (err) {
         console.warn('[Chat] Send on wire failed, queuing:', err);
