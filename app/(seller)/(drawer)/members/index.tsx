@@ -36,25 +36,22 @@ export default function MembersScreen() {
   const roles = rolesData?.data ?? {};
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState("manager");
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState(null);
 
   const handleInvite = () => {
-    const data = {};
-    if (inviteEmail.trim()) data.email = inviteEmail.trim();
-    if (invitePhone.trim()) data.phone = invitePhone.trim();
-    if (!data.email && !data.phone) return;
-    data.role = inviteRole;
-    inviteMember.mutate(data, {
-      onSuccess: () => {
-        setInviteSheetOpen(false);
-        setInviteEmail("");
-        setInvitePhone("");
-        setInviteRole("manager");
+    if (!inviteEmail.trim()) return;
+    inviteMember.mutate(
+      { email: inviteEmail.trim(), role: inviteRole },
+      {
+        onSuccess: () => {
+          setInviteSheetOpen(false);
+          setInviteEmail("");
+          setInviteRole("manager");
+        },
       },
-    });
+    );
   };
 
   const handleRemove = () => {
@@ -133,16 +130,6 @@ export default function MembersScreen() {
                   onChangeText={setInviteEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                />
-              </YStack>
-
-              <YStack gap="$1">
-                <XStack gap="$2" alignItems="center"><Phone size={16} color="$colorMuted" /><Text fontSize="$3" color="$colorMuted">Phone (optional)</Text></XStack>
-                <Input
-                  placeholder="+233XXXXXXXXX"
-                  value={invitePhone}
-                  onChangeText={setInvitePhone}
-                  keyboardType="phone-pad"
                 />
               </YStack>
 

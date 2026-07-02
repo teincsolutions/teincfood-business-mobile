@@ -6,6 +6,16 @@ export interface FleetRiderUser {
   phone?: string;
 }
 
+export interface FleetRiderVehicle {
+  id: string;
+  type: string;
+  plate_number: string;
+  brand: string | null;
+  model: string | null;
+  color: string | null;
+  year: number | null;
+}
+
 export interface FleetRider {
   id: string;
   rider_number: string;
@@ -17,7 +27,39 @@ export interface FleetRider {
   license_number: string;
   kyc_status: string;
   user: FleetRiderUser | null;
+  vehicle: FleetRiderVehicle | null;
   inserted_at: string;
+}
+
+// ─── Fleet Rider Detail Response ───
+
+export interface FleetRiderResponse {
+  data: FleetRider;
+}
+
+// ─── Fleet Rider KYC ───
+
+export interface FleetKycDocument {
+  type: string;
+  name: string;
+  url: string | null;
+  signed_url: string | null;
+  document_id: string | null;
+  issued_date: string | null;
+  expiration_date: string | null;
+  expired: boolean;
+}
+
+export interface FleetRiderKyc {
+  rider_id: string;
+  kyc_status: string;
+  submitted_at: string | null;
+  verified_at: string | null;
+  documents: FleetKycDocument[];
+}
+
+export interface FleetRiderKycResponse {
+  data: FleetRiderKyc;
 }
 
 // ─── Fleet Vehicle ───

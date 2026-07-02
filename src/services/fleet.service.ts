@@ -2,9 +2,12 @@ import { api } from './api';
 import type {
   FleetRider,
   FleetRidersResponse,
+  FleetRiderResponse,
+  FleetRiderKycResponse,
   FleetVehicle,
   FleetVehiclesResponse,
   FleetDashboardResponse,
+  JoinRequest,
 } from '@/types/api';
 
 // ─── Riders ───
@@ -17,6 +20,15 @@ export async function fetchFleetRiders(
 ): Promise<FleetRidersResponse> {
   return api.get<FleetRidersResponse>('/business/riders', {
     params: { ...(businessId ? { business_id: businessId } : {}), page, page_size: pageSize, ...filters },
+  });
+}
+
+export async function fetchFleetRider(
+  riderId: string,
+  businessId?: string,
+): Promise<FleetRiderResponse> {
+  return api.get<FleetRiderResponse>(`/business/riders/${riderId}`, {
+    params: businessId ? { business_id: businessId } : undefined,
   });
 }
 
@@ -42,14 +54,14 @@ export async function activateRider(riderId: string, businessId?: string): Promi
   });
 }
 
-export async function fetchRiderKyc(riderId: string, businessId?: string): Promise<{ data: Record<string, unknown> }> {
-  return api.get(`/business/riders/${riderId}/kyc`, {
+export async function fetchRiderKyc(riderId: string, businessId?: string): Promise<FleetRiderKycResponse> {
+  return api.get<FleetRiderKycResponse>(`/business/riders/${riderId}/kyc`, {
     params: businessId ? { business_id: businessId } : undefined,
   });
 }
 
-export async function fetchJoinRequests(businessId?: string): Promise<{ data: Record<string, unknown>[] }> {
-  return api.get('/business/riders/join-requests', {
+export async function fetchJoinRequests(businessId?: string): Promise<{ data: JoinRequest[] }> {
+  return api.get<{ data: JoinRequest[] }>('/business/riders/join-requests', {
     params: businessId ? { business_id: businessId } : undefined,
   });
 }

@@ -26,6 +26,7 @@ import {
   Menu,
   MessageSquare,
   Users,
+  Bike,
   DollarSign,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
@@ -173,6 +174,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Members
+            </Text>
+          </Button>
+
+          {/* Riders */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/riders")}
+            icon={<Bike size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Riders
             </Text>
           </Button>
 
@@ -458,6 +476,18 @@ export default function SellerDrawerLayout() {
           options={{
             headerShown: false,
           }}
+        />
+
+        {/* Riders */}
+        <Drawer.Screen
+          name="riders/index"
+          options={{
+            title: "Riders",
+            drawerIcon: ({ color, size }) => (
+              <Bike color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
         />
       </Drawer>
 

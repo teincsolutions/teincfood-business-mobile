@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { FleetRider, FleetVehicle, FleetDashboard } from '@/types/fleet.model';
+import type { FleetVehicle } from '@/types/fleet.model';
 import * as fleetService from '@/services/fleet.service';
 import { useBusinessStore } from '@/stores/business.store';
 
@@ -7,6 +7,7 @@ const FLEET_KEYS = {
   all: ['fleet'] as const,
   riders: (businessId?: string) => [...FLEET_KEYS.all, 'riders', businessId] as const,
   riderDetail: (id: string) => [...FLEET_KEYS.all, 'rider', id] as const,
+  riderKyc: (id: string) => [...FLEET_KEYS.all, 'rider-kyc', id] as const,
   vehicles: (businessId?: string) => [...FLEET_KEYS.all, 'vehicles', businessId] as const,
   vehicleDetail: (id: string) => [...FLEET_KEYS.all, 'vehicle', id] as const,
   dashboard: (businessId?: string) => [...FLEET_KEYS.all, 'dashboard', businessId] as const,
@@ -38,6 +39,25 @@ export function useInviteRiderMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: FLEET_KEYS.riders(businessId) });
     },
+  });
+}
+
+export function useFleetRiderQuery(riderId: string, enabled = true) {
+  const businessId = useBusinessId();
+  return useQuery({
+    queryKey: FLEET_KEYS.riderDetail(riderId),
+    queryFn: () => fleetService.fetchFleetRider(riderId, businessId),
+    enabled: enabled && Boolean(riderId),
+  });
+}
+
+export function useRiderKycQuery(riderId: string, enabled = true) {
+  const businessId = useBusinessId();
+  return useQuery({
+    queryKey: FLEET_KEYS.riderKyc(riderId),
+    queryFn: () => fleetService.fetchRiderKyc(riderId, businessId),
+    enabled: enabled && Boolean(riderId),
+    staleTime: 0,
   });
 }
 

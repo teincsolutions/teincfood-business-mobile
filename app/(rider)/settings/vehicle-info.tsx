@@ -73,8 +73,34 @@ export default function VehicleInfo() {
         toast.success("Vehicle information saved");
         router.back();
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.debug("[VehicleInfo] save error", error);
+
+        // Extract field-level validation errors from API response
+        const apiError = error as { data?: { error?: { details?: Record<string, string[]> } } };
+        const details = apiError?.data?.error?.details;
+        if (details && typeof details === "object") {
+          const fieldErrors: Record<string, string> = {};
+          const fieldMap: Record<string, string> = {
+            plate_number: "plateNumber",
+            type: "vehicleType",
+            brand: "brand",
+            model: "model",
+            color: "color",
+            year: "year",
+          };
+          for (const [field, messages] of Object.entries(details)) {
+            const formField = fieldMap[field] || field;
+            if (Array.isArray(messages) && messages.length > 0) {
+              fieldErrors[formField] = messages[0];
+            }
+          }
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            return;
+          }
+        }
+
         toast.error(extractApiErrorMessage(error));
       },
     });
@@ -224,6 +250,7 @@ export default function VehicleInfo() {
                 }}
                 keyboardType="number-pad"
                 maxLength={4}
+                error={errors.year}
               />
             </YStack>
           </Card>
