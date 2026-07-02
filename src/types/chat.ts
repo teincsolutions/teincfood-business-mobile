@@ -9,6 +9,7 @@ export interface StoredMessage {
   status: ChatMessageStatus;
   channel: 'app' | 'whatsapp';
   sentAt: string;
+  sortKey?: number;
   deliveredAt?: string;
   readAt?: string;
 }

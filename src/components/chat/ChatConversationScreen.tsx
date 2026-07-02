@@ -250,42 +250,8 @@ export function ChatConversationScreen({
   // ---------------------------------------------------------------------------
 
   const messages = useMemo(() => {
-    const map = new Map<string, StoredMessage>();
-
-    // 1. REST messages first (server is source of truth)
-    if (initialMessages) {
-      for (const rest of initialMessages) {
-        const key = rest.id;
-        map.set(key, {
-          id: rest.id,
-          localId: rest.id,
-          conversationId: rest.conversation_id,
-          senderId: rest.sender_id,
-          text: rest.text,
-          status: (rest.status as ChatMessageStatus) ?? 'delivered',
-          channel: rest.channel ?? 'app',
-          sentAt: rest.sent_at,
-        });
-      }
-    }
-
-    // 2. Stored messages overlaid — skip if already present by server id
-    //    (stored messages that were sent optimistically have localId != id after server ack)
-    for (const msg of storedMessages) {
-      const serverKey = msg.id && msg.id !== msg.localId ? msg.id : null;
-      if (serverKey && map.has(serverKey)) continue;
-
-      const key = msg.localId;
-      const existing = map.get(key);
-      if (existing) {
-        map.set(key, { ...existing, status: existing.status === 'queued' ? 'queued' : (msg.status === 'queued' ? 'queued' : existing.status) });
-      } else {
-        map.set(key, msg);
-      }
-    }
-
-    const sorted = Array.from(map.values()).sort(
-      (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
+    const sorted = [...storedMessages].sort(
+      (a, b) => (a.sortKey ?? 0) - (b.sortKey ?? 0),
     );
 
     // Inject date separators

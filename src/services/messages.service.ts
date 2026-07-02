@@ -371,13 +371,10 @@ export function useChatSocket(
 
       try {
         const reply = await chatService.sendMessage(topic, text, localId);
-        const serverId =
-          (typeof reply === 'object' && !Array.isArray(reply)
-            ? (reply as Record<string, unknown>)?.id
-            : Array.isArray(reply)
-              ? (reply[1] as Record<string, unknown>)?.id
-              : undefined) ?? localId;
-        store.getState().updateMessageStatus(cid, localId, 'delivered', serverId as string);
+        const msgData = Array.isArray(reply) ? (reply[1] as Record<string, unknown>) : (typeof reply === 'object' ? reply : null);
+        const serverId = (msgData?.id as string) ?? localId;
+        const serverSentAt = (msgData?.sent_at as string) || (msgData?.inserted_at as string);
+        store.getState().updateMessageStatus(cid, localId, 'delivered', serverId, serverSentAt);
         return true;
       } catch (err) {
         console.warn('[Chat] Send on wire failed, queuing:', err);

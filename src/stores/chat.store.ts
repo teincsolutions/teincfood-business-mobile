@@ -9,13 +9,15 @@ interface ChatState {
   outbox: OutboundMessage[];
   typingUsers: Record<string, { userId: string; timestamp: number }>;
   conversationTopicCache: Record<string, string>;
+  sortKeyCounter: number;
 
-  upsertMessage: (conversationId: string, msg: StoredMessage) => void;
+  upsertMessage: (conversationId: string, msg: StoredMessage, sortKey?: number) => void;
   updateMessageStatus: (
     conversationId: string,
     localId: string,
     status: ChatMessageStatus,
     serverId?: string,
+    sentAt?: string,
   ) => void;
   getConversationMessages: (conversationId: string) => StoredMessage[];
   addToOutbox: (msg: OutboundMessage) => void;
@@ -40,6 +42,7 @@ export const useChatStore = create<ChatState>()(
       outbox: [],
       typingUsers: {},
       conversationTopicCache: {},
+      sortKeyCounter: 0,
 
       upsertMessage: (conversationId, msg) =>
         set((state) => {
@@ -49,16 +52,21 @@ export const useChatStore = create<ChatState>()(
           );
           const next = [...existing];
           if (idx >= 0) {
-            next[idx] = { ...next[idx], ...msg };
+            next[idx] = { ...next[idx], ...msg, sortKey: next[idx].sortKey ?? msg.sortKey };
           } else {
-            next.push(msg);
+            const nextKey = state.sortKeyCounter + 1;
+            next.push({ ...msg, sortKey: msg.sortKey ?? nextKey });
+            return {
+              messages: { ...state.messages, [conversationId]: next },
+              sortKeyCounter: nextKey,
+            };
           }
           return {
             messages: { ...state.messages, [conversationId]: next },
           };
         }),
 
-      updateMessageStatus: (conversationId, localId, status, serverId) =>
+      updateMessageStatus: (conversationId, localId, status, serverId, sentAt) =>
         set((state) => {
           const existing = state.messages[conversationId] ?? [];
           const next = existing.map((m) => {
@@ -67,6 +75,7 @@ export const useChatStore = create<ChatState>()(
               ...m,
               status,
               ...(serverId ? { id: serverId } : {}),
+              ...(sentAt ? { sentAt } : {}),
             };
           });
           return {
