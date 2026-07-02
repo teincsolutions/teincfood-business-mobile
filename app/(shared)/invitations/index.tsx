@@ -1,26 +1,72 @@
 // @ts-nocheck
+import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MailOpen, Clock, ChevronRight } from "@tamagui/lucide-icons";
+import { MailOpen, Clock, CheckCircle } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   useNotificationsQuery,
   useNotificationsStream,
 } from "@/hooks/useNotifications";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
+import { useRemoveMemberMutation } from "@/hooks/useBusinessMembers";
+import { extractApiErrorMessage } from "@/utils/error";
+import { toast } from "sonner-native";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
   const { data: notifications = [], refetch, isRefetching } = useNotificationsQuery();
   useNotificationsStream(true);
 
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  const [confirmLeave, setConfirmLeave] = useState<string | null>(null);
+  const removeMember = useRemoveMemberMutation();
+
+  const markDone = (id: string) => {
+    setCompletedIds((prev) => new Set(prev).add(id));
+  };
+
+  const markJoined = (id: string) => {
+    setCompletedIds((prev) => new Set(prev).add(id));
+    setJoinedIds((prev) => new Set(prev).add(id));
+  };
+
   const pendingInvites = notifications.filter(
     (n) =>
+      !completedIds.has(n.id) &&
       n.payload?.action_required === "true" &&
       (n.payload?.notification_category === "rider_invitation" ||
         n.payload?.notification_category === "business_member_invitation"),
   );
+
+  const joinedInvites = notifications.filter(
+    (n) =>
+      joinedIds.has(n.id) &&
+      (n.payload?.notification_category === "rider_invitation" ||
+        n.payload?.notification_category === "business_member_invitation"),
+  );
+
+  const handleConfirmLeave = () => {
+    if (!confirmLeave) return;
+    removeMember.mutate(confirmLeave, {
+      onSuccess: () => {
+        toast.success("Left the business");
+        setJoinedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(confirmLeave);
+          return next;
+        });
+        setConfirmLeave(null);
+      },
+      onError: (err) => {
+        toast.error(extractApiErrorMessage(err));
+        setConfirmLeave(null);
+      },
+    });
+  };
 
   const renderInvite = ({ item }: { item: (typeof notifications)[0] }) => (
     <Card padding="$4" bordered marginBottom="$3">
@@ -36,7 +82,35 @@ export default function InvitationsScreen() {
             ? new Date(item.created_at).toLocaleDateString()
             : ""}
         </Text>
-        <NotificationActionCard notification={item} onDone={() => {}} />
+        <NotificationActionCard
+          notification={item}
+          onDone={() => markJoined(item.id)}
+        />
+      </YStack>
+    </Card>
+  );
+
+  const renderJoined = ({ item }: { item: (typeof notifications)[0] }) => (
+    <Card padding="$4" bordered marginBottom="$3" backgroundColor="$green2">
+      <YStack gap="$2">
+        <XStack gap="$2" alignItems="center">
+          <CheckCircle size={18} color="$green10" />
+          <Text fontSize="$5" fontWeight="600" color="$green10">
+            Joined
+          </Text>
+        </XStack>
+        <Text fontSize="$3" color="$colorMuted">
+          {item.title} — {item.message}
+        </Text>
+        <Button
+          variant="outline"
+          borderColor="$red10"
+          color="$red10"
+          size="$3"
+          onPress={() => setConfirmLeave(item.id)}
+        >
+          Leave Business
+        </Button>
       </YStack>
     </Card>
   );
@@ -72,9 +146,11 @@ export default function InvitationsScreen() {
       </XStack>
 
       <FlatList
-        data={pendingInvites}
+        data={[...pendingInvites, ...joinedInvites]}
         keyExtractor={(item) => item.id}
-        renderItem={renderInvite}
+        renderItem={({ item }) =>
+          joinedIds.has(item.id) ? renderJoined({ item }) : renderInvite({ item })
+        }
         contentContainerStyle={{
           padding: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
@@ -96,6 +172,16 @@ export default function InvitationsScreen() {
             onRefresh={refetch}
           />
         }
+      />
+
+      <AppAlertDialog
+        open={confirmLeave !== null}
+        onOpenChange={() => setConfirmLeave(null)}
+        title="Leave Business"
+        description="Are you sure you want to leave this business? You may need a new invitation to rejoin."
+        confirmText="Leave"
+        isDestructive
+        onConfirm={handleConfirmLeave}
       />
     </YStack>
   );

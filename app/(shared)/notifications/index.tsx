@@ -52,6 +52,12 @@ export default function NotificationsScreen() {
   const markAsRead = useMarkNotificationReadMutation();
   const markAllAsRead = useMarkAllNotificationsReadMutation();
 
+  const [completedActionIds, setCompletedActionIds] = useState<Set<string>>(new Set());
+
+  const markActionDone = useCallback((id: string) => {
+    setCompletedActionIds((prev) => new Set(prev).add(id));
+  }, []);
+
   const unreadNotifications = notifications.filter((n) => !n.read);
   const readNotifications = notifications.filter((n) => n.read);
 
@@ -150,17 +156,19 @@ export default function NotificationsScreen() {
                     ? new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                     : ""}
                 </Text>
-                <NotificationActionCard
-                  notification={item}
-                  onDone={() => {}}
-                />
+                {!completedActionIds.has(item.id) && (
+                  <NotificationActionCard
+                    notification={item}
+                    onDone={() => markActionDone(item.id)}
+                  />
+                )}
               </YStack>
             </XStack>
           </Card>
         ))}
       </YStack>
     );
-  }, [handleNotificationPress]);
+  }, [handleNotificationPress, completedActionIds, markActionDone]);
 
   if (isLoading) {
     return (
