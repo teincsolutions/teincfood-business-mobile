@@ -57,7 +57,7 @@ export default function RoleScreen() {
             Choose Your Role
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-            Select how you want to use TeincFoodBusiness
+            Select how you want to use TeincFood Business
           </Text>
         </YStack>
 
@@ -131,7 +131,9 @@ export default function RoleScreen() {
                     width: 28,
                     height: 28,
                     tintColor:
-                      selectedRole === "rider" ? "white" : "#71717A" /* $colorMuted */,
+                      selectedRole === "rider"
+                        ? "white"
+                        : "#71717A" /* $colorMuted */,
                   }}
                 />
               </YStack>

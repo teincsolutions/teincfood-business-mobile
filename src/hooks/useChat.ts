@@ -4,16 +4,11 @@ import {
   useChatParticipantQuery,
   useChatSocket,
   useSupportConversationQuery,
-  useConversationMessagesQuery,
+  useMessagesQuery,
 } from '@/services/messages.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { useChatStore } from '@/stores/chat.store';
 import type { StoredMessage } from '@/types/chat';
-import type {
-  ConversationListResponse,
-  Conversation,
-  ConversationMessage,
-} from '@/types/api';
 
 const EMPTY_MESSAGES: StoredMessage[] = [];
 
@@ -30,62 +25,70 @@ export function useChat({
   userId?: string;
   orderId?: string;
   onChatEvent: (event: any) => void;
-  onChannelHistory?: (messages: ConversationMessage[]) => void;
+  onChannelHistory?: (messages: any[]) => void;
 }) {
   const currentUserId = useAuthStore((state) => state.user?.id || '');
   const isSupportChat = userId === 'support';
   const isOrderPairChat = Boolean(orderId && userId && currentUserId && !isSupportChat);
+
+  const { data: supportConversation } = useSupportConversationQuery(
+    isSupportChat,
+    currentUserId,
+  );
+
   const chatTopic = isSupportChat
     ? chatService.getSupportChatTopic(currentUserId)
     : isOrderPairChat
       ? chatService.getOrderChatTopic(orderId!, currentUserId, userId!)
       : '';
-  const chatJoinTarget = isSupportChat ? currentUserId : isOrderPairChat ? userId || '' : '';
 
-  const { data: supportConversation, isLoading: supportLoading } = useSupportConversationQuery();
-  const socketState = useChatSocket(chatTopic, onChatEvent);
+  const chatJoinTarget = isSupportChat
+    ? currentUserId
+    : isOrderPairChat
+      ? userId || ''
+      : '';
 
+  const socketState = useChatSocket(chatJoinTarget, onChatEvent, {
+    topic: chatTopic,
+    conversationIdHint: supportConversation?.id,
+    enableChannelHistory: isOrderPairChat,
+    channelHistoryLimit: 50,
+    onChannelHistory,
+  });
+
+  // Use cached conversation ID immediately so stored messages show right away
   const activeConversationId = isSupportChat
-    ? supportConversation?.data?.id ?? undefined
-    : undefined;
+    ? supportConversation?.id || socketState.cachedConversationId || socketState.conversationId || undefined
+    : socketState.cachedConversationId || socketState.conversationId || undefined;
 
   const participantQuery = useChatParticipantQuery(isSupportChat ? 'support' : userId || '');
-  const messagesQuery = useConversationMessagesQuery(activeConversationId ?? '');
 
+  // Load persisted messages from store eagerly (using cache if active ID not ready yet)
   const storedMessages = useChatStore(
     (state) =>
       activeConversationId
         ? state.messages[activeConversationId] ?? EMPTY_MESSAGES
         : EMPTY_MESSAGES,
   );
-
-  const isReady = Boolean(chatTopic) && !supportLoading && (isSupportChat ? Boolean(supportConversation) : true);
-
-  const loadOlderMessages = async (): Promise<boolean> => {
-    if (!activeConversationId || messagesQuery.isFetching) return false;
-    const offset = storedMessages.length;
-    const result = await messagesQuery.refetch();
-    if (!result.data?.data) return false;
-    return result.data.data.length > 0;
-  };
+  const messagesQuery = useMessagesQuery(activeConversationId, isSupportChat);
 
   return {
     currentUserId,
     isSupportChat,
     isOrderPairChat,
-    supportConversation: supportConversation?.data,
+    supportConversation,
     chatTopic,
     chatJoinTarget,
     activeConversationId,
     user: participantQuery.data,
-    initialMessages: messagesQuery.data?.data,
+    initialMessages: messagesQuery.data,
     storedMessages,
     sendMessage: socketState.sendMessage,
     setTyping: socketState.setTyping,
-    isTyping: false,
+    isTyping: socketState.isTyping,
     conversationId: activeConversationId,
-    isReady,
-    loadOlderMessages,
-    loadingOlder: messagesQuery.isFetching,
+    isReady: socketState.isReady,
+    loadOlderMessages: socketState.loadOlderMessages,
+    loadingOlder: socketState.loadingOlder,
   };
 }

@@ -96,18 +96,46 @@ export default function SharedProfile() {
                   {displayName}
                 </Text>
                 <XStack gap="$2" alignItems="center">
-                  <Text color="$colorMuted" fontSize="$3">{displayEmail}</Text>
+                  <Text color="$colorMuted" fontSize="$3">
+                    {displayEmail}
+                  </Text>
                   {profile?.email_verified_at ? (
-                    <XStack px="$1.5" py="$0.5" borderRadius="$2" backgroundColor="$successMuted">
-                      <Text fontSize="$1" color="$success" fontWeight="600" fontFamily="$body">Verified</Text>
+                    <XStack
+                      px="$1.5"
+                      py="$0.5"
+                      borderRadius="$2"
+                      backgroundColor="$successMuted"
+                    >
+                      <Text
+                        fontSize="$1"
+                        color="$success"
+                        fontWeight="600"
+                        fontFamily="$body"
+                      >
+                        Verified
+                      </Text>
                     </XStack>
                   ) : null}
                 </XStack>
                 <XStack gap="$2" alignItems="center">
-                  <Text color="$colorMuted" fontSize="$3">{displayPhone}</Text>
+                  <Text color="$colorMuted" fontSize="$3">
+                    {displayPhone}
+                  </Text>
                   {profile?.phone_verified_at ? (
-                    <XStack px="$1.5" py="$0.5" borderRadius="$2" backgroundColor="$successMuted">
-                      <Text fontSize="$1" color="$success" fontWeight="600" fontFamily="$body">Verified</Text>
+                    <XStack
+                      px="$1.5"
+                      py="$0.5"
+                      borderRadius="$2"
+                      backgroundColor="$successMuted"
+                    >
+                      <Text
+                        fontSize="$1"
+                        color="$success"
+                        fontWeight="600"
+                        fontFamily="$body"
+                      >
+                        Verified
+                      </Text>
                     </XStack>
                   ) : null}
                 </XStack>
@@ -156,7 +184,7 @@ export default function SharedProfile() {
 
           <YStack alignItems="center" padding="$4">
             <Text color="$colorMuted" fontSize="$2">
-              TeincFoodBusiness v1.0.0
+              TeincFood Business v1.0.0
             </Text>
           </YStack>
         </YStack>

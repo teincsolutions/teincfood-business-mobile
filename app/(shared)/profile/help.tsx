@@ -87,7 +87,7 @@ export default function HelpSupport() {
       icon: MessageCircle,
       label: "Live Chat",
       description: "Chat with our support team",
-      action: () => router.push('/(communication)/chat/support'),
+      action: () => router.push("/(communication)/chat/support"),
       available: true,
     },
     {
@@ -301,7 +301,7 @@ export default function HelpSupport() {
           <Card padding="$4" bordered backgroundColor="$gray2">
             <YStack gap="$2" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
-                TeincFoodBusiness
+                TeincFood Business
               </Text>
               <Text color="$colorMuted">Version 1.0.0</Text>
               <Text color="$colorMuted" fontSize="$2">

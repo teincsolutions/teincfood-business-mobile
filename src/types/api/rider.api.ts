@@ -133,6 +133,7 @@ export interface RiderDashboardResponse {
 export interface DeliveryCustomer {
   name: string | null;
   phone: string | null;
+  user_id: string | null;
 }
 
 export interface DeliveryPickupLocation {
@@ -167,6 +168,8 @@ export interface RiderDeliveryDetail {
   dropoff_lat: number | null;
   dropoff_lng: number | null;
   eta_minutes: number | null;
+  rider_pickup_confirmed_at: string | null;
+  merchant_handover_confirmed_at: string | null;
   inserted_at: string;
   updated_at: string;
   customer: DeliveryCustomer;

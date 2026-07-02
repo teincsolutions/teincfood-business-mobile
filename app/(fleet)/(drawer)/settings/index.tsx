@@ -1,14 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Separator,
-  Avatar,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Settings,
@@ -33,7 +26,7 @@ export default function FleetSettingsScreen() {
   const { fleet, updateFleet } = useFleetStore();
   const [isEditing, setIsEditing] = useState(false);
   const [commissionRate, setCommissionRate] = useState(
-    fleet?.commissionRate?.toString() || "15"
+    fleet?.commissionRate?.toString() || "15",
   );
 
   const handleSaveCommission = () => {
@@ -87,7 +80,12 @@ export default function FleetSettingsScreen() {
       <YStack padding="$4" gap="$4">
         {/* Header */}
         <YStack gap="$2">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Settings
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -144,10 +142,19 @@ export default function FleetSettingsScreen() {
                   <Percent size={20} color="$blue10" />
                 </YStack>
                 <YStack>
-                  <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="600"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Commission Rate
                   </Text>
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     Percentage of rider earnings
                   </Text>
                 </YStack>
@@ -168,7 +175,12 @@ export default function FleetSettingsScreen() {
                 </XStack>
               ) : (
                 <XStack gap="$2" alignItems="center">
-                  <Text fontSize="$6" fontWeight="600" color="$blue10" fontFamily="$heading">
+                  <Text
+                    fontSize="$6"
+                    fontWeight="600"
+                    color="$blue10"
+                    fontFamily="$heading"
+                  >
                     {fleet?.commissionRate || 15}%
                   </Text>
                   <Button
@@ -181,14 +193,20 @@ export default function FleetSettingsScreen() {
               )}
             </XStack>
             <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-              This percentage will be deducted from each rider's earnings as your fleet commission
+              This percentage will be deducted from each rider's earnings as
+              your fleet commission
             </Text>
           </YStack>
         </Card>
 
         {/* Settings Menu */}
         <YStack gap="$2">
-          <Text fontSize="$5" fontWeight="600" color="$colorSecondary" fontFamily="$heading">
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            color="$colorSecondary"
+            fontFamily="$heading"
+          >
             General Settings
           </Text>
           {settingsItems.map((item, index) => (
@@ -211,10 +229,19 @@ export default function FleetSettingsScreen() {
                   <item.icon size={20} color="$colorMuted" />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$5" fontWeight="500" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="500"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     {item.title}
                   </Text>
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     {item.description}
                   </Text>
                 </YStack>
@@ -226,7 +253,12 @@ export default function FleetSettingsScreen() {
 
         {/* Fleet Stats */}
         <YStack gap="$3">
-          <Text fontSize="$5" fontWeight="600" color="$colorSecondary" fontFamily="$heading">
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            color="$colorSecondary"
+            fontFamily="$heading"
+          >
             Fleet Statistics
           </Text>
           <Card padding="$4" bordered>
@@ -278,7 +310,7 @@ export default function FleetSettingsScreen() {
         {/* App Info */}
         <YStack gap="$2" alignItems="center" marginTop="$4">
           <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-            TeincFoodBusiness v1.0.0
+            TeincFood Business v1.0.0
           </Text>
           <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
             © 2026 Teinc Solutions

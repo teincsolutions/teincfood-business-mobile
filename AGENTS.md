@@ -1,4 +1,4 @@
-# AGENTS.md — TeincFoodBusiness Integration Checklist
+# AGENTS.md — TeincFood Business Integration Checklist
 
 This file is for AI coding agents. Always re-read this file before starting work and check off completed items.
 
@@ -11,7 +11,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **No service code in UI** — screens call hooks, hooks call services. Never import a service file (`@/services/*`) directly from a screen file.
 - **Role isolation** — screens inside `app/(seller)/`, `app/(rider)/`, `app/(fleet)/` must not import from each other. Only shared code in `src/` crosses role boundaries.
 - **`{var && <Component>}` is dangerous** — If `var` can be `""` or `0` (falsy non-boolean), React renders it as bare text outside `<Text>`, causing "Text strings must be rendered within a <Text> component". The `??` operator only catches `null`/`undefined`, not other falsy values. Use `var ? <Component /> : null` (ternary) instead of `var && <Component />`.
-- **No bare punctuation in JSX text** — wrapping a value in literal parentheses/brackets like `Label ({value})` splits text into bare string fragments, causing "Text strings must be rendered within a <Text> component". Use template literals to keep it a single string: `` Label {`${value}`} ``.
+- **No bare punctuation in JSX text** — wrapping a value in literal parentheses/brackets like `Label ({value})` splits text into bare string fragments, causing "Text strings must be rendered within a <Text> component". Use template literals to keep it a single string: ``Label {`${value}`}``.
 - **`apiResponse ?? defaults` is a trap** — API responses are always defined objects (e.g. `{ data: [...], pagination: {...} }`), so `??` will never fire even when expected fields like `response.todayEarnings` are missing. Use per-field `response?.field ?? default` instead of full-object `response ?? defaults`.
 - **No manual data mapping** — every backend API resource gets a dedicated service file in `src/services/` with a corresponding model file in `src/models/`. Model types use **snake_case** to match the backend exactly. Never manually remap fields (e.g. `apiUser.full_name || apiUser.fullName`). The service passes raw API shapes; any camelCase conversion happens only at the hook boundary via a mapper function.
 - **Type per purpose, no field renaming** — never define a type that renames fields from the backend response/request shape. If you need types for different purposes (e.g. one for API responses, one for form state, one for API requests), create separate explicit interfaces in the appropriate file (`@/types/api/*` for API shapes, `@/types/*.types` for UI/form shapes). Each interface must use field names true to its purpose — form types can have `price: string` (input string), API types have `price_minor: number` (minor units). Never use one type to represent two different shapes with renamed fields.

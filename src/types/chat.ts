@@ -39,6 +39,7 @@ export interface ChatMessagePayload {
 
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed';
 
+/** Phoenix V2 WebSocket frame: [joinRef, ref, topic, event, payload] */
 export type PhoenixV2Frame = [
   joinRef: string | null,
   ref: string | null,

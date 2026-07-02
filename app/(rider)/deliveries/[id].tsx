@@ -270,11 +270,11 @@ export default function RiderDeliveryDetails() {
                   flex={1}
                   variant="outline"
                   icon={<MessageCircle size={18} />}
-                  onPress={() =>
-                    router.push(
-                      `/(communication)/chat/${delivery.customer.phone}`,
-                    )
-                  }
+                    onPress={() =>
+                      router.push(
+                        `/(communication)/chat/order?userId=${delivery.customer.user_id}&orderId=${delivery.order_id}&name=${encodeURIComponent(delivery.customer.name || "")}&phone=${encodeURIComponent(delivery.customer.phone || "")}`,
+                      )
+                    }
                 >
                   Message
                 </Button>
@@ -420,8 +420,7 @@ export default function RiderDeliveryDetails() {
           {/* Action Buttons */}
           <YStack gap="$3">
             {delivery.status === "assigned" &&
-              (updateStatus.isSuccess &&
-              updateStatus.variables?.action === "confirm-pickup" ? (
+              (delivery.rider_pickup_confirmed_at ? (
                 <Button
                   size="$5"
                   backgroundColor="$yellow10"

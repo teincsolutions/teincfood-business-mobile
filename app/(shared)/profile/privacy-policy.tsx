@@ -1,11 +1,20 @@
 // @ts-nocheck
 
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { YStack, XStack, Text, Card, Separator } from 'tamagui';
-import { Shield, Eye, Lock, Database, Share2, Bell, Settings, Mail } from '@tamagui/lucide-icons';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton } from '@/components/ui';
+import { ScrollView, TouchableOpacity } from "react-native";
+import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import {
+  Shield,
+  Eye,
+  Lock,
+  Database,
+  Share2,
+  Bell,
+  Settings,
+  Mail,
+} from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BackButton } from "@/components/ui";
 
 /**
  * Privacy Policy Screen
@@ -39,7 +48,9 @@ export default function PrivacyPolicy() {
             <XStack gap="$3" alignItems="center">
               <Shield size={24} color="$primary" />
               <YStack flex={1}>
-                <Text fontSize="$5" fontWeight="bold">Privacy Policy</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Privacy Policy
+                </Text>
                 <Text fontSize="$3" color="$colorMuted">
                   Last updated: March 31, 2026
                 </Text>
@@ -50,10 +61,15 @@ export default function PrivacyPolicy() {
           {/* Introduction */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Introduction</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Introduction
+              </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                At TeincFoodBusiness, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and services.
+                At TeincFood Business, we take your privacy seriously. This
+                Privacy Policy explains how we collect, use, disclose, and
+                safeguard your information when you use our mobile application
+                and services.
               </Text>
             </YStack>
           </Card>
@@ -63,7 +79,9 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Database size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Information We Collect</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Information We Collect
+                </Text>
               </XStack>
               <Separator />
               <YStack gap="$2">
@@ -75,7 +93,8 @@ export default function PrivacyPolicy() {
                   • Delivery address and location data
                 </Text>
                 <Text color="$colorMuted" lineHeight="$1">
-                  • Payment information (processed securely by third-party providers)
+                  • Payment information (processed securely by third-party
+                  providers)
                 </Text>
                 <Text color="$colorMuted" lineHeight="$1">
                   • Profile photo and identification documents
@@ -84,7 +103,8 @@ export default function PrivacyPolicy() {
               <YStack gap="$2" marginTop="$2">
                 <Text fontWeight="bold">Usage Information</Text>
                 <Text color="$colorMuted" lineHeight="$1">
-                  • Device information (model, operating system, unique identifiers)
+                  • Device information (model, operating system, unique
+                  identifiers)
                 </Text>
                 <Text color="$colorMuted" lineHeight="$1">
                   • Log data (IP address, access times, app features used)
@@ -101,7 +121,9 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Settings size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">How We Use Your Information</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  How We Use Your Information
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
@@ -135,7 +157,9 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Share2 size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Information Sharing</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Information Sharing
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
@@ -167,7 +191,9 @@ export default function PrivacyPolicy() {
           {/* Location Data */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Location Data</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Location Data
+              </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
                 We collect location data to:
@@ -184,7 +210,9 @@ export default function PrivacyPolicy() {
                 </Text>
               </YStack>
               <Text color="$colorMuted" marginTop="$2">
-                You can control location permissions through your device settings. Note that disabling location services may limit some features.
+                You can control location permissions through your device
+                settings. Note that disabling location services may limit some
+                features.
               </Text>
             </YStack>
           </Card>
@@ -194,11 +222,14 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Lock size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Data Security</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Data Security
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                We implement appropriate security measures to protect your information, including:
+                We implement appropriate security measures to protect your
+                information, including:
               </Text>
               <YStack gap="$2">
                 <Text color="$colorMuted" lineHeight="$1">
@@ -222,7 +253,9 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Eye size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Your Rights</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Your Rights
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
@@ -253,7 +286,9 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Bell size={20} color="$colorMuted" />
-                <Text fontSize="$5" fontWeight="bold">Communications</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Communications
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
@@ -274,7 +309,8 @@ export default function PrivacyPolicy() {
                 </Text>
               </YStack>
               <Text color="$colorMuted" marginTop="$2">
-                You can manage notification preferences in your account settings.
+                You can manage notification preferences in your account
+                settings.
               </Text>
             </YStack>
           </Card>
@@ -282,10 +318,15 @@ export default function PrivacyPolicy() {
           {/* Children's Privacy */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Children's Privacy</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Children's Privacy
+              </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                Our services are not intended for individuals under the age of 18. We do not knowingly collect personal information from children. If you believe we have inadvertently collected information from a child, please contact us immediately.
+                Our services are not intended for individuals under the age of
+                18. We do not knowingly collect personal information from
+                children. If you believe we have inadvertently collected
+                information from a child, please contact us immediately.
               </Text>
             </YStack>
           </Card>
@@ -293,10 +334,15 @@ export default function PrivacyPolicy() {
           {/* Changes to Policy */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold">Changes to This Policy</Text>
+              <Text fontSize="$5" fontWeight="bold">
+                Changes to This Policy
+              </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last updated" date. We encourage you to review this policy periodically.
+                We may update this Privacy Policy from time to time. We will
+                notify you of any material changes by posting the new policy on
+                this page and updating the "Last updated" date. We encourage you
+                to review this policy periodically.
               </Text>
             </YStack>
           </Card>
@@ -306,11 +352,14 @@ export default function PrivacyPolicy() {
             <YStack gap="$3">
               <XStack gap="$2" alignItems="center">
                 <Mail size={20} color="$primary" />
-                <Text fontSize="$5" fontWeight="bold">Contact Us</Text>
+                <Text fontSize="$5" fontWeight="bold">
+                  Contact Us
+                </Text>
               </XStack>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                If you have questions or concerns about this Privacy Policy, please contact us:
+                If you have questions or concerns about this Privacy Policy,
+                please contact us:
               </Text>
               <YStack gap="$1">
                 <Text fontWeight="bold">Email: privacy@teincfoods.com</Text>
