@@ -156,10 +156,10 @@ export default function SellerOrders() {
         </XStack>
         <Separator />
         <XStack gap="$3">
-          <Button flex={1} size="$3" variant="outline" icon={<ExternalLink size={14} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
-          <Button flex={1} size="$3" variant="outline" icon={<Printer size={14} />} onPress={() => handlePrint(item)}>Print</Button>
+          <Button flex={1} variant="outline" height={40} icon={<ExternalLink size={14} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
+          <Button flex={1} variant="outline" height={40} icon={<Printer size={14} />} onPress={() => handlePrint(item)}>Print</Button>
           {CANCELLABLE_STATUSES.includes(item.status) && (
-            <Button size="$3" variant="dangerOutline" icon={<FileText size={14} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
+            <Button variant="dangerOutline" height={40} icon={<FileText size={14} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
           )}
         </XStack>
       </YStack>
@@ -195,10 +195,10 @@ export default function SellerOrders() {
         <Text fontSize="$4" color="$colorMuted">{timeSince(item.inserted_at)}</Text>
       </XStack>
       <XStack gap="$3" width={colWidths.actions} justifyContent="flex-end">
-        <Button size="$4" variant="outline" icon={<ExternalLink size={16} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
-        <Button size="$4" variant="outline" icon={<Printer size={16} />} onPress={() => handlePrint(item)}>Print</Button>
+        <Button variant="outline" height={40} paddingHorizontal="$3" icon={<ExternalLink size={16} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
+        <Button variant="outline" height={40} paddingHorizontal="$3" icon={<Printer size={16} />} onPress={() => handlePrint(item)}>Print</Button>
         {CANCELLABLE_STATUSES.includes(item.status) && (
-          <Button size="$4" variant="dangerOutline" icon={<FileText size={16} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
+          <Button variant="dangerOutline" height={40} paddingHorizontal="$3" icon={<FileText size={16} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
         )}
       </XStack>
     </XStack>
@@ -220,17 +220,17 @@ export default function SellerOrders() {
     <XStack
       borderBottomWidth={2}
       borderBottomColor="$borderColor"
-      paddingVertical="$2"
-      paddingHorizontal="$3"
+      paddingVertical="$3"
+      paddingHorizontal="$4"
       backgroundColor="$backgroundSoft"
     >
-      <Text fontWeight="bold" width={colWidths.order} fontSize="$3" color="$colorMuted">Order #</Text>
-      <Text fontWeight="bold" width={colWidths.customer} fontSize="$3" color="$colorMuted">Customer</Text>
-      <Text fontWeight="bold" width={colWidths.status} fontSize="$3" color="$colorMuted">Status</Text>
-      <Text fontWeight="bold" width={colWidths.items} fontSize="$3" color="$colorMuted">Items</Text>
-      <Text fontWeight="bold" width={colWidths.total} fontSize="$3" color="$colorMuted">Total</Text>
-      <Text fontWeight="bold" width={colWidths.time} fontSize="$3" color="$colorMuted">Time</Text>
-      <Text fontWeight="bold" width={colWidths.actions} fontSize="$3" color="$colorMuted" textAlign="right">Actions</Text>
+      <Text fontWeight="bold" width={colWidths.order} fontSize="$4" color="$colorMuted">Order #</Text>
+      <Text fontWeight="bold" width={colWidths.customer} fontSize="$4" color="$colorMuted">Customer</Text>
+      <Text fontWeight="bold" width={colWidths.status} fontSize="$4" color="$colorMuted">Status</Text>
+      <Text fontWeight="bold" width={colWidths.items} fontSize="$4" color="$colorMuted">Items</Text>
+      <Text fontWeight="bold" width={colWidths.total} fontSize="$4" color="$colorMuted">Total</Text>
+      <Text fontWeight="bold" width={colWidths.time} fontSize="$4" color="$colorMuted">Time</Text>
+      <Text fontWeight="bold" width={colWidths.actions} fontSize="$4" color="$colorMuted" textAlign="right">Actions</Text>
     </XStack>
   );
 

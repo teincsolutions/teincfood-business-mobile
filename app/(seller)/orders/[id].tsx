@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { YStack, Text, Card, XStack, Separator } from "tamagui";
-import { ScrollView, Linking } from "react-native";
+import { YStack, Text, Card, XStack, Separator, Sheet } from "tamagui";
+import { ScrollView, Linking, Modal } from "react-native";
+import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
 import {
@@ -13,6 +14,8 @@ import {
   Check,
   Bike,
   Truck,
+  Printer,
+  Eye,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -29,6 +32,7 @@ import {
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { useAvailableRidersQuery, useAssignRiderMutation } from "@/hooks/kiosk.hooks";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
+import { printService } from "@/services/print.service";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "$yellow9",
@@ -71,11 +75,34 @@ export default function OrderDetails() {
     onConfirm: () => void;
   } | null>(null);
   const [showRiderSheet, setShowRiderSheet] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<{ html: string } | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   const order = data?.data;
   const showDialog = (title: string, description: string, onConfirm: () => void, isDestructive = false) => {
     setDialogConfig({ title, description, onConfirm, isDestructive });
     setDialogOpen(true);
+  };
+
+  const handlePrint = async () => {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      await printService.printOrderReceipt(order!.id);
+    } catch {
+      toast.error("Print failed");
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    try {
+      const html = await printService.fetchReceipt(order!.id, 'html');
+      setReceiptPreview({ html });
+    } catch {
+      toast.error("Failed to load receipt preview");
+    }
   };
 
   if (isLoading) {
@@ -252,6 +279,16 @@ export default function OrderDetails() {
 
           {/* Action Buttons */}
           <YStack gap="$3" marginTop="$2">
+            {/* Receipt actions — always visible */}
+            <XStack gap="$3">
+              <Button flex={1} variant="outline" height={40} icon={<Eye size={16} />} onPress={handlePreview}>
+                Preview Receipt
+              </Button>
+              <Button flex={1} variant="primary" height={40} icon={<Printer size={16} />} onPress={handlePrint} disabled={printing}>
+                {printing ? "Printing..." : "Print Receipt"}
+              </Button>
+            </XStack>
+
             {order.status === "pending" && (
               <>
                 <Button variant="info" width="100%" onPress={() => showDialog("Accept Order", "Accept this order and start preparing?", () => acceptMutation.mutate(order.id))}>
@@ -290,6 +327,30 @@ export default function OrderDetails() {
           </YStack>
         </YStack>
       </ScrollView>
+
+      {/* Receipt Preview Modal */}
+      <Modal visible={receiptPreview !== null} animationType="slide" onRequestClose={() => setReceiptPreview(null)}>
+        <YStack flex={1} backgroundColor="$background">
+          <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
+            <BackButton onPress={() => setReceiptPreview(null)} />
+            <Text fontSize="$6" fontWeight="bold" flex={1}>Receipt Preview</Text>
+            <Button variant="outline" height={40} icon={<Printer size={16} />} onPress={() => {
+              setReceiptPreview(null);
+              handlePrint();
+            }}>
+              Print
+            </Button>
+          </XStack>
+          {receiptPreview && (
+            <WebView
+              source={{ html: receiptPreview.html }}
+              style={{ flex: 1 }}
+              originWhitelist={['*']}
+              scalesPageToFit
+            />
+          )}
+        </YStack>
+      </Modal>
 
       <RiderSelectionSheet
         visible={showRiderSheet}
