@@ -44,5 +44,5 @@ export async function fetchAvailableRiders(businessId?: string): Promise<{ data:
 }
 
 export async function assignKioskOrderToRider(orderId: string, riderId: string): Promise<{ data: Record<string, unknown> }> {
-  return api.post('/deliveries/assign', { delivery_id: orderId, rider_id: riderId });
+  return api.post('/deliveries/assign', { order_id: orderId, rider_id: riderId });
 }

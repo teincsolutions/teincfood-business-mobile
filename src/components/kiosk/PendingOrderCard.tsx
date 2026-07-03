@@ -4,6 +4,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  ChefHat,
   FileText,
   User,
 } from "@tamagui/lucide-icons";
@@ -16,6 +17,7 @@ interface PendingOrderCardProps {
   order: SellerOrder;
   onAccept: (orderId: string) => void;
   onReject: (orderId: string) => void;
+  onStartPreparing: (orderId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
   getTimeSince: (dateString: string | null | undefined) => number;
 }
@@ -24,15 +26,18 @@ export function PendingOrderCard({
   order,
   onAccept,
   onReject,
+  onStartPreparing,
   onViewDetails,
   getTimeSince,
 }: PendingOrderCardProps) {
+  const isAccepted = order.status === "accepted";
+
   return (
     <Card
       padding="$4"
       bordered
-      backgroundColor="$backgroundOrange"
-      borderColor="$primary"
+      backgroundColor={isAccepted ? "$yellow2" : "$backgroundOrange"}
+      borderColor={isAccepted ? "$warning" : "$primary"}
       borderWidth={1}
       onPress={() => onViewDetails(order)}
       pressStyle={{ opacity: 0.8 }}
@@ -52,12 +57,12 @@ export function PendingOrderCard({
         </XStack>
 
         <Badge
-          backgroundColor="$primary"
+          backgroundColor={isAccepted ? "$warning" : "$primary"}
           size="$2"
           alignSelf="flex-start"
         >
           <Text color="white" fontSize="$1" fontWeight="bold">
-            PENDING
+            {isAccepted ? "ACCEPTED" : "PENDING"}
           </Text>
         </Badge>
 
@@ -98,32 +103,44 @@ export function PendingOrderCard({
           <Text fontSize="$5" fontWeight="bold">
             {formatPriceFromMinor(order.total_minor, order.currency)}
           </Text>
-          <XStack gap="$2">
+          {isAccepted ? (
             <Button
-              size="$1.5"
-              height="$8"
+              height="$12"
               $lg={{ height: "$12" }}
-              backgroundColor="$error"
-              onPress={() => onReject(order.id)}
-              icon={<XCircle size={18} color="white" />}
+              backgroundColor="$warning"
+              onPress={() => onStartPreparing(order.id)}
+              icon={<ChefHat size={18} color="white" />}
             >
-              <Text color="white" fontWeight="bold">
-                REJECT
-              </Text>
+              <Text color="white" fontWeight="bold">START PREPARING</Text>
             </Button>
-            <Button
-              size="$1.5"
-              height="$8"
-              $lg={{ height: "$12" }}
-              backgroundColor="$success"
-              onPress={() => onAccept(order.id)}
-              icon={<CheckCircle size={18} color="white" />}
-            >
-              <Text color="white" fontWeight="bold">
-                ACCEPT
-              </Text>
-            </Button>
-          </XStack>
+          ) : (
+            <XStack gap="$2">
+              <Button
+                size="$1.5"
+                height="$8"
+                $lg={{ height: "$12" }}
+                backgroundColor="$error"
+                onPress={() => onReject(order.id)}
+                icon={<XCircle size={18} color="white" />}
+              >
+                <Text color="white" fontWeight="bold">
+                  REJECT
+                </Text>
+              </Button>
+              <Button
+                size="$1.5"
+                height="$8"
+                $lg={{ height: "$12" }}
+                backgroundColor="$success"
+                onPress={() => onAccept(order.id)}
+                icon={<CheckCircle size={18} color="white" />}
+              >
+                <Text color="white" fontWeight="bold">
+                  ACCEPT
+                </Text>
+              </Button>
+            </XStack>
+          )}
         </XStack>
       </YStack>
     </Card>

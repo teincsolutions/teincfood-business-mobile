@@ -9,6 +9,7 @@ import {
   ChevronRight,
   MailOpen,
   Printer,
+  Percent,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -111,6 +112,12 @@ export default function SellerSettings() {
       label: "Printer Settings",
       description: "Configure POS thermal printer",
       route: "/(seller)/settings/printer",
+    },
+    {
+      icon: Percent,
+      label: "Tax Settings",
+      description: "Configure tax rules for orders",
+      route: "/(seller)/settings/tax-settings",
     },
     {
       icon: CreditCard,

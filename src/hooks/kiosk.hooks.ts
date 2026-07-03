@@ -63,6 +63,17 @@ export function useRejectKioskOrderMutation() {
   });
 }
 
+export function useStartPreparingKioskOrderMutation() {
+  const businessId = useBusinessId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => kioskService.startPreparingKioskOrder(orderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
+    },
+  });
+}
+
 export function useMarkKioskOrderReadyMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
@@ -82,6 +93,9 @@ export function useAssignRiderMutation() {
       kioskService.assignKioskOrderToRider(orderId, riderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
+    },
+    onError: (error) => {
+      console.debug('Assign rider mutation failed:', error);
     },
   });
 }

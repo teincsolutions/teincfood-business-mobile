@@ -43,9 +43,12 @@ import { formatPriceFromMinor } from "@/utils/currency";
 
 const FILTER_CHIPS = [
   { key: "pending", label: "Pending", color: "$yellow9" },
-  { key: "accepted", label: "In Progress", color: "$blue9", statuses: ["accepted", "preparing"] },
+  { key: "accepted", label: "Accepted", color: "$orange9" },
+  { key: "preparing", label: "Preparing", color: "$blue9" },
   { key: "ready", label: "Ready", color: "$green9" },
+  { key: "waiting_pickup", label: "Waiting Pickup", color: "$blue9" },
   { key: "on_the_way", label: "In Transit", color: "$blue9" },
+  { key: "arrived", label: "Arrived", color: "$green9" },
   { key: "delivered", label: "Delivered", color: "$gray9" },
   { key: "cancelled", label: "Cancelled", color: "$red9" },
 ];
@@ -55,12 +58,14 @@ const CHIP_COLORS = {
   accepted: "$orange9",
   preparing: "$blue9",
   ready: "$green9",
+  waiting_pickup: "$blue9",
   on_the_way: "$blue9",
+  arrived: "$green9",
   delivered: "$gray9",
   cancelled: "$red9",
 };
 
-const DEFAULT_CHIPS = ["pending", "accepted", "ready", "on_the_way"];
+const DEFAULT_CHIPS = ["pending", "accepted", "preparing", "ready", "waiting_pickup", "on_the_way", "arrived", "delivered"];
 const CANCELLABLE_STATUSES = ["pending", "accepted", "preparing"];
 
 function formatStatus(status: string) {
@@ -73,11 +78,6 @@ function timeSince(dateStr: string) {
   if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
   return `${hrs}h ${mins % 60}m`;
-}
-
-function chipStatuses(chipKey: string): string[] {
-  const chip = FILTER_CHIPS.find((c) => c.key === chipKey);
-  return chip?.statuses || [chipKey];
 }
 
 export default function SellerOrders() {
@@ -100,7 +100,7 @@ export default function SellerOrders() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeChips, setActiveChips] = useState<string[]>(
-    isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "ready"],
+    isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "preparing", "ready"],
   );
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
@@ -113,8 +113,7 @@ export default function SellerOrders() {
   const allOrders = data?.data || [];
 
   const filteredOrders = useMemo(() => {
-    const statuses = activeChips.flatMap(chipStatuses);
-    let result = allOrders.filter((o) => statuses.includes(o.status));
+    let result = allOrders.filter((o) => activeChips.includes(o.status));
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(
@@ -384,7 +383,7 @@ export default function SellerOrders() {
                 {searchQuery ? "No orders match your search" : "No orders for the selected filters"}
               </Text>
               {(searchQuery || activeChips.length > 0) && (
-                <Button variant="outline" marginTop="$3" onPress={() => { setSearchQuery(""); setActiveChips(isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "ready"]); }}>
+                <Button variant="outline" marginTop="$3" onPress={() => { setSearchQuery(""); setActiveChips(isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "preparing", "ready"]); }}>
                   Reset Filters
                 </Button>
               )}

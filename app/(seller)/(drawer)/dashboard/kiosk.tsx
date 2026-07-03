@@ -53,6 +53,7 @@ import {
   useKioskOrdersQuery,
   useAcceptKioskOrderMutation,
   useRejectKioskOrderMutation,
+  useStartPreparingKioskOrderMutation,
   useMarkKioskOrderReadyMutation,
   useAssignRiderMutation,
   useAvailableRidersQuery,
@@ -163,13 +164,14 @@ export default function KioskMode() {
   const { data, isRefetching, refetch } = useKioskOrdersQuery(autoRefresh);
   const acceptOrder = useAcceptKioskOrderMutation();
   const rejectOrder = useRejectKioskOrderMutation();
+  const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
   const assignRider = useAssignRiderMutation();
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
 
   const allOrders = data?.data ?? [];
-  const pendingOrders = allOrders.filter((o) => o.status === "pending");
-  const preparingOrders = allOrders.filter((o) => o.status === "accepted" || o.status === "preparing");
+  const pendingOrders = allOrders.filter((o) => o.status === "pending" || o.status === "accepted");
+  const preparingOrders = allOrders.filter((o) => o.status === "preparing");
   const readyOrders = allOrders.filter((o) => o.status === "ready");
 
   const playSound = (type: "success" | "alert" | "error") => {
@@ -227,6 +229,27 @@ export default function KioskMode() {
       },
       icon: XCircle,
       isDestructive: true,
+    });
+  };
+
+  const handleStartPreparing = (orderId: string) => {
+    triggerHaptic("medium");
+
+    const order = pendingOrders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    setDialog({
+      open: true,
+      title: "Start Preparing",
+      description: `Start preparing ${order.order_number}?`,
+      confirmText: "Start",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        startPreparing.mutate(orderId);
+        setDialog(defaultDialogState);
+      },
+      icon: CheckCircle,
+      isDestructive: false,
     });
   };
 
@@ -459,6 +482,7 @@ export default function KioskMode() {
                     order={order}
                     onAccept={handleAcceptOrder}
                     onReject={handleRejectOrder}
+                    onStartPreparing={handleStartPreparing}
                     onViewDetails={handleViewDetails}
                     getTimeSince={getTimeSince}
                   />
@@ -662,6 +686,7 @@ export default function KioskMode() {
                     order={order}
                     onAccept={handleAcceptOrder}
                     onReject={handleRejectOrder}
+                    onStartPreparing={handleStartPreparing}
                     onViewDetails={handleViewDetails}
                     getTimeSince={getTimeSince}
                   />

@@ -90,10 +90,17 @@ export interface PromoResponse {
 
 export interface TaxRule {
   id: string;
-  name: string;
-  rate_percent: number;
-  is_active: boolean;
   business_id: string;
+  name: string;
+  code: string;
+  country_code: string;
+  rate_basis_points: number;
+  applies_to: 'subtotal' | 'subtotal_plus_delivery';
+  is_inclusive: boolean;
+  is_active: boolean;
+  display_order: number;
+  inserted_at: string;
+  updated_at: string;
 }
 
 export interface TaxRuleListResponse {
@@ -102,4 +109,17 @@ export interface TaxRuleListResponse {
 
 export interface TaxRuleResponse {
   data: TaxRule;
+}
+
+export interface TaxRuleRequest {
+  tax_rule: {
+    name: string;
+    code: string;
+    country_code: string;
+    rate_basis_points: number;
+    applies_to: 'subtotal' | 'subtotal_plus_delivery';
+    is_inclusive: boolean;
+    is_active: boolean;
+    display_order?: number;
+  };
 }
