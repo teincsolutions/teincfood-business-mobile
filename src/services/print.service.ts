@@ -10,13 +10,18 @@ export const printService = {
   async fetchReceipt(orderId: string, format: 'html' | 'escpos' = 'html'): Promise<string> {
     const token = useAuthStore.getState().accessToken;
     const url = `${API_BASE_URL}/orders/${orderId}/receipt?format=${format}`;
+    console.debug('[PrintService] fetchReceipt', { url, format });
     const response = await fetch(url, {
       headers: {
         Authorization: token ? `Bearer ${token}` : '',
         Accept: format === 'html' ? 'text/html' : 'text/plain',
       },
     });
-    if (!response.ok) throw new Error('Failed to fetch receipt');
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      console.debug('[PrintService] fetchReceipt failed', { status: response.status, body });
+      throw new Error(`Failed to fetch receipt (${response.status}): ${body.slice(0, 200)}`);
+    }
     return response.text();
   },
 

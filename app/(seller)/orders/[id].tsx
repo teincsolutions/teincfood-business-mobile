@@ -84,24 +84,26 @@ export default function OrderDetails() {
     setDialogOpen(true);
   };
 
+  const handlePreview = async () => {
+    try {
+      const html = await printService.fetchReceipt(order!.id, 'html');
+      setReceiptPreview({ html });
+    } catch (err) {
+      console.debug('[ReceiptPreview] Failed', err);
+      toast.error("Failed to load receipt preview — check backend logs");
+    }
+  };
+
   const handlePrint = async () => {
     if (printing) return;
     setPrinting(true);
     try {
       await printService.printOrderReceipt(order!.id);
-    } catch {
-      toast.error("Print failed");
+    } catch (err) {
+      console.debug('[Print] Failed', err);
+      toast.error("Print failed — check backend logs");
     } finally {
       setPrinting(false);
-    }
-  };
-
-  const handlePreview = async () => {
-    try {
-      const html = await printService.fetchReceipt(order!.id, 'html');
-      setReceiptPreview({ html });
-    } catch {
-      toast.error("Failed to load receipt preview");
     }
   };
 
