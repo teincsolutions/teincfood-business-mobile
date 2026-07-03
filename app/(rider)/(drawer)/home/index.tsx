@@ -55,6 +55,7 @@ export default function RiderHome() {
   // Rider status from backend: 'available' | 'busy' | 'offline'
   const riderStatus = metricsData?.status || 'offline';
   const isAvailable = riderStatus === 'available';
+  const isOnline = riderStatus !== 'offline';
   const statusLabel = riderStatus === 'available' ? 'Available' : riderStatus === 'busy' ? 'On Delivery' : 'Offline';
   const statusColor = riderStatus === 'available' ? '$success' : riderStatus === 'busy' ? '$blue9' : '$colorMuted';
 
@@ -131,10 +132,10 @@ export default function RiderHome() {
           </XStack>
           <Switch
             size="$8"
-            checked={isAvailable}
+            checked={isOnline}
             disabled={riderStatus === 'busy'}
             onCheckedChange={(val) => updateOnlineStatus.mutate(val)}
-            backgroundColor={isAvailable ? "$success" : "$colorMuted"}
+            backgroundColor={isOnline ? "$success" : "$colorMuted"}
           >
             <Switch.Thumb animation="quick" backgroundColor="white" />
           </Switch>
@@ -338,7 +339,7 @@ export default function RiderHome() {
         ) : null}
 
         {/* Quick Actions */}
-        {isAvailable ? (
+        {isOnline ? (
           <Card padding="$4" bordered>
             <YStack gap="$3">
               <Text fontSize="$5" fontWeight="bold">

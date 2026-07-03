@@ -38,8 +38,8 @@ export async function confirmKioskPickup(orderId: string): Promise<{ data: Recor
 }
 
 export async function fetchAvailableRiders(businessId?: string): Promise<{ data: Record<string, unknown>[] }> {
-  return api.get('/business/riders', {
-    params: { filter: 'available', ...(businessId ? { business_id: businessId } : {}) },
+  return api.get('/deliveries/available-riders', {
+    params: { business_id: businessId },
   });
 }
 

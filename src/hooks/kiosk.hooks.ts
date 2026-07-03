@@ -28,7 +28,16 @@ export function useAvailableRidersQuery(enabled = true) {
     queryKey: KIOSK_KEYS.riders(businessId),
     queryFn: () => kioskService.fetchAvailableRiders(businessId),
     enabled,
-    staleTime: 10000,
+    staleTime: 0,
+    select: (response) =>
+      (response?.data ?? []).map((rider: Record<string, any>) => ({
+        id: rider.id,
+        name: rider.user?.full_name || rider.rider_number || 'Rider',
+        phone: rider.phone || null,
+        vehicle_type: rider.vehicle?.type || null,
+        rating: null,
+        distance: null,
+      })),
   });
 }
 
