@@ -77,6 +77,28 @@ export async function acceptBusinessInvitation(data: { code: string }): Promise<
   return api.post<{ data: Record<string, unknown> }>('/businesses/memberships/accept', data);
 }
 
+// ─── User Invitations ───
+
+export interface UserInvitation {
+  id: string;
+  type: 'fleet_rider' | 'business_member' | 'rider_linked';
+  status: string;
+  business_name: string | null;
+  business_id: string | null;
+  code: string | null;
+  role?: string;
+  is_fleet_managed: boolean;
+  created_at: string | null;
+}
+
+export async function fetchUserInvitations(): Promise<{ data: UserInvitation[] }> {
+  return api.get<{ data: UserInvitation[] }>('/users/me/invitations');
+}
+
+export async function leaveBusiness(invitationId: string): Promise<{ data: { status: string } }> {
+  return api.post<{ data: { status: string } }>(`/users/me/invitations/${invitationId}/leave`);
+}
+
 // ─── Operating Hours ───
 
 export async function fetchOperatingHours(businessId: string): Promise<OperatingHoursResponse> {

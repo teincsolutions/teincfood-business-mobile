@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Menu,
   Copy,
+  MailOpen,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRiderProfileQuery } from "@/hooks/useRider";

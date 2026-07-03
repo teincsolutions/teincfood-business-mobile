@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Users,
   Bike,
+  MailOpen,
   DollarSign,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
@@ -244,6 +245,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Notifications
+            </Text>
+          </Button>
+
+          {/* Invitations */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(shared)/invitations")}
+            icon={<MailOpen size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Invitations
             </Text>
           </Button>
 

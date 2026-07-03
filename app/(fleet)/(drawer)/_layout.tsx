@@ -15,6 +15,7 @@ import {
   Bell,
   LogOut,
   Menu,
+  MailOpen,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { AppAlertDialog, Button } from "@/components/ui";
@@ -160,6 +161,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4" fontFamily="$body">
               Notifications
+            </Text>
+          </Button>
+
+          {/* Invitations */}
+          <Button
+            variant="ghost"
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            onPress={() => router.push("/(shared)/invitations")}
+            icon={<MailOpen size={20} color={theme.color.val} />}
+            justifyContent="flex-start"
+          >
+            <Text flex={1} fontSize="$4" fontFamily="$body">
+              Invitations
             </Text>
           </Button>
 
