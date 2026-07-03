@@ -215,7 +215,7 @@ export function useRejectOrderMutation() {
 export function useConfirmHandoverMutation() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return   useMutation({
     mutationFn: (deliveryId: string) => sellerService.confirmHandover(deliveryId),
 
     onSuccess: () => {
@@ -227,7 +227,7 @@ export function useConfirmHandoverMutation() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.orders() });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
     },
   });
 }

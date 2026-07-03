@@ -139,6 +139,7 @@ export interface SellerOrder {
 export interface SellerOrderDetail extends SellerOrder {
   notes: string | null;
   delivery_person: DeliveryPerson | null;
+  delivery_id: string | null;
   eta_minutes: number | null;
   status_history: StatusHistoryEntry[];
   business: OrderBusiness | null;

@@ -273,7 +273,7 @@ export default function OrderDetails() {
               </Button>
             )}
             {order.status === "ready" && order.delivery_person && (
-              <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_person.id))}>
+              <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
                 Confirm Handover to Rider
               </Button>
             )}

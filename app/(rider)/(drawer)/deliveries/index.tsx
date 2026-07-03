@@ -32,7 +32,7 @@ const FILTER_OPTIONS: { key: FilterOption; label: string }[] = [
 ];
 
 const ACTIVE_STATUSES = ['assigned', 'picked_up', 'en_route', 'arrived'];
-const COMPLETED_STATUSES = ['delivered'];
+const COMPLETED_STATUSES = ['delivered', 'cancelled', 'failed', 'returned'];
 
 function formatDeliveryAddress(address: unknown): string {
   if (!address) return 'Customer';
