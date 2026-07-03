@@ -266,23 +266,27 @@ export default function KioskMode() {
 
     const rider = riders?.find((r) => r.id === riderId);
 
-    setDialog({
-      open: true,
-      title: "Assign Rider",
-      description: `Are you sure you want to assign this order to ${rider?.name ?? "rider"}?`,
-      confirmText: "Assign",
-      cancelText: "Cancel",
-      onConfirm: () => {
-        triggerHaptic("medium");
-        playSound("success");
-        assignRider.mutate({ orderId: selectedOrderId, riderId });
-        setShowRiderSheet(false);
-        setSelectedOrderId(null);
-        setDialog(defaultDialogState);
-      },
-      icon: Truck,
-      isDestructive: false,
-    });
+    // Close the rider sheet first so the dialog renders on top
+    setShowRiderSheet(false);
+
+    setTimeout(() => {
+      setDialog({
+        open: true,
+        title: "Assign Rider",
+        description: `Are you sure you want to assign this order to ${rider?.name ?? "rider"}?`,
+        confirmText: "Assign",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          triggerHaptic("medium");
+          playSound("success");
+          assignRider.mutate({ orderId: selectedOrderId, riderId });
+          setSelectedOrderId(null);
+          setDialog(defaultDialogState);
+        },
+        icon: Truck,
+        isDestructive: false,
+      });
+    }, 100);
   };
 
   const getTimeSince = (dateString: string | null | undefined) => {

@@ -232,4 +232,18 @@ export function useConfirmHandoverMutation() {
   });
 }
 
+export function useCancelOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => sellerService.cancelOrder(orderId),
+    onSuccess: () => {
+      toast.success("Order cancelled");
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
+    },
+    onError: (error) => {
+      toast.error(extractApiErrorMessage(error));
+    },
+  });
+}
+
 export { SELLER_KEYS as sellerKeys };

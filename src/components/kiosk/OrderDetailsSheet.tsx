@@ -1,6 +1,5 @@
 // @ts-nocheck
-import { Modal } from "react-native";
-import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import { YStack, XStack, Text, Separator, Sheet, ScrollView } from "tamagui";
 import {
   Clock,
   X,
@@ -88,30 +87,14 @@ export function OrderDetailsSheet({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <YStack
-        flex={1}
-        justifyContent="flex-end"
-        backgroundColor="rgba(0,0,0,0.4)"
-      >
-        <YStack
-          backgroundColor="$background"
-          borderTopLeftRadius="$6"
-          borderTopRightRadius="$6"
-          padding="$5"
-          maxHeight="80%"
-        >
+    <Sheet modal open={visible} onOpenChange={(open) => !open && onClose()} snapPoints={[80]} dismissOnSnapToBottom zIndex={200_000}>
+      <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
+      <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$5">
+        <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+
+        <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <XStack
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom="$4"
-          >
+          <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
             <XStack gap="$3" alignItems="center">
               {getStatusIcon()}
               <YStack>
@@ -138,9 +121,7 @@ export function OrderDetailsSheet({
           {/* Customer */}
           {order.user?.full_name && (
             <YStack gap="$2" marginBottom="$4">
-              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-                Customer
-              </Text>
+              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">Customer</Text>
               <XStack gap="$2" alignItems="center">
                 <User size={16} color="$colorMuted" />
                 <Text fontSize="$4">{order.user.full_name}</Text>
@@ -151,28 +132,20 @@ export function OrderDetailsSheet({
           {/* Special Instructions */}
           {order.notes && (
             <YStack gap="$2" marginBottom="$4">
-              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-                Special Instructions
-              </Text>
+              <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">Special Instructions</Text>
               <XStack gap="$2" alignItems="flex-start">
                 <FileText size={16} color="$info" />
-                <Text fontSize="$4" color="$info" flex={1}>
-                  {order.notes}
-                </Text>
+                <Text fontSize="$4" color="$info" flex={1}>{order.notes}</Text>
               </XStack>
             </YStack>
           )}
 
           {/* Order Time */}
           <YStack gap="$2" marginBottom="$4">
-            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-              Order Time
-            </Text>
+            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">Order Time</Text>
             <XStack gap="$2" alignItems="center">
               <Clock size={16} color="$colorMuted" />
-              <Text fontSize="$4">
-                {getTimeSince(order.inserted_at)} minutes ago
-              </Text>
+              <Text fontSize="$4">{getTimeSince(order.inserted_at)} minutes ago</Text>
             </XStack>
           </YStack>
 
@@ -180,20 +153,12 @@ export function OrderDetailsSheet({
 
           {/* Order Items */}
           <YStack gap="$2" marginBottom="$4">
-            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-              Order Items
-            </Text>
+            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">Order Items</Text>
             <YStack gap="$2">
               {order.items.map((item) => (
-                <XStack
-                  key={item.id}
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
+                <XStack key={item.id} justifyContent="space-between" alignItems="center">
                   <XStack gap="$2" alignItems="center">
-                    <Text fontSize="$4" fontWeight="bold">
-                      {item.quantity}x
-                    </Text>
+                    <Text fontSize="$4" fontWeight="bold">{item.quantity}x</Text>
                     <Text fontSize="$4">{item.menu_item?.name}</Text>
                   </XStack>
                   <Text fontSize="$4" color="$colorMuted">
@@ -208,9 +173,7 @@ export function OrderDetailsSheet({
 
           {/* Payment */}
           <YStack gap="$2" marginBottom="$4">
-            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">
-              Payment
-            </Text>
+            <Text fontSize="$4" fontWeight="bold" color="$colorSecondary">Payment</Text>
             <XStack gap="$2" alignItems="center">
               {getPaymentIcon(order.payment_mode)}
               <Text fontSize="$4" textTransform="capitalize">
@@ -228,14 +191,8 @@ export function OrderDetailsSheet({
           <Separator marginBottom="$4" />
 
           {/* Total */}
-          <XStack
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom="$4"
-          >
-            <Text fontSize="$5" fontWeight="bold">
-              Total
-            </Text>
+          <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
+            <Text fontSize="$5" fontWeight="bold">Total</Text>
             <Text fontSize="$6" fontWeight="bold" color="$primary">
               {formatPriceFromMinor(order.total_minor, order.currency)}
             </Text>
@@ -245,8 +202,8 @@ export function OrderDetailsSheet({
           <Button flex={1} variant="outline" onPress={onClose}>
             <Text fontWeight="bold">Close</Text>
           </Button>
-        </YStack>
-      </YStack>
-    </Modal>
+        </ScrollView>
+      </Sheet.Frame>
+    </Sheet>
   );
 }

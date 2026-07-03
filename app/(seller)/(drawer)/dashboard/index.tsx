@@ -92,6 +92,9 @@ export default function SellerDashboard() {
     }
   };
 
+  const formatStatus = (status: string) =>
+    status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -341,9 +344,8 @@ export default function SellerDashboard() {
                       <Text
                         fontSize="$2"
                         color="$color.white"
-                        textTransform="capitalize"
                       >
-                        {order.status}
+                        {formatStatus(order.status)}
                       </Text>
                     </YStack>
                     <ChevronRight size={16} color="$colorMuted" />

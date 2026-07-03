@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   YStack,
   Text,
@@ -8,69 +8,113 @@ import {
   XStack,
   Separator,
   Spinner,
+  Sheet,
+  ScrollView,
 } from "tamagui";
-import { Filter, X, Check, Search } from "@tamagui/lucide-icons";
+import {
+  FileText,
+  Printer,
+  X,
+  Search,
+  ExternalLink,
+  Clock,
+  Package,
+} from "@tamagui/lucide-icons";
 import {
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
   TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import {
   useSellerOrdersQuery,
-  useAcceptOrderMutation,
-  useRejectOrderMutation,
-  useStartPreparingOrderMutation,
-  useMarkOrderReadyMutation,
+  useCancelOrderMutation,
   SELLER_KEYS,
 } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { useResponsive } from "@/utils/responsive";
+import { useTheme } from "tamagui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@/types/api";
-import { SellerOrderCard } from "@/components/orders/SellerOrderCard";
+import { formatPriceFromMinor } from "@/utils/currency";
 
-const FILTER_OPTIONS = [
-  "pending",
-  "accepted",
-  "preparing",
-  "ready",
-  "delivered",
+const FILTER_CHIPS = [
+  { key: "pending", label: "Pending", color: "$yellow9" },
+  { key: "accepted", label: "In Progress", color: "$blue9", statuses: ["accepted", "preparing"] },
+  { key: "ready", label: "Ready", color: "$green9" },
+  { key: "on_the_way", label: "In Transit", color: "$blue9" },
+  { key: "delivered", label: "Delivered", color: "$gray9" },
+  { key: "cancelled", label: "Cancelled", color: "$red9" },
 ];
 
+const CHIP_COLORS = {
+  pending: "$yellow9",
+  accepted: "$orange9",
+  preparing: "$blue9",
+  ready: "$green9",
+  on_the_way: "$blue9",
+  delivered: "$gray9",
+  cancelled: "$red9",
+};
+
+const DEFAULT_CHIPS = ["pending", "accepted", "ready", "on_the_way"];
+const CANCELLABLE_STATUSES = ["pending", "accepted", "preparing"];
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function timeSince(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  return `${hrs}h ${mins % 60}m`;
+}
+
+function chipStatuses(chipKey: string): string[] {
+  const chip = FILTER_CHIPS.find((c) => c.key === chipKey);
+  return chip?.statuses || [chipKey];
+}
+
 export default function SellerOrders() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isTablet, isLargeTablet } = useResponsive();
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const { width } = useResponsive();
+  const theme = useTheme();
+  const isTablet = width >= 768;
+
+  // Dynamic column widths based on screen width
+  const colWidths = {
+    order: Math.max(110, width * 0.13),
+    customer: Math.max(140, width * 0.16),
+    status: Math.max(100, width * 0.1),
+    items: 60,
+    total: Math.max(100, width * 0.11),
+    time: 65,
+    actions: Math.max(220, width * 0.2),
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeChips, setActiveChips] = useState<string[]>(
+    isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "ready"],
+  );
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
-  const acceptMutation = useAcceptOrderMutation();
-  const rejectMutation = useRejectOrderMutation();
-  const startPreparingMutation = useStartPreparingOrderMutation();
-  const markReadyMutation = useMarkOrderReadyMutation();
+  const cancelOrder = useCancelOrderMutation();
 
-  // Real-time order updates via WebSocket
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
-    title: string;
-    description: string;
-    isDestructive?: boolean;
-    onConfirm: () => void;
-  } | null>(null);
-
-  const orders = data?.data || [];
+  const allOrders = data?.data || [];
 
   const filteredOrders = useMemo(() => {
-    let result = orders;
-    if (selectedFilters.length > 0) {
-      result = result.filter((o) => selectedFilters.includes(o.status));
-    }
+    const statuses = activeChips.flatMap(chipStatuses);
+    let result = allOrders.filter((o) => statuses.includes(o.status));
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(
@@ -80,102 +124,145 @@ export default function SellerOrders() {
       );
     }
     return result;
-  }, [orders, selectedFilters, searchQuery]);
+  }, [allOrders, activeChips, searchQuery]);
 
-  const pendingOrders = filteredOrders.filter((o) => o.status === "pending");
-  const acceptedOrders = filteredOrders.filter((o) =>
-    ["accepted", "preparing"].includes(o.status),
-  );
-  const doneOrders = filteredOrders.filter((o) =>
-    ["ready", "delivered"].includes(o.status),
-  );
-
-  const toggleFilter = (status: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(status)
-        ? prev.filter((f) => f !== status)
-        : [...prev, status],
+  const toggleChip = (key: string) => {
+    setActiveChips((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
 
-  const clearFilters = () => setSelectedFilters([]);
+  const handlePrint = useCallback(async (order: SellerOrder) => {
+    try {
+      await printService.printOrderReceipt(order.id);
+    } catch {}
+  }, []);
 
-  const showDialog = (
-    title: string,
-    description: string,
-    onConfirm: () => void,
-    isDestructive = false,
-  ) => {
-    setDialogConfig({ title, description, onConfirm, isDestructive });
-    setDialogOpen(true);
-  };
-
-  const renderOrderCard = useCallback(
-    ({ item }: { item: SellerOrder }) => renderOrder(item),
-    [renderOrder],
+  // ── Phone: compact card ──
+  const renderPhoneCard = ({ item }: { item: SellerOrder }) => (
+    <Card padding="$4" bordered marginBottom="$3" pressStyle={{ scale: 0.98, opacity: 0.9 }}>
+      <YStack gap="$2">
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$5" fontWeight="bold">{item.order_number}</Text>
+          <YStack px="$2" py="$1" borderRadius="$3" backgroundColor={CHIP_COLORS[item.status] || "$gray9"}>
+            <Text fontSize="$2" color="white" fontWeight="600">{formatStatus(item.status)}</Text>
+          </YStack>
+        </XStack>
+        <XStack justifyContent="space-between">
+          <Text fontSize="$4">{item.user?.full_name || "Customer"}</Text>
+          <Text fontSize="$5" fontWeight="bold" color="$primary">
+            {formatPriceFromMinor(item.total_minor, item.currency)}
+          </Text>
+        </XStack>
+        <Separator />
+        <XStack gap="$3">
+          <Button flex={1} size="$3" variant="outline" icon={<ExternalLink size={14} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
+          <Button flex={1} size="$3" variant="outline" icon={<Printer size={14} />} onPress={() => handlePrint(item)}>Print</Button>
+          {CANCELLABLE_STATUSES.includes(item.status) && (
+            <Button size="$3" variant="dangerOutline" icon={<FileText size={14} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
+          )}
+        </XStack>
+      </YStack>
+    </Card>
   );
 
-  const renderOrder = useCallback(
-    (order: SellerOrder) => (
-      <SellerOrderCard
-        key={order.id}
-        item={order}
-        onAccept={(id) => acceptMutation.mutate(id)}
-        onReject={(id) => rejectMutation.mutate(id)}
-        onPrepare={(id) => startPreparingMutation.mutate(id)}
-        onMarkReady={(id) => markReadyMutation.mutate(id)}
-        showDialog={showDialog}
-      />
-    ),
-    [acceptMutation, rejectMutation, startPreparingMutation, markReadyMutation],
-  );
-
-  const renderColumn = (
-    title: string,
-    color: string,
-    items: SellerOrder[],
-    emptyText: string,
-  ) => (
-    <YStack flex={1} gap="$3">
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$5" fontWeight="bold" color={color}>
-          {title}
-        </Text>
-        <Text fontSize="$3" color="$colorMuted">
-          {items.length}
-        </Text>
+  // ── Tablet: table row ──
+  const renderTabletRow = ({ item }: { item: SellerOrder }) => (
+    <XStack
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+      paddingVertical="$4"
+      paddingHorizontal="$4"
+      alignItems="center"
+    >
+      <Text fontWeight="bold" width={colWidths.order} fontSize="$5">{item.order_number}</Text>
+      <YStack width={colWidths.customer}>
+        <Text fontSize="$4" numberOfLines={1}>{item.user?.full_name || "—"}</Text>
+        <Text fontSize="$3" color="$colorMuted">{item.user?.phone || ""}</Text>
+      </YStack>
+      <YStack px="$3" py="$2" borderRadius="$3" backgroundColor={CHIP_COLORS[item.status] || "$gray9"} width={colWidths.status}>
+        <Text fontSize="$3" color="$color" fontWeight="600" textAlign="center">{formatStatus(item.status)}</Text>
+      </YStack>
+      <XStack width={colWidths.items} gap="$2" alignItems="center">
+        <Package size={18} color="$colorMuted" />
+        <Text fontSize="$4">{item.items?.length || 0}</Text>
       </XStack>
-      {items.length === 0 ? (
-        <Card
-          padding="$5"
-          alignItems="center"
-          backgroundColor="$backgroundSoft"
-        >
-          <Text color="$colorMuted">{emptyText}</Text>
-        </Card>
-      ) : (
-        items.map(renderOrder)
-      )}
-    </YStack>
+      <Text fontSize="$5" fontWeight="bold" color="$primary" width={colWidths.total}>
+        {formatPriceFromMinor(item.total_minor, item.currency)}
+      </Text>
+      <XStack width={colWidths.time} gap="$2" alignItems="center">
+        <Clock size={16} color="$colorMuted" />
+        <Text fontSize="$4" color="$colorMuted">{timeSince(item.inserted_at)}</Text>
+      </XStack>
+      <XStack gap="$3" width={colWidths.actions} justifyContent="flex-end">
+        <Button size="$4" variant="outline" icon={<ExternalLink size={16} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)}>View</Button>
+        <Button size="$4" variant="outline" icon={<Printer size={16} />} onPress={() => handlePrint(item)}>Print</Button>
+        {CANCELLABLE_STATUSES.includes(item.status) && (
+          <Button size="$4" variant="dangerOutline" icon={<FileText size={16} />} onPress={() => setCancelTarget(item.id)}>Cancel</Button>
+        )}
+      </XStack>
+    </XStack>
   );
 
   if (isLoading) {
     return (
-      <YStack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        backgroundColor="$background"
-      >
+      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
         <Spinner size="large" color="$primary" />
       </YStack>
     );
   }
 
+  // ── Tablet: full table layout ──
+  const tableTotalWidth = Object.values(colWidths).reduce((a, b) => a + b, 0) + 48;
+  const needsHScroll = tableTotalWidth > width;
+
+  const tableHeader = (
+    <XStack
+      borderBottomWidth={2}
+      borderBottomColor="$borderColor"
+      paddingVertical="$2"
+      paddingHorizontal="$3"
+      backgroundColor="$backgroundSoft"
+    >
+      <Text fontWeight="bold" width={colWidths.order} fontSize="$3" color="$colorMuted">Order #</Text>
+      <Text fontWeight="bold" width={colWidths.customer} fontSize="$3" color="$colorMuted">Customer</Text>
+      <Text fontWeight="bold" width={colWidths.status} fontSize="$3" color="$colorMuted">Status</Text>
+      <Text fontWeight="bold" width={colWidths.items} fontSize="$3" color="$colorMuted">Items</Text>
+      <Text fontWeight="bold" width={colWidths.total} fontSize="$3" color="$colorMuted">Total</Text>
+      <Text fontWeight="bold" width={colWidths.time} fontSize="$3" color="$colorMuted">Time</Text>
+      <Text fontWeight="bold" width={colWidths.actions} fontSize="$3" color="$colorMuted" textAlign="right">Actions</Text>
+    </XStack>
+  );
+
+  const table = (
+    <YStack flex={1}>
+      {tableHeader}
+      {filteredOrders.length === 0 ? (
+        <YStack padding="$8" alignItems="center">
+          <Text color="$colorMuted" fontSize="$4" textAlign="center">
+            {searchQuery ? "No orders match your search" : "No orders for the selected filters"}
+          </Text>
+        </YStack>
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTabletRow}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
+          initialNumToRender={20}
+          windowSize={10}
+          maxToRenderPerBatch={15}
+          removeClippedSubviews
+        />
+      )}
+    </YStack>
+  );
+
   return (
     <YStack flex={1} backgroundColor="$background">
-      {/* Search + Filter Header */}
-      <YStack paddingHorizontal="$4" paddingTop="$2" gap="$2">
+      {/* Search + Filter chips */}
+      <YStack padding="$4" gap="$3" paddingBottom="$2">
         <XStack gap="$2" alignItems="center">
           <XStack
             flex={1}
@@ -200,104 +287,105 @@ export default function SellerOrders() {
             height={40}
             paddingHorizontal="$3"
             borderWidth={1}
-            borderColor={selectedFilters.length > 0 ? "$blue9" : "$borderColor"}
+            borderColor={activeChips.length > 0 ? "$primary" : "$borderColor"}
             borderRadius="$3"
-            backgroundColor={
-              selectedFilters.length > 0 ? "$blue2" : "$background"
-            }
-            onPress={() => setFilterModalVisible(true)}
-            icon={
-              <Filter
-                size={16}
-                color={selectedFilters.length > 0 ? "$blue9" : "$color"}
-              />
-            }
+            backgroundColor={activeChips.length > 0 ? "$primary" : "$background"}
+            onPress={() => setFilterSheetOpen(true)}
           >
-            <Text
-              fontFamily="$body"
-              fontWeight="600"
-              fontSize="$3"
-              color={selectedFilters.length > 0 ? "$blue9" : "$color"}
-            >
-              Filter
-              {selectedFilters.length > 0 ? ` (${selectedFilters.length})` : ""}
+            <Text fontFamily="$body" fontWeight="600" fontSize="$3" color={activeChips.length > 0 ? "$color" : "$color"}>
+              Filters
             </Text>
           </Button>
         </XStack>
+
+        {/* Filter chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <XStack gap="$2" paddingVertical="$1">
+            {FILTER_CHIPS.map((chip) => {
+              const active = activeChips.includes(chip.key);
+              return (
+                <Pressable key={chip.key} onPress={() => toggleChip(chip.key)}>
+                  <YStack px="$3" py="$2" borderRadius="$4" borderWidth={1}
+                    borderColor={active ? chip.color : "$borderColor"}
+                    backgroundColor={active ? chip.color : "$background"}
+                  >
+                    <Text fontSize="$3" fontWeight="600" color={active ? "$color" : "$color"}>{chip.label}</Text>
+                  </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+        </ScrollView>
       </YStack>
 
+      {/* Order list */}
       {isTablet ? (
-        <XStack padding="$4" gap="$4" alignItems="flex-start" flex={1}>
-          {renderColumn(
-            "Pending",
-            "$yellow9",
-            pendingOrders,
-            "No pending orders",
-          )}
-
-          {isLargeTablet ? (
-            <>
-              {renderColumn(
-                "In Progress",
-                "$blue9",
-                acceptedOrders,
-                "No orders in progress",
-              )}
-              {renderColumn(
-                "Completed",
-                "$green9",
-                doneOrders,
-                "No completed orders",
-              )}
-            </>
-          ) : (
-            <YStack flex={1} gap="$4">
-              {renderColumn(
-                "In Progress",
-                "$blue9",
-                acceptedOrders,
-                "No orders in progress",
-              )}
-              {renderColumn(
-                "Completed",
-                "$green9",
-                doneOrders,
-                "No completed orders",
-              )}
+        needsHScroll ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ flex: 1 }}>
+            <YStack width={tableTotalWidth} flex={1}>
+              {tableHeader}
+              <FlatList
+                data={filteredOrders}
+                keyExtractor={(item) => item.id}
+                renderItem={(props) => (
+                  <XStack width={tableTotalWidth}>
+                    {renderTabletRow(props)}
+                  </XStack>
+                )}
+                refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
+                initialNumToRender={20}
+                windowSize={10}
+                maxToRenderPerBatch={15}
+                removeClippedSubviews
+                ListEmptyComponent={
+                  <YStack padding="$8" alignItems="center">
+                    <Text color="$colorMuted" fontSize="$4" textAlign="center">
+                      {searchQuery ? "No orders match your search" : "No orders for the selected filters"}
+                    </Text>
+                  </YStack>
+                }
+              />
             </YStack>
-          )}
-        </XStack>
+          </ScrollView>
+        ) : (
+          <YStack flex={1}>
+            {tableHeader}
+            <FlatList
+              data={filteredOrders}
+              keyExtractor={(item) => item.id}
+              renderItem={renderTabletRow}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
+              initialNumToRender={20}
+              windowSize={10}
+              maxToRenderPerBatch={15}
+              removeClippedSubviews
+              ListEmptyComponent={
+                <YStack padding="$8" alignItems="center">
+                  <Text color="$colorMuted" fontSize="$4" textAlign="center">
+                    {searchQuery ? "No orders match your search" : "No orders for the selected filters"}
+                  </Text>
+                </YStack>
+              }
+            />
+          </YStack>
+        )
       ) : (
         <FlatList
           data={filteredOrders}
           keyExtractor={(item) => item.id}
-          renderItem={renderOrderCard}
-          contentContainerStyle={{ padding: 16, flexGrow: 1 }}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-          }
+          renderItem={renderPhoneCard}
+          contentContainerStyle={{ padding: 16, paddingTop: 0, paddingBottom: Math.max(insets.bottom + 20, 24) }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           ListEmptyComponent={
-            <YStack
-              flex={1}
-              justifyContent="center"
-              alignItems="center"
-              padding="$6"
-            >
-              <Text color="$colorMuted" fontSize="$4" textAlign="center">
-                {searchQuery || selectedFilters.length > 0
-                  ? "No orders match your search or filters"
-                  : "No orders yet"}
+            <YStack padding="$8" alignItems="center" gap="$3">
+              <Text color="$colorMuted" fontSize="$5" textAlign="center">
+                {searchQuery ? "No orders match your search" : "No orders for the selected filters"}
               </Text>
-              {(searchQuery || selectedFilters.length > 0) && (
-                <Button
-                  variant="outline"
-                  marginTop="$3"
-                  onPress={() => {
-                    setSearchQuery("");
-                    clearFilters();
-                  }}
-                >
-                  Clear All
+              {(searchQuery || activeChips.length > 0) && (
+                <Button variant="outline" marginTop="$3" onPress={() => { setSearchQuery(""); setActiveChips(isTablet ? [...DEFAULT_CHIPS] : ["pending", "accepted", "ready"]); }}>
+                  Reset Filters
                 </Button>
               )}
             </YStack>
@@ -309,119 +397,46 @@ export default function SellerOrders() {
         />
       )}
 
-      {/* Filter Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={filterModalVisible}
-        onRequestClose={() => setFilterModalVisible(false)}
-      >
-        <YStack flex={1} justifyContent="flex-end">
-          <Pressable
-            flex={1}
-            backgroundColor="rgba(0,0,0,0.5)"
-            onPress={() => setFilterModalVisible(false)}
-          />
-          <YStack
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            padding="$4"
-            paddingBottom={insets.bottom + 16}
-          >
-            <XStack
-              justifyContent="space-between"
-              alignItems="center"
-              marginBottom="$4"
-            >
-              <Text fontSize="$5" fontWeight="bold">
-                Filter Orders
-              </Text>
-              <Pressable onPress={() => setFilterModalVisible(false)}>
-                <X size={24} color="$color" />
-              </Pressable>
+      {/* Filter Sheet */}
+      <Sheet modal open={filterSheetOpen} onOpenChange={setFilterSheetOpen} snapPoints={[60]} dismissOnSnapToBottom zIndex={200_000}>
+        <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$4" paddingBottom={insets.bottom + 16}>
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack gap="$4">
+            <XStack justifyContent="space-between" alignItems="center">
+              <Text fontSize="$5" fontWeight="bold">Filter Orders</Text>
+              <Pressable onPress={() => setFilterSheetOpen(false)}><X size={24} color="$color" /></Pressable>
             </XStack>
-
             <YStack gap="$3">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
-                Order Status
-              </Text>
-              {FILTER_OPTIONS.map((status) => (
-                <Pressable key={status} onPress={() => toggleFilter(status)}>
-                  <XStack
-                    padding="$3"
-                    borderWidth={1}
-                    borderColor={
-                      selectedFilters.includes(status)
-                        ? "$blue9"
-                        : "$borderColor"
-                    }
-                    borderRadius="$3"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    backgroundColor={
-                      selectedFilters.includes(status)
-                        ? "$blue2"
-                        : "transparent"
-                    }
-                  >
-                    <XStack alignItems="center" gap="$3">
-                      <YStack
-                        width={20}
-                        height={20}
-                        borderRadius="$2"
-                        backgroundColor={
-                          {
-                            pending: "$yellow9",
-                            accepted: "$orange9",
-                            preparing: "$blue9",
-                            ready: "$green9",
-                            delivered: "$gray9",
-                          }[status] || "$gray9"
-                        }
-                      />
-                      <Text
-                        textTransform="capitalize"
-                        fontWeight="500"
-                        color={
-                          selectedFilters.includes(status) ? "$blue9" : "$color"
-                        }
-                      >
-                        {status}
-                      </Text>
+              <Text fontSize="$4" fontWeight="600" color="$colorMuted">Order Status</Text>
+              {FILTER_CHIPS.map((chip) => {
+                const active = activeChips.includes(chip.key);
+                return (
+                  <Pressable key={chip.key} onPress={() => toggleChip(chip.key)}>
+                    <XStack p="$3" borderWidth={1} borderColor={active ? chip.color : "$borderColor"} borderRadius="$3" alignItems="center" justifyContent="space-between" backgroundColor={active ? chip.color : "$background"}>
+                      <Text fontWeight="500" color={"$color"}>{chip.label}</Text>
                     </XStack>
-                    {selectedFilters.includes(status) && (
-                      <Check size={20} color="$blue9" />
-                    )}
-                  </XStack>
-                </Pressable>
-              ))}
+                  </Pressable>
+                );
+              })}
             </YStack>
-
-            <XStack gap="$3" marginTop="$4">
-              <Button flex={1} variant="outline" onPress={clearFilters}>
-                Clear All
-              </Button>
-              <Button flex={1} onPress={() => setFilterModalVisible(false)}>
-                Apply Filters
-              </Button>
+            <XStack gap="$3" marginTop="$2">
+              <Button flex={1} variant="outline" onPress={() => setActiveChips([])}>Clear All</Button>
+              <Button flex={1} onPress={() => setFilterSheetOpen(false)}>Apply</Button>
             </XStack>
           </YStack>
-        </YStack>
-      </Modal>
+        </Sheet.Frame>
+      </Sheet>
 
-      {/* Confirmation Dialog */}
+      {/* Cancel Confirmation */}
       <AppAlertDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={dialogConfig?.title || ""}
-        description={dialogConfig?.description || ""}
-        confirmText="Confirm"
-        isDestructive={dialogConfig?.isDestructive}
-        onConfirm={() => {
-          dialogConfig?.onConfirm();
-          setDialogOpen(false);
-        }}
+        open={cancelTarget !== null}
+        onOpenChange={() => setCancelTarget(null)}
+        title="Cancel Order"
+        description="Are you sure you want to cancel this order? This cannot be undone."
+        confirmText="Cancel Order"
+        isDestructive
+        onConfirm={() => { if (cancelTarget) { cancelOrder.mutate(cancelTarget); setCancelTarget(null); } }}
       />
     </YStack>
   );

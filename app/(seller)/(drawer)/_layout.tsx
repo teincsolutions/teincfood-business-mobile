@@ -28,6 +28,7 @@ import {
   Users,
   Bike,
   MailOpen,
+  Truck,
   DollarSign,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
@@ -124,6 +125,23 @@ function CustomDrawerContent(props: any) {
           >
             <Text flex={1} fontSize="$4">
               Orders
+            </Text>
+          </Button>
+
+          {/* Deliveries */}
+          <Button
+            unstyled
+            flexDirection="row"
+            alignItems="center"
+            gap="$3"
+            padding="$3"
+            paddingLeft="$4"
+            pressStyle={{ backgroundColor: "$gray3" }}
+            onPress={() => router.push("/(seller)/deliveries")}
+            icon={<Truck size={20} color={theme.color.val} />}
+          >
+            <Text flex={1} fontSize="$4">
+              Deliveries
             </Text>
           </Button>
 
@@ -437,6 +455,18 @@ export default function SellerDrawerLayout() {
             title: "Orders",
             drawerIcon: ({ color, size }) => (
               <ShoppingBag color={color} size={size} />
+            ),
+          }}
+          listeners={{ drawerItemPress: handleProtectedRoute }}
+        />
+
+        {/* Deliveries */}
+        <Drawer.Screen
+          name="deliveries/index"
+          options={{
+            title: "Deliveries",
+            drawerIcon: ({ color, size }) => (
+              <Truck color={color} size={size} />
             ),
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}

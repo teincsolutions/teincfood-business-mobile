@@ -80,6 +80,7 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-font",
+      "expo-sharing",
       "./plugins/withNotifeeRepo.js",
       [
         "expo-location",

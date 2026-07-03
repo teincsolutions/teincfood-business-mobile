@@ -8,6 +8,7 @@ import {
   Palette,
   ChevronRight,
   MailOpen,
+  Printer,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -104,6 +105,12 @@ export default function SellerSettings() {
       label: "Delivery Settings",
       description: "Delivery radius, fees, minimum order",
       route: "/(seller)/settings/delivery-settings",
+    },
+    {
+      icon: Printer,
+      label: "Printer Settings",
+      description: "Configure POS thermal printer",
+      route: "/(seller)/settings/printer",
     },
     {
       icon: CreditCard,
