@@ -5,9 +5,11 @@ import {
   Building,
   ChevronDown,
   Check,
+  User,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { useProfileQuery } from "@/hooks/useProfile";
 import { useResponsive } from "@/utils/responsive";
 
 interface DrawerHeaderProps {
@@ -24,6 +26,7 @@ export function DrawerHeader({
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const { businesses, activeBusiness, switchBusiness } = useActiveBusiness();
+  const { data: profile } = useProfileQuery();
   const { isTablet } = useResponsive();
 
   const avatarSize = isTablet ? "$12" : "$10";
@@ -47,10 +50,10 @@ export function DrawerHeader({
       >
         <XStack gap="$3" alignItems="center">
           <Avatar circular size={avatarSize}>
-            <Avatar.Image src={user?.avatarUrl} />
+            <Avatar.Image src={profile?.avatar_url || user?.avatar_url} />
             <Avatar.Fallback
-              items="center"
               justify="center"
+              alignItems="center"
               backgroundColor="$color.gray50"
             >
               <Text color="$color" fontWeight="bold" fontSize={avatarTextSize}>

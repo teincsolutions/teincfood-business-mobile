@@ -1,16 +1,12 @@
 // @ts-nocheck
 import { useState } from "react";
 import { Drawer } from "expo-router/drawer";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useTheme,
   YStack,
-  XStack,
-  Text,
-  Avatar,
   Separator,
-  Button,
 } from "tamagui";
 import {
   LayoutDashboard,
@@ -33,12 +29,9 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
-import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerHeader } from "@/components/ui/DrawerHeader";
-import {
-  DrawerContentScrollView,
-  DrawerItemList,
-} from "@react-navigation/drawer";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -47,9 +40,18 @@ import { useResponsive } from "@/utils/responsive";
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
+
+  const isActive = (routeName?: string, sharedPrefix?: string) => {
+    if (routeName && activeRouteName === routeName) return true;
+    if (sharedPrefix && pathname.startsWith(sharedPrefix)) return true;
+    return false;
+  };
 
   const handleLogout = () => {
     clearAuth();
@@ -75,266 +77,32 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
-          {/* Dashboard */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/dashboard")}
-            icon={<LayoutDashboard size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Dashboard
-            </Text>
-          </Button>
-
-          {/* Kiosk Mode */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/dashboard/kiosk")}
-            icon={<Monitor size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Kiosk Mode
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={LayoutDashboard} label="Dashboard" drawerName="dashboard/index" onPress={() => router.push("/(seller)/dashboard")} isActive={isActive} />
+          <DrawerMenuItem icon={Monitor} label="Kiosk Mode" drawerName="dashboard/kiosk" onPress={() => router.push("/(seller)/dashboard/kiosk")} isActive={isActive} />
 
           <Separator marginVertical="$2" />
 
-          {/* Orders */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/orders")}
-            icon={<ShoppingBag size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Orders
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={ShoppingBag} label="Orders" drawerName="orders/index" onPress={() => router.push("/(seller)/orders")} isActive={isActive} />
+          <DrawerMenuItem icon={Truck} label="Deliveries" drawerName="deliveries/index" onPress={() => router.push("/(seller)/deliveries")} isActive={isActive} />
+          <DrawerMenuItem icon={UtensilsCrossed} label="Menu" drawerName="menu/index" onPress={() => router.push("/(seller)/menu")} isActive={isActive} />
+          <DrawerMenuItem icon={BarChart3} label="Analytics" drawerName="analytics/index" onPress={() => router.push("/(seller)/analytics")} isActive={isActive} />
+          <DrawerMenuItem icon={Users} label="Members" drawerName="members/index" onPress={() => router.push("/(seller)/members")} isActive={isActive} />
+          <DrawerMenuItem icon={Bike} label="Riders" drawerName="riders/index" onPress={() => router.push("/(seller)/riders")} isActive={isActive} />
 
-          {/* Deliveries */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/deliveries")}
-            icon={<Truck size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Deliveries
-            </Text>
-          </Button>
-
-          {/* Menu */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/menu")}
-            icon={<UtensilsCrossed size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Menu
-            </Text>
-          </Button>
-
-          {/* Analytics */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/analytics")}
-            icon={<BarChart3 size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Analytics
-            </Text>
-          </Button>
-
-          {/* Members */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/members")}
-            icon={<Users size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Members
-            </Text>
-          </Button>
-
-          {/* Riders */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/riders")}
-            icon={<Bike size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Riders
-            </Text>
-          </Button>
-
-          {/* Wallet & Billing */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(shared)/wallet")}
-            icon={<DollarSign size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Wallet & Billing
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={DollarSign} label="Wallet & Billing" sharedPrefix="/(shared)/wallet" onPress={() => router.push("/(shared)/wallet")} isActive={isActive} />
 
           <Separator marginVertical="$2" />
 
-          {/* Messages */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(communication)")}
-            icon={<MessageSquare size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Messages
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} />
+          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} />
+          <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} />
 
-          {/* Notifications */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(shared)/notifications")}
-            icon={<Bell size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Notifications
-            </Text>
-          </Button>
-
-          {/* Invitations */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(shared)/invitations")}
-            icon={<MailOpen size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Invitations
-            </Text>
-          </Button>
-
-          {/* Settings */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/settings")}
-            icon={<Settings size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Settings
-            </Text>
-          </Button>
-
-          {/* Profile */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$gray3" }}
-            onPress={() => router.push("/(seller)/profile")}
-            icon={<User size={20} color={theme.color.val} />}
-          >
-            <Text flex={1} fontSize="$4">
-              Profile
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(seller)/settings")} isActive={isActive} />
+          <DrawerMenuItem icon={User} label="Profile" drawerName="profile" onPress={() => router.push("/(seller)/profile")} isActive={isActive} />
 
           <Separator marginVertical="$2" />
 
-          {/* Logout */}
-          <Button
-            unstyled
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            pressStyle={{ backgroundColor: "$red4" }}
-            onPress={() => setShowLogoutDialog(true)}
-            icon={<LogOut size={20} color="$red10" />}
-          >
-            <Text flex={1} fontSize="$4" color="$red10">
-              Logout
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={LogOut} label="Logout" onPress={() => setShowLogoutDialog(true)} danger />
         </YStack>
       </DrawerContentScrollView>
 

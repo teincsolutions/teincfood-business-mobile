@@ -166,7 +166,7 @@ export default function EditProfile() {
           <Card padding="$4" bordered alignItems="center">
             <YStack alignItems="center" gap="$3">
               <Avatar circular size="$20">
-                <Avatar.Image src={selectedImage || user?.avatarUrl} />
+                <Avatar.Image src={selectedImage || profile?.avatar_url || user?.avatar_url} />
                 <Avatar.Fallback
                   justify="center"
                   alignItems="center"

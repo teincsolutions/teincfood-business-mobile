@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { useState } from "react";
 import { Drawer } from "expo-router/drawer";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme, YStack, XStack, Text, Avatar, Separator } from "tamagui";
+import { useTheme, YStack, Separator } from "tamagui";
 import {
   LayoutDashboard,
   Users,
@@ -18,12 +18,9 @@ import {
   MailOpen,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
-import { AppAlertDialog, Button } from "@/components/ui";
+import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerHeader } from "@/components/ui/DrawerHeader";
-import {
-  DrawerContentScrollView,
-  DrawerItemList,
-} from "@react-navigation/drawer";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useDeliveryRealtimeUpdates } from "@/hooks/useDeliveryRealtimeUpdates";
 
@@ -33,9 +30,18 @@ import { useDeliveryRealtimeUpdates } from "@/hooks/useDeliveryRealtimeUpdates";
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
+
+  const isActive = (routeName?: string, sharedPrefix?: string) => {
+    if (routeName && activeRouteName === routeName) return true;
+    if (sharedPrefix && pathname.startsWith(sharedPrefix)) return true;
+    return false;
+  };
 
   const handleLogout = () => {
     clearAuth();
@@ -58,181 +64,26 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
-          {/* Dashboard */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/dashboard")}
-            icon={<LayoutDashboard size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Dashboard
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={LayoutDashboard} label="Dashboard" drawerName="dashboard/index" onPress={() => router.push("/(fleet)/dashboard")} isActive={isActive} fontFamily="$body" />
 
           <Separator marginVertical="$2" />
 
-          {/* Riders */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/riders")}
-            icon={<Users size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Riders
-            </Text>
-          </Button>
-
-          {/* Vehicles */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/vehicles")}
-            icon={<Car size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Vehicles
-            </Text>
-          </Button>
-
-          {/* Earnings */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/earnings")}
-            icon={<DollarSign size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Earnings
-            </Text>
-          </Button>
-
-          {/* Wallet & Billing */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(shared)/wallet")}
-            icon={<DollarSign size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Wallet & Billing
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={Users} label="Riders" drawerName="riders/index" onPress={() => router.push("/(fleet)/riders")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={Car} label="Vehicles" drawerName="vehicles/index" onPress={() => router.push("/(fleet)/vehicles")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={DollarSign} label="Earnings" drawerName="earnings/index" onPress={() => router.push("/(fleet)/earnings")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={DollarSign} label="Wallet & Billing" sharedPrefix="/(shared)/wallet" onPress={() => router.push("/(shared)/wallet")} isActive={isActive} fontFamily="$body" />
 
           <Separator marginVertical="$2" />
 
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(shared)/notifications")}
-            icon={<Bell size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Notifications
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} fontFamily="$body" />
 
-          {/* Invitations */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(shared)/invitations")}
-            icon={<MailOpen size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Invitations
-            </Text>
-          </Button>
-
-          {/* Settings */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/settings")}
-            icon={<Settings size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Settings
-            </Text>
-          </Button>
-
-          {/* Profile */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => router.push("/(fleet)/profile")}
-            icon={<User size={20} color={theme.color.val} />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" fontFamily="$body">
-              Profile
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(fleet)/settings")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={User} label="Profile" drawerName="profile" onPress={() => router.push("/(fleet)/profile")} isActive={isActive} fontFamily="$body" />
 
           <Separator marginVertical="$2" />
 
-          {/* Logout */}
-          <Button
-            variant="ghost"
-            flexDirection="row"
-            alignItems="center"
-            gap="$3"
-            padding="$3"
-            paddingLeft="$4"
-            onPress={() => setShowLogoutDialog(true)}
-            icon={<LogOut size={20} color="$red10" />}
-            justifyContent="flex-start"
-          >
-            <Text flex={1} fontSize="$4" color="$red10" fontFamily="$body">
-              Logout
-            </Text>
-          </Button>
+          <DrawerMenuItem icon={LogOut} label="Logout" onPress={() => setShowLogoutDialog(true)} danger fontFamily="$body" />
         </YStack>
       </DrawerContentScrollView>
 

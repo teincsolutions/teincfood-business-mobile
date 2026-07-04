@@ -160,7 +160,7 @@ export default function LoginScreen() {
           phone: response.user.phone,
           username: response.user.username,
           role: selectedRole,
-          avatarUrl: response.user.avatar_url,
+          avatar_url: response.user.avatar_url,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },

@@ -4,6 +4,7 @@ import { FormInput } from './FormInput';
 import { FormTextArea } from './FormTextArea';
 import { BackButton } from './BackButton';
 import { DrawerHeader } from './DrawerHeader';
+import { DrawerMenuItem } from './DrawerMenuItem';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
 import { AppAlertDialog } from './AlertDialog';
 import { Badge } from './Badge';
@@ -18,6 +19,7 @@ export {
   FormTextArea,
   BackButton,
   DrawerHeader,
+  DrawerMenuItem,
   Skeleton,
   FoodCardSkeleton, 
   RestaurantCardSkeleton,
