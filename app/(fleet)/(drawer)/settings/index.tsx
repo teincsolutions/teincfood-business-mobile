@@ -41,8 +41,8 @@ export default function FleetSettingsScreen() {
   const settingsItems = [
     {
       icon: Building,
-      title: "Manage Businesses",
-      description: "View and switch between your businesses",
+      title: "My Businesses",
+      description: "View and manage your businesses",
       onPress: () => router.push("/(shared)/businesses"),
     },
     {

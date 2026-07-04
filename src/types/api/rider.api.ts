@@ -9,6 +9,15 @@ export interface RiderProfileBusiness {
   type: string;
   status: string;
   logo_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  address: {
+    address_line: string;
+    city: string;
+    region: string;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
 }
 
 export interface RiderProfile {

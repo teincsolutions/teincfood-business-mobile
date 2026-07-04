@@ -83,10 +83,18 @@ export default function SellerSettings() {
   const settingsItems = [
     {
       icon: Building,
+      label: "My Businesses",
+      description: activeBusiness
+        ? "View all businesses you own or manage"
+        : "Manage your businesses",
+      route: "/(shared)/businesses",
+    },
+    {
+      icon: Building,
       label: "Business Profile",
       description: activeBusiness
         ? `${activeBusiness.name} — update details, logo, description`
-        : "Manage your businesses",
+        : "Update your business details",
       onPress: handleBusinessProfile,
     },
     {

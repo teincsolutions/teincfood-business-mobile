@@ -41,8 +41,8 @@ export default function RiderSettings() {
     {
       icon: Building,
       label: "My Businesses",
-      description: "Businesses you own or belong to",
-      route: "/(shared)/businesses",
+      description: "Businesses you deliver for",
+      route: "/(rider)/businesses",
     },
     {
       icon: MailOpen,
