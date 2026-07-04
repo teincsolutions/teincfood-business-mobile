@@ -177,33 +177,30 @@ export default function RiderBusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
+      <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
+        <XStack gap="$2" alignItems="center">
+          <BackButton />
+          <YStack gap="$1" flex={1}>
+            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+              My Businesses
+            </Text>
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+              Businesses you deliver for
+            </Text>
+          </YStack>
+        </XStack>
+      </YStack>
       <FlatList
         data={businesses}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
-        ListHeaderComponent={
-          <YStack gap="$1" paddingBottom="$4">
-            <XStack gap="$2" alignItems="center">
-              <BackButton />
-              <YStack gap="$1" flex={1}>
-                <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-                  My Businesses
-                </Text>
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                  Businesses you deliver for
-                </Text>
-              </YStack>
-            </XStack>
-          </YStack>
-        }
         ListEmptyComponent={ListEmptyComponent}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} />
         }
         contentContainerStyle={{
-          padding: 16,
-          paddingTop: Math.max(insets.top + 8, 16),
+          paddingHorizontal: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
           flexGrow: 1,
         }}

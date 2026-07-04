@@ -87,7 +87,7 @@ export default function SellerSettings() {
       description: activeBusiness
         ? "View all businesses you own or manage"
         : "Manage your businesses",
-      route: "/(shared)/businesses",
+      route: "/(seller)/businesses",
     },
     {
       icon: Building,

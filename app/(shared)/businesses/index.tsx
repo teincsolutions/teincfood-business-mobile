@@ -159,53 +159,6 @@ export default function BusinessesScreen() {
     );
   };
 
-  const ListHeaderComponent = () => (
-    <YStack gap="$4" paddingBottom="$2">
-      <XStack gap="$2" alignItems="center">
-        <BackButton />
-        <YStack gap="$1" flex={1}>
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-            Businesses
-          </Text>
-          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-            {ownedCount > 0 ? "Businesses you own or belong to" : "Businesses you belong to"}
-          </Text>
-        </YStack>
-      </XStack>
-
-      <YStack gap="$3">
-        <XStack gap="$3" alignItems="center">
-          <YStack flex={1} position="relative">
-            <Input
-              placeholder="Search businesses..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              paddingStart="$10"
-            />
-            <YStack position="absolute" left="$3" top="$5">
-              <Search size={20} color="$colorMuted" />
-            </YStack>
-          </YStack>
-          <Button variant="outline" icon={Plus} onPress={() => router.push("/(shared)/businesses/add")}>
-            Add Business
-          </Button>
-        </XStack>
-
-        <XStack gap="$2">
-          <Button size="$2" variant={filterStatus === "all" ? "primary" : "outline"} onPress={() => setFilterStatus("all")}>
-            {`All (${entries.length})`}
-          </Button>
-          <Button size="$2" variant={filterStatus === "active" ? "primary" : "outline"} onPress={() => setFilterStatus("active")}>
-            {`Active (${entries.filter((e) => e.status === "active").length})`}
-          </Button>
-          <Button size="$2" variant={filterStatus === "inactive" ? "primary" : "outline"} onPress={() => setFilterStatus("inactive")}>
-            {`Inactive (${entries.filter((e) => e.status !== "active").length})`}
-          </Button>
-        </XStack>
-      </YStack>
-    </YStack>
-  );
-
   const ListEmptyComponent = () => (
     <Card padding="$6" bordered>
       <YStack alignItems="center" gap="$3">
@@ -226,19 +179,61 @@ export default function BusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
+      <YStack gap="$4" paddingHorizontal="$4" paddingBottom="$2">
+        <XStack gap="$2" alignItems="center">
+          <BackButton />
+          <YStack gap="$1" flex={1}>
+            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+              Businesses
+            </Text>
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+              {ownedCount > 0 ? "Businesses you own or belong to" : "Businesses you belong to"}
+            </Text>
+          </YStack>
+        </XStack>
+
+        <YStack gap="$3">
+          <XStack gap="$3" alignItems="center">
+            <YStack flex={1} position="relative">
+              <Input
+                placeholder="Search businesses..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                paddingStart="$10"
+              />
+              <YStack position="absolute" left="$3" top="$5">
+                <Search size={20} color="$colorMuted" />
+              </YStack>
+            </YStack>
+            <Button variant="outline" icon={Plus} onPress={() => router.push("/(shared)/businesses/add")}>
+              Add Business
+            </Button>
+          </XStack>
+
+          <XStack gap="$2">
+            <Button size="$2" variant={filterStatus === "all" ? "primary" : "outline"} onPress={() => setFilterStatus("all")}>
+              {`All (${entries.length})`}
+            </Button>
+            <Button size="$2" variant={filterStatus === "active" ? "primary" : "outline"} onPress={() => setFilterStatus("active")}>
+              {`Active (${entries.filter((e) => e.status === "active").length})`}
+            </Button>
+            <Button size="$2" variant={filterStatus === "inactive" ? "primary" : "outline"} onPress={() => setFilterStatus("inactive")}>
+              {`Inactive (${entries.filter((e) => e.status !== "active").length})`}
+            </Button>
+          </XStack>
+        </YStack>
+      </YStack>
       <FlatList
         data={filteredEntries}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
-        ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetchAll} />
         }
         contentContainerStyle={{
-          padding: 16,
-          paddingTop: Math.max(insets.top + 8, 16),
+          paddingHorizontal: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
           flexGrow: 1,
         }}
