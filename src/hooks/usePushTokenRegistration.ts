@@ -70,6 +70,15 @@ export function usePushTokenRegistration(enabled = true): void {
   const isAuthenticated = useAuthStore((state) => Boolean(state.user && state.accessToken));
   const ranOnce = useRef(false);
 
+  // Reset on logout — allows new user on same device to re-register their token
+  useEffect(() => {
+    if (!isAuthenticated) {
+      unregisterPushTokenOnLogout();
+      ranOnce.current = false;
+      currentToken = null;
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (!enabled || !isAuthenticated || ranOnce.current) return;
 
