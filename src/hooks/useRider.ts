@@ -96,7 +96,7 @@ export function useActiveDeliveryQuery(enabled = true) {
     queryKey: RIDER_KEYS.activeDelivery(),
     queryFn: async () => {
       const res = await riderService.fetchActiveDelivery();
-      return res.data?.[0] ?? null;
+      return res.data;
     },
     enabled,
   });

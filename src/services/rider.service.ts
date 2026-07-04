@@ -73,8 +73,12 @@ export async function fetchRiderDeliveries(
   return api.get<RiderDeliveriesResponse>('/riders/deliveries', { params: { page, page_size: pageSize, ...filters } });
 }
 
-export async function fetchActiveDelivery(): Promise<RiderDeliveriesResponse> {
-  return api.get<RiderDeliveriesResponse>('/riders/deliveries', { params: { page: 1, page_size: 1 } });
+export interface ActiveDeliveryResponse {
+  data: RiderDelivery | null;
+}
+
+export async function fetchActiveDelivery(): Promise<ActiveDeliveryResponse> {
+  return api.get<ActiveDeliveryResponse>('/riders/deliveries/active');
 }
 
 export async function fetchDeliveryDetail(deliveryId: string): Promise<RiderDeliveryDetailResponse> {

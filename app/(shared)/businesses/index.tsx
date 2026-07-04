@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
-import { FlatList } from "react-native";
-import { YStack, XStack, Text, Card } from "tamagui";
+import { FlatList, RefreshControl } from "react-native";
+import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -9,48 +9,48 @@ import {
   Search,
   MapPin,
   ChevronRight,
+  LogOut,
+  Crown,
+  User,
 } from "@tamagui/lucide-icons";
-import { useBusinessStore } from "@/stores/business.store";
 import { useRouter, useNavigation } from "expo-router";
 import { Button, Input, BackButton } from "@/components/ui";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { useMyBusinesses } from "@/hooks/useMyBusinesses";
+import { useLeaveBusinessMutation } from "@/hooks/useInvitations";
 
 export default function BusinessesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { businesses, setDefaultBusiness, getDefaultBusiness } =
-    useBusinessStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "active" | "inactive"
-  >("all");
+  const { entries, isLoading, owned, refetchAll } = useMyBusinesses();
+  const leaveMutation = useLeaveBusinessMutation();
 
-  const filteredBusinesses = businesses.filter((business) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [leaveTarget, setLeaveTarget] = useState<{ invitationId: string; name: string } | null>(null);
+
+  const filteredEntries = entries.filter((entry) => {
     const matchesSearch =
-      business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.business_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.address?.city?.toLowerCase().includes(searchQuery.toLowerCase());
+      entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.business_number.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       filterStatus === "all" ||
-      (filterStatus === "active" && business.status === "active") ||
-      (filterStatus === "inactive" && business.status !== "active");
+      (filterStatus === "active" && entry.status === "active") ||
+      (filterStatus === "inactive" && entry.status !== "active");
     return matchesSearch && matchesStatus;
   });
 
-  const handleSetDefault = (businessId: string) => {
-    setDefaultBusiness(businessId);
-  };
-
-  const renderBusiness = ({ item: business }) => {
-    const isDefault = getDefaultBusiness()?.id === business.id;
-    const isActive = business.status === "active";
+  const renderBusiness = ({ item: entry }) => {
+    const isOwned = entry.type === "owned";
+    const isActive = entry.status === "active";
     return (
       <Card
         bordered
         overflow="hidden"
         marginBottom="$3"
         pressStyle={{ scale: 0.99, opacity: 0.9 }}
-        onPress={() => router.push(`/(shared)/businesses/${business.id}`)}
+        onPress={() => isOwned && router.push(`/(shared)/businesses/${entry.business_id}`)}
       >
         <YStack
           position="absolute"
@@ -69,79 +69,49 @@ export default function BusinessesScreen() {
         >
           <YStack flex={1} gap="$1" paddingRight="$3">
             <XStack gap="$2" alignItems="center">
-              <Text
-                fontSize="$5"
-                fontWeight="700"
-                fontFamily="$heading"
-                color="$color"
-              >
-                {business.name}
+              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                {entry.name}
               </Text>
-              {isDefault && (
-                <XStack
-                  paddingHorizontal="$2"
-                  paddingVertical="$1"
-                  borderRadius="$10"
-                  backgroundColor="$infoMuted"
-                  borderWidth={1}
-                  borderColor="$info"
-                >
-                  <Text
-                    fontSize="$1"
-                    color="$info"
-                    fontFamily="$body"
-                    fontWeight="600"
-                  >
-                    DEFAULT
+              {isOwned ? (
+                <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$orangeMuted" borderWidth={1} borderColor="$orange">
+                  <Crown size={10} color="$orange" />
+                  <Text fontSize="$1" color="$orange" fontFamily="$body" fontWeight="600" marginLeft={2}>
+                    OWNER
+                  </Text>
+                </XStack>
+              ) : (
+                <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$infoMuted" borderWidth={1} borderColor="$info">
+                  <User size={10} color="$info" />
+                  <Text fontSize="$1" color="$info" fontFamily="$body" fontWeight="600" marginLeft={2}>
+                    {entry.role?.toUpperCase() || "MEMBER"}
                   </Text>
                 </XStack>
               )}
-              <XStack
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-                borderRadius="$10"
-                backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"}
-                borderWidth={1}
-                borderColor={isActive ? "$success" : "$borderColor"}
-              >
-                <Text
-                  fontSize="$1"
-                  color={isActive ? "$success" : "$colorMuted"}
-                  fontFamily="$body"
-                  fontWeight="600"
-                >
+              <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"} borderWidth={1} borderColor={isActive ? "$success" : "$borderColor"}>
+                <Text fontSize="$1" color={isActive ? "$success" : "$colorMuted"} fontFamily="$body" fontWeight="600">
                   {isActive ? "ACTIVE" : "INACTIVE"}
                 </Text>
               </XStack>
             </XStack>
-            <XStack gap="$1" alignItems="center">
-              <MapPin size={13} color="$colorMuted" />
-              <Text
-                fontSize="$3"
-                color="$colorSecondary"
-                numberOfLines={1}
-                fontFamily="$body"
-              >
-                {business.address?.city || "No address"}
-              </Text>
-            </XStack>
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              {entry.business_number}
+            </Text>
           </YStack>
           <XStack gap="$2" alignItems="center">
-            {!isDefault && isActive && (
+            {!isOwned && entry.invitation_id && (
               <Button
                 size="$2"
-                variant="outline"
+                variant="dangerOutline"
+                icon={<LogOut size={14} />}
                 onPress={(e) => {
                   e.stopPropagation();
-                  handleSetDefault(business.id);
+                  setLeaveTarget({ invitationId: entry.invitation_id, name: entry.name });
                 }}
               >
-                <Text fontSize="$2" fontFamily="$body">
-                  Set Default
-                </Text>
+                Leave
               </Button>
             )}
-            <ChevronRight size={18} color="$colorMuted" />
+            {isOwned && <ChevronRight size={18} color="$colorMuted" />}
           </XStack>
         </XStack>
       </Card>
@@ -153,16 +123,11 @@ export default function BusinessesScreen() {
       <XStack gap="$2" alignItems="center">
         <BackButton />
         <YStack gap="$1" flex={1}>
-          <Text
-            fontSize="$8"
-            fontWeight="bold"
-            fontFamily="$heading"
-            color="$color"
-          >
+          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
             Businesses
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-            Manage your business locations
+            {owned.length > 0 ? "Businesses you own or belong to" : "Businesses you belong to"}
           </Text>
         </YStack>
       </XStack>
@@ -180,38 +145,20 @@ export default function BusinessesScreen() {
               <Search size={20} color="$colorMuted" />
             </YStack>
           </YStack>
-          <Button
-            variant="outline"
-            icon={Plus}
-            onPress={() => router.push("/(shared)/businesses/add")}
-          >
+          <Button variant="outline" icon={Plus} onPress={() => router.push("/(shared)/businesses/add")}>
             Add Business
           </Button>
         </XStack>
 
         <XStack gap="$2">
-          <Button
-            size="$2"
-            variant={filterStatus === "all" ? "primary" : "outline"}
-            onPress={() => setFilterStatus("all")}
-          >
-            All {`(${businesses.length})`}
+          <Button size="$2" variant={filterStatus === "all" ? "primary" : "outline"} onPress={() => setFilterStatus("all")}>
+            All ({entries.length})
           </Button>
-          <Button
-            size="$2"
-            variant={filterStatus === "active" ? "primary" : "outline"}
-            onPress={() => setFilterStatus("active")}
-          >
-            Active{" "}
-            {`(${businesses.filter((b) => b.status === "active").length})`}
+          <Button size="$2" variant={filterStatus === "active" ? "primary" : "outline"} onPress={() => setFilterStatus("active")}>
+            Active ({entries.filter((e) => e.status === "active").length})
           </Button>
-          <Button
-            size="$2"
-            variant={filterStatus === "inactive" ? "primary" : "outline"}
-            onPress={() => setFilterStatus("inactive")}
-          >
-            Inactive{" "}
-            {`(${businesses.filter((b) => b.status !== "active").length})`}
+          <Button size="$2" variant={filterStatus === "inactive" ? "primary" : "outline"} onPress={() => setFilterStatus("inactive")}>
+            Inactive ({entries.filter((e) => e.status !== "active").length})
           </Button>
         </XStack>
       </YStack>
@@ -222,25 +169,11 @@ export default function BusinessesScreen() {
     <Card padding="$6" bordered>
       <YStack alignItems="center" gap="$3">
         <Building size={48} color="$colorMuted" />
-        <Text
-          fontSize="$5"
-          fontWeight="600"
-          textAlign="center"
-          fontFamily="$heading"
-        >
-          {searchQuery || filterStatus !== "all"
-            ? "No businesses found"
-            : "No businesses yet"}
+        <Text fontSize="$5" fontWeight="600" textAlign="center" fontFamily="$heading">
+          {searchQuery || filterStatus !== "all" ? "No businesses found" : "No businesses yet"}
         </Text>
-        <Text
-          fontSize="$4"
-          color="$colorSecondary"
-          textAlign="center"
-          fontFamily="$body"
-        >
-          {searchQuery || filterStatus !== "all"
-            ? "Try adjusting your search or filter"
-            : "Add your first business to get started"}
+        <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+          {searchQuery || filterStatus !== "all" ? "Try adjusting your search or filter" : "Add your first business to get started"}
         </Text>
         {!searchQuery && filterStatus === "all" && (
           <Button onPress={() => router.push("/(shared)/businesses/add")}>
@@ -254,11 +187,14 @@ export default function BusinessesScreen() {
   return (
     <YStack flex={1} backgroundColor="$background">
       <FlatList
-        data={filteredBusinesses}
+        data={filteredEntries}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refetchAll} />
+        }
         contentContainerStyle={{
           padding: 16,
           paddingTop: Math.max(insets.top + 8, 16),
@@ -269,6 +205,21 @@ export default function BusinessesScreen() {
         windowSize={5}
         maxToRenderPerBatch={10}
         removeClippedSubviews
+      />
+
+      <AppAlertDialog
+        open={leaveTarget !== null}
+        onOpenChange={() => setLeaveTarget(null)}
+        title="Leave Business"
+        description={`Are you sure you want to leave ${leaveTarget?.name || "this business"}? This will remove your access.`}
+        confirmText="Leave"
+        isDestructive
+        onConfirm={() => {
+          if (leaveTarget) {
+            leaveMutation.mutate(leaveTarget.invitationId);
+            setLeaveTarget(null);
+          }
+        }}
       />
     </YStack>
   );

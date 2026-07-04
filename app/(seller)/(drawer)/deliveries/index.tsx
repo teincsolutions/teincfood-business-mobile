@@ -12,6 +12,7 @@ import {
   Bike,
   ChevronRight,
   Search,
+  Navigation2,
 } from "@tamagui/lucide-icons";
 import { Button, Input } from "@/components/ui";
 import { useSellerOrdersQuery } from "@/hooks/seller.hooks";
@@ -28,6 +29,16 @@ const STATUS_COLORS = {
   on_the_way: "$blue9",
   delivered: "$gray9",
   cancelled: "$red9",
+};
+
+const DELIVERY_STATUS_COLORS = {
+  assigned: "$orange9",
+  picked_up: "$blue9",
+  en_route: "$blue9",
+  arrived: "$green9",
+  delivered: "$gray9",
+  failed: "$red9",
+  returned_to_merchant: "$orange9",
 };
 
 export default function SellerDeliveries() {
@@ -85,7 +96,13 @@ export default function SellerDeliveries() {
       bordered
       marginBottom="$3"
       pressStyle={{ scale: 0.98, opacity: 0.9 }}
-      onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+      onPress={() => {
+        if (order.delivery_id) {
+          router.push(`/(seller)/deliveries/${order.delivery_id}`);
+        } else {
+          router.push(`/(seller)/orders/${order.id}`);
+        }
+      }}
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
@@ -93,16 +110,30 @@ export default function SellerDeliveries() {
             <Truck size={18} color="$colorMuted" />
             <Text fontSize="$5" fontWeight="bold">{order.order_number}</Text>
           </XStack>
-          <YStack
-            paddingHorizontal="$3"
-            paddingVertical="$1"
-            borderRadius="$3"
-            backgroundColor={STATUS_COLORS[order.status] || "$gray9"}
-          >
-            <Text fontSize="$2" color="white" fontWeight="600" textTransform="capitalize">
-              {order.status.replace(/_/g, " ")}
-            </Text>
-          </YStack>
+          <XStack gap="$2" alignItems="center">
+            {order.delivery_status && (
+              <YStack
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius="$3"
+                backgroundColor={DELIVERY_STATUS_COLORS[order.delivery_status] || "$gray9"}
+              >
+                <Text fontSize="$2" color="white" fontWeight="600">
+                  {order.delivery_status.replace(/_/g, " ")}
+                </Text>
+              </YStack>
+            )}
+            <YStack
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius="$3"
+              backgroundColor={STATUS_COLORS[order.status] || "$gray9"}
+            >
+              <Text fontSize="$2" color="white" fontWeight="600" textTransform="capitalize">
+                {order.status.replace(/_/g, " ")}
+              </Text>
+            </YStack>
+          </XStack>
         </XStack>
 
         <XStack gap="$3" alignItems="center">
@@ -142,25 +173,25 @@ export default function SellerDeliveries() {
           >
             Assign Rider
           </Button>
-        ) : order.status === "on_the_way" ? (
+        ) : order.status === "on_the_way" && order.delivery_id ? (
+          <Button
+            variant="outline"
+            icon={<Navigation2 size={16} />}
+            onPress={() => router.push(`/(seller)/deliveries/${order.delivery_id}`)}
+          >
+            Track Delivery
+          </Button>
+        ) : order.status === "delivered" || order.status === "cancelled" ? (
           <Button
             variant="outline"
             onPress={() => router.push(`/(seller)/orders/${order.id}`)}
           >
-            View Details
+            View Order
           </Button>
         ) : null}
       </YStack>
     </Card>
   );
-
-  if (isLoading) {
-    return (
-      <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-        <Text color="$colorMuted">Loading...</Text>
-      </YStack>
-    );
-  }
 
   return (
     <YStack flex={1} backgroundColor="$background">

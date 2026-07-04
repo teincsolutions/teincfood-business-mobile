@@ -111,6 +111,8 @@ export interface SellerOrder {
   id: string;
   order_number: string;
   status: string;
+  delivery_id: string | null;
+  delivery_status: string | null;
   is_paid: boolean;
   payment: OrderPayment;
   payment_mode: string;

@@ -333,19 +333,6 @@ export default function SellerOrders() {
     </XStack>
   );
 
-  if (isLoading) {
-    return (
-      <YStack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        backgroundColor="$background"
-      >
-        <Spinner size="large" color="$primary" />
-      </YStack>
-    );
-  }
-
   const tableHeader = (
     <XStack
       borderBottomWidth={2}

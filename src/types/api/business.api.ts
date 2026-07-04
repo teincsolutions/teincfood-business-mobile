@@ -31,6 +31,30 @@ export interface BusinessListResponse {
   data: Business[];
 }
 
+// ─── Business Membership (from /businesses/me/memberships) ───
+
+export interface BusinessMembershipBusiness {
+  id: string;
+  business_number: string;
+  name: string;
+  type: string;
+  status: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+}
+
+export interface BusinessMembership {
+  business: BusinessMembershipBusiness;
+  role: string;
+  status: string;
+  source: string | null;
+  invited_by_user_id: string | null;
+}
+
+export interface BusinessMembershipListResponse {
+  data: BusinessMembership[];
+}
+
 // ─── Business Member ───
 
 export interface BusinessMember {

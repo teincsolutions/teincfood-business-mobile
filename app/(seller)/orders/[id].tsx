@@ -43,6 +43,16 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "$red9",
 };
 
+const DELIVERY_STATUS_COLORS: Record<string, string> = {
+  assigned: "$orange9",
+  picked_up: "$blue9",
+  en_route: "$blue9",
+  arrived: "$green9",
+  delivered: "$gray9",
+  failed: "$red9",
+  returned_to_merchant: "$orange9",
+};
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleString("en-GB", {
@@ -175,13 +185,44 @@ export default function OrderDetails() {
             </YStack>
           </Card>
 
+          {/* Delivery Status */}
+          {order.delivery_id && (
+            <Card padding="$4" bordered backgroundColor="$blue2">
+              <YStack gap="$2">
+                <XStack alignItems="center" gap="$2">
+                  <Truck size={16} color="$primary" />
+                  <Text fontSize="$4" fontWeight="bold">Delivery Status</Text>
+                </XStack>
+                <XStack gap="$2" alignItems="center">
+                  <Text fontSize="$3" color="$colorMuted">Status:</Text>
+                  <YStack
+                    paddingHorizontal="$2"
+                    paddingVertical="$1"
+                    borderRadius="$3"
+                    backgroundColor={DELIVERY_STATUS_COLORS[order.delivery_status] || "$gray9"}
+                  >
+                    <Text fontSize="$2" color="white" fontWeight="600">
+                      {order.delivery_status?.replace(/_/g, " ")}
+                    </Text>
+                  </YStack>
+                </XStack>
+                {order.eta_minutes && (
+                  <Text fontSize="$3" color="$colorMuted">ETA: {order.eta_minutes} min</Text>
+                )}
+                {order.delivery_person && (
+                  <Separator />
+                )}
+              </YStack>
+            </Card>
+          )}
+
           {/* Rider Info */}
           {order.delivery_person && (
             <Card padding="$4" bordered backgroundColor="$blue2">
               <YStack gap="$2">
                 <XStack alignItems="center" gap="$2">
                   <Bike size={16} color="$primary" />
-                  <Text fontSize="$4" fontWeight="bold">Rider Assigned</Text>
+                  <Text fontSize="$4" fontWeight="bold">Rider</Text>
                 </XStack>
                 {order.delivery_person.name && (
                   <Text fontSize="$3">{order.delivery_person.name}</Text>

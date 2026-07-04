@@ -3,6 +3,8 @@ import type {
   Business,
   BusinessResponse,
   BusinessListResponse,
+  BusinessMembership,
+  BusinessMembershipListResponse,
   BusinessMember,
   BusinessMemberListResponse,
   OperatingHoursEntry,
@@ -21,8 +23,8 @@ export async function fetchMyBusinesses(): Promise<BusinessListResponse> {
   return api.get<BusinessListResponse>('/businesses/me');
 }
 
-export async function fetchMyMemberships(): Promise<BusinessListResponse> {
-  return api.get<BusinessListResponse>('/businesses/me/memberships');
+export async function fetchMyMemberships(): Promise<BusinessMembershipListResponse> {
+  return api.get<BusinessMembershipListResponse>('/businesses/me/memberships');
 }
 
 // ─── Business CRUD ───
