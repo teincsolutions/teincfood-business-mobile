@@ -15,6 +15,7 @@ export interface KycDocumentState {
   previewUri?: string;
   rejectionReason?: string;
   uri?: string;
+  fileName?: string;
   idType?: string;
   idNumber?: string;
   issuedDate?: Date;
@@ -143,7 +144,7 @@ export function KycForm({
 
       setUploadingId(docId);
       setUploadProgress(0);
-      updateDoc(docId, { status: "uploading", previewUri: asset.uri });
+      updateDoc(docId, { status: "uploading", previewUri: asset.uri, fileName: asset.name });
 
       try {
         const ctx = { entity_type: 'unknown', entity_id: 'unknown', document_type: docId, ...(uploadContext || {}) };
@@ -230,6 +231,7 @@ export function KycForm({
                   status={doc.status}
                   uploadedAt={doc.uploadedAt}
                   previewUri={doc.previewUri}
+                  fileName={doc.fileName}
                   rejectionReason={doc.rejectionReason}
                   uploading={uploadingId === config.id}
                   uploadProgress={uploadProgress}

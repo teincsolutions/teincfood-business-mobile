@@ -50,6 +50,7 @@ interface KycCardProps {
   status: DocStatus;
   uploadedAt?: string;
   previewUri?: string;
+  fileName?: string;
   rejectionReason?: string;
   uploading: boolean;
   uploadProgress?: number;
@@ -93,6 +94,7 @@ export function KycCard({
   status,
   uploadedAt,
   previewUri,
+  fileName,
   rejectionReason,
   uploading,
   uploadProgress,
@@ -118,9 +120,7 @@ export function KycCard({
   const selectedLabel =
     ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
   const canUpload = status !== "verified";
-  const displayFilename = previewUri
-    ? previewUri.split("/").pop() || "file"
-    : "";
+  const displayFilename = fileName || "file";
   const canSubmit =
     previewUri && status !== "pending" && status !== "verified" && !uploading;
 
@@ -291,39 +291,33 @@ export function KycCard({
         </YStack>
       ) : previewUri && status !== "not_uploaded" && status !== "rejected" ? (
         <YStack paddingLeft="$11" marginTop="$1">
-          {isImage ? (
-            <YStack
-              width={120}
-              height={80}
-              borderRadius="$3"
-              overflow="hidden"
-              backgroundColor="$backgroundSoft"
-            >
-              <Image
-                source={{ uri: previewUri }}
-                style={{ width: 120, height: 80 }}
-                resizeMode="cover"
-              />
-            </YStack>
-          ) : (
-            <XStack
-              gap="$2"
-              alignItems="center"
-              padding="$2"
-              backgroundColor="$backgroundSoft"
-              borderRadius="$3"
-            >
-              <FileText size={20} color="$colorMuted" />
+          <YStack
+            gap="$1"
+            borderRadius="$3"
+            padding="$2"
+            backgroundColor="$backgroundSoft"
+          >
+            <XStack gap="$2" alignItems="center">
+              {isImage ? (
+                <Image
+                  source={{ uri: previewUri }}
+                  style={{ width: 48, height: 48, borderRadius: 6 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <FileText size={24} color="$colorMuted" />
+              )}
               <Text
                 fontSize="$2"
                 color="$colorSecondary"
                 fontFamily="$body"
                 numberOfLines={1}
+                flex={1}
               >
                 {displayFilename}
               </Text>
             </XStack>
-          )}
+          </YStack>
         </YStack>
       ) : null}
 

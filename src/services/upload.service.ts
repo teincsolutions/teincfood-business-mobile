@@ -1,4 +1,4 @@
-import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
+import { createUploadTask, FileSystemUploadType } from 'expo-file-system/legacy';
 import { api } from './api';
 
 interface UploadResponse {
@@ -63,15 +63,27 @@ export async function uploadImage(
   const { upload_url, download_url, key } = data;
   console.log('[Upload] Got URLs', { key });
 
-  // Upload to S3 via expo-file-system (reliable on all RN URI schemes)
-  const response = await uploadAsync(upload_url, localUri, {
-    httpMethod: 'PUT',
-    headers: { 'Content-Type': contentType },
-    uploadType: FileSystemUploadType.BINARY_CONTENT,
-  });
+  // Upload to S3 via expo-file-system with progress tracking
+  const task = createUploadTask(
+    upload_url,
+    localUri,
+    {
+      httpMethod: 'PUT',
+      headers: { 'Content-Type': contentType },
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+    },
+    (progress) => {
+      const percent = Math.round(
+        (progress.totalBytesSent / progress.totalBytesExpectedToSend) * 100,
+      );
+      onProgress?.(percent);
+    },
+  );
 
-  if (response.status >= 400) {
-    throw new Error(`Upload failed with status ${response.status}`);
+  const response = await task.uploadAsync();
+
+  if (!response || response.status >= 400) {
+    throw new Error(`Upload failed with status ${response?.status}`);
   }
 
   console.log('[Upload] S3 PUT succeeded');
