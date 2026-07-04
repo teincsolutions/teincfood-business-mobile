@@ -2,6 +2,15 @@ import type { PaginationMeta, PaginatedResponse } from './pagination';
 
 // ─── Rider Profile ───
 
+export interface RiderProfileBusiness {
+  id: string;
+  name: string;
+  business_number: string;
+  type: string;
+  status: string;
+  logo_url: string | null;
+}
+
 export interface RiderProfile {
   id: string;
   rider_number: string;
@@ -12,7 +21,7 @@ export interface RiderProfile {
   is_active: boolean;
   current_lat: number | null;
   current_lng: number | null;
-  business_id: string | null;
+  businesses: RiderProfileBusiness[];
   phone: string;
   license_number: string;
   kyc_status: string;

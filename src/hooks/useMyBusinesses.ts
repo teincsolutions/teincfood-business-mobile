@@ -1,11 +1,9 @@
-import { useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import * as businessService from '@/services/business.service';
-import { useUserInvitationsQuery } from '@/hooks/useInvitations';
-import type { BusinessMembership } from '@/types/api';
-import type { Business } from '@/types/api';
+import type { UserInvitation } from '@/services/business.service';
 
 export interface MyBusinessEntry {
-  type: 'owned' | 'member';
+  type: 'owned' | 'member' | 'rider' | 'fleet_invitation' | 'member_invitation';
   id: string;
   business_id: string;
   name: string;
@@ -14,79 +12,95 @@ export interface MyBusinessEntry {
   status: string;
   role: string | null;
   invitation_id: string | null;
+  code?: string | null;
+}
+
+function mapInvitation(inv: UserInvitation): MyBusinessEntry | null {
+  switch (inv.type) {
+    case 'business_owner':
+      return {
+        type: 'owned',
+        id: inv.id,
+        business_id: inv.business_id!,
+        name: inv.business_name || 'Unknown Business',
+        business_number: '',
+        logo_url: null,
+        status: inv.status,
+        role: 'owner',
+        invitation_id: null,
+      };
+    case 'business_member':
+      if (inv.status === 'accepted' || inv.status === 'active') {
+        return {
+          type: 'member',
+          id: inv.id,
+          business_id: inv.business_id!,
+          name: inv.business_name || 'Unknown Business',
+          business_number: '',
+          logo_url: null,
+          status: 'active',
+          role: inv.role || 'member',
+          invitation_id: inv.id,
+        };
+      }
+      return {
+        type: 'member_invitation',
+        id: inv.id,
+        business_id: inv.business_id!,
+        name: inv.business_name || 'Unknown Business',
+        business_number: '',
+        logo_url: null,
+        status: 'pending',
+        role: inv.role || 'member',
+        invitation_id: inv.id,
+        code: inv.code,
+      };
+    case 'rider_linked':
+      return {
+        type: 'rider',
+        id: inv.id,
+        business_id: inv.business_id!,
+        name: inv.business_name || 'Unknown Business',
+        business_number: '',
+        logo_url: null,
+        status: 'active',
+        role: 'rider',
+        invitation_id: inv.id,
+      };
+    case 'fleet_rider':
+      if (inv.status === 'pending') {
+        return {
+          type: 'fleet_invitation',
+          id: inv.id,
+          business_id: inv.business_id!,
+          name: inv.business_name || 'Unknown Business',
+          business_number: '',
+          logo_url: null,
+          status: 'pending',
+          role: null,
+          invitation_id: inv.id,
+          code: inv.code,
+        };
+      }
+      return null;
+    default:
+      return null;
+  }
 }
 
 export function useMyBusinesses() {
-  const queries = useQueries({
-    queries: [
-      {
-        queryKey: ['businesses', 'mine'],
-        queryFn: async () => {
-          const res = await businessService.fetchMyBusinesses();
-          return res.data || [];
-        },
-        staleTime: 1000 * 60 * 5,
-      },
-      {
-        queryKey: ['businesses', 'memberships'],
-        queryFn: async () => {
-          const res = await businessService.fetchMyMemberships();
-          return res.data || [];
-        },
-        staleTime: 1000 * 60 * 5,
-      },
-    ],
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['businesses', 'relationships'],
+    queryFn: async () => {
+      const res = await businessService.fetchUserInvitations();
+      return (res.data || []).map(mapInvitation).filter(Boolean) as MyBusinessEntry[];
+    },
+    staleTime: 1000 * 60 * 5,
   });
 
-  const { data: invitations } = useUserInvitationsQuery();
-
-  const [ownedRes, membershipsRes] = queries;
-  const owned = (ownedRes.data || []) as Business[];
-  const memberships = ((membershipsRes.data || []) as BusinessMembership[]).filter(
-    (m) => m.source !== 'owner',
-  );
-
-  const joinedInvitations = (invitations?.data || []).filter(
-    (inv: { status: string }) => inv.status === 'accepted' || inv.status === 'active',
-  );
-
-  const entries: MyBusinessEntry[] = [
-    ...owned.map((b) => ({
-      type: 'owned' as const,
-      id: `owned_${b.id}`,
-      business_id: b.id,
-      name: b.name,
-      business_number: b.business_number,
-      logo_url: b.logo_url,
-      status: b.status,
-      role: 'owner' as const,
-      invitation_id: null,
-    })),
-    ...memberships.map((m) => {
-      const inv = joinedInvitations.find(
-        (i: { business_id?: string | null; type?: string }) => i.business_id === m.business.id && i.type === 'business_member',
-      );
-      return {
-        type: 'member' as const,
-        id: `member_${m.business.id}`,
-        business_id: m.business.id,
-        name: m.business.name,
-        business_number: m.business.business_number,
-        logo_url: m.business.logo_url,
-        status: m.status,
-        role: m.role,
-        invitation_id: inv?.id || null,
-      };
-    }),
-  ];
-
-  const isLoading = queries.some((q) => q.isLoading);
-
   return {
-    entries,
+    entries: data || [],
     isLoading,
-    owned,
-    memberships,
-    refetchAll: () => queries.forEach((q) => q.refetch()),
+    refetchAll: refetch,
   };
 }

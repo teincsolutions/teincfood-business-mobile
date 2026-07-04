@@ -17,14 +17,16 @@ import { useRouter, useNavigation } from "expo-router";
 import { Button, Input, BackButton } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useMyBusinesses } from "@/hooks/useMyBusinesses";
-import { useLeaveBusinessMutation } from "@/hooks/useInvitations";
+import { useLeaveBusinessMutation, useAcceptFleetInvitationMutation } from "@/hooks/useInvitations";
 
 export default function BusinessesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { entries, isLoading, owned, refetchAll } = useMyBusinesses();
+  const { entries, isLoading, refetchAll } = useMyBusinesses();
+  const ownedCount = entries.filter((e) => e.type === 'owned').length;
   const leaveMutation = useLeaveBusinessMutation();
+  const acceptInvitation = useAcceptFleetInvitationMutation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
@@ -33,7 +35,7 @@ export default function BusinessesScreen() {
   const filteredEntries = entries.filter((entry) => {
     const matchesSearch =
       entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.business_number.toLowerCase().includes(searchQuery.toLowerCase());
+      (entry.business_number && entry.business_number.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && entry.status === "active") ||
@@ -41,9 +43,46 @@ export default function BusinessesScreen() {
     return matchesSearch && matchesStatus;
   });
 
+  const RoleBadge = ({ entry }) => {
+    if (entry.type === "owned") {
+      return (
+        <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$orangeMuted" borderWidth={1} borderColor="$orange">
+          <Crown size={10} color="$orange" />
+          <Text fontSize="$1" color="$orange" fontFamily="$body" fontWeight="600" marginLeft={2}>OWNER</Text>
+        </XStack>
+      );
+    }
+    if (entry.type === "rider") {
+      return (
+        <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$greenMuted" borderWidth={1} borderColor="$green">
+          <User size={10} color="$green" />
+          <Text fontSize="$1" color="$green" fontFamily="$body" fontWeight="600" marginLeft={2}>RIDER</Text>
+        </XStack>
+      );
+    }
+    if (entry.type === "fleet_invitation" || entry.type === "member_invitation") {
+      return (
+        <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$yellowMuted" borderWidth={1} borderColor="$yellow">
+          <User size={10} color="$yellow" />
+          <Text fontSize="$1" color="$yellow" fontFamily="$body" fontWeight="600" marginLeft={2}>INVITED</Text>
+        </XStack>
+      );
+    }
+    return (
+      <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$infoMuted" borderWidth={1} borderColor="$info">
+        <User size={10} color="$info" />
+        <Text fontSize="$1" color="$info" fontFamily="$body" fontWeight="600" marginLeft={2}>
+          {entry.role?.toUpperCase() || "MEMBER"}
+        </Text>
+      </XStack>
+    );
+  };
+
   const renderBusiness = ({ item: entry }) => {
     const isOwned = entry.type === "owned";
     const isActive = entry.status === "active";
+    const isPendingInvite = entry.type === "fleet_invitation" || entry.type === "member_invitation";
+    const canLeave = entry.type === "member" || entry.type === "rider";
     return (
       <Card
         bordered
@@ -72,33 +111,35 @@ export default function BusinessesScreen() {
               <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                 {entry.name}
               </Text>
-              {isOwned ? (
-                <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$orangeMuted" borderWidth={1} borderColor="$orange">
-                  <Crown size={10} color="$orange" />
-                  <Text fontSize="$1" color="$orange" fontFamily="$body" fontWeight="600" marginLeft={2}>
-                    OWNER
-                  </Text>
-                </XStack>
-              ) : (
-                <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$infoMuted" borderWidth={1} borderColor="$info">
-                  <User size={10} color="$info" />
-                  <Text fontSize="$1" color="$info" fontFamily="$body" fontWeight="600" marginLeft={2}>
-                    {entry.role?.toUpperCase() || "MEMBER"}
+              <RoleBadge entry={entry} />
+              {!isPendingInvite && (
+                <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"} borderWidth={1} borderColor={isActive ? "$success" : "$borderColor"}>
+                  <Text fontSize="$1" color={isActive ? "$success" : "$colorMuted"} fontFamily="$body" fontWeight="600">
+                    {isActive ? "ACTIVE" : "INACTIVE"}
                   </Text>
                 </XStack>
               )}
-              <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor={isActive ? "$successMuted" : "$backgroundSoft"} borderWidth={1} borderColor={isActive ? "$success" : "$borderColor"}>
-                <Text fontSize="$1" color={isActive ? "$success" : "$colorMuted"} fontFamily="$body" fontWeight="600">
-                  {isActive ? "ACTIVE" : "INACTIVE"}
-                </Text>
-              </XStack>
             </XStack>
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              {entry.business_number}
-            </Text>
+            {entry.business_number && (
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                {entry.business_number}
+              </Text>
+            )}
           </YStack>
           <XStack gap="$2" alignItems="center">
-            {!isOwned && entry.invitation_id && (
+            {isPendingInvite && entry.code && (
+              <Button
+                size="$2"
+                variant="primary"
+                onPress={(e) => {
+                  e.stopPropagation();
+                  acceptInvitation.mutate({ code: entry.code });
+                }}
+              >
+                Accept
+              </Button>
+            )}
+            {canLeave && entry.invitation_id && (
               <Button
                 size="$2"
                 variant="dangerOutline"
@@ -127,7 +168,7 @@ export default function BusinessesScreen() {
             Businesses
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-            {owned.length > 0 ? "Businesses you own or belong to" : "Businesses you belong to"}
+            {ownedCount > 0 ? "Businesses you own or belong to" : "Businesses you belong to"}
           </Text>
         </YStack>
       </XStack>

@@ -83,7 +83,7 @@ export async function acceptBusinessInvitation(data: { code: string }): Promise<
 
 export interface UserInvitation {
   id: string;
-  type: 'fleet_rider' | 'business_member' | 'rider_linked';
+  type: 'business_owner' | 'fleet_rider' | 'business_member' | 'rider_linked';
   status: string;
   business_name: string | null;
   business_id: string | null;
