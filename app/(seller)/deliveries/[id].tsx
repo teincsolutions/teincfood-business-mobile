@@ -28,6 +28,7 @@ const DELIVERY_STATUS_COLORS = {
   delivered: "$gray9",
   failed: "$red9",
   returned_to_merchant: "$orange9",
+  cancelled: "$red9",
 };
 
 const DEFAULT_REGION = {
@@ -128,7 +129,7 @@ export default function SellerDeliveryDetail() {
           <Card padding="$4" bordered>
             <YStack gap="$3">
               <Text fontSize="$4" fontWeight="bold">Progress</Text>
-              <DeliveryTimeline currentStep={getDeliveryStepIndex(delivery.status)} />
+              <DeliveryTimeline currentStep={getDeliveryStepIndex(delivery.status)} status={delivery.status} />
             </YStack>
           </Card>
 
@@ -226,7 +227,7 @@ export default function SellerDeliveryDetail() {
           )}
 
           {/* Rider Info */}
-          {delivery.status !== "assigned" && (
+          {delivery.status !== "assigned" && !["failed", "returned_to_merchant", "cancelled"].includes(delivery.status) && (
             <Card padding="$4" bordered backgroundColor="$blue2">
               <YStack gap="$2">
                 <XStack alignItems="center" gap="$2">

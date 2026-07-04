@@ -152,13 +152,13 @@ export default function BusinessesScreen() {
 
         <XStack gap="$2">
           <Button size="$2" variant={filterStatus === "all" ? "primary" : "outline"} onPress={() => setFilterStatus("all")}>
-            All ({entries.length})
+            {`All (${entries.length})`}
           </Button>
           <Button size="$2" variant={filterStatus === "active" ? "primary" : "outline"} onPress={() => setFilterStatus("active")}>
-            Active ({entries.filter((e) => e.status === "active").length})
+            {`Active (${entries.filter((e) => e.status === "active").length})`}
           </Button>
           <Button size="$2" variant={filterStatus === "inactive" ? "primary" : "outline"} onPress={() => setFilterStatus("inactive")}>
-            Inactive ({entries.filter((e) => e.status !== "active").length})
+            {`Inactive (${entries.filter((e) => e.status !== "active").length})`}
           </Button>
         </XStack>
       </YStack>

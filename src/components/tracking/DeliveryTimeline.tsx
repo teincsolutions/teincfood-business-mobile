@@ -27,9 +27,13 @@ interface DeliveryTimelineProps {
 }
 
 export function DeliveryTimeline({ currentStep, status }: DeliveryTimelineProps) {
-  const isFailed = status === "failed" || status === "returned_to_merchant";
+  const terminalStatus = status === "failed" || status === "returned_to_merchant" || status === "cancelled";
 
-  if (isFailed) {
+  if (terminalStatus) {
+    const label =
+      status === "cancelled" ? "Cancelled" :
+      status === "returned_to_merchant" ? "Returned to Merchant" :
+      "Delivery Failed";
     return (
       <YStack gap="$2">
         <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
@@ -47,7 +51,7 @@ export function DeliveryTimeline({ currentStep, status }: DeliveryTimelineProps)
             <XCircle size={20} color="white" />
           </YStack>
           <Text fontSize="$3" fontWeight="700" color="$red">
-            {status === "returned_to_merchant" ? "Returned to Merchant" : "Delivery Failed"}
+            {label}
           </Text>
         </YStack>
       </YStack>
