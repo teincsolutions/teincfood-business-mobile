@@ -42,7 +42,9 @@ export function useMyBusinesses() {
 
   const [ownedRes, membershipsRes] = queries;
   const owned = (ownedRes.data || []) as Business[];
-  const memberships = (membershipsRes.data || []) as BusinessMembership[];
+  const memberships = ((membershipsRes.data || []) as BusinessMembership[]).filter(
+    (m) => m.source !== 'owner',
+  );
 
   const joinedInvitations = (invitations?.data || []).filter(
     (inv: { status: string }) => inv.status === 'accepted' || inv.status === 'active',
