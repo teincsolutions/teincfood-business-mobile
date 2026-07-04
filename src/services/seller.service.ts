@@ -51,8 +51,20 @@ export async function cancelOrderDeliveryFailure(orderId: string): Promise<{ dat
 
 // ─── Business Orders ───
 
-export async function fetchBusinessOrders(businessId: string): Promise<SellerOrdersResponse> {
-  return api.get<SellerOrdersResponse>(`/businesses/${businessId}/orders`);
+export interface BusinessOrdersParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  q?: string;
+  order_number?: string;
+  payment_mode?: string;
+}
+
+export async function fetchBusinessOrders(
+  businessId: string,
+  params?: BusinessOrdersParams,
+): Promise<SellerOrdersResponse> {
+  return api.get<SellerOrdersResponse>(`/businesses/${businessId}/orders`, { params });
 }
 
 export async function fetchBusinessOrderByNumber(businessId: string, orderNumber: string): Promise<SellerOrderDetailResponse> {

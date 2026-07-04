@@ -43,7 +43,7 @@ export default function SellerDeliveries() {
 
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
-  const allOrders = data?.data ?? [];
+  const allOrders = data ?? [];
 
   // Orders that need delivery (have delivery_address) and are in delivery-relevant statuses
   const deliveryOrders = useMemo(() => {

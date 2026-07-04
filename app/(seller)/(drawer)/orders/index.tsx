@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   YStack,
   Text,
@@ -20,7 +20,7 @@ import {
   Clock,
   Package,
 } from "@tamagui/lucide-icons";
-import { FlatList, Pressable, RefreshControl, TextInput } from "react-native";
+import { FlatList, Pressable, RefreshControl, TextInput, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -98,6 +98,8 @@ export default function SellerOrders() {
 
   const [containerWidth, setContainerWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeChips, setActiveChips] = useState<string[]>(
     isTablet
       ? [...DEFAULT_CHIPS]
@@ -106,12 +108,40 @@ export default function SellerOrders() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
-  const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 400);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchQuery]);
+
+  const filterParams = useMemo(() => {
+    const params: { status?: string; q?: string } = {};
+    const chips = activeChips;
+    if (chips.length > 0 && chips.length < DEFAULT_CHIPS.length) {
+      params.status = chips.join(",");
+    }
+    if (debouncedSearch) params.q = debouncedSearch;
+    return params;
+  }, [activeChips, debouncedSearch]);
+
+  const {
+    data,
+    isLoading,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSellerOrdersQuery(true, filterParams);
   const cancelOrder = useCancelOrderMutation();
 
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
-  const allOrders = data?.data || [];
+  const allOrders = data || [];
 
   const availWidth = containerWidth || width;
   const remaining = Math.max(300, availWidth - FIXED_TOTAL - 48);
@@ -125,19 +155,6 @@ export default function SellerOrders() {
     actions: COL_ACTIONS,
   };
   const tableTotal = Object.values(colWidths).reduce((a, b) => a + b, 0) + 48;
-
-  const filteredOrders = useMemo(() => {
-    let result = allOrders.filter((o) => activeChips.includes(o.status));
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (o) =>
-          o.order_number.toLowerCase().includes(q) ||
-          o.user?.full_name?.toLowerCase().includes(q),
-      );
-    }
-    return result;
-  }, [allOrders, activeChips, searchQuery]);
 
   const toggleChip = (key: string) => {
     setActiveChips((prev) =>
@@ -490,19 +507,23 @@ export default function SellerOrders() {
         >
           <YStack width={tableTotal}>
             {tableHeader}
-            {filteredOrders.length === 0 ? (
+            {allOrders.length === 0 ? (
               <YStack padding="$8" alignItems="center">
                 <Text color="$colorMuted" fontSize="$4" textAlign="center">
-                  {searchQuery
+                  {debouncedSearch
                     ? "No orders match your search"
                     : "No orders for the selected filters"}
                 </Text>
               </YStack>
             ) : (
               <FlatList
-                data={filteredOrders}
+                data={allOrders}
                 keyExtractor={(item) => item.id}
                 renderItem={renderTabletRow}
+                onEndReached={() => {
+                  if (hasNextPage) fetchNextPage();
+                }}
+                onEndReachedThreshold={0.5}
                 refreshControl={
                   <RefreshControl
                     refreshing={isRefetching}
@@ -512,6 +533,13 @@ export default function SellerOrders() {
                 contentContainerStyle={{
                   paddingBottom: Math.max(insets.bottom + 20, 24),
                 }}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <YStack padding="$4" alignItems="center">
+                      <ActivityIndicator />
+                    </YStack>
+                  ) : null
+                }
                 initialNumToRender={20}
                 windowSize={10}
                 maxToRenderPerBatch={15}
@@ -522,9 +550,13 @@ export default function SellerOrders() {
         </ScrollView>
       ) : (
         <FlatList
-          data={filteredOrders}
+          data={allOrders}
           keyExtractor={(item) => item.id}
           renderItem={renderPhoneCard}
+          onEndReached={() => {
+            if (hasNextPage) fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
           contentContainerStyle={{
             padding: 16,
             paddingTop: 0,
@@ -533,19 +565,27 @@ export default function SellerOrders() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
           }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <YStack padding="$4" alignItems="center">
+                <ActivityIndicator />
+              </YStack>
+            ) : null
+          }
           ListEmptyComponent={
             <YStack padding="$8" alignItems="center" gap="$3">
               <Text color="$colorMuted" fontSize="$5" textAlign="center">
-                {searchQuery
+                {debouncedSearch
                   ? "No orders match your search"
                   : "No orders for the selected filters"}
               </Text>
-              {(searchQuery || activeChips.length > 0) && (
+              {(debouncedSearch || activeChips.length > 0) && (
                 <Button
                   variant="outline"
                   marginTop="$3"
                   onPress={() => {
                     setSearchQuery("");
+                    setDebouncedSearch("");
                     setActiveChips(
                       isTablet
                         ? [...DEFAULT_CHIPS]

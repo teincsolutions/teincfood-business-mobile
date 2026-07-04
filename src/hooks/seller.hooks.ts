@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { SellerOrder as ApiSellerOrder } from '@/types/api/seller.api';
+import type { BusinessOrdersParams } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
 import { useBusinessStore } from '@/stores/business.store';
 import { toast } from 'sonner-native';
@@ -7,23 +8,32 @@ import { extractApiErrorMessage } from '@/utils/error';
 
 export const SELLER_KEYS = {
   all: ['seller'] as const,
-  orders: (businessId?: string) => [...SELLER_KEYS.all, 'orders', businessId] as const,
+  orders: (businessId?: string, filters?: BusinessOrdersParams) =>
+    [...SELLER_KEYS.all, 'orders', businessId, filters].filter((x) => x !== undefined) as readonly any[],
   order: (id: string, businessId?: string) => [...SELLER_KEYS.all, 'order', id, businessId] as const,
 };
 
-export function useSellerOrdersQuery(enabled = true) {
+export function useSellerOrdersQuery(
+  enabled = true,
+  filters?: { status?: string; q?: string },
+) {
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
 
-  return useQuery({
-    queryKey: SELLER_KEYS.orders(activeBusinessId),
-    queryFn: () => {
-      if (activeBusinessId) {
-        return sellerService.fetchBusinessOrders(activeBusinessId);
-      }
-      return sellerService.fetchSellerOrders();
+  return useInfiniteQuery({
+    queryKey: SELLER_KEYS.orders(activeBusinessId, filters),
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: BusinessOrdersParams = { page: pageParam, page_size: 20 };
+      if (filters?.status) params.status = filters.status;
+      if (filters?.q) params.q = filters.q;
+      return sellerService.fetchBusinessOrders(activeBusinessId!, params);
     },
-    enabled: enabled,
-    staleTime: 30 * 1000,
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination ?? {};
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    select: (data) => data.pages.flatMap((p) => p.data),
+    enabled: enabled && Boolean(activeBusinessId),
   });
 }
 
@@ -184,30 +194,16 @@ export function useRejectOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => sellerService.rejectOrder(orderId),
 
-    onMutate: async (orderId) => {
-      await queryClient.cancelQueries({ queryKey: SELLER_KEYS.orders() });
-       const previous = queryClient.getQueryData<{ orders: ApiSellerOrder[] }>(SELLER_KEYS.orders());
-      if (previous) {
-        queryClient.setQueryData<{ orders: ApiSellerOrder[] }>(SELLER_KEYS.orders(), {
-          orders: previous.orders.filter((o) => o.id !== orderId),
-        });
-      }
-      return { previous };
-    },
-
     onSuccess: () => {
       toast.success("Order rejected");
     },
 
-    onError: (error, _orderId, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(SELLER_KEYS.orders(), context.previous);
-      }
+    onError: (error) => {
       toast.error(extractApiErrorMessage(error));
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.orders() });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
     },
   });
 }
