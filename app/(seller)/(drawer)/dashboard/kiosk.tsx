@@ -58,6 +58,7 @@ import {
   useAssignRiderMutation,
   useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
+import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { useResponsive } from "@/utils/responsive";
 import { Button } from "@/components/ui";
 import { formatPriceFromMinor } from "@/utils/currency";
@@ -167,6 +168,7 @@ export default function KioskMode() {
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
   const assignRider = useAssignRiderMutation();
+  const confirmHandover = useConfirmHandoverMutation();
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
 
   const allOrders = data?.data ?? [];
@@ -277,6 +279,22 @@ export default function KioskMode() {
   const handleOpenRiderSheet = (orderId: string) => {
     setSelectedOrderId(orderId);
     setShowRiderSheet(true);
+  };
+
+  const handleHandover = (orderId: string, deliveryId: string) => {
+    setDialog({
+      open: true,
+      title: "Confirm Handover",
+      description: "Hand over this order to the rider?",
+      confirmText: "Handover",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        confirmHandover.mutate(deliveryId);
+        setDialog(defaultDialogState);
+      },
+      icon: Truck,
+      isDestructive: false,
+    });
   };
 
   const handleViewDetails = (order: SellerOrder) => {
@@ -563,6 +581,7 @@ export default function KioskMode() {
                         key={order.id}
                         order={order}
                         onAssignRider={handleOpenRiderSheet}
+                        onHandover={handleHandover}
                         onViewDetails={handleViewDetails}
                       />
                     ))
@@ -642,6 +661,8 @@ export default function KioskMode() {
                         key={order.id}
                         order={order}
                         onAssignRider={handleOpenRiderSheet}
+                        onHandover={handleHandover}
+                        onViewDetails={handleViewDetails}
                       />
                     ))
                   )}
@@ -766,6 +787,7 @@ export default function KioskMode() {
                     key={order.id}
                     order={order}
                     onAssignRider={handleOpenRiderSheet}
+                    onHandover={handleHandover}
                     onViewDetails={handleViewDetails}
                   />
                 ))
