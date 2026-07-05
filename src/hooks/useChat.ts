@@ -48,9 +48,15 @@ export function useChat({
       ? userId || ''
       : '';
 
+  const cachedConversationIdHint = useChatStore(
+    (state) => state.conversationTopicCache[chatTopic] ?? undefined
+  );
+
   const socketState = useChatSocket(chatJoinTarget, onChatEvent, {
     topic: chatTopic,
-    conversationIdHint: supportConversation?.id,
+    conversationIdHint: isSupportChat
+      ? (supportConversation?.id ?? cachedConversationIdHint)
+      : cachedConversationIdHint,
     enableChannelHistory: isOrderPairChat,
     channelHistoryLimit: 50,
     onChannelHistory,
@@ -65,10 +71,10 @@ export function useChat({
 
   // Load persisted messages from store eagerly (using cache if active ID not ready yet)
   const storedMessages = useChatStore(
-    (state) =>
-      activeConversationId
-        ? state.messages[activeConversationId] ?? EMPTY_MESSAGES
-        : EMPTY_MESSAGES,
+    (state) => {
+      if (!activeConversationId) return state.messages[chatTopic] ?? EMPTY_MESSAGES;
+      return state.messages[activeConversationId] ?? state.messages[chatTopic] ?? EMPTY_MESSAGES;
+    },
   );
   const messagesQuery = useMessagesQuery(activeConversationId, isSupportChat);
 

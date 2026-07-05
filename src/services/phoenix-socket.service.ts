@@ -24,6 +24,7 @@ class PhoenixSocket {
   private pendingPushes: Map<string, { resolve: (p: Record<string, unknown>) => void; reject: (e: Error) => void }> = new Map();
   joinedChannels: Set<string> = new Set();
   private pendingRejoin: Set<string> = new Set();
+  private topicJoinRefs: Map<string, string> = new Map();
 
   private frameHandlers: Map<string, Set<FrameHandler>> = new Map();
 
@@ -134,6 +135,7 @@ class PhoenixSocket {
     this.pendingRejoin.clear();
     this.pendingJoins.clear();
     this.pendingPushes.clear();
+    this.topicJoinRefs.clear();
     this.frameHandlers.clear();
 
     if (this.socket) {
@@ -200,8 +202,11 @@ class PhoenixSocket {
 
   private sendRaw(msg: PhoenixOutbound): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
+      const joinRef = msg.topic && msg.topic !== 'phoenix'
+        ? (msg.joinRef ?? this.topicJoinRefs.get(msg.topic) ?? null)
+        : (msg.joinRef ?? null);
       const frame: PhoenixV2Frame = [
-        msg.joinRef ?? null,
+        joinRef,
         msg.ref ?? null,
         msg.topic,
         msg.event,
@@ -211,13 +216,18 @@ class PhoenixSocket {
     }
   }
 
+  push(topic: string, event: string, payload: Record<string, unknown>): void {
+    const ref = this.getRef();
+    this.sendRaw({ topic, event, payload, ref, joinRef: this.topicJoinRefs.get(topic) });
+  }
+
   pushWithReply(
     topic: string,
     event: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const ref = this.getRef();
-    const msg: PhoenixOutbound = { topic, event, payload, ref };
+    const msg: PhoenixOutbound = { topic, event, payload, ref, joinRef: this.topicJoinRefs.get(topic) };
 
     return new Promise((resolve, reject) => {
       this.pendingPushes.set(ref, { resolve, reject });
@@ -262,6 +272,7 @@ class PhoenixSocket {
         pending.resolve(response);
         this.pendingJoins.delete(topic);
         this.joinedChannels.add(topic);
+        if (joinRef) this.topicJoinRefs.set(topic, joinRef);
       }
       return;
     }
@@ -323,6 +334,7 @@ class PhoenixSocket {
   leaveChannel(topic: string): void {
     this.joinedChannels.delete(topic);
     this.pendingRejoin.delete(topic);
+    this.topicJoinRefs.delete(topic);
   }
 
   private async rejoinPending(): Promise<void> {

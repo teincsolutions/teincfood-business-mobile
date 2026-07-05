@@ -209,10 +209,10 @@ export function useChatSocket(
 
   const store = useChatStore;
 
-  // Eagerly load cached conversation ID for instant message display
-  const cachedConversationId = useMemo(() => {
-    return store.getState().conversationTopicCache[topic] ?? null;
-  }, [topic, store]);
+  // Eagerly load cached conversation ID for instant message display (reactive zustand selector)
+  const cachedConversationId = useChatStore(
+    (state) => state.conversationTopicCache[topic] ?? null
+  );
 
   useEffect(() => {
     if (!joinTarget || !topic) return;
@@ -235,6 +235,18 @@ export function useChatSocket(
         if (mounted) {
           setConversationId(resolvedConversationId);
           store.getState().cacheConversationId(topic, resolvedConversationId);
+        }
+
+        // Reconcile messages stored under topic key before UUID was known
+        const preJoinMessages = store.getState().messages[topic];
+        if (preJoinMessages?.length && resolvedConversationId !== topic) {
+          for (const msg of preJoinMessages) {
+            store.getState().upsertMessage(resolvedConversationId, {
+              ...msg,
+              conversationId: resolvedConversationId,
+            });
+          }
+          store.getState().clearConversation(topic);
         }
         
         // Subscribe to incoming messages
@@ -270,6 +282,7 @@ export function useChatSocket(
 
         // Subscribe to typing events
         typingUnsub = chatService.onTyping(topic, (data) => {
+          if (data.sender_id === currentUserIdRef.current) return;
           if (data.is_typing) {
             setIsTyping(true);
             if (typingTimer.current) clearTimeout(typingTimer.current);
@@ -307,6 +320,7 @@ export function useChatSocket(
 
         if (mounted) {
           setIsReady(true);
+          chatService.flushOutbox().catch(() => {});
         }
       } catch {
         if (mounted) {
@@ -343,7 +357,8 @@ export function useChatSocket(
 
   const sendMessage = useCallback(
     async (text: string): Promise<boolean> => {
-      const cid = conversationId || options?.conversationIdHint || cachedConversationId || '';
+      const storeCid = store.getState().conversationTopicCache[topic] ?? '';
+      const cid = conversationId || options?.conversationIdHint || cachedConversationId || storeCid || topic;
       if (!topic || !cid) return false;
 
       const localId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -380,7 +395,7 @@ export function useChatSocket(
         const msgData = Array.isArray(reply) ? (reply[1] as Record<string, unknown>) : (typeof reply === 'object' ? reply : null);
         const serverId = (msgData?.id as string) ?? localId;
         const serverSentAt = (msgData?.sent_at as string) || (msgData?.inserted_at as string);
-        store.getState().updateMessageStatus(cid, localId, 'delivered', serverId, serverSentAt);
+        store.getState().updateMessageStatus(cid, localId, 'sent', serverId, serverSentAt);
         return true;
       } catch (err) {
         console.warn('[Chat] Send on wire failed, queuing:', err);

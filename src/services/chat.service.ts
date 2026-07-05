@@ -1,9 +1,9 @@
 import { useChatStore } from '@/stores/chat.store';
 import { phoenixSocket } from './phoenix-socket.service';
-import type { ChatMessagePayload, ConnectionState, PhoenixV2Frame } from '@/types/chat';
+import type { ChatMessagePayload, ConnectionState } from '@/types/chat';
 
 type ChatEventCallback = (msg: ChatMessagePayload) => void;
-type TypingEventCallback = (data: { user_id: string; is_typing: boolean }) => void;
+type TypingEventCallback = (data: { sender_id: string; is_typing: boolean }) => void;
 
 class ChatService {
   private channels: Map<string, Set<ChatEventCallback>> = new Map();
@@ -82,7 +82,7 @@ class ChatService {
           callbacks.forEach((cb) => cb(chatPayload));
         }
       } else if (event === 'typing') {
-        const typingData = payload as { user_id: string; is_typing: boolean };
+        const typingData = payload as { sender_id: string; is_typing: boolean };
         const callbacks = this.typingCallbacks.get(topic);
         if (callbacks) {
           callbacks.forEach((cb) => cb(typingData));
@@ -124,14 +124,11 @@ class ChatService {
   }
 
   sendTyping(topic: string, isTyping: boolean): void {
-    this.sendRaw(topic, 'typing', { is_typing: isTyping });
+    phoenixSocket.push(topic, 'typing', { is_typing: isTyping });
   }
 
   private sendRaw(topic: string, event: string, payload: Record<string, unknown>): void {
-    if (phoenixSocket.socket?.readyState === WebSocket.OPEN) {
-      const frame: PhoenixV2Frame = [null, null, topic, event, payload];
-      phoenixSocket.socket.send(JSON.stringify(frame));
-    }
+    phoenixSocket.push(topic, event, payload);
   }
 
   async getMessages(topic: string, limit = 50): Promise<ChatMessagePayload[]> {
@@ -162,7 +159,7 @@ class ChatService {
     return `chat:pair:order_${orderId}_${sorted[0]}_${sorted[1]}`;
   }
 
-  private async flushOutbox(): Promise<void> {
+  async flushOutbox(): Promise<void> {
     const store = useChatStore.getState();
     const pending = store.getPendingOutbox();
 

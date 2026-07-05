@@ -489,12 +489,12 @@ export function ChatConversationScreen({
             if (offsetY > scrollOffsetRef.current) {
               scrollOffsetRef.current = offsetY;
             }
-            if (offsetY < 50 && hasMoreRef.current && !loadingOlderRef.current) {
+            if (offsetY < 50 && hasMoreRef.current && !loadingOlderRef.current && isReady) {
               loadingOlderRef.current = true;
               const cid = activeConversationId;
               if (!cid) { loadingOlderRef.current = false; return; }
 
-              messagesService.getMessages(cid, scrollOffsetRef.current).then((older) => {
+              messagesService.getMessages(cid, Math.round(scrollOffsetRef.current)).then((older) => {
                 if (older.length > 0) {
                   scrollOffsetRef.current += older.length;
                   const store = useChatStore.getState();
