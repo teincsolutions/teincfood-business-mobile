@@ -32,6 +32,7 @@ import {
 } from '@tamagui/lucide-icons';
 import * as Clipboard from 'expo-clipboard';
 import { BackButton } from '@/components/ui';
+import { useAuthStore } from '@/stores/auth.store';
 import { useChat } from '@/hooks/useChat';
 import type { StoredMessage, ChatMessageStatus, ConnectionState } from '@teincfood/chat-client';
 
@@ -180,6 +181,7 @@ interface ChatConversationScreenProps {
   userId: string;
   orderId?: string;
   isDirect?: boolean;
+  topic?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,12 +192,15 @@ export function ChatConversationScreen({
   userId,
   orderId,
   isDirect = false,
+  topic: customTopic,
 }: ChatConversationScreenProps) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const [message, setMessage] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const currentUserId = useAuthStore((state) => state.user?.id || '');
+  const isSupport = userId === 'support';
 
   const {
     isSupportChat,
@@ -211,7 +216,7 @@ export function ChatConversationScreen({
     client,
     connectionState,
     activeConversationId,
-  } = useChat({ userId, orderId, isDirect });
+  } = useChat(isSupport ? { userId: 'support' } : customTopic ? { userId: currentUserId, topic: customTopic } : { userId: currentUserId, otherUserId: userId, orderId, isDirect });
 
   const scrollOffsetRef = useRef(0);
   const loadingOlderRef = useRef(false);
@@ -381,7 +386,7 @@ export function ChatConversationScreen({
                       backgroundColor={connFailed ? '#ef4444' : isConnected ? '#25D366' : '#f59e0b'}
                     />
                     <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                      {connFailed ? 'Connection failed' : connState === 'reconnecting' ? 'Reconnecting...' : isConnected ? 'Online' : 'Offline'}
+                      {connFailed ? 'Connection failed' : connectionState === 'reconnecting' ? 'Reconnecting...' : isConnected ? 'Online' : 'Offline'}
                     </Text>
                   </>
                 ) : null}
