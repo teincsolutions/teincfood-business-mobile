@@ -159,6 +159,11 @@ class ChatService {
     return `chat:pair:order_${orderId}_${sorted[0]}_${sorted[1]}`;
   }
 
+  getDirectChatTopic(participantA: string, participantB: string): string {
+    const sorted = [participantA, participantB].sort();
+    return `chat:pair:${sorted[0]}_${sorted[1]}`;
+  }
+
   async flushOutbox(): Promise<void> {
     const store = useChatStore.getState();
     const pending = store.getPendingOutbox();

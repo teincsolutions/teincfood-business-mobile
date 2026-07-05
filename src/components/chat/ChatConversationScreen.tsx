@@ -186,6 +186,7 @@ interface ChatConversationScreenProps {
   orderId?: string;
   contactName?: string;
   contactPhone?: string;
+  isDirect?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +198,7 @@ export function ChatConversationScreen({
   orderId,
   contactName,
   contactPhone,
+  isDirect = false,
 }: ChatConversationScreenProps) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -230,7 +232,7 @@ export function ChatConversationScreen({
     isTyping,
     isReady,
     conversationId: activeConversationId,
-  } = useChat({ userId, orderId, onChatEvent, onChannelHistory });
+  } = useChat({ userId, orderId, isDirect, onChatEvent, onChannelHistory });
 
   const scrollOffsetRef = useRef(0);
   const loadingOlderRef = useRef(false);

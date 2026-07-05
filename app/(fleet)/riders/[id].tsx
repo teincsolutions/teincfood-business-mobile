@@ -20,6 +20,7 @@ import {
   Clock,
   Calendar,
   User,
+  MessageCircle,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { BackButton, Button } from "@/components/ui";
@@ -164,6 +165,26 @@ export default function RiderDetailScreen() {
                 {rider.riderEmail}
               </Text>
             </XStack>
+
+            {rider.riderId && (
+              <>
+                <Separator />
+                <Button
+                  variant="outline"
+                  icon={<MessageCircle size={18} />}
+                  onPress={() => {
+                    const uid = rider.riderId;
+                    const name = rider.riderName || "";
+                    const phone = rider.riderPhone || "";
+                    router.push(
+                      `/(communication)/chat/direct?userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`
+                    );
+                  }}
+                >
+                  Message Rider
+                </Button>
+              </>
+            )}
           </YStack>
         </Card>
 

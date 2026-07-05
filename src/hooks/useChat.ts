@@ -19,17 +19,20 @@ export function useInboxConversations() {
 export function useChat({
   userId,
   orderId,
+  isDirect,
   onChatEvent,
   onChannelHistory,
 }: {
   userId?: string;
   orderId?: string;
+  isDirect?: boolean;
   onChatEvent: (event: any) => void;
   onChannelHistory?: (messages: any[]) => void;
 }) {
   const currentUserId = useAuthStore((state) => state.user?.id || '');
   const isSupportChat = userId === 'support';
   const isOrderPairChat = Boolean(orderId && userId && currentUserId && !isSupportChat);
+  const isDirectPairChat = Boolean(isDirect && userId && currentUserId && !isSupportChat && !isOrderPairChat);
 
   const { data: supportConversation } = useSupportConversationQuery(
     isSupportChat,
@@ -40,11 +43,13 @@ export function useChat({
     ? chatService.getSupportChatTopic(currentUserId)
     : isOrderPairChat
       ? chatService.getOrderChatTopic(orderId!, currentUserId, userId!)
-      : '';
+      : isDirectPairChat
+        ? chatService.getDirectChatTopic(currentUserId, userId!)
+        : '';
 
   const chatJoinTarget = isSupportChat
     ? currentUserId
-    : isOrderPairChat
+    : isOrderPairChat || isDirectPairChat
       ? userId || ''
       : '';
 
@@ -57,7 +62,7 @@ export function useChat({
     conversationIdHint: isSupportChat
       ? (supportConversation?.id ?? cachedConversationIdHint)
       : cachedConversationIdHint,
-    enableChannelHistory: isOrderPairChat,
+    enableChannelHistory: isOrderPairChat || isDirectPairChat,
     channelHistoryLimit: 50,
     onChannelHistory,
   });
@@ -82,6 +87,7 @@ export function useChat({
     currentUserId,
     isSupportChat,
     isOrderPairChat,
+    isDirectPairChat,
     supportConversation,
     chatTopic,
     chatJoinTarget,
