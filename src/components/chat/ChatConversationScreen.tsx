@@ -184,8 +184,6 @@ function TypingDots() {
 interface ChatConversationScreenProps {
   userId: string;
   orderId?: string;
-  contactName?: string;
-  contactPhone?: string;
   isDirect?: boolean;
 }
 
@@ -196,8 +194,6 @@ interface ChatConversationScreenProps {
 export function ChatConversationScreen({
   userId,
   orderId,
-  contactName,
-  contactPhone,
   isDirect = false,
 }: ChatConversationScreenProps) {
   const insets = useSafeAreaInsets();
@@ -238,8 +234,8 @@ export function ChatConversationScreen({
   const loadingOlderRef = useRef(false);
   const hasMoreRef = useRef(true);
 
-  const displayName = isSupportChat ? 'TeincFood Support' : contactName || user?.fullName || 'Chat';
-  const displayPhone = contactPhone || user?.phone;
+  const displayName = isSupportChat ? 'TeincFood Support' : user?.fullName || 'Chat';
+  const displayPhone = user?.phone;
 
   // Connection state listener
   useEffect(() => {

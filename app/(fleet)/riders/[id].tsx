@@ -166,19 +166,14 @@ export default function RiderDetailScreen() {
               </Text>
             </XStack>
 
-            {rider.riderId && (
+            {rider.user?.id && (
               <>
                 <Separator />
                 <Button
                   variant="outline"
                   icon={<MessageCircle size={18} />}
                   onPress={() => {
-                    const uid = rider.riderId;
-                    const name = rider.riderName || "";
-                    const phone = rider.riderPhone || "";
-                    router.push(
-                      `/(communication)/chat/direct?userId=${encodeURIComponent(uid)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`
-                    );
+                    router.push({ pathname: '/(communication)/chat/direct', params: { userId: rider.user?.id } });
                   }}
                 >
                   Message Rider

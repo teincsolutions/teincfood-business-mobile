@@ -346,11 +346,7 @@ export default function RiderDeliveryDetails() {
                   onPress={() => {
                     const uid = delivery.customer?.user_id;
                     if (uid) {
-                      router.push(
-                        `/(communication)/chat/order?userId=${uid}&orderId=${delivery.order_id}&name=${encodeURIComponent(delivery.customer?.name || "")}&phone=${encodeURIComponent(delivery.customer?.phone || "")}`
-                      );
-                    } else {
-                      router.push("/(communication)/chat/support");
+                      router.push({ pathname: '/(communication)/chat/order', params: { userId: uid, orderId: delivery.order_id } });
                     }
                   }}
                 >
@@ -386,6 +382,8 @@ export default function RiderDeliveryDetails() {
                       phone: delivery.pickup?.phone,
                       lat: delivery.pickup?.lat,
                       lng: delivery.pickup?.lng,
+                      userId: delivery.customer?.user_id,
+                      orderId: delivery.order_id,
                     };
                     router.push(`/(rider)/navigate/${encodeURIComponent(JSON.stringify(data))}`);
                   }}
@@ -429,6 +427,8 @@ export default function RiderDeliveryDetails() {
                       lat: delivery.dropoff?.lat,
                       lng: delivery.dropoff?.lng,
                       notes: delivery.dropoff?.notes,
+                      userId: delivery.customer?.user_id,
+                      orderId: delivery.order_id,
                     };
                     router.push(`/(rider)/navigate/${encodeURIComponent(JSON.stringify(data))}`);
                   }}

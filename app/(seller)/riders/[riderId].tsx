@@ -1,14 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { ScrollView, Linking } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Avatar,
-  Separator,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -21,7 +14,12 @@ import {
   CheckCircle,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
-import { useFleetRiderQuery, useRiderKycQuery, useSuspendRiderMutation, useActivateRiderMutation } from "@/hooks/useFleet";
+import {
+  useFleetRiderQuery,
+  useRiderKycQuery,
+  useSuspendRiderMutation,
+  useActivateRiderMutation,
+} from "@/hooks/useFleet";
 import { RiderKycSheet } from "@/components/rider/RiderKycSheet";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
@@ -45,9 +43,17 @@ export default function SellerRiderDetailScreen() {
 
   if (isLoading || !rider) {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center" gap="$3" backgroundColor="$background">
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        gap="$3"
+        backgroundColor="$background"
+      >
         <User size={48} color="$colorMuted" />
-        <Text fontSize="$5" fontWeight="600">Loading...</Text>
+        <Text fontSize="$5" fontWeight="600">
+          Loading...
+        </Text>
       </YStack>
     );
   }
@@ -118,7 +124,12 @@ export default function SellerRiderDetailScreen() {
                 borderRadius="$3"
                 backgroundColor={statusBg}
               >
-                <Text fontSize="$3" color={statusColor} fontFamily="$body" fontWeight="600">
+                <Text
+                  fontSize="$3"
+                  color={statusColor}
+                  fontFamily="$body"
+                  fontWeight="600"
+                >
                   {statusLabel}
                 </Text>
               </YStack>
@@ -155,11 +166,7 @@ export default function SellerRiderDetailScreen() {
                 onPress={() => {
                   const uid = rider.user?.id;
                   if (uid) {
-                    router.push(
-                      `/(communication)/chat/order?userId=${uid}&name=${encodeURIComponent(rider.user?.full_name || "")}&phone=${encodeURIComponent(rider.phone || "")}`
-                    );
-                  } else {
-                    router.push("/(communication)/chat/support");
+                    router.push({ pathname: '/(communication)/chat/direct', params: { userId: uid } });
                   }
                 }}
               >
@@ -183,38 +190,64 @@ export default function SellerRiderDetailScreen() {
 
               {vehicle.plate_number && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Plate Number</Text>
-                  <Text fontWeight="600" fontFamily="$body">{vehicle.plate_number}</Text>
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Plate Number
+                  </Text>
+                  <Text fontWeight="600" fontFamily="$body">
+                    {vehicle.plate_number}
+                  </Text>
                 </XStack>
               )}
               {vehicle.brand && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Brand</Text>
-                  <Text fontWeight="600" fontFamily="$body">{vehicle.brand}</Text>
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Brand
+                  </Text>
+                  <Text fontWeight="600" fontFamily="$body">
+                    {vehicle.brand}
+                  </Text>
                 </XStack>
               )}
               {vehicle.model && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Model</Text>
-                  <Text fontWeight="600" fontFamily="$body">{vehicle.model}</Text>
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Model
+                  </Text>
+                  <Text fontWeight="600" fontFamily="$body">
+                    {vehicle.model}
+                  </Text>
                 </XStack>
               )}
               {vehicle.color && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Color</Text>
-                  <Text fontWeight="600" fontFamily="$body">{vehicle.color}</Text>
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Color
+                  </Text>
+                  <Text fontWeight="600" fontFamily="$body">
+                    {vehicle.color}
+                  </Text>
                 </XStack>
               )}
               {vehicle.year && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Year</Text>
-                  <Text fontWeight="600" fontFamily="$body">{vehicle.year}</Text>
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Year
+                  </Text>
+                  <Text fontWeight="600" fontFamily="$body">
+                    {vehicle.year}
+                  </Text>
                 </XStack>
               )}
               {vehicle.type && (
                 <XStack justifyContent="space-between">
-                  <Text color="$colorSecondary" fontFamily="$body">Type</Text>
-                  <Text fontWeight="600" fontFamily="$body" textTransform="capitalize">
+                  <Text color="$colorSecondary" fontFamily="$body">
+                    Type
+                  </Text>
+                  <Text
+                    fontWeight="600"
+                    fontFamily="$body"
+                    textTransform="capitalize"
+                  >
                     {vehicle.type.replace(/_/g, " ")}
                   </Text>
                 </XStack>
@@ -264,10 +297,7 @@ export default function SellerRiderDetailScreen() {
             </YStack>
 
             {kycDocuments.length > 0 && (
-              <Button
-                variant="outline"
-                onPress={() => setKycSheetOpen(true)}
-              >
+              <Button variant="outline" onPress={() => setKycSheetOpen(true)}>
                 View Documents ({kycDocuments.length})
               </Button>
             )}
@@ -283,16 +313,28 @@ export default function SellerRiderDetailScreen() {
             <Separator />
 
             <XStack justifyContent="space-between">
-              <Text color="$colorSecondary" fontFamily="$body">License</Text>
-              <Text fontWeight="600" fontFamily="$body">{rider.license_number || "—"}</Text>
+              <Text color="$colorSecondary" fontFamily="$body">
+                License
+              </Text>
+              <Text fontWeight="600" fontFamily="$body">
+                {rider.license_number || "—"}
+              </Text>
             </XStack>
             <XStack justifyContent="space-between">
-              <Text color="$colorSecondary" fontFamily="$body">Status</Text>
-              <Text fontWeight="600" fontFamily="$body">{rider.status}</Text>
+              <Text color="$colorSecondary" fontFamily="$body">
+                Status
+              </Text>
+              <Text fontWeight="600" fontFamily="$body">
+                {rider.status}
+              </Text>
             </XStack>
             <XStack justifyContent="space-between">
-              <Text color="$colorSecondary" fontFamily="$body">Fleet Managed</Text>
-              <Text fontWeight="600" fontFamily="$body">{rider.is_fleet_managed ? "Yes" : "No"}</Text>
+              <Text color="$colorSecondary" fontFamily="$body">
+                Fleet Managed
+              </Text>
+              <Text fontWeight="600" fontFamily="$body">
+                {rider.is_fleet_managed ? "Yes" : "No"}
+              </Text>
             </XStack>
           </YStack>
         </Card>
@@ -354,10 +396,18 @@ export default function SellerRiderDetailScreen() {
           alignItems="center"
           padding="$6"
         >
-          <Card padding="$6" bordered backgroundColor="$background" width="100%" maxWidth={400}>
+          <Card
+            padding="$6"
+            bordered
+            backgroundColor="$background"
+            width="100%"
+            maxWidth={400}
+          >
             <YStack gap="$4" alignItems="center">
               <Text fontSize="$6" fontWeight="bold" textAlign="center">
-                {confirmAction === "suspend" ? "Suspend Rider?" : "Activate Rider?"}
+                {confirmAction === "suspend"
+                  ? "Suspend Rider?"
+                  : "Activate Rider?"}
               </Text>
               <Text fontSize="$4" color="$colorMuted" textAlign="center">
                 {confirmAction === "suspend"
@@ -374,8 +424,12 @@ export default function SellerRiderDetailScreen() {
                 </Button>
                 <Button
                   flex={1}
-                  backgroundColor={confirmAction === "suspend" ? "$red10" : "$green10"}
-                  onPress={confirmAction === "suspend" ? handleSuspend : handleActivate}
+                  backgroundColor={
+                    confirmAction === "suspend" ? "$red10" : "$green10"
+                  }
+                  onPress={
+                    confirmAction === "suspend" ? handleSuspend : handleActivate
+                  }
                 >
                   Confirm
                 </Button>

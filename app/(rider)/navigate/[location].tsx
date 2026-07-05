@@ -29,6 +29,8 @@ interface LocationData {
   lat: number;
   lng: number;
   notes?: string;
+  userId?: string;
+  orderId?: string;
 }
 
 export default function NavigationScreen() {
@@ -102,9 +104,10 @@ export default function NavigationScreen() {
   };
 
   const handleMessage = () => {
-    const phoneNumber = locationData?.phone;
-    if (!phoneNumber) return;
-    router.push(`/(communication)/chat/${phoneNumber}`);
+    const { userId, orderId } = locationData || {};
+    if (userId && orderId) {
+      router.push({ pathname: '/(communication)/chat/order', params: { userId, orderId } });
+    }
   };
 
   const handleOpenMaps = () => {

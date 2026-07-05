@@ -176,12 +176,24 @@ export function useMessagesQuery(conversationId?: string, enabled = true) {
 export function useChatParticipantQuery(_userId: string) {
   return useQuery({
     queryKey: ['chat-participant', _userId],
-    queryFn: async () => ({
-      id: 'support',
-      fullName: 'TeincFood Support',
-      avatarUrl: undefined as string | undefined,
-      phone: undefined as string | undefined,
-    }),
+    queryFn: async () => {
+      if (_userId === 'support') {
+        return {
+          id: 'support',
+          fullName: 'TeincFood Support',
+          avatarUrl: undefined as string | undefined,
+          phone: undefined as string | undefined,
+        };
+      }
+      const res = await api.get<any>(`/users/${_userId}`);
+      const d = res.data?.data ?? res.data;
+      return {
+        id: d.id,
+        fullName: d.full_name ?? d.fullName,
+        avatarUrl: d.avatar_url ?? d.avatarUrl,
+        phone: d.phone,
+      };
+    },
     enabled: Boolean(_userId),
   });
 }
