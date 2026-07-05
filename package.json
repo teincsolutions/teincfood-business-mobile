@@ -21,6 +21,7 @@
   "dependencies": {
     "@babel/core": "^7.29.0",
     "@expo-google-fonts/sen": "^0.4.2",
+    "@teincfood/chat-client": "file:../teincfood-chat-client",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@mapbox/polyline": "^1.2.1",
     "@notifee/react-native": "^9.1.8",

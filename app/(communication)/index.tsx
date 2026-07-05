@@ -5,7 +5,7 @@ import { YStack, XStack, Text, Image, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare, ChevronRight } from "@tamagui/lucide-icons";
 import { BackButton, Button, Input } from "@/components/ui";
-import { useInboxConversations } from "@/hooks/useChat";
+import { useInboxConversations } from "@/hooks/useInboxConversations";
 
 export default function InboxScreen() {
   const router = useRouter();
@@ -74,9 +74,15 @@ export default function InboxScreen() {
               {conversations.map((chat, idx) => (
                 <YStack key={chat.id}>
                   <TouchableOpacity
-                    onPress={() =>
-                      router.push(`/(communication)/chat/support`)
-                    }
+                    onPress={() => {
+                      if (chat.type === 'support') {
+                        router.push({ pathname: '/(communication)/chat/support' });
+                      } else if (chat.orderId) {
+                        router.push({ pathname: '/(communication)/chat/order', params: { userId: chat.participantUserId, orderId: chat.orderId } });
+                      } else if (chat.participantUserId) {
+                        router.push({ pathname: '/(communication)/chat/direct', params: { userId: chat.participantUserId } });
+                      }
+                    }}
                     activeOpacity={0.7}
                   >
                     <XStack padding="$4" gap="$3" alignItems="center">

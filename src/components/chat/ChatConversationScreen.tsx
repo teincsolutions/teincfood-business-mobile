@@ -33,12 +33,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { BackButton } from '@/components/ui';
 import { useChat } from '@/hooks/useChat';
-import { useAuthStore } from '@/stores/auth.store';
-import { useChatStore } from '@/stores/chat.store';
-import { chatService } from '@/services/chat.service';
-import { messagesService } from '@/services/messages.service';
-import { toast } from 'sonner-native';
-import type { StoredMessage, ChatMessageStatus, ConnectionState } from '@/types/chat';
+import type { StoredMessage, ChatMessageStatus, ConnectionState } from '@teincfood/chat-client';
 
 // ─── HTML entity decoding ──────────────────────────────────────────────────
 
@@ -199,22 +194,8 @@ export function ChatConversationScreen({
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
-  const currentUserId = useAuthStore((state) => state.user?.id || '');
   const [message, setMessage] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [connState, setConnState] = useState<ConnectionState>(chatService.getConnectionState());
-  const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
-
-  const onChatEvent = useCallback(
-    (event: { type: string; payload: any; occurredAt: string }) => {
-      // handled by useChat/useChatSocket persistence
-    },
-    [],
-  );
-
-  const onChannelHistory = useCallback((_messages: any[]) => {
-    // handled by useChat/useChatSocket persistence
-  }, []);
 
   const {
     isSupportChat,
@@ -227,8 +208,10 @@ export function ChatConversationScreen({
     setTyping,
     isTyping,
     isReady,
-    conversationId: activeConversationId,
-  } = useChat({ userId, orderId, isDirect, onChatEvent, onChannelHistory });
+    client,
+    connectionState,
+    activeConversationId,
+  } = useChat({ userId, orderId, isDirect });
 
   const scrollOffsetRef = useRef(0);
   const loadingOlderRef = useRef(false);
@@ -236,12 +219,6 @@ export function ChatConversationScreen({
 
   const displayName = isSupportChat ? 'TeincFood Support' : user?.fullName || 'Chat';
   const displayPhone = user?.phone;
-
-  // Connection state listener
-  useEffect(() => {
-    const unsub = chatService.onConnectionStateChange(setConnState);
-    return unsub;
-  }, []);
 
   // ---------------------------------------------------------------------------
   // Merge stored + REST messages into displayed messages
@@ -315,24 +292,9 @@ export function ChatConversationScreen({
   // ---------------------------------------------------------------------------
 
   const handleRetryMessage = async (localId: string) => {
-    const store = useChatStore.getState();
-    const convoMessages = storedMessages;
-    const msg = convoMessages.find((m) => m.localId === localId);
+    const msg = storedMessages.find((m: StoredMessage) => m.localId === localId);
     if (!msg || !chatTopic) return;
-
-    store.updateMessageStatus(msg.conversationId, localId, 'sending');
-    try {
-      if (!chatService.isConnected()) {
-        await chatService.connect();
-      }
-      await chatService.joinChannel(chatTopic);
-      await chatService.sendMessage(chatTopic, msg.text, localId);
-      store.updateMessageStatus(msg.conversationId, localId, 'sent');
-      store.removeFromOutbox(localId);
-    } catch {
-      store.updateMessageStatus(msg.conversationId, localId, 'queued');
-    }
-    setRetryTargetId(null);
+    await sendMessage(msg.text);
   };
 
   const handleCall = async () => {
@@ -352,7 +314,7 @@ export function ChatConversationScreen({
 
   const handleClearConversation = () => {
     if (activeConversationId) {
-      useChatStore.getState().clearConversation(activeConversationId);
+      client.store.clear(activeConversationId);
     }
     setMenuOpen(false);
   };
@@ -371,12 +333,12 @@ export function ChatConversationScreen({
   // Render
   // ---------------------------------------------------------------------------
 
-  const isConnected = connState === 'connected';
-  const connFailed = connState === 'failed';
-  const showRetryBanner = connState === 'reconnecting' || connFailed;
+  const isConnected = connectionState === 'connected';
+  const connFailed = connectionState === 'failed';
+  const showRetryBanner = connectionState === 'reconnecting' || connFailed;
 
   const handleRetryConnection = () => {
-    chatService.retryConnection();
+    client.retryConnection();
   };
 
   return (
@@ -492,22 +454,10 @@ export function ChatConversationScreen({
               const cid = activeConversationId;
               if (!cid) { loadingOlderRef.current = false; return; }
 
-              messagesService.getMessages(cid, Math.round(scrollOffsetRef.current)).then((older) => {
+              client.rest.fetchMessages(cid, Math.round(scrollOffsetRef.current)).then((older) => {
                 if (older.length > 0) {
                   scrollOffsetRef.current += older.length;
-                  const store = useChatStore.getState();
-                  for (const msg of older) {
-                    store.upsertMessage(msg.conversation_id, {
-                      id: msg.id,
-                      localId: msg.id,
-                      conversationId: msg.conversation_id,
-                      senderId: msg.sender_id,
-                      text: msg.text,
-                      status: 'delivered',
-                      channel: msg.channel ?? 'app',
-                      sentAt: msg.sent_at,
-                    });
-                  }
+                  // Screen re-renders from useChat's storedMessages after history loads
                 } else {
                   hasMoreRef.current = false;
                 }
