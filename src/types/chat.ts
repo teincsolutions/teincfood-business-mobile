@@ -1,6 +1,6 @@
 export type {
-  ChatMessageStatus,
-  StoredMessage,
+  MessageStatus,
+  Message,
   OutboundMessage,
   ChatMessagePayload,
   ConnectionState,

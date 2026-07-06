@@ -3,17 +3,14 @@ import { useRouter } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, Image, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, MessageSquare, ChevronRight } from "@tamagui/lucide-icons";
+import { Search, MessageSquare, Users, ChevronRight } from "@tamagui/lucide-icons";
 import { BackButton, Button, Input } from "@/components/ui";
 import { useInboxConversations } from "@/hooks/useInboxConversations";
 
 export default function InboxScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: conversationsData } = useInboxConversations();
-  const conversations = (conversationsData || []).filter(
-    (conversation) => conversation.type !== "support",
-  );
+  const { data: conversations } = useInboxConversations();
 
   const handleSupportChat = () => {
     router.push(`/(communication)/chat/support`);
@@ -75,12 +72,8 @@ export default function InboxScreen() {
                 <YStack key={chat.id}>
                   <TouchableOpacity
                     onPress={() => {
-                      if (chat.type === 'support') {
-                        router.push({ pathname: '/(communication)/chat/support' });
-                      } else if (chat.orderId) {
-                        router.push({ pathname: '/(communication)/chat/order', params: { userId: chat.participantUserId, orderId: chat.orderId } });
-                      } else if (chat.participantUserId) {
-                        router.push({ pathname: '/(communication)/chat/direct', params: { userId: chat.participantUserId } });
+                      if (chat.id) {
+                        router.push({ pathname: '/(communication)/chat/[conversationId]', params: { conversationId: chat.id, displayName: chat.name, displayAvatar: chat.avatar } });
                       }
                     }}
                     activeOpacity={0.7}
@@ -204,6 +197,33 @@ export default function InboxScreen() {
               </Text>
             </YStack>
           )}
+
+          {/* Contacts link */}
+          <TouchableOpacity
+            onPress={() => router.push('/(communication)/contacts')}
+            activeOpacity={0.7}
+          >
+            <XStack
+              backgroundColor="$backgroundSoft"
+              padding="$4"
+              borderRadius="$5"
+              alignItems="center"
+              gap="$3"
+            >
+              <YStack backgroundColor="$white" padding="$2" borderRadius="$3">
+                <Users size={24} color="$primary" />
+              </YStack>
+              <YStack flex={1}>
+                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+                  Contacts
+                </Text>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  People you've chatted with
+                </Text>
+              </YStack>
+              <ChevronRight size={20} color="$gray200" />
+            </XStack>
+          </TouchableOpacity>
 
           {/* Support Section — always visible */}
           <YStack
