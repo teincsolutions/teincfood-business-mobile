@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { YStack, Text } from "tamagui";
-import { ChatConversationScreen } from "@/components/chat/ChatConversationScreen";
+import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
 import { getConversationService } from "@/utils/chat-service";
 
 export default function DirectPairChatScreen() {
@@ -45,7 +45,7 @@ export default function DirectPairChatScreen() {
   }
 
   return (
-    <ChatConversationScreen
+    <ContactChatScreen
       conversationId={conversationId}
       displayName={displayName}
       displayAvatar={displayAvatar}

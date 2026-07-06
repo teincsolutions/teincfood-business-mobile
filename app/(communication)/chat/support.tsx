@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
 import { YStack, Text } from "tamagui";
-import { ChatConversationScreen } from "@/components/chat/ChatConversationScreen";
+import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
 import { getConversationService } from "@/utils/chat-service";
 
 export default function SupportChatScreen() {
@@ -40,7 +40,7 @@ export default function SupportChatScreen() {
   }
 
   return (
-    <ChatConversationScreen
+    <ContactChatScreen
       conversationId={conversationId}
       displayName="TeincFood Support"
     />

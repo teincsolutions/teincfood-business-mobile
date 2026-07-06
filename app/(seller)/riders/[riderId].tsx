@@ -3,10 +3,9 @@ import { useState } from "react";
 import { ScrollView, Linking } from "react-native";
 import { YStack, XStack, Text, Card, Avatar, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import {
   Phone,
-  MessageCircle,
   Car,
   ShieldCheck,
   User,
@@ -14,6 +13,7 @@ import {
   CheckCircle,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
+import { MessageButton } from "@/components/chat/MessageButton";
 import {
   useFleetRiderQuery,
   useRiderKycQuery,
@@ -26,7 +26,6 @@ import { extractApiErrorMessage } from "@/utils/error";
 
 export default function SellerRiderDetailScreen() {
   const { riderId } = useLocalSearchParams<{ riderId: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [kycSheetOpen, setKycSheetOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
@@ -159,19 +158,10 @@ export default function SellerRiderDetailScreen() {
               >
                 Call
               </Button>
-              <Button
-                flex={1}
-                variant="outline"
-                icon={<MessageCircle size={18} />}
-                onPress={() => {
-                  const uid = rider.user?.id;
-                  if (uid) {
-                    router.push({ pathname: '/(communication)/chat/direct', params: { userId: uid } });
-                  }
-                }}
-              >
-                Message
-              </Button>
+              <MessageButton
+                userId={rider.user?.id || ''}
+                displayName={rider.user?.full_name}
+              />
             </XStack>
           </YStack>
         </Card>

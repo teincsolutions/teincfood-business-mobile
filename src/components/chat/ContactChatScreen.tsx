@@ -35,6 +35,7 @@ import { BackButton } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 import { useChat } from '@/hooks/useChat';
 import type { Message as StoredMessage, MessageStatus as ChatMessageStatus, ConnectionState } from '@teincfood/chat-client';
+import { formatTime, formatDateSeparator, shouldShowDateSeparator } from '@teincfood/chat-client';
 
 // ─── HTML entity decoding ──────────────────────────────────────────────────
 
@@ -57,42 +58,6 @@ function decodeEntities(text: string): string {
   }
   result = result.replace(/&#(\d+);/g, (_match, num) => String.fromCharCode(parseInt(num, 10)));
   return result;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return '';
-  }
-}
-
-function formatDateSeparator(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (d.toDateString() === now.toDateString()) return 'Today';
-    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-  } catch {
-    return '';
-  }
-}
-
-function shouldShowDateSeparator(current: string, previous?: string): boolean {
-  if (!previous) return true;
-  try {
-    return new Date(current).toDateString() !== new Date(previous).toDateString();
-  } catch {
-    return true;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -175,7 +140,7 @@ interface ChatConversationScreenProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ChatConversationScreen({
+export function ContactChatScreen({
   conversationId,
   displayName: propDisplayName,
   displayAvatar,

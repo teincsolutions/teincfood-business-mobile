@@ -3,17 +3,26 @@ import { useRouter } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, Image, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, MessageSquare, Users, ChevronRight } from "@tamagui/lucide-icons";
+import { Search, MessageSquare } from "@tamagui/lucide-icons";
 import { BackButton, Button, Input } from "@/components/ui";
-import { useInboxConversations } from "@/hooks/useInboxConversations";
+import { useContacts } from "@/hooks/useContacts";
+import { formatTime } from "@teincfood/chat-client";
 
 export default function InboxScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: conversations } = useInboxConversations();
+  const { data: contactsData } = useContacts();
+  const contacts = contactsData || [];
 
   const handleSupportChat = () => {
     router.push(`/(communication)/chat/support`);
+  };
+
+  const handleContactPress = (contact: { id: string; fullName?: string; avatarUrl?: string }) => {
+    router.push({
+      pathname: '/(communication)/chat/direct',
+      params: { userId: contact.id, displayName: contact.fullName || 'Contact', displayAvatar: contact.avatarUrl },
+    });
   };
 
   return (
@@ -61,32 +70,28 @@ export default function InboxScreen() {
             />
           </XStack>
 
-          {/* Conversation List — only shown when there are conversations */}
-          {conversations.length > 0 ? (
+          {/* Contact List — WhatsApp-style */}
+          {contacts.length > 0 ? (
             <YStack
               backgroundColor="$white"
               borderRadius="$5"
               overflow="hidden"
             >
-              {conversations.map((chat, idx) => (
-                <YStack key={chat.id}>
+              {contacts.map((contact, idx) => (
+                <YStack key={contact.id}>
                   <TouchableOpacity
-                    onPress={() => {
-                      if (chat.id) {
-                        router.push({ pathname: '/(communication)/chat/[conversationId]', params: { conversationId: chat.id, displayName: chat.name, displayAvatar: chat.avatar } });
-                      }
-                    }}
+                    onPress={() => handleContactPress(contact)}
                     activeOpacity={0.7}
                   >
                     <XStack padding="$4" gap="$3" alignItems="center">
                       <YStack position="relative">
                         <Image
-                          source={{ uri: chat.avatar }}
+                          source={{ uri: contact.avatarUrl }}
                           width={54}
                           height={54}
                           borderRadius="$full"
                         />
-                        {chat.unreadCount > 0 && (
+                        {contact.unreadCount > 0 && (
                           <YStack
                             position="absolute"
                             top={0}
@@ -112,14 +117,14 @@ export default function InboxScreen() {
                             fontFamily="$heading"
                             color="$color"
                           >
-                            {chat.name}
+                            {contact.fullName}
                           </Text>
                           <Text
                             fontSize="$2"
                             color="$colorSecondary"
                             fontFamily="$body"
                           >
-                            {chat.time}
+                            {contact.updatedAt ? formatTime(contact.updatedAt) : ''}
                           </Text>
                         </XStack>
                         <XStack
@@ -129,18 +134,22 @@ export default function InboxScreen() {
                           <Text
                             fontSize="$3"
                             color={
-                              chat.unreadCount > 0
+                              contact.unreadCount > 0
                                 ? "$color"
                                 : "$colorSecondary"
                             }
-                            fontWeight={chat.unreadCount > 0 ? "700" : "400"}
+                            fontWeight={contact.unreadCount > 0 ? "700" : "400"}
                             fontFamily="$body"
                             numberOfLines={1}
                             flex={1}
                           >
-                            {chat.lastMessage}
+                            {contact.lastMessage?.text
+                              ? (contact.lastMessage.text.length > 80
+                                  ? contact.lastMessage.text.slice(0, 80) + '...'
+                                  : contact.lastMessage.text)
+                              : 'Tap to start chatting'}
                           </Text>
-                          {chat.unreadCount > 0 && (
+                          {contact.unreadCount > 0 && (
                             <YStack
                               backgroundColor="$primary"
                               minWidth={20}
@@ -156,7 +165,7 @@ export default function InboxScreen() {
                                 fontWeight="800"
                                 color="white"
                               >
-                                {chat.unreadCount}
+                                {contact.unreadCount}
                               </Text>
                             </YStack>
                           )}
@@ -164,7 +173,7 @@ export default function InboxScreen() {
                       </YStack>
                     </XStack>
                   </TouchableOpacity>
-                  {idx < conversations.length - 1 && (
+                  {idx < contacts.length - 1 && (
                     <Separator borderColor="$gray100" />
                   )}
                 </YStack>
@@ -185,7 +194,7 @@ export default function InboxScreen() {
                 color="$color"
                 marginTop="$2"
               >
-                No conversations yet
+                No contacts yet
               </Text>
               <Text
                 fontSize="$3"
@@ -193,37 +202,10 @@ export default function InboxScreen() {
                 fontFamily="$body"
                 textAlign="center"
               >
-                Your conversations will appear here.
+                People you interact with will appear here.
               </Text>
             </YStack>
           )}
-
-          {/* Contacts link */}
-          <TouchableOpacity
-            onPress={() => router.push('/(communication)/contacts')}
-            activeOpacity={0.7}
-          >
-            <XStack
-              backgroundColor="$backgroundSoft"
-              padding="$4"
-              borderRadius="$5"
-              alignItems="center"
-              gap="$3"
-            >
-              <YStack backgroundColor="$white" padding="$2" borderRadius="$3">
-                <Users size={24} color="$primary" />
-              </YStack>
-              <YStack flex={1}>
-                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
-                  Contacts
-                </Text>
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  People you've chatted with
-                </Text>
-              </YStack>
-              <ChevronRight size={20} color="$gray200" />
-            </XStack>
-          </TouchableOpacity>
 
           {/* Support Section — always visible */}
           <YStack
