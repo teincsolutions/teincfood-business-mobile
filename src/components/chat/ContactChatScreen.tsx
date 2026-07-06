@@ -167,11 +167,18 @@ export function ContactChatScreen({
     connectionState,
     loadOlderMessages,
     loadingOlder,
+    markRead,
   } = useChat({ conversationId });
 
   const scrollOffsetRef = useRef(0);
   const loadingOlderRef = useRef(false);
   const hasMoreRef = useRef(true);
+
+  useEffect(() => {
+    if (isReady) {
+      markRead();
+    }
+  }, [isReady, markRead]);
 
   const isSupport = propDisplayName === 'TeincFood Support';
   const displayName = propDisplayName || user?.fullName || 'Chat';

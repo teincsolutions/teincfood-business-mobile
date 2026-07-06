@@ -18,10 +18,10 @@ export default function InboxScreen() {
     router.push(`/(communication)/chat/support`);
   };
 
-  const handleContactPress = (contact: { id: string; fullName?: string; avatarUrl?: string }) => {
+  const handleContactPress = (contact: { id: string; fullName?: string; avatarUrl?: string; contactType?: string }) => {
     router.push({
       pathname: '/(communication)/chat/direct',
-      params: { userId: contact.id, displayName: contact.fullName || 'Contact', displayAvatar: contact.avatarUrl },
+      params: { userId: contact.id, displayName: contact.fullName || 'Contact', displayAvatar: contact.avatarUrl, contactType: contact.contactType || 'user' },
     });
   };
 

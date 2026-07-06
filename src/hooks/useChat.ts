@@ -5,13 +5,14 @@ import { mmkvStorage } from '@/utils/storage';
 import { API_BASE_URL, WS_BASE_URL } from '@/utils/constants';
 
 export function useChat(options: UseChatOptions) {
+  const currentUserId = useAuthStore((state) => state.user?.id || '');
   const config: ChatClientConfig = {
     wsBaseUrl: WS_BASE_URL,
     apiBaseUrl: API_BASE_URL,
     getAccessToken: () => Promise.resolve(useAuthStore.getState().accessToken ?? ''),
     storage: createMMKVStorageAdapter(mmkvStorage),
   };
-  return useLibChat(config, options);
+  return useLibChat(config, { ...options, currentUserId });
 }
 
 export type { UseChatOptions } from '@teincfood/chat-client';
