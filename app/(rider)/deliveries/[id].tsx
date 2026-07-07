@@ -346,7 +346,7 @@ export default function RiderDeliveryDetails() {
                   onPress={() => {
                     const uid = delivery.customer?.user_id;
                     if (uid) {
-                      router.push({ pathname: '/(communication)/chat/order', params: { userId: uid, orderId: delivery.order_id } });
+                      router.push({ pathname: '/(communication)/chat/direct', params: { userId: uid, orderId: delivery.order_id } });
                     }
                   }}
                 >

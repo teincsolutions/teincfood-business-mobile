@@ -1,22 +1,14 @@
-import { createMMKVStorageAdapter, useChat as useLibChat } from '@teincfood/chat-client';
-import type { ChatClientConfig, UseChatOptions } from '@teincfood/chat-client';
+import { useChat as useLibChat } from '@teincfood/chat-client';
+import type { UseChatResult } from '@teincfood/chat-client';
+import { getChatClient } from '@/utils/chat-service';
 import { useAuthStore } from '@/stores/auth.store';
-import { mmkvStorage } from '@/utils/storage';
-import { API_BASE_URL, WS_BASE_URL } from '@/utils/constants';
 
-export function useChat(options: UseChatOptions) {
-  const currentUserId = useAuthStore((state) => state.user?.id || '');
-  const config: ChatClientConfig = {
-    wsBaseUrl: WS_BASE_URL,
-    apiBaseUrl: API_BASE_URL,
-    getAccessToken: () => Promise.resolve(useAuthStore.getState().accessToken ?? ''),
-    storage: createMMKVStorageAdapter(mmkvStorage),
-  };
-  return useLibChat(config, { ...options, currentUserId });
+export function useChat(conversationId: string | null): UseChatResult {
+  const client = getChatClient();
+  return useLibChat(client, conversationId);
 }
 
-export type { UseChatOptions } from '@teincfood/chat-client';
-
-// Re-export inbox hook for convenience
 export { useInboxConversations } from './useInboxConversations';
 export { useOpenUserChat } from './useOpenUserChat';
+
+export type { UseChatResult } from '@teincfood/chat-client';

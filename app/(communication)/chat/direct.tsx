@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { YStack, Text } from "tamagui";
 import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
-import { getConversationService } from "@/utils/chat-service";
+import { getChatClient } from "@/utils/chat-service";
 
 export default function DirectPairChatScreen() {
   const { userId, displayName, displayAvatar, contactType } = useLocalSearchParams();
@@ -14,9 +14,10 @@ export default function DirectPairChatScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const conv = await getConversationService().startChat({
-          contactType: (contactType as string) || 'user',
-          contactId: userId,
+        const client = getChatClient();
+        const conv = await client.conversations.startChat({
+          contact_type: (contactType as string) || 'user',
+          contact_id: userId as string,
         });
         if (!cancelled) setConversationId(conv.id);
       } catch (e) {

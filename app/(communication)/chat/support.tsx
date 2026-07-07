@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { YStack, Text } from "tamagui";
 import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
-import { getConversationService } from "@/utils/chat-service";
+import { getChatClient } from "@/utils/chat-service";
 
 export default function SupportChatScreen() {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -12,7 +12,8 @@ export default function SupportChatScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const conv = await getConversationService().startSupportChat();
+        const client = getChatClient();
+        const conv = await client.conversations.startSupportChat();
         if (!cancelled) setConversationId(conv.id);
       } catch (e) {
         console.error('[Chat] Failed to create support conversation:', e);

@@ -106,7 +106,7 @@ export default function NavigationScreen() {
   const handleMessage = () => {
     const { userId, orderId } = locationData || {};
     if (userId && orderId) {
-      router.push({ pathname: '/(communication)/chat/order', params: { userId, orderId } });
+      router.push({ pathname: '/(communication)/chat/direct', params: { userId, orderId } });
     }
   };
 

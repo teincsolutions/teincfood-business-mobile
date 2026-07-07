@@ -32,6 +32,7 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
+import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
 import {
   registerBackgroundPushHandler,
   registerForegroundPushHandler,
@@ -65,6 +66,15 @@ function AppShell() {
 
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
+
+  // Connect ChatClient WebSocket for real-time messaging
+  useEffect(() => {
+    if (isAuthenticated && user?.id && accessToken) {
+      connectChatClient(user.id, accessToken).catch(console.error);
+    } else {
+      disconnectChatClient();
+    }
+  }, [isAuthenticated, user?.id, accessToken]);
 
   // Register push notification handlers for background/foreground display
   useEffect(() => {
