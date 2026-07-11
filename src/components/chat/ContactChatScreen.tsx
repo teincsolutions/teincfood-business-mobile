@@ -73,16 +73,15 @@ type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting'
 function MessageStatusIcon({ status }: { status: MessageStatus }) {
   switch (status) {
     case 'sending':
-    case 'failed':
-      return <Clock size={12} color="#8696a0" />;
+      return <Clock size={12} color="$colorMuted" />;
     case 'sent':
-      return <Check size={12} color="#8696a0" />;
+      return <Check size={12} color="$colorMuted" />;
     case 'delivered':
-      return <CheckCheck size={12} color="#8696a0" />;
+      return <CheckCheck size={12} color="$colorMuted" />;
     case 'read':
-      return <CheckCheck size={12} color="#53bdeb" />;
+      return <CheckCheck size={12} color="$info" />;
     case 'failed':
-      return <AlertCircle size={12} color="#ef4444" />;
+      return <AlertCircle size={12} color="$error" />;
     default:
       return null;
   }
@@ -96,6 +95,7 @@ function TypingDots() {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
+  const theme = useTheme();
 
   useEffect(() => {
     const anim = (dot: Animated.Value, delay: number) =>
@@ -116,7 +116,7 @@ function TypingDots() {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#8696a0',
+    backgroundColor: (theme.colorMuted?.val as string) || '#A0A5BA',
     opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
     transform: [{ scale: dot.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }) }],
   });
@@ -304,10 +304,10 @@ export function ContactChatScreen({
                     width={8}
                     height={8}
                     borderRadius={4}
-                    backgroundColor={connFailed ? '#ef4444' : isConnected ? '#25D366' : '#f59e0b'}
+                    backgroundColor={isConnected ? '$success' : '$warning'}
                   />
                   <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                    {connFailed ? 'Connection failed' : isConnected ? 'Online' : 'Connecting...'}
+                    {isConnected ? 'Online' : 'Connecting...'}
                   </Text>
                 </XStack>
               )}
@@ -329,24 +329,37 @@ export function ContactChatScreen({
         </XStack>
 
         {/* Retry banner */}
-        {connFailed && (
+        {connectionState === 'reconnecting' && (
           <XStack
-            backgroundColor="#fef2f2"
+            backgroundColor="$yellowLight"
             padding="$3"
             alignItems="center"
             justifyContent="center"
-            gap="$2"
           >
-            <Text fontSize="$2" color="#ef4444" fontFamily="$body">
-              Connection lost. Messages are saved locally.
+            <Text fontSize="$2" color="$yellowDark" fontFamily="$body">
+              Connecting...
+            </Text>
+          </XStack>
+        )}
+
+        {connectionState === 'disconnected' && (
+          <XStack
+            backgroundColor="$yellowLight"
+            padding="$3"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Text fontSize="$2" color="$yellowDark" fontFamily="$body">
+              Connecting...
             </Text>
             <Button
               size="$2"
-              backgroundColor="#ef4444"
-              color="white"
+              backgroundColor="$yellowDark"
+              color="$white"
               onPress={handleRetryConnection}
               paddingHorizontal="$3"
               borderRadius="$3"
+              marginLeft="$2"
             >
               Retry
             </Button>
@@ -424,7 +437,7 @@ export function ContactChatScreen({
                 >
                   <YStack
                     backgroundColor={
-                      isMe ? (isFailed ? '#e8e8e8' : '#dcf8c6') : '#f0f0f0'
+                      isMe ? (isFailed ? '$gray200' : '$greenLight') : '$gray100'
                     }
                     paddingHorizontal="$3"
                     paddingVertical="$2"
@@ -432,16 +445,16 @@ export function ContactChatScreen({
                     borderBottomRightRadius={isMe ? 2 : '$3'}
                     borderBottomLeftRadius={isMe ? '$3' : 2}
                   >
-                    <Text fontSize="$4" fontFamily="$body" color={isMe ? '#111' : '#111'}>
+                    <Text fontSize="$4" fontFamily="$body" color="$color">
                       {decodeEntities(msg.content)}
                     </Text>
                     <XStack gap={3} alignItems="center" justifyContent="flex-end" marginTop={2}>
-                      <Text fontSize={10} color="#667781" fontFamily="$body">
+                      <Text fontSize={10} color="$colorMuted" fontFamily="$body">
                         {formatTime(msg.sent_at)}
                       </Text>
                       {isMe && <MessageStatusIcon status={msg.status} />}
                       {msg.channel === 'whatsapp' && (
-                        <Text fontSize={10} color="#667781" fontFamily="$body">
+                        <Text fontSize={10} color="$colorMuted" fontFamily="$body">
                           WhatsApp
                         </Text>
                       )}
@@ -453,7 +466,7 @@ export function ContactChatScreen({
                       onPress={() => handleRetryMessage(msg.id)}
                       style={{ marginTop: 4 }}
                     >
-                      <Text fontSize={12} color="#ef4444" fontFamily="$body" textAlign="right">
+                      <Text fontSize={12} color="$error" fontFamily="$body" textAlign="right">
                         Tap to retry
                       </Text>
                     </TouchableOpacity>
@@ -514,13 +527,13 @@ export function ContactChatScreen({
               circular
               width={44}
               height={44}
-              backgroundColor={canSend ? '#25D366' : '$colorDisabled'}
+              backgroundColor={canSend ? '$green' : '$colorDisabled'}
               borderWidth={0}
-              pressStyle={{ backgroundColor: '#20bd5a' }}
+              pressStyle={{ backgroundColor: '$greenDark' }}
               icon={
                 <Send
                   size={20}
-                  color={(theme.white?.val as string) || '#FFFFFF'}
+                  color="$white"
                 />
               }
               onPress={handleSend}
