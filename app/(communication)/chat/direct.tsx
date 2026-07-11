@@ -6,8 +6,10 @@ import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
 import { getChatClient } from "@/utils/chat-service";
 
 export default function DirectPairChatScreen() {
-  const { userId, displayName, displayAvatar, contactType } = useLocalSearchParams();
+  const { userId, contactType } = useLocalSearchParams();
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [displayAvatar, setDisplayAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,11 +17,19 @@ export default function DirectPairChatScreen() {
     (async () => {
       try {
         const client = getChatClient();
+        const currentUserId = client.getCurrentUserId();
         const conv = await client.conversations.startChat({
           contact_type: (contactType as string) || 'user',
           contact_id: userId as string,
         });
-        if (!cancelled) setConversationId(conv.id);
+        if (!cancelled) {
+          setConversationId(conv.id);
+          const other = conv.participants?.find(
+            (p: any) => p.user_id !== currentUserId,
+          );
+          setDisplayName(conv.business?.name ?? other?.user?.full_name ?? null);
+          setDisplayAvatar(conv.business?.logo_url ?? other?.user?.avatar_url ?? null);
+        }
       } catch (e) {
         console.error('[Chat] Failed to create conversation:', e);
       } finally {

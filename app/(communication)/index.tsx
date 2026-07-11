@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useRouter } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
-import { YStack, XStack, Text, Image, Separator } from "tamagui";
+import { YStack, XStack, Text, Avatar, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare } from "@tamagui/lucide-icons";
 import { BackButton, Button, Input } from "@/components/ui";
@@ -18,10 +18,20 @@ export default function InboxScreen() {
     router.push(`/(communication)/chat/support`);
   };
 
-  const handleContactPress = (contact: { id: string; full_name?: string; avatar_url?: string; contact_type?: string }) => {
+  const handleContactPress = (contact: {
+    id: string;
+    full_name?: string;
+    avatar_url?: string;
+    contact_type?: string;
+  }) => {
     router.push({
-      pathname: '/(communication)/chat/direct',
-      params: { userId: contact.id, displayName: contact.full_name || 'Contact', displayAvatar: contact.avatar_url, contactType: contact.contact_type || 'user' },
+      pathname: "/(communication)/chat/direct",
+      params: {
+        userId: contact.id,
+        displayName: contact.full_name || "Contact",
+        displayAvatar: contact.avatar_url,
+        contactType: contact.contact_type || "user",
+      },
     });
   };
 
@@ -85,12 +95,22 @@ export default function InboxScreen() {
                   >
                     <XStack padding="$4" gap="$3" alignItems="center">
                       <YStack position="relative">
-                        <Image
-                          source={{ uri: contact.avatar_url }}
-                          width={54}
-                          height={54}
-                          borderRadius="$full"
-                        />
+                        <Avatar circular size={54}>
+                          <Avatar.Image src={contact.avatar_url ?? undefined} />
+                          <Avatar.Fallback
+                            justify="center"
+                            alignItems="center"
+                            backgroundColor="$color.gray50"
+                          >
+                            <Text
+                              color="$color"
+                              fontWeight="bold"
+                              fontSize="$6"
+                            >
+                              {contact.full_name?.charAt(0) || "?"}
+                            </Text>
+                          </Avatar.Fallback>
+                        </Avatar>
                         {contact.unread_count > 0 && (
                           <YStack
                             position="absolute"
@@ -124,7 +144,9 @@ export default function InboxScreen() {
                             color="$colorSecondary"
                             fontFamily="$body"
                           >
-                            {contact.last_message?.sent_at ? formatTime(contact.last_message.sent_at) : ''}
+                            {contact.last_message?.sent_at
+                              ? formatTime(contact.last_message.sent_at)
+                              : ""}
                           </Text>
                         </XStack>
                         <XStack
@@ -138,16 +160,18 @@ export default function InboxScreen() {
                                 ? "$color"
                                 : "$colorSecondary"
                             }
-                            fontWeight={contact.unread_count > 0 ? "700" : "400"}
+                            fontWeight={
+                              contact.unread_count > 0 ? "700" : "400"
+                            }
                             fontFamily="$body"
                             numberOfLines={1}
                             flex={1}
                           >
                             {contact.last_message?.text
-                              ? (contact.last_message.text.length > 80
-                                  ? contact.last_message.text.slice(0, 80) + '...'
-                                  : contact.last_message.text)
-                              : 'Tap to start chatting'}
+                              ? contact.last_message.text.length > 80
+                                ? contact.last_message.text.slice(0, 80) + "..."
+                                : contact.last_message.text
+                              : "Tap to start chatting"}
                           </Text>
                           {contact.unread_count > 0 && (
                             <YStack
