@@ -165,6 +165,8 @@ export function ContactChatScreen({
   const { messages, send, loadMore, sendTyping, markRead } = useChat(conversationId);
 
   useEffect(() => {
+    // Sync initial state (connection may have been established before mount)
+    setConnectionState(client.isConnected() ? 'connected' : 'disconnected')
     const unsub = client.on('connection:status', (status) => {
       setConnectionState(status);
     });
