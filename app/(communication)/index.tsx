@@ -11,17 +11,17 @@ import { formatTime } from "@teincfood/chat-client";
 export default function InboxScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: contactsData } = useContacts();
+  const { contacts: contactsData } = useContacts();
   const contacts = contactsData || [];
 
   const handleSupportChat = () => {
     router.push(`/(communication)/chat/support`);
   };
 
-  const handleContactPress = (contact: { id: string; fullName?: string; avatarUrl?: string; contactType?: string }) => {
+  const handleContactPress = (contact: { id: string; full_name?: string; avatar_url?: string; contact_type?: string }) => {
     router.push({
       pathname: '/(communication)/chat/direct',
-      params: { userId: contact.id, displayName: contact.fullName || 'Contact', displayAvatar: contact.avatarUrl, contactType: contact.contactType || 'user' },
+      params: { userId: contact.id, displayName: contact.full_name || 'Contact', displayAvatar: contact.avatar_url, contactType: contact.contact_type || 'user' },
     });
   };
 
@@ -86,12 +86,12 @@ export default function InboxScreen() {
                     <XStack padding="$4" gap="$3" alignItems="center">
                       <YStack position="relative">
                         <Image
-                          source={{ uri: contact.avatarUrl }}
+                          source={{ uri: contact.avatar_url }}
                           width={54}
                           height={54}
                           borderRadius="$full"
                         />
-                        {contact.unreadCount > 0 && (
+                        {contact.unread_count > 0 && (
                           <YStack
                             position="absolute"
                             top={0}
@@ -117,14 +117,14 @@ export default function InboxScreen() {
                             fontFamily="$heading"
                             color="$color"
                           >
-                            {contact.fullName}
+                            {contact.full_name}
                           </Text>
                           <Text
                             fontSize="$2"
                             color="$colorSecondary"
                             fontFamily="$body"
                           >
-                            {contact.updatedAt ? formatTime(contact.updatedAt) : ''}
+                            {contact.last_message?.sent_at ? formatTime(contact.last_message.sent_at) : ''}
                           </Text>
                         </XStack>
                         <XStack
@@ -134,22 +134,22 @@ export default function InboxScreen() {
                           <Text
                             fontSize="$3"
                             color={
-                              contact.unreadCount > 0
+                              contact.unread_count > 0
                                 ? "$color"
                                 : "$colorSecondary"
                             }
-                            fontWeight={contact.unreadCount > 0 ? "700" : "400"}
+                            fontWeight={contact.unread_count > 0 ? "700" : "400"}
                             fontFamily="$body"
                             numberOfLines={1}
                             flex={1}
                           >
-                            {contact.lastMessage?.text
-                              ? (contact.lastMessage.text.length > 80
-                                  ? contact.lastMessage.text.slice(0, 80) + '...'
-                                  : contact.lastMessage.text)
+                            {contact.last_message?.text
+                              ? (contact.last_message.text.length > 80
+                                  ? contact.last_message.text.slice(0, 80) + '...'
+                                  : contact.last_message.text)
                               : 'Tap to start chatting'}
                           </Text>
-                          {contact.unreadCount > 0 && (
+                          {contact.unread_count > 0 && (
                             <YStack
                               backgroundColor="$primary"
                               minWidth={20}
@@ -165,7 +165,7 @@ export default function InboxScreen() {
                                 fontWeight="800"
                                 color="white"
                               >
-                                {contact.unreadCount}
+                                {contact.unread_count}
                               </Text>
                             </YStack>
                           )}

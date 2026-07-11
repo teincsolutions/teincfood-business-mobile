@@ -1,12 +1,8 @@
-// Re-exports from @teincfood/chat-client
-export type {
-  MessageStatus,
-  Message,
-  ChatMessagePayload,
-} from '@teincfood/chat-client';
+import type { Message, MessageStatus } from '@teincfood/chat-client';
 
-// Local types used by phoenix-socket.service.ts
-export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting' | 'failed';
+export type { Message, MessageStatus };
+
+export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed';
 
 export type PhoenixV2Frame = [
   '0' | '1' | '2' | '3' | '4' | '6' | '7' | '8' | '9',

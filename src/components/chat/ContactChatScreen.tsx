@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
@@ -30,12 +29,17 @@ import {
   Clock,
   AlertCircle,
 } from '@tamagui/lucide-icons';
-import * as Clipboard from 'expo-clipboard';
+import { setStringAsync } from 'expo-clipboard';
 import { BackButton } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth.store';
 import { useChat } from '@/hooks/useChat';
-import type { Message as StoredMessage, MessageStatus as ChatMessageStatus, ConnectionState } from '@teincfood/chat-client';
-import { formatTime, formatDateSeparator, shouldShowDateSeparator } from '@teincfood/chat-client';
+import { getChatClient } from '@/utils/chat-service';
+import type { Message, MessageStatus } from '@teincfood/chat-client';
+import {
+  formatTime,
+  formatDateSeparator,
+  shouldShowDateSeparator,
+} from '@teincfood/chat-client';
 
 // ─── HTML entity decoding ──────────────────────────────────────────────────
 
@@ -64,11 +68,12 @@ function decodeEntities(text: string): string {
 // Status icon component (WhatsApp-style)
 // ---------------------------------------------------------------------------
 
-function MessageStatusIcon({ status }: { status: ChatMessageStatus }) {
+type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting'
+
+function MessageStatusIcon({ status }: { status: MessageStatus }) {
   switch (status) {
     case 'sending':
-      return <Clock size={12} color="#8696a0" />;
-    case 'queued':
+    case 'failed':
       return <Clock size={12} color="#8696a0" />;
     case 'sent':
       return <Check size={12} color="#8696a0" />;
@@ -151,99 +156,58 @@ export function ContactChatScreen({
   const scrollViewRef = useRef<ScrollView>(null);
   const [message, setMessage] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionStatus>('disconnected');
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
   const currentUserId = useAuthStore((state) => state.user?.id || '');
+  const currentUser = useAuthStore((state) => state.user);
 
-  const {
-    chatTopic,
-    user,
-    initialMessages,
-    storedMessages,
-    sendMessage,
-    setTyping,
-    isTyping,
-    isReady,
-    client,
-    connectionState,
-    loadOlderMessages,
-    loadingOlder,
-    markRead,
-  } = useChat({ conversationId });
-
-  const scrollOffsetRef = useRef(0);
-  const loadingOlderRef = useRef(false);
-  const hasMoreRef = useRef(true);
+  const client = getChatClient();
+  const { messages, send, loadMore, sendTyping, markRead } = useChat(conversationId);
 
   useEffect(() => {
-    if (isReady) {
-      markRead();
-    }
-  }, [isReady, markRead]);
-
-  const isSupport = propDisplayName === 'TeincFood Support';
-  const displayName = propDisplayName || user?.fullName || 'Chat';
-  const displayPhone = phoneNumber || user?.phone;
-
-  // ---------------------------------------------------------------------------
-  // Merge stored + REST messages into displayed messages
-  // ---------------------------------------------------------------------------
-
-  const messages = useMemo(() => {
-    const map = new Map<string, StoredMessage>();
-
-    if (initialMessages) {
-      for (const rest of initialMessages) {
-        const key = rest.id;
-        map.set(key, {
-          id: rest.id,
-          localId: rest.id,
-          conversationId: rest.conversation_id,
-          senderId: rest.sender_id,
-          text: rest.text,
-          status: (rest.status as ChatMessageStatus) ?? 'delivered',
-          channel: rest.channel ?? 'app',
-          sentAt: rest.sent_at,
-        });
-      }
-    }
-
-    for (const msg of storedMessages) {
-      const serverKey = msg.id && msg.id !== msg.localId ? msg.id : null;
-      if (serverKey && map.has(serverKey)) continue;
-
-      const key = msg.localId;
-      const existing = map.get(key);
-      if (existing) {
-        map.set(key, { ...existing, status: existing.status === 'queued' ? 'queued' : (msg.status === 'queued' ? 'queued' : existing.status) });
-      } else {
-        map.set(key, msg);
-      }
-    }
-
-    const sorted = Array.from(map.values()).sort(
-      (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
-    );
-
-    const withSeparators: Array<{ type: 'message'; msg: StoredMessage } | { type: 'separator'; date: string }> = [];
-    let prevDate: string | undefined;
-    for (const msg of sorted) {
-      if (shouldShowDateSeparator(msg.sentAt, prevDate)) {
-        withSeparators.push({ type: 'separator', date: formatDateSeparator(msg.sentAt) });
-      }
-      withSeparators.push({ type: 'message', msg });
-      prevDate = msg.sentAt;
-    }
-
-    return withSeparators;
-  }, [storedMessages, initialMessages]);
+    const unsub = client.on('connection:status', (status) => {
+      setConnectionState(status);
+    });
+    return unsub;
+  }, [client]);
 
   const prevCountRef = useRef(0);
   useEffect(() => {
-    if (messages.length > prevCountRef.current && messages.length - prevCountRef.current < 5 && !loadingOlderRef.current) {
+    if (messages.length > prevCountRef.current && messages.length - prevCountRef.current < 5) {
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     }
     prevCountRef.current = messages.length;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (connectionState === 'connected') {
+      markRead();
+    }
+  }, [connectionState, markRead]);
+
+  const isSupport = propDisplayName === 'TeincFood Support';
+  const displayName = propDisplayName || currentUser?.full_name || 'Chat';
+  const displayPhone = phoneNumber || currentUser?.phone;
+
+  // ---------------------------------------------------------------------------
+  // Merge + add date separators
+  // ---------------------------------------------------------------------------
+
+  const displayMessages = useMemo(() => {
+    const withSeparators: Array<{ type: 'message'; msg: Message } | { type: 'separator'; date: string }> = [];
+    let prevDate: string | undefined;
+    for (const msg of messages) {
+      if (shouldShowDateSeparator(msg.sent_at, prevDate ?? null)) {
+        withSeparators.push({ type: 'separator', date: formatDateSeparator(msg.sent_at) });
+      }
+      withSeparators.push({ type: 'message', msg });
+      prevDate = msg.sent_at;
+    }
+    return withSeparators;
+  }, [messages]);
+
+  const hasMoreRef = useRef(true);
+  const loadingRef = useRef(false);
 
   // ---------------------------------------------------------------------------
   // Send
@@ -253,25 +217,19 @@ export function ContactChatScreen({
     if (!message.trim()) return;
     const outgoingText = message.trim();
     setMessage('');
-
     setRetryTargetId(null);
-
-    if (!isReady) {
-      await sendMessage(outgoingText);
-      return;
-    }
-
-    await sendMessage(outgoingText);
+    send(outgoingText);
   };
 
   // ---------------------------------------------------------------------------
   // Retry failed/queued message
   // ---------------------------------------------------------------------------
 
-  const handleRetryMessage = async (localId: string) => {
-    const msg = storedMessages.find((m: StoredMessage) => m.localId === localId);
-    if (!msg || !chatTopic) return;
-    await sendMessage(msg.text);
+  const handleRetryMessage = async (localId: string | null) => {
+    if (!localId) return;
+    const msg = messages.find((m: Message) => m.id === localId);
+    if (!msg) return;
+    send(msg.content);
   };
 
   const handleCall = async () => {
@@ -290,7 +248,7 @@ export function ContactChatScreen({
   };
 
   const handleClearConversation = () => {
-    client.store.clear(conversationId);
+    client.store.removeConversation(conversationId);
     setMenuOpen(false);
   };
 
@@ -302,18 +260,12 @@ export function ContactChatScreen({
     );
   };
 
-  const canSend = Boolean(message.trim() && chatTopic);
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
+  const canSend = Boolean(message.trim());
   const isConnected = connectionState === 'connected';
-  const connFailed = connectionState === 'failed';
-  const showRetryBanner = connectionState === 'reconnecting' || connFailed;
+  const connFailed = connectionState === 'disconnected';
 
   const handleRetryConnection = () => {
-    client.retryConnection();
+    client.start(client['tokens'] as any).catch(() => {});
   };
 
   return (
@@ -337,7 +289,7 @@ export function ContactChatScreen({
           <BackButton />
           <XStack flex={1} gap="$3" alignItems="center">
             <Image
-              source={{ uri: displayAvatar || user?.avatarUrl }}
+              source={{ uri: (displayAvatar || currentUser?.avatar_url) ?? undefined }}
               width={40}
               height={40}
               borderRadius="$full"
@@ -355,7 +307,7 @@ export function ContactChatScreen({
                     backgroundColor={connFailed ? '#ef4444' : isConnected ? '#25D366' : '#f59e0b'}
                   />
                   <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                    {connFailed ? 'Connection failed' : connectionState === 'reconnecting' ? 'Reconnecting...' : isConnected ? 'Online' : 'Offline'}
+                    {connFailed ? 'Connection failed' : isConnected ? 'Online' : 'Connecting...'}
                   </Text>
                 </XStack>
               )}
@@ -365,13 +317,11 @@ export function ContactChatScreen({
           <XStack gap="$1">
             <Button
               circular
-              variant="ghost"
               icon={<Phone size={20} color="$color" />}
               onPress={handleCall}
             />
             <Button
               circular
-              variant="ghost"
               icon={<MoreVertical size={20} color="$color" />}
               onPress={() => setMenuOpen(true)}
             />
@@ -379,63 +329,49 @@ export function ContactChatScreen({
         </XStack>
 
         {/* Retry banner */}
-        {showRetryBanner && (
+        {connFailed && (
           <XStack
-            backgroundColor={connFailed ? '#fef2f2' : '#fffbeb'}
+            backgroundColor="#fef2f2"
             padding="$3"
             alignItems="center"
             justifyContent="center"
             gap="$2"
           >
-            <Text fontSize="$2" color={connFailed ? '#ef4444' : '#f59e0b'} fontFamily="$body">
-              {connFailed
-                ? 'Connection lost. Messages are saved locally.'
-                : 'Reconnecting...'}
+            <Text fontSize="$2" color="#ef4444" fontFamily="$body">
+              Connection lost. Messages are saved locally.
             </Text>
-            {connFailed && (
-              <Button
-                size="$2"
-                backgroundColor="#ef4444"
-                color="white"
-                onPress={handleRetryConnection}
-                paddingHorizontal="$3"
-                borderRadius="$3"
-              >
-                Retry
-              </Button>
-            )}
+            <Button
+              size="$2"
+              backgroundColor="#ef4444"
+              color="white"
+              onPress={handleRetryConnection}
+              paddingHorizontal="$3"
+              borderRadius="$3"
+            >
+              Retry
+            </Button>
           </XStack>
         )}
 
         {/* Messages */}
         <ScrollView
           ref={scrollViewRef}
-          flex={1}
-          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 24 }}
           onContentSizeChange={() => {
-            if (!loadingOlderRef.current) {
-              scrollViewRef.current?.scrollToEnd({ animated: false });
-            }
+            scrollViewRef.current?.scrollToEnd({ animated: false });
           }}
           onScroll={(e) => {
             const offsetY = e.nativeEvent.contentOffset.y;
-            if (offsetY > scrollOffsetRef.current) {
-              scrollOffsetRef.current = offsetY;
-            }
-            if (offsetY < 50 && hasMoreRef.current && !loadingOlderRef.current && isReady) {
-              loadingOlderRef.current = true;
-              loadOlderMessages().then((older) => {
-                if (older.length > 0) {
-                  scrollOffsetRef.current += older.length;
-                } else {
-                  hasMoreRef.current = false;
-                }
-              }).finally(() => { loadingOlderRef.current = false; });
+            if (offsetY < 50 && hasMoreRef.current && !loadingRef.current) {
+              loadingRef.current = true;
+              loadMore().finally(() => {
+                loadingRef.current = false;
+              });
             }
           }}
           scrollEventThrottle={100}
         >
-          {messages.length === 0 && (
+          {displayMessages.length === 0 && (
             <YStack alignItems="center" paddingVertical="$8" gap="$2">
               <Text ta="center" fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 {isSupport
@@ -445,7 +381,7 @@ export function ContactChatScreen({
             </YStack>
           )}
 
-          {messages.map((item) => {
+          {displayMessages.map((item) => {
             if (item.type === 'separator') {
               return (
                 <YStack key={item.date} alignItems="center" marginVertical="$3">
@@ -464,23 +400,22 @@ export function ContactChatScreen({
             }
 
             const msg = item.msg;
-            const isMe = msg.senderId === currentUserId;
+            const isMe = msg.sender_id === currentUserId;
             const isFailed = msg.status === 'failed';
-            const isQueued = msg.status === 'queued';
 
             return (
               <TouchableOpacity
-                key={msg.localId}
+                key={msg.id}
                 onPress={() => {
-                  if (isFailed || isQueued) {
-                    setRetryTargetId(msg.localId);
+                  if (isFailed) {
+                    setRetryTargetId(msg.id);
                   }
                 }}
                 onLongPress={() => {
-                  Clipboard.setStringAsync(msg.text);
+                  setStringAsync(msg.content);
                 }}
                 delayLongPress={400}
-                activeOpacity={isFailed || isQueued ? 0.6 : 1}
+                activeOpacity={isFailed ? 0.6 : 1}
               >
                 <YStack
                   alignSelf={isMe ? 'flex-end' : 'flex-start'}
@@ -489,7 +424,7 @@ export function ContactChatScreen({
                 >
                   <YStack
                     backgroundColor={
-                      isMe ? (msg.status === 'failed' || msg.status === 'queued' ? '#e8e8e8' : '#dcf8c6') : '#f0f0f0'
+                      isMe ? (isFailed ? '#e8e8e8' : '#dcf8c6') : '#f0f0f0'
                     }
                     paddingHorizontal="$3"
                     paddingVertical="$2"
@@ -498,11 +433,11 @@ export function ContactChatScreen({
                     borderBottomLeftRadius={isMe ? '$3' : 2}
                   >
                     <Text fontSize="$4" fontFamily="$body" color={isMe ? '#111' : '#111'}>
-                      {decodeEntities(msg.text)}
+                      {decodeEntities(msg.content)}
                     </Text>
                     <XStack gap={3} alignItems="center" justifyContent="flex-end" marginTop={2}>
                       <Text fontSize={10} color="#667781" fontFamily="$body">
-                        {formatTime(msg.sentAt)}
+                        {formatTime(msg.sent_at)}
                       </Text>
                       {isMe && <MessageStatusIcon status={msg.status} />}
                       {msg.channel === 'whatsapp' && (
@@ -513,9 +448,9 @@ export function ContactChatScreen({
                     </XStack>
                   </YStack>
 
-                  {(isFailed || isQueued) && retryTargetId === msg.localId && (
+                  {isFailed && retryTargetId === msg.id && (
                     <TouchableOpacity
-                      onPress={() => handleRetryMessage(msg.localId)}
+                      onPress={() => handleRetryMessage(msg.id)}
                       style={{ marginTop: 4 }}
                     >
                       <Text fontSize={12} color="#ef4444" fontFamily="$body" textAlign="right">
@@ -528,20 +463,7 @@ export function ContactChatScreen({
             );
           })}
 
-          {/* Typing indicator */}
-          {isTyping && !isSupport && (
-            <YStack alignSelf="flex-start" maxWidth="60%" marginBottom="$2">
-              <YStack
-                backgroundColor="#f0f0f0"
-                paddingHorizontal="$3"
-                paddingVertical="$1"
-                borderRadius="$3"
-                borderBottomLeftRadius={2}
-              >
-                <TypingDots />
-              </YStack>
-            </YStack>
-          )}
+          {/* Typing indicator — placeholder; app doesn't receive remote typing yet */}
         </ScrollView>
 
         {/* Input bar */}
@@ -568,7 +490,7 @@ export function ContactChatScreen({
                 value={message}
                 onChangeText={(val) => {
                   setMessage(val);
-                  setTyping(val.length > 0);
+                  sendTyping();
                 }}
                 multiline
                 blurOnSubmit={false}
@@ -624,26 +546,26 @@ export function ContactChatScreen({
           />
           <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$8" borderTopRightRadius="$8">
             <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
-            <YStack px="$5" py="$4">
+            <YStack paddingHorizontal="$5" paddingVertical="$4">
               <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$color">
                 Conversation Actions
               </Text>
             </YStack>
-            <YStack px="$5" pb="$6">
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleCall}>
+            <YStack paddingHorizontal="$5" paddingBottom="$6">
+              <XStack paddingVertical="$4" alignItems="center" justifyContent="space-between" onPress={handleCall}>
                 <Text fontSize="$4" fontFamily="$body" color="$color">
                   Call {displayName || 'Contact'}
                 </Text>
                 <Phone size={18} color="$primary" />
               </XStack>
               <Separator borderColor="$borderColor" />
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleViewContact}>
+              <XStack paddingVertical="$4" alignItems="center" justifyContent="space-between" onPress={handleViewContact}>
                 <Text fontSize="$4" fontFamily="$body" color="$color">
                   View contact
                 </Text>
               </XStack>
               <Separator borderColor="$borderColor" />
-              <XStack py="$4" ai="center" jc="space-between" onPress={handleClearConversation}>
+              <XStack paddingVertical="$4" alignItems="center" justifyContent="space-between" onPress={handleClearConversation}>
                 <Text fontSize="$4" fontFamily="$body" color="$error">
                   Clear conversation
                 </Text>

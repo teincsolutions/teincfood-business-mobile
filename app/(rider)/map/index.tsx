@@ -33,13 +33,7 @@ import {
 } from "@/services/directions.service";
 import { phoenixSocket } from "@/services/phoenix-socket.service";
 
-const ACCRA_REGION = {
-  latitude: 5.6037,
-  longitude: -0.187,
-  latitudeDelta: 0.05,
-  longitudeDelta: 0.05,
-};
-
+const DEFAULT_DELTA = 0.02;
 const ACTIVE_STATUSES = ["assigned", "picked_up", "en_route", "arrived"];
 
 export default function RiderMap() {
@@ -63,7 +57,8 @@ export default function RiderMap() {
   const [routeCoords, setRouteCoords] = useState([]);
   const [routeEtaSeconds, setRouteEtaSeconds] = useState(null);
   const [riderLocation, setRiderLocation] = useState(null);
-  const [initialRegion, setInitialRegion] = useState(ACCRA_REGION);
+  const [initialRegion, setInitialRegion] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(true);
   const [mapBottomPad, setMapBottomPad] = useState(screenHeight * 0.2);
 
   const { data: profileData } = useRiderProfileQuery();
@@ -107,11 +102,12 @@ export default function RiderMap() {
           const region = {
             latitude,
             longitude,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+            latitudeDelta: DEFAULT_DELTA,
+            longitudeDelta: DEFAULT_DELTA,
           };
           setInitialRegion(region);
           mapRef.current?.animateToRegion(region, 1000);
+          setLocationLoading(false);
           return;
         }
       } catch {}
@@ -120,9 +116,11 @@ export default function RiderMap() {
         setInitialRegion({
           latitude: profileData.current_lat,
           longitude: profileData.current_lng,
-          ...ACCRA_REGION,
+          latitudeDelta: DEFAULT_DELTA,
+          longitudeDelta: DEFAULT_DELTA,
         });
       }
+      setLocationLoading(false);
     }
 
     centerOnLocation();
@@ -293,16 +291,17 @@ export default function RiderMap() {
   return (
     <View style={styles.screen}>
       {/* Full-screen Map */}
-      <MapView
-        ref={mapRef}
-        style={StyleSheet.absoluteFillObject}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={initialRegion}
-        showsUserLocation
-        showsMyLocationButton
-        showsCompass
-        mapPadding={{ top: 60, bottom: mapBottomPad + 16, left: 16, right: 16 }}
-      >
+      {initialRegion ? (
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFillObject}
+          provider={PROVIDER_GOOGLE}
+          initialRegion={initialRegion}
+          showsUserLocation
+          showsMyLocationButton
+          showsCompass
+          mapPadding={{ top: 60, bottom: mapBottomPad + 16, left: 16, right: 16 }}
+        >
         {/* Pickup Markers (green) */}
         {allRouteDeliveries.map((delivery) => (
           <Marker
@@ -352,6 +351,11 @@ export default function RiderMap() {
         {/* Rider vehicle marker */}
         {renderRiderMarker()}
       </MapView>
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+          <Text>Loading map...</Text>
+        </View>
+      )}
 
       {/* Top Header Overlay */}
       <XStack
