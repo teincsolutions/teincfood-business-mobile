@@ -137,7 +137,7 @@ export default function InboxScreen() {
                             fontFamily="$heading"
                             color="$color"
                           >
-                            {contact.full_name}
+                            {contact.full_name}{contact.is_self ? ' (Me)' : ''}
                           </Text>
                           <Text
                             fontSize="$2"
