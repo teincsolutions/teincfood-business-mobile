@@ -75,7 +75,7 @@
     "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "^5.4.0",
-    "react-native-screens": "^4.11.0",
+    "react-native-screens": "4.25.2",
     "react-native-svg": "^15.11.0",
     "react-native-tcp-socket": "^6.4.1",
     "react-native-web": "^0.20.0",
