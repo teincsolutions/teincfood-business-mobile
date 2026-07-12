@@ -7,9 +7,10 @@ interface MessageButtonProps {
   displayName?: string;
   displayAvatar?: string;
   size?: 'small' | 'medium';
+  contactType?: string;
 }
 
-export function MessageButton({ userId, displayName, displayAvatar, size = 'medium' }: MessageButtonProps) {
+export function MessageButton({ userId, displayName, displayAvatar, size = 'medium', contactType }: MessageButtonProps) {
   const openChat = useOpenUserChat();
 
   if (size === 'small') {
@@ -19,7 +20,7 @@ export function MessageButton({ userId, displayName, displayAvatar, size = 'medi
         circular
         width={36}
         height={36}
-        onPress={() => openChat(userId, displayName, displayAvatar)}
+        onPress={() => openChat(userId, displayName, displayAvatar, contactType)}
       />
     );
   }
@@ -27,7 +28,7 @@ export function MessageButton({ userId, displayName, displayAvatar, size = 'medi
   return (
     <Button
       icon={<MessageSquare size={20} />}
-      onPress={() => openChat(userId, displayName, displayAvatar)}
+      onPress={() => openChat(userId, displayName, displayAvatar, contactType)}
     >
       Message
     </Button>
