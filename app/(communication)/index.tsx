@@ -61,17 +61,22 @@ export default function InboxScreen() {
       avatar_url?: string;
       contact_type?: string;
     }) => {
+      const params: Record<string, string> = {
+        userId: contact.id,
+        displayName: contact.full_name || "Contact",
+        displayAvatar: contact.avatar_url || "",
+        contactType: contact.contact_type || "user",
+      };
+      // Business tab clicks create business-scoped conversations
+      if (tab === "business" && activeBusinessId) {
+        params.senderBusinessId = activeBusinessId;
+      }
       router.push({
         pathname: "/(communication)/chat/direct",
-        params: {
-          userId: contact.id,
-          displayName: contact.full_name || "Contact",
-          displayAvatar: contact.avatar_url || "",
-          contactType: contact.contact_type || "user",
-        },
+        params,
       });
     },
-    [router],
+    [router, tab, activeBusinessId],
   );
 
   const renderContact = useCallback(
