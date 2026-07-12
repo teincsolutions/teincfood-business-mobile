@@ -197,7 +197,11 @@ export default function LoginScreen() {
         throw new Error(`Unknown provider: ${provider}`);
       }
 
-      setAuth(response.user, response.access_token, response.refresh_token);
+      setAuth(
+        { ...response.user, role: selectedRole },
+        response.access_token,
+        response.refresh_token,
+      );
       goPostAuth();
     } catch {
       setError(`Failed to sign in with ${provider}`);
