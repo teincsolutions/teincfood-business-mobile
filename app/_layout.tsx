@@ -32,11 +32,16 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
+import { usePushTokenRegistration } from '../src/hooks/usePushTokenRegistration';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
 import {
   registerBackgroundPushHandler,
   registerForegroundPushHandler,
 } from '../src/services/background-push-handler.service';
+import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
+
+// Subscribe to auth changes to disconnect WebSocket on logout
+subscribeAuthCleanup();
 
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
@@ -82,6 +87,9 @@ function AppShell() {
     registerBackgroundPushHandler();
     registerForegroundPushHandler();
   }, []);
+
+  // Register push token on app startup when authenticated
+  usePushTokenRegistration(isAuthenticated);
 
   // Handle Notifee notification tap (Android foreground)
   const handleNotifeeAction = useCallback(

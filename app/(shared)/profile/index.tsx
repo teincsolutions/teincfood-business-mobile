@@ -14,6 +14,7 @@ import {
 import { ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useProfileQuery } from "@/hooks/useProfile";
+import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 
 /**
@@ -29,7 +30,8 @@ export default function SharedProfile() {
   const displayEmail = profile?.email || user?.email || "";
   const displayPhone = profile?.phone || user?.phone || "";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout();
     clearAuth();
     router.replace("/(auth)/login");
   };

@@ -29,6 +29,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
+import { authService } from "@/services/auth.service";
 import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
@@ -53,7 +54,8 @@ function CustomDrawerContent(props: any) {
     return false;
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout();
     clearAuth();
     setShowLogoutDialog(false);
     router.replace("/(auth)/login");

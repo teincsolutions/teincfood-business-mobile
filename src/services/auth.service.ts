@@ -3,6 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import { api } from './api';
+import { useAuthStore } from '@/stores/auth.store';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -196,8 +197,15 @@ export const authService = {
     return this.loginWithOIDC('apple', credential.identityToken ?? '');
   },
 
-  logout(): Promise<void> {
-    return Promise.resolve();
+  async logout(): Promise<void> {
+    const { refreshToken } = useAuthStore.getState();
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refresh_token: refreshToken });
+      } catch {
+        // Server-side clean up is best-effort; clear local state regardless
+      }
+    }
   },
 };
 

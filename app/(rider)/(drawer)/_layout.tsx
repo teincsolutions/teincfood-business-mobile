@@ -29,6 +29,7 @@ import {
   MailOpen,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
+import { authService } from "@/services/auth.service";
 import { useRiderProfileQuery } from "@/hooks/useRider";
 import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
@@ -72,7 +73,8 @@ function CustomDrawerContent(props: any) {
         ? "$yellow10"
         : "$gray800";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout();
     clearAuth();
     setShowLogoutDialog(false);
     router.replace("/(auth)/login");
