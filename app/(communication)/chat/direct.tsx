@@ -6,7 +6,7 @@ import { ContactChatScreen } from "@/components/chat/ContactChatScreen";
 import { getChatClient } from "@/utils/chat-service";
 
 export default function DirectPairChatScreen() {
-  const { userId, contactType } = useLocalSearchParams();
+  const { userId, contactType, senderBusinessId } = useLocalSearchParams();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [displayAvatar, setDisplayAvatar] = useState<string | null>(null);
@@ -21,6 +21,7 @@ export default function DirectPairChatScreen() {
         const conv = await client.conversations.startChat({
           contact_type: (contactType as string) || 'user',
           contact_id: userId as string,
+          sender_business_id: (senderBusinessId as string) || null,
         });
         if (!cancelled) {
           setConversationId(conv.id);

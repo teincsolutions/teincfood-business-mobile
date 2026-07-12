@@ -10,9 +10,9 @@ import {
   Separator,
   Card,
   Tabs,
-  Badge,
   SizableText,
 } from "tamagui";
+import { Badge } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare, Building2, User } from "@tamagui/lucide-icons";
 import { BackButton } from "@/components/ui";
@@ -128,8 +128,10 @@ export default function InboxScreen() {
                     : "Tap to start chatting"}
                 </Text>
                 {contact.unread_count > 0 && (
-                  <Badge size="$3" theme="active">
-                    {contact.unread_count > 99 ? "99+" : contact.unread_count}
+                  <Badge size="$2" backgroundColor="$primary">
+                    <Text color="$white" fontSize="$1" fontWeight="700">
+                      {contact.unread_count > 99 ? "99+" : contact.unread_count}
+                    </Text>
                   </Badge>
                 )}
               </XStack>
