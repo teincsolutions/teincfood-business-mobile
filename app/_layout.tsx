@@ -59,6 +59,7 @@ function AppShell() {
   const authHydrated = useAuthStore((state) => state.isHydrated);
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
   const onboardingHydrated = useOnboardingStore((state) => state.isHydrated);
   const locationHydrated = useLocationStore((state) => state.isHydrated);
   const roleHydrated = useRoleStore((state) => state.isHydrated);
@@ -70,11 +71,11 @@ function AppShell() {
   // Connect ChatClient WebSocket for real-time messaging
   useEffect(() => {
     if (isAuthenticated && user?.id && accessToken) {
-      connectChatClient(user.id, accessToken).catch(console.error);
+      connectChatClient(user.id, accessToken, refreshToken ?? undefined).catch(console.error);
     } else {
       disconnectChatClient();
     }
-  }, [isAuthenticated, user?.id, accessToken]);
+  }, [isAuthenticated, user?.id, accessToken, refreshToken]);
 
   // Register push notification handlers for background/foreground display
   useEffect(() => {
