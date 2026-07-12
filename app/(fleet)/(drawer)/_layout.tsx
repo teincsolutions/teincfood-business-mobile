@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   MailOpen,
+  MessageSquare,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { authService } from "@/services/auth.service";
@@ -24,6 +25,7 @@ import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useDeliveryRealtimeUpdates } from "@/hooks/useDeliveryRealtimeUpdates";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 /**
  * Custom Drawer Content for Fleet Manager
@@ -37,6 +39,8 @@ function CustomDrawerContent(props: any) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
+
+  const { total: totalUnread } = useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -77,6 +81,7 @@ function CustomDrawerContent(props: any) {
 
           <Separator marginVertical="$2" />
 
+          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} fontFamily="$body" badgeCount={totalUnread} />
           <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" />
           <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} fontFamily="$body" />
 

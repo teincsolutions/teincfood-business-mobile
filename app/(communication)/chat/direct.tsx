@@ -28,8 +28,22 @@ export default function DirectPairChatScreen() {
           const other = conv.participants?.find(
             (p: any) => p.user_id !== currentUserId,
           );
-          setDisplayName(conv.business?.name ?? other?.user?.full_name ?? null);
-          setDisplayAvatar(conv.business?.logo_url ?? other?.user?.avatar_url ?? null);
+          // If senderBusinessId is set, we're messaging as our own business —
+          // show the OTHER participant, not our own business.
+          // If senderBusinessId is not set and contactType is "business",
+          // the business IS the contact (user messaged a business directly).
+          const isBizContact = (contactType as string) === "business";
+          const showBizAsContact = !!conv.business && !senderBusinessId && isBizContact;
+          setDisplayName(
+            showBizAsContact
+              ? conv.business.name
+              : other?.user?.full_name ?? null,
+          );
+          setDisplayAvatar(
+            showBizAsContact
+              ? conv.business.logo_url
+              : other?.user?.avatar_url ?? null,
+          );
         }
       } catch (e) {
         console.error('[Chat] Failed to create conversation:', e);
@@ -38,7 +52,7 @@ export default function DirectPairChatScreen() {
       }
     })();
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, senderBusinessId]);
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useTheme, Button, Text } from "tamagui";
+import { useTheme, Button, Text, XStack } from "tamagui";
 
 interface DrawerMenuItemProps {
   icon: React.ElementType;
@@ -10,6 +10,7 @@ interface DrawerMenuItemProps {
   isActive?: (routeName?: string, sharedPrefix?: string) => boolean;
   danger?: boolean;
   fontFamily?: string;
+  badgeCount?: number;
 }
 
 export function DrawerMenuItem({
@@ -21,6 +22,7 @@ export function DrawerMenuItem({
   isActive,
   danger,
   fontFamily,
+  badgeCount,
 }: DrawerMenuItemProps) {
   const theme = useTheme();
   const active = drawerName || sharedPrefix ? isActive(drawerName, sharedPrefix) : false;
@@ -41,9 +43,36 @@ export function DrawerMenuItem({
       icon={<Icon size={20} color={color} />}
       justifyContent="flex-start"
     >
-      <Text flex={1} fontSize="$4" fontFamily={fontFamily} color={color} fontWeight={active ? "700" : "400"}>
-        {label}
-      </Text>
+      <XStack flex={1} alignItems="center" justifyContent="space-between">
+        <Text
+          fontSize="$4"
+          fontFamily={fontFamily}
+          color={color}
+          fontWeight={active ? "700" : "400"}
+        >
+          {label}
+        </Text>
+        {badgeCount != null && badgeCount > 0 && (
+          <XStack
+            backgroundColor="$primary"
+            borderRadius="$12"
+            minWidth={22}
+            height={22}
+            paddingHorizontal="$1.5"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Text
+              fontSize="$1"
+              fontWeight="700"
+              color="$white"
+              lineHeight={14}
+            >
+              {badgeCount > 99 ? "99+" : badgeCount}
+            </Text>
+          </XStack>
+        )}
+      </XStack>
     </Button>
   );
 }

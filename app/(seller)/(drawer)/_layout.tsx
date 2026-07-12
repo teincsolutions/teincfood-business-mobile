@@ -30,6 +30,7 @@ import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 /**
  * Custom Drawer Content
@@ -43,6 +44,8 @@ function CustomDrawerContent(props: any) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
+
+  const { total: totalUnread } = useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -151,6 +154,7 @@ function CustomDrawerContent(props: any) {
             sharedPrefix="/(communication)"
             onPress={() => router.push("/(communication)")}
             isActive={isActive}
+            badgeCount={totalUnread}
           />
           <DrawerMenuItem
             icon={Bell}
