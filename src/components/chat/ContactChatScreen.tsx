@@ -179,6 +179,7 @@ export function ContactChatScreen({
   const [connectionState, setConnectionState] =
     useState<ConnectionStatus>("disconnected");
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
+  const [retryClientId, setRetryClientId] = useState<string | null>(null);
   const currentUserId = useAuthStore((state) => state.user?.id || "");
 
   const client = getChatClient();
@@ -211,8 +212,10 @@ export function ContactChatScreen({
   useEffect(() => {
     if (connectionState === "connected") {
       markRead();
+      // Auto-retry any messages that were marked "failed" while disconnected
+      client.resendFailedMessages();
     }
-  }, [connectionState, markRead]);
+  }, [connectionState, markRead, client]);
 
   const isSupport = propDisplayName === "TeincFood Support";
   const displayName = propDisplayName;
@@ -252,6 +255,7 @@ export function ContactChatScreen({
     const outgoingText = message.trim();
     setMessage("");
     setRetryTargetId(null);
+    setRetryClientId(null);
     send(outgoingText);
   };
 
@@ -259,10 +263,19 @@ export function ContactChatScreen({
   // Retry failed/queued message
   // ---------------------------------------------------------------------------
 
-  const handleRetryMessage = async (localId: string | null) => {
-    if (!localId) return;
-    const msg = messages.find((m: Message) => m.id === localId);
+  const handleRetryMessage = async (localId: string | null, clientId?: string | null) => {
+    const msg = clientId
+      ? messages.find((m: Message) => (m as any)._clientId === clientId)
+      : messages.find((m: Message) => m.id === localId);
     if (!msg) return;
+    if (clientId) {
+      client.removePendingMessage(clientId);
+    } else if (localId) {
+      const found = messages.find((m: Message) => m.id === localId && (m as any)._clientId);
+      if (found) client.removePendingMessage((found as any)._clientId);
+    }
+    setRetryTargetId(null);
+    setRetryClientId(null);
     send(msg.content);
   };
 
@@ -305,7 +318,10 @@ export function ContactChatScreen({
   const connFailed = connectionState === "disconnected";
 
   const handleRetryConnection = () => {
-    client.start(client["tokens"] as any).catch(() => {});
+    const tokens = client.getTokens();
+    if (tokens) {
+      client.start(tokens).catch(() => {});
+    }
   };
 
   return (
@@ -486,10 +502,12 @@ export function ContactChatScreen({
 
             return (
               <TouchableOpacity
-                key={msg.id}
+                key={msg.id ?? (msg as any)._clientId}
                 onPress={() => {
                   if (isFailed) {
-                    setRetryTargetId(msg.id);
+                    const cid = (msg as any)._clientId;
+                    setRetryTargetId(cid ? null : msg.id);
+                    setRetryClientId(cid ?? null);
                   }
                 }}
                 onLongPress={() => {
@@ -546,9 +564,12 @@ export function ContactChatScreen({
                     </XStack>
                   </YStack>
 
-                  {isFailed && retryTargetId === msg.id && (
+                  {isFailed && (retryTargetId === msg.id || retryClientId === (msg as any)._clientId) && (
                     <TouchableOpacity
-                      onPress={() => handleRetryMessage(msg.id)}
+                      onPress={() => {
+                        const cid = (msg as any)._clientId;
+                        handleRetryMessage(msg.id, cid ?? null);
+                      }}
                       style={{ marginTop: 4 }}
                     >
                       <Text

@@ -5,11 +5,11 @@ export type { Message, MessageStatus };
 export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed';
 
 export type PhoenixV2Frame = [
-  '0' | '1' | '2' | '3' | '4' | '6' | '7' | '8' | '9',
+  string | null,
+  string | null,
   string,
   string,
-  string,
-  unknown?,
+  Record<string, unknown> | undefined,
 ];
 
 export type PhoenixOutbound = Record<string, unknown> & {
@@ -17,4 +17,5 @@ export type PhoenixOutbound = Record<string, unknown> & {
   event: string;
   payload: Record<string, unknown>;
   ref?: string | null;
+  joinRef?: string | null;
 };
