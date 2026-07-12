@@ -7,6 +7,7 @@ import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
 } from "@/hooks/useInvitations";
+import { useDismissNotificationActionMutation } from "@/hooks/useNotifications";
 import type { Notification } from "@/services/notifications.service";
 
 interface Props {
@@ -18,6 +19,7 @@ export function NotificationActionCard({ notification, onDone }: Props) {
   const [accepting, setAccepting] = useState(false);
   const acceptFleet = useAcceptFleetInvitationMutation();
   const acceptBusiness = useAcceptBusinessInvitationMutation();
+  const dismissAction = useDismissNotificationActionMutation();
 
   const payload = notification.payload ?? {};
   const actionRequired = payload.action_required === "true";
@@ -38,6 +40,7 @@ export function NotificationActionCard({ notification, onDone }: Props) {
       {
         onSettled: () => {
           setAccepting(false);
+          dismissAction.mutate(notification.id);
           onDone();
         },
         onError: () => {
@@ -47,7 +50,12 @@ export function NotificationActionCard({ notification, onDone }: Props) {
     );
   };
 
-  const isPending = acceptFleet.isPending || acceptBusiness.isPending;
+  const handleDismiss = () => {
+    dismissAction.mutate(notification.id);
+    onDone();
+  };
+
+  const isPending = acceptFleet.isPending || acceptBusiness.isPending || dismissAction.isPending;
 
   return (
     <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
@@ -66,7 +74,7 @@ export function NotificationActionCard({ notification, onDone }: Props) {
         size="$3"
         variant="outline"
         icon={<X size={14} />}
-        onPress={onDone}
+        onPress={handleDismiss}
         disabled={isPending}
       >
         Dismiss

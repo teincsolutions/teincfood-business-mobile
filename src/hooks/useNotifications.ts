@@ -59,6 +59,18 @@ export function useRemoveNotificationMutation() {
   });
 }
 
+export function useDismissNotificationActionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return notificationsService.dismissAction(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
+    },
+  });
+}
+
 export function useClearNotificationsMutation() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -1,45 +1,59 @@
 // @ts-nocheck
-
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Card, Spinner } from "tamagui";
+import { YStack, XStack, Text, Spinner } from "tamagui";
 import {
   Bell,
-  ShoppingBag,
-  DollarSign,
+  Package,
   Truck,
-  MessageCircle,
+  CheckCircle,
+  Trash2,
   Check,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton, Button } from "@/components/ui";
+import { BackButton, Button, AppAlertDialog } from "@/components/ui";
 import {
   useNotificationsQuery,
   useNotificationsStream,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
+  useClearNotificationsMutation,
 } from "@/hooks/useNotifications";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
 
-function getIconComponent(type: string) {
-  switch (type) {
-    case "order": return ShoppingBag;
-    case "delivery":
-    case "delivered": return Truck;
-    case "promo": return DollarSign;
-    default: return MessageCircle;
-  }
+const ICON_MAP: Record<string, [typeof Package, string]> = {
+  order: [Package, "$primary"],
+  delivery: [Truck, "$orange9"],
+  delivered: [CheckCircle, "$green10"],
+  promo: [Bell, "$orange9"],
+  system: [Bell, "$colorSecondary"],
+  announcement: [Bell, "$orange9"],
+};
+
+function getIcon(type: string): [typeof Package, string] {
+  return ICON_MAP[type] ?? [Bell, "$colorSecondary"];
 }
 
-function getIconColor(type: string) {
-  switch (type) {
-    case "order": return "$primary";
-    case "delivery":
-    case "delivered": return "$success";
-    case "promo": return "#f1c40f";
-    default: return "$colorMuted";
-  }
+function formatTime(dateString: string): string {
+  const now = Date.now();
+  const date = new Date(dateString).getTime();
+  const diff = now - date;
+
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  return new Date(dateString).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function NotificationsScreen() {
@@ -51,124 +65,90 @@ export default function NotificationsScreen() {
 
   const markAsRead = useMarkNotificationReadMutation();
   const markAllAsRead = useMarkAllNotificationsReadMutation();
+  const clearAll = useClearNotificationsMutation();
 
-  const [completedActionIds, setCompletedActionIds] = useState<Set<string>>(new Set());
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const readTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const markActionDone = useCallback((id: string) => {
-    setCompletedActionIds((prev) => new Set(prev).add(id));
-  }, []);
+  const unread = notifications.filter((n) => !n.read);
+  const read_ = notifications.filter((n) => n.read);
 
-  const unreadNotifications = notifications.filter((n) => !n.read);
-  const readNotifications = notifications.filter((n) => n.read);
-
-  const handleNotificationPress = useCallback((id: string) => {
-    markAsRead.mutate(id);
+  const handleMarkAsRead = useCallback((id: string) => {
+    if (readTimeoutRef.current) clearTimeout(readTimeoutRef.current);
+    readTimeoutRef.current = setTimeout(() => {
+      markAsRead.mutate(id);
+    }, 300);
   }, [markAsRead]);
 
   const handleMarkAllRead = useCallback(() => {
     markAllAsRead.mutate();
   }, [markAllAsRead]);
 
-  const renderNotification = useCallback(({ item: notification }: { item: typeof notifications[0] }) => {
-    const IconComponent = getIconComponent(notification.type);
-    return (
-      <Card
-        padding="$4"
-        bordered
-        marginBottom="$3"
-        backgroundColor={notification.read ? "$background" : "$primaryLight"}
-        pressStyle={{ scale: 0.98, opacity: 0.9 }}
-        onPress={() => handleNotificationPress(notification.id)}
-      >
-        <XStack gap="$3" alignItems="flex-start">
-          <YStack
-            width={44}
-            height={44}
-            backgroundColor={notification.read ? "$gray5" : "$primary"}
-            borderRadius="$3"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <IconComponent size={22} color={notification.read ? "$colorMuted" : "white"} />
-          </YStack>
-          <YStack flex={1} gap="$1">
-            <XStack justifyContent="space-between" alignItems="center">
-              <Text fontWeight={notification.read ? "normal" : "bold"}>
-                {notification.title}
-              </Text>
-              {!notification.read && (
-                <YStack width={8} height={8} backgroundColor="$primary" borderRadius="$10" />
-              )}
-            </XStack>
-            <Text fontSize="$3" color="$colorMuted">{notification.message}</Text>
-            <Text fontSize="$2" color="$colorMuted" marginTop="$1">
-              {notification.created_at
-                ? new Date(notification.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                : ""}
-            </Text>
-          </YStack>
-        </XStack>
-      </Card>
-    );
-  }, [handleNotificationPress]);
+  const handleClearAll = useCallback(() => {
+    clearAll.mutate();
+    setShowClearDialog(false);
+  }, [clearAll]);
 
-  const renderSection = useCallback((title: string, items: typeof notifications, emptyText: string) => {
-    if (items.length === 0) return null;
+  const renderItem = useCallback(({ item }: { item: (typeof notifications)[0] }) => {
+    const [Icon, iconColor] = getIcon(item.type);
+    const isRead = item.read;
     return (
-      <YStack gap="$1" marginBottom="$4">
-        <Text fontSize="$4" fontWeight="bold" color="$colorMuted" paddingLeft="$1" marginBottom="$2">
-          {title}
-        </Text>
-        {items.map((item) => (
-          <Card
-            key={item.id}
-            padding="$4"
-            bordered
-            marginBottom="$2"
-            backgroundColor={item.read ? "$background" : "$primaryLight"}
-            pressStyle={{ scale: 0.98, opacity: 0.9 }}
-            onPress={() => handleNotificationPress(item.id)}
-          >
-            <XStack gap="$3" alignItems="flex-start">
-              <YStack
-                width={44}
-                height={44}
-                backgroundColor={item.read ? "$gray5" : "$primary"}
-                borderRadius="$3"
-                alignItems="center"
-                justifyContent="center"
-              >
-                {(() => {
-                  const Icon = getIconComponent(item.type);
-                  return <Icon size={22} color={item.read ? "$colorMuted" : "white"} />;
-                })()}
-              </YStack>
-              <YStack flex={1} gap="$1">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontWeight={item.read ? "normal" : "bold"}>{item.title}</Text>
-                  {!item.read && (
-                    <YStack width={8} height={8} backgroundColor="$primary" borderRadius="$10" />
-                  )}
-                </XStack>
-                <Text fontSize="$3" color="$colorMuted">{item.message}</Text>
-                <Text fontSize="$2" color="$colorMuted" marginTop="$1">
-                  {item.created_at
-                    ? new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                    : ""}
+      <YStack
+        backgroundColor={isRead ? "$background" : "$orangeMuted"}
+        borderBottomWidth={1}
+        borderBottomColor="$gray100"
+        onPress={() => handleMarkAsRead(item.id)}
+      >
+        <YStack padding="$4" gap="$1">
+          <XStack gap="$3" alignItems="flex-start">
+            <YStack
+              width={40}
+              height={40}
+              borderRadius="$3"
+              backgroundColor={isRead ? "$gray100" : "$orangeLight"}
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Icon size={20} color={isRead ? "$colorMuted" : iconColor} />
+            </YStack>
+
+            <YStack flex={1} gap={2}>
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text
+                  fontSize="$3"
+                  fontWeight={isRead ? "400" : "700"}
+                  fontFamily="$body"
+                  color="$color"
+                  flex={1}
+                >
+                  {item.title}
                 </Text>
-                {!completedActionIds.has(item.id) && (
-                  <NotificationActionCard
-                    notification={item}
-                    onDone={() => markActionDone(item.id)}
-                  />
-                )}
-              </YStack>
-            </XStack>
-          </Card>
-        ))}
+                <Text fontSize={11} color="$colorSecondary" fontFamily="$body">
+                  {formatTime(item.created_at)}
+                </Text>
+              </XStack>
+
+              <Text
+                fontSize="$3"
+                color="$colorSecondary"
+                fontFamily="$body"
+                numberOfLines={2}
+              >
+                {item.message}
+              </Text>
+            </YStack>
+          </XStack>
+
+          {item.payload?.action_required === "true" && (
+            <NotificationActionCard
+              notification={item}
+              onDone={() => {}}
+            />
+          )}
+        </YStack>
       </YStack>
     );
-  }, [handleNotificationPress, completedActionIds, markActionDone]);
+  }, [handleMarkAsRead]);
 
   if (isLoading) {
     return (
@@ -178,78 +158,129 @@ export default function NotificationsScreen() {
     );
   }
 
+  const sections: { title: string; data: typeof notifications }[] = [];
+  if (unread.length > 0) sections.push({ title: "New", data: unread });
+  if (read_.length > 0) sections.push({ title: "Earlier", data: read_ });
+
   return (
     <YStack flex={1} backgroundColor="$background">
+      {/* Header */}
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 12, 24)}
-        justifyContent="space-between"
         alignItems="center"
-        backgroundColor="$background"
+        gap="$3"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <XStack gap="$3" alignItems="center">
-          <BackButton />
-          <Text fontSize="$7" fontWeight="bold">
-            Notifications
-          </Text>
-          {unreadNotifications.length > 0 && (
-            <YStack
-              backgroundColor="$primary"
-              borderRadius="$10"
-              minWidth={24}
-              height={24}
-              alignItems="center"
-              justifyContent="center"
-              paddingHorizontal="$2"
+        <BackButton />
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color" flex={1}>
+          Notifications
+        </Text>
+
+        <XStack gap="$2">
+          {unread.length > 0 && (
+            <Button
+              variant="outline"
+              width="auto"
+              height={36}
+              paddingHorizontal="$3"
+              icon={<Check size={14} />}
+              onPress={handleMarkAllRead}
+              loading={markAllAsRead.isPending}
             >
-              <Text color="$background" fontSize="$2" fontWeight="bold">
-                {unreadNotifications.length}
-              </Text>
-            </YStack>
+              Read All
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="outline"
+              width="auto"
+              height={36}
+              paddingHorizontal="$3"
+              icon={<Trash2 size={14} />}
+              onPress={() => setShowClearDialog(true)}
+              loading={clearAll.isPending}
+            >
+              Clear
+            </Button>
           )}
         </XStack>
-        {unreadNotifications.length > 0 && (
-          <Button
-            variant="outline"
-            width="auto"
-            height={40}
-            paddingHorizontal="$3"
-            onPress={handleMarkAllRead}
-            loading={markAllAsRead.isPending}
-            icon={<Check size={14} />}
-          >
-            Mark All Read
-          </Button>
-        )}
       </XStack>
 
+      {/* List */}
       <FlatList
-        data={[]}
-        renderItem={() => null}
-        ListHeaderComponent={() => (
-          <YStack padding="$4" paddingBottom={0}>
-            {renderSection("New", unreadNotifications, "No new notifications")}
-            {renderSection("Earlier", readNotifications, "No notifications yet")}
-            {notifications.length === 0 && (
-              <YStack padding="$8" alignItems="center" gap="$4">
-                <Bell size={48} color="$colorMuted" />
-                <Text fontSize="$5" color="$colorMuted">
-                  No notifications yet
+        data={sections.flatMap((s) => [{ _section: true, title: s.title }, ...s.data])}
+        keyExtractor={(item: any) => item._section ? `section-${item.title}` : item.id}
+        renderItem={({ item }: any) => {
+          if (item._section) {
+            return (
+              <XStack
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                backgroundColor="$background"
+                gap="$2"
+                alignItems="center"
+              >
+                <Text
+                  fontSize="$3"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color="$colorSecondary"
+                  letterSpacing={0.5}
+                  textTransform="uppercase"
+                >
+                  {item.title}
                 </Text>
-              </YStack>
-            )}
-          </YStack>
-        )}
-        keyExtractor={() => "header"}
+                {item.title === "New" && (
+                  <YStack
+                    backgroundColor="$primary"
+                    borderRadius="$full"
+                    minWidth={18}
+                    height={18}
+                    alignItems="center"
+                    justifyContent="center"
+                    paddingHorizontal={4}
+                  >
+                    <Text fontSize={10} fontWeight="800" color="white">
+                      {unread.length}
+                    </Text>
+                  </YStack>
+                )}
+              </XStack>
+            );
+          }
+          return renderItem({ item });
+        }}
         contentContainerStyle={{
           flexGrow: 1,
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: insets.bottom + 80,
         }}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
+        ListEmptyComponent={
+          <YStack flex={1} alignItems="center" justifyContent="center" paddingVertical="$10" gap="$2">
+            <Bell size={48} color="$gray200" />
+            <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color" marginTop="$2">
+              No notifications yet
+            </Text>
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" textAlign="center">
+              Notifications from your orders and activity will appear here.
+            </Text>
+          </YStack>
+        }
+      />
+
+      {/* Clear All Confirmation */}
+      <AppAlertDialog
+        open={showClearDialog}
+        onOpenChange={setShowClearDialog}
+        title="Clear All Notifications"
+        description="Are you sure? This action cannot be undone."
+        confirmText="Clear"
+        onConfirm={handleClearAll}
+        cancelText="Cancel"
       />
     </YStack>
   );

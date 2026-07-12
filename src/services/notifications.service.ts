@@ -64,6 +64,11 @@ export const notificationsService = {
     return { success: true };
   },
 
+  async dismissAction(id: string): Promise<{ success: boolean }> {
+    await api.patch(`/notifications/${id}/dismiss-action`);
+    return { success: true };
+  },
+
   async clearAll(): Promise<{ success: boolean }> {
     await api.delete('/notifications');
     return { success: true };
