@@ -1,16 +1,28 @@
 // @ts-nocheck
-import { YStack, XStack, Text, Avatar, Button, Select, Adapt, Sheet } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Avatar,
+  Button,
+  Select,
+  Adapt,
+  Sheet,
+  ButtonIcon,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
   ChevronDown,
   Check,
   User,
+  Copy,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useProfileQuery } from "@/hooks/useProfile";
 import { useResponsive } from "@/utils/responsive";
+import { copyToClipboard } from "@/utils/copyToClipBoard";
 
 interface DrawerHeaderProps {
   fallbackName?: string;
@@ -20,7 +32,7 @@ interface DrawerHeaderProps {
 
 export function DrawerHeader({
   fallbackName = "User",
-  fallbackEmail = "user@example.com",
+  fallbackEmail = "",
   onNavigateCreateBusiness,
 }: DrawerHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -29,7 +41,7 @@ export function DrawerHeader({
   const { data: profile } = useProfileQuery();
   const { isTablet } = useResponsive();
 
-  const avatarSize = isTablet ? "$12" : "$10";
+  const avatarSize = isTablet ? "$14" : "$12";
   const avatarTextSize = isTablet ? "$10" : "$8";
   const nameTextSize = isTablet ? "$6" : "$5";
   const emailTextSize = isTablet ? "$4" : "$3";
@@ -65,9 +77,33 @@ export function DrawerHeader({
             <Text color="white" fontWeight="bold" fontSize={nameTextSize}>
               {user?.fullName || fallbackName}
             </Text>
-            <Text color="white" opacity={0.8} fontSize={emailTextSize}>
-              {user?.email || fallbackEmail}
-            </Text>
+            {user?.email && (
+              <Text color="white" opacity={0.8} fontSize={emailTextSize}>
+                {user?.email}
+              </Text>
+            )}
+
+            <XStack
+              onPress={async () => {
+                await copyToClipboard(activeBusiness?.business_number);
+                console.log("ID copied", activeBusiness?.business_number);
+                toast.success("Rider ID copied to clipboard");
+              }}
+              gap="$1"
+              marginTop="$2"
+              alignItems="center"
+              paddingHorizontal="$2"
+            >
+              <Text
+                fontSize="$1"
+                color="white"
+                opacity={0.6}
+                verticalAlign={"bottom"}
+              >
+                Bus.ID: #{activeBusiness?.business_number}
+                <Copy color="$white" size="$4" />
+              </Text>
+            </XStack>
           </YStack>
         </XStack>
       </YStack>

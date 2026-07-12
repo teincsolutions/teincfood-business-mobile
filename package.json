@@ -35,7 +35,7 @@
     "@tanstack/query-sync-storage-persister": "^5.101.2",
     "@tanstack/react-query": "^5.75.0",
     "@tanstack/react-query-persist-client": "^5.101.2",
-    "@teincfood/chat-client": "^0.1.4",
+    "@teincfood/chat-client": "0.1.5",
     "axios": "^1.14.0",
     "babel-preset-expo": "^55.0.14-canary-20260328-bdc6273",
     "expo": "^55.0.0",

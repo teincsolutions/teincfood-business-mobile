@@ -159,7 +159,7 @@ export default function SellerRiderDetailScreen() {
                 Call
               </Button>
               <MessageButton
-                userId={rider.user?.id || ''}
+                userId={rider.user?.id || ""}
                 displayName={rider.user?.full_name}
               />
             </XStack>
@@ -339,7 +339,7 @@ export default function SellerRiderDetailScreen() {
 
             {rider.is_active ? (
               <Button
-                backgroundColor="$red10"
+                variant="danger"
                 icon={<Ban size={18} />}
                 onPress={() => setConfirmAction("suspend")}
                 disabled={suspendRider.isPending}
@@ -348,7 +348,7 @@ export default function SellerRiderDetailScreen() {
               </Button>
             ) : (
               <Button
-                backgroundColor="$green10"
+                variant="success"
                 icon={<CheckCircle size={18} />}
                 onPress={() => setConfirmAction("activate")}
                 disabled={activateRider.isPending}

@@ -3,11 +3,7 @@ import { useState } from "react";
 import { Drawer } from "expo-router/drawer";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  useTheme,
-  YStack,
-  Separator,
-} from "tamagui";
+import { useTheme, YStack, Separator } from "tamagui";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -65,7 +61,7 @@ function CustomDrawerContent(props: any) {
     <YStack flex={1} backgroundColor="$background">
       <DrawerHeader
         fallbackName="Seller"
-        fallbackEmail="seller@example.com"
+        fallbackEmail=""
         onNavigateCreateBusiness={() => router.push("/(shared)/businesses/add")}
       />
 
@@ -79,32 +75,121 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
-          <DrawerMenuItem icon={LayoutDashboard} label="Dashboard" drawerName="dashboard/index" onPress={() => router.push("/(seller)/dashboard")} isActive={isActive} />
-          <DrawerMenuItem icon={Monitor} label="Kiosk Mode" drawerName="dashboard/kiosk" onPress={() => router.push("/(seller)/dashboard/kiosk")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            drawerName="dashboard/index"
+            onPress={() => router.push("/(seller)/dashboard")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={Monitor}
+            label="Kiosk Mode"
+            drawerName="dashboard/kiosk"
+            onPress={() => router.push("/(seller)/dashboard/kiosk")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={ShoppingBag} label="Orders" drawerName="orders/index" onPress={() => router.push("/(seller)/orders")} isActive={isActive} />
-          <DrawerMenuItem icon={Truck} label="Deliveries" drawerName="deliveries/index" onPress={() => router.push("/(seller)/deliveries")} isActive={isActive} />
-          <DrawerMenuItem icon={UtensilsCrossed} label="Menu" drawerName="menu/index" onPress={() => router.push("/(seller)/menu")} isActive={isActive} />
-          <DrawerMenuItem icon={BarChart3} label="Analytics" drawerName="analytics/index" onPress={() => router.push("/(seller)/analytics")} isActive={isActive} />
-          <DrawerMenuItem icon={Users} label="Members" drawerName="members/index" onPress={() => router.push("/(seller)/members")} isActive={isActive} />
-          <DrawerMenuItem icon={Bike} label="Riders" drawerName="riders/index" onPress={() => router.push("/(seller)/riders")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={ShoppingBag}
+            label="Orders"
+            drawerName="orders/index"
+            onPress={() => router.push("/(seller)/orders")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={Truck}
+            label="Deliveries"
+            drawerName="deliveries/index"
+            onPress={() => router.push("/(seller)/deliveries")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={UtensilsCrossed}
+            label="Menu"
+            drawerName="menu/index"
+            onPress={() => router.push("/(seller)/menu")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={BarChart3}
+            label="Analytics"
+            drawerName="analytics/index"
+            onPress={() => router.push("/(seller)/analytics")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={Users}
+            label="Members"
+            drawerName="members/index"
+            onPress={() => router.push("/(seller)/members")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={Bike}
+            label="Riders"
+            drawerName="riders/index"
+            onPress={() => router.push("/(seller)/riders")}
+            isActive={isActive}
+          />
 
-          <DrawerMenuItem icon={DollarSign} label="Wallet & Billing" sharedPrefix="/(shared)/wallet" onPress={() => router.push("/(shared)/wallet")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={DollarSign}
+            label="Wallet & Billing"
+            sharedPrefix="/(shared)/wallet"
+            onPress={() => router.push("/(shared)/wallet")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} />
-          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} />
-          <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={MessageSquare}
+            label="Messages"
+            sharedPrefix="/(communication)"
+            onPress={() => router.push("/(communication)")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={Bell}
+            label="Notifications"
+            sharedPrefix="/(shared)/notifications"
+            onPress={() => router.push("/(shared)/notifications")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={MailOpen}
+            label="Invitations"
+            sharedPrefix="/(shared)/invitations"
+            onPress={() => router.push("/(shared)/invitations")}
+            isActive={isActive}
+          />
 
-          <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(seller)/settings")} isActive={isActive} />
-          <DrawerMenuItem icon={User} label="Profile" drawerName="profile" onPress={() => router.push("/(seller)/profile")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={Settings}
+            label="Settings"
+            drawerName="settings/index"
+            onPress={() => router.push("/(seller)/settings")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={User}
+            label="Profile"
+            drawerName="profile"
+            onPress={() => router.push("/(seller)/profile")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={LogOut} label="Logout" onPress={() => setShowLogoutDialog(true)} danger />
+          <DrawerMenuItem
+            icon={LogOut}
+            label="Logout"
+            onPress={() => setShowLogoutDialog(true)}
+            danger
+          />
         </YStack>
       </DrawerContentScrollView>
 
@@ -301,9 +386,7 @@ export default function SellerDrawerLayout() {
           name="riders/index"
           options={{
             title: "Riders",
-            drawerIcon: ({ color, size }) => (
-              <Bike color={color} size={size} />
-            ),
+            drawerIcon: ({ color, size }) => <Bike color={color} size={size} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
