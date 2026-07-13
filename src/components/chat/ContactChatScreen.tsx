@@ -29,6 +29,7 @@ import {
   CheckCheck,
   Clock,
   AlertCircle,
+  Building2,
 } from "@tamagui/lucide-icons";
 import { setStringAsync } from "expo-clipboard";
 import { BackButton } from "@/components/ui";
@@ -159,6 +160,7 @@ interface ChatConversationScreenProps {
   displayName?: string;
   displayAvatar?: string;
   phoneNumber?: string;
+  isBusiness?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +172,7 @@ export function ContactChatScreen({
   displayName: propDisplayName,
   displayAvatar,
   phoneNumber,
+  isBusiness = false,
 }: ChatConversationScreenProps) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -263,7 +266,10 @@ export function ContactChatScreen({
   // Retry failed/queued message
   // ---------------------------------------------------------------------------
 
-  const handleRetryMessage = async (localId: string | null, clientId?: string | null) => {
+  const handleRetryMessage = async (
+    localId: string | null,
+    clientId?: string | null,
+  ) => {
     const msg = clientId
       ? messages.find((m: Message) => (m as any)._clientId === clientId)
       : messages.find((m: Message) => m.id === localId);
@@ -271,7 +277,9 @@ export function ContactChatScreen({
     if (clientId) {
       client.removePendingMessage(clientId);
     } else if (localId) {
-      const found = messages.find((m: Message) => m.id === localId && (m as any)._clientId);
+      const found = messages.find(
+        (m: Message) => m.id === localId && (m as any)._clientId,
+      );
       if (found) client.removePendingMessage((found as any)._clientId);
     }
     setRetryTargetId(null);
@@ -365,6 +373,19 @@ export function ContactChatScreen({
               >
                 {displayName}
               </Text>
+              {isBusiness && (
+                <XStack alignItems="center" gap="$1">
+                  <Building2 size={12} color="$primary" />
+                  <Text
+                    fontSize="$1"
+                    fontWeight="600"
+                    color="$primary"
+                    fontFamily="$body"
+                  >
+                    Business
+                  </Text>
+                </XStack>
+              )}
               {isSupport && (
                 <XStack alignItems="center" gap="$1">
                   <YStack
@@ -564,24 +585,26 @@ export function ContactChatScreen({
                     </XStack>
                   </YStack>
 
-                  {isFailed && (retryTargetId === msg.id || retryClientId === (msg as any)._clientId) && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        const cid = (msg as any)._clientId;
-                        handleRetryMessage(msg.id, cid ?? null);
-                      }}
-                      style={{ marginTop: 4 }}
-                    >
-                      <Text
-                        fontSize={12}
-                        color="$error"
-                        fontFamily="$body"
-                        textAlign="right"
+                  {isFailed &&
+                    (retryTargetId === msg.id ||
+                      retryClientId === (msg as any)._clientId) && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const cid = (msg as any)._clientId;
+                          handleRetryMessage(msg.id, cid ?? null);
+                        }}
+                        style={{ marginTop: 4 }}
                       >
-                        Tap to retry
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                        <Text
+                          fontSize={12}
+                          color="$error"
+                          fontFamily="$body"
+                          textAlign="right"
+                        >
+                          Tap to retry
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                 </YStack>
               </TouchableOpacity>
             );

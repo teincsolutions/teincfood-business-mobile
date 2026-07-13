@@ -75,6 +75,7 @@ export default function DirectPairChatScreen() {
       conversationId={conversationId}
       displayName={displayName}
       displayAvatar={displayAvatar}
+      isBusiness={!!senderBusinessId}
     />
   );
 }

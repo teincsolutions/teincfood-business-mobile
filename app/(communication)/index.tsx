@@ -81,72 +81,114 @@ export default function InboxScreen() {
 
   const renderContact = useCallback(
     ({ item: contact }: { item: any }) => (
-      <YStack>
-        <TouchableOpacity
-          onPress={() => handleContactPress(contact)}
-          activeOpacity={0.7}
-        >
-          <XStack p="$4" gap="$3" ai="center">
-            <YStack position="relative">
-              <Avatar circular size={54}>
-                <Avatar.Image src={contact.avatar_url ?? undefined} />
-                <Avatar.Fallback bg="$backgroundStrong" jc="center" ai="center">
-                  <Text color="$color" fontWeight="bold" fontSize="$6">
-                    {contact.full_name?.charAt(0) || "?"}
-                  </Text>
-                </Avatar.Fallback>
-              </Avatar>
-            </YStack>
-
-            <YStack flex={1} gap="$1">
-              <XStack jc="space-between" ai="center">
-                <Text
-                  fontSize="$4"
-                  fontWeight="700"
-                  fontFamily="$heading"
-                  color="$color"
-                  flex={1}
-                  numberOfLines={1}
-                >
-                  {contact.full_name}
-                  {contact.is_self ? " (Me)" : ""}
-                </Text>
-                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  {contact.last_message?.sent_at
-                    ? formatTime(contact.last_message.sent_at)
-                    : ""}
-                </Text>
-              </XStack>
-              <XStack jc="space-between" ai="center">
-                <Text
-                  fontSize="$3"
-                  color={
-                    contact.unread_count > 0 ? "$color" : "$colorSecondary"
-                  }
-                  fontWeight={contact.unread_count > 0 ? "700" : "400"}
-                  fontFamily="$body"
-                  numberOfLines={1}
-                  flex={1}
-                >
-                  {contact.last_message?.text
-                    ? contact.last_message.text.slice(0, 80) + "..."
-                    : "Tap to start chatting"}
-                </Text>
-                {contact.unread_count > 0 && (
-                  <Badge size="$2" backgroundColor="$primary">
-                    <Text color="$white" fontSize="$1" fontWeight="700">
-                      {contact.unread_count > 99 ? "99+" : contact.unread_count}
+      <XStack>
+        <YStack flex={1}>
+          <TouchableOpacity
+            onPress={() => handleContactPress(contact)}
+            activeOpacity={0.7}
+          >
+            <XStack p="$4" gap="$3" alignItems="center">
+              <YStack position="relative">
+                <Avatar circular size={54}>
+                  <Avatar.Image src={contact.avatar_url ?? undefined} />
+                  <Avatar.Fallback
+                    bg="$backgroundStrong"
+                    justifyContent="center"
+                    alignItems="center"
+                  >
+                    <Text color="$color" fontWeight="bold" fontSize="$6">
+                      {contact.full_name?.charAt(0) || "?"}
                     </Text>
-                  </Badge>
+                  </Avatar.Fallback>
+                </Avatar>
+                {tab === "business" && (
+                  <YStack
+                    position="absolute"
+                    bottom={-2}
+                    right={-2}
+                    backgroundColor="$primary"
+                    borderRadius="$12"
+                    width={18}
+                    height={18}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Building2 size={10} color="$white" />
+                  </YStack>
                 )}
-              </XStack>
-            </YStack>
-          </XStack>
-        </TouchableOpacity>
-        <Separator borderColor="$borderColor" />
-      </YStack>
+              </YStack>
+
+              <YStack flex={1} gap="$1">
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text
+                    fontSize="$4"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                    flex={1}
+                    numberOfLines={1}
+                  >
+                    {contact.full_name}
+                    {contact.is_self ? " (Me)" : ""}
+                  </Text>
+                  <XStack gap="$1.5" alignItems="center">
+                    {tab === "business" && (
+                      <>
+                        <Building2 size={12} color="$primary" />
+                        <Text
+                          fontSize="$1"
+                          color="$primary"
+                          fontFamily="$body"
+                          fontWeight="600"
+                        >
+                          Business
+                        </Text>
+                      </>
+                    )}
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      {contact.last_message?.sent_at
+                        ? formatTime(contact.last_message.sent_at)
+                        : ""}
+                    </Text>
+                  </XStack>
+                </XStack>
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text
+                    fontSize="$3"
+                    color={
+                      contact.unread_count > 0 ? "$color" : "$colorSecondary"
+                    }
+                    fontWeight={contact.unread_count > 0 ? "700" : "400"}
+                    fontFamily="$body"
+                    numberOfLines={1}
+                    flex={1}
+                  >
+                    {contact.last_message?.text
+                      ? contact.last_message.text.slice(0, 80) + "..."
+                      : "Tap to start chatting"}
+                  </Text>
+                  {contact.unread_count > 0 && (
+                    <Badge size="$2" backgroundColor="$primary">
+                      <Text color="$white" fontSize="$1" fontWeight="700">
+                        {contact.unread_count > 99
+                          ? "99+"
+                          : contact.unread_count}
+                      </Text>
+                    </Badge>
+                  )}
+                </XStack>
+              </YStack>
+            </XStack>
+          </TouchableOpacity>
+          <Separator borderColor="$borderColor" />
+        </YStack>
+      </XStack>
     ),
-    [handleContactPress],
+    [handleContactPress, tab],
   );
 
   const renderEmpty = () => (
