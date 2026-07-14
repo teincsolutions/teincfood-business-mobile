@@ -1,7 +1,16 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl, ScrollView } from "react-native";
-import { YStack, XStack, Text, Card, Avatar, Sheet, Separator, Input as TamaguiInput } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Avatar,
+  Sheet,
+  Separator,
+  Input as TamaguiInput,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Users,
@@ -36,17 +45,29 @@ export default function SellerRidersScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const { data: ridersRes, isLoading: ridersLoading, refetch: refetchRiders, isRefetching: ridersRefetching } = useFleetRidersQuery(true, {
+  const {
+    data: ridersRes,
+    isLoading: ridersLoading,
+    refetch: refetchRiders,
+    isRefetching: ridersRefetching,
+  } = useFleetRidersQuery(true, {
     q: searchQuery || undefined,
     status: filterStatus !== "all" ? filterStatus : undefined,
   });
-  const { data: joinRequestsRes, isLoading: requestsLoading, refetch: refetchRequests } = useJoinRequestsQuery(true);
+  const {
+    data: joinRequestsRes,
+    isLoading: requestsLoading,
+    refetch: refetchRequests,
+  } = useJoinRequestsQuery(true);
 
   const approveRequest = useApproveJoinRequestMutation();
   const rejectRequest = useRejectJoinRequestMutation();
   const inviteRider = useInviteRiderMutation();
 
-  const [confirmAction, setConfirmAction] = useState<{ type: 'approve' | 'reject'; id: string } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "approve" | "reject";
+    id: string;
+  } | null>(null);
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteIdentifier, setInviteIdentifier] = useState("");
 
@@ -113,20 +134,22 @@ export default function SellerRidersScreen() {
         <YStack flex={1} gap="$1">
           <XStack justifyContent="space-between" alignItems="center">
             <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-              {rider.user?.full_name || rider.rider_number || "Rider"}
+              {rider.user?.full_name || "Rider"}
             </Text>
             <YStack
               paddingHorizontal="$2"
               paddingVertical="$1"
               borderRadius="$2"
-              backgroundColor={rider.is_active ? "$green2" : "$red2"}
+              backgroundColor={
+                rider.is_active ? "$successMuted" : "$errorMuted"
+              }
             >
               <Text
                 fontSize="$2"
-                color={rider.is_active ? "$green10" : "$red10"}
+                color={rider.is_active ? "$success" : "$error"}
                 fontFamily="$body"
               >
-                {rider.is_active ? rider.status || "Active" : "Suspended"}
+                {rider.status}
               </Text>
             </YStack>
           </XStack>
@@ -135,7 +158,7 @@ export default function SellerRidersScreen() {
             <XStack gap="$1" alignItems="center">
               <Phone size={14} color="$colorMuted" />
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {rider.phone || "N/A"}
+                {rider.user?.phone || "N/A"}
               </Text>
             </XStack>
             {rider.vehicle?.plate_number && (
@@ -249,7 +272,12 @@ export default function SellerRidersScreen() {
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
       <YStack padding="$4" gap="$2">
-        <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$7"
+          fontWeight="bold"
+          fontFamily="$heading"
+          color="$color"
+        >
           Riders
         </Text>
         <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -260,7 +288,6 @@ export default function SellerRidersScreen() {
         <XStack gap="$3" paddingTop="$2">
           <Button
             flex={1}
-            height="$10"
             variant={activeTab === "riders" ? "primary" : "outline"}
             onPress={() => setActiveTab("riders")}
           >
@@ -268,7 +295,6 @@ export default function SellerRidersScreen() {
           </Button>
           <Button
             flex={1}
-            height="$10"
             variant={activeTab === "requests" ? "primary" : "outline"}
             onPress={() => setActiveTab("requests")}
           >
@@ -300,7 +326,6 @@ export default function SellerRidersScreen() {
             {["all", "available", "busy", "offline"].map((s) => (
               <Button
                 key={s}
-                size="$2"
                 variant={filterStatus === s ? "primary" : "outline"}
                 onPress={() => setFilterStatus(s)}
               >
@@ -364,11 +389,23 @@ export default function SellerRidersScreen() {
         dismissOnSnapToBottom
         zIndex={200_000}
       >
-        <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$6"
+        >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4">
-            <Text fontSize="$6" fontWeight="bold">Invite Rider</Text>
+            <Text fontSize="$6" fontWeight="bold">
+              Invite Rider
+            </Text>
             <Text fontSize="$3" color="$colorMuted">
               Enter the rider's number, email, or phone
             </Text>
@@ -398,7 +435,11 @@ export default function SellerRidersScreen() {
       <AppAlertDialog
         open={confirmAction !== null}
         onOpenChange={() => setConfirmAction(null)}
-        title={confirmAction?.type === "approve" ? "Approve Request" : "Reject Request"}
+        title={
+          confirmAction?.type === "approve"
+            ? "Approve Request"
+            : "Reject Request"
+        }
         description={
           confirmAction?.type === "approve"
             ? "This rider will be able to accept your business's deliveries."
