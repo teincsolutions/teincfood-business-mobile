@@ -42,8 +42,8 @@ async function registerToken(token: string): Promise<void> {
     console.log('[PushToken] Backend registration response:', JSON.stringify(response));
     currentToken = token;
     setStoredTokenHash(token);
-    if (response?.id) {
-      mmkvStorage.set(REGISTERED_TOKEN_ID_KEY, response.id);
+    if (response?.data?.id) {
+      mmkvStorage.set(REGISTERED_TOKEN_ID_KEY, response.data.id);
     }
     console.log('[PushToken] Token stored locally and dedup hash set');
   } catch (error) {
@@ -53,17 +53,17 @@ async function registerToken(token: string): Promise<void> {
 
 export async function unregisterPushTokenOnLogout(): Promise<void> {
   const tokenId = getStoredTokenId();
-  if (!tokenId) return;
-  try {
-    await devicesService.unregisterPushToken(tokenId);
-    console.log('[PushToken] Token unregistered on logout');
-  } catch (error) {
-    console.warn('[PushToken] Logout unregister failed:', error);
-  } finally {
-    clearStoredTokenId();
-    mmkvStorage.delete(REGISTERED_TOKEN_KEY);
-    currentToken = null;
+  if (tokenId) {
+    try {
+      await devicesService.unregisterPushToken(tokenId);
+      console.log('[PushToken] Token unregistered on logout');
+    } catch (error) {
+      console.warn('[PushToken] Logout unregister failed:', error);
+    }
   }
+  clearStoredTokenId();
+  mmkvStorage.delete(REGISTERED_TOKEN_KEY);
+  currentToken = null;
 }
 
 export function usePushTokenRegistration(enabled = true): void {
