@@ -145,7 +145,7 @@ export default function SellerRidersScreen() {
               }
             >
               <Text
-                fontSize="$2"
+                fontSize="$3"
                 color={rider.is_active ? "$success" : "$error"}
                 fontFamily="$body"
               >
