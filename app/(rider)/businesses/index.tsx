@@ -1,7 +1,16 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl, Alert } from "react-native";
-import { YStack, XStack, Text, Card, Button, Separator, Sheet, ScrollView, Avatar } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Separator,
+  Sheet,
+  ScrollView,
+  Avatar,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -10,12 +19,12 @@ import {
   LogOut,
   MapPin,
   Map,
-
   X,
   Store,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
-import { BackButton } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
+import { MessageButton } from "@/components/chat/MessageButton";
 import { useRiderProfileQuery } from "@/hooks/useRider";
 import { useLeaveBusinessMutation } from "@/hooks/useInvitations";
 
@@ -27,7 +36,6 @@ export default function RiderBusinessesScreen() {
   const businesses = profile?.businesses ?? [];
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-
 
   const handleOpenSheet = (business) => {
     setSelectedBusiness(business);
@@ -57,22 +65,26 @@ export default function RiderBusinessesScreen() {
   };
 
   const handleLeave = (business) => {
-    Alert.alert("Leave Business", `Are you sure you want to leave ${business.name}? You will stop receiving delivery requests from them.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Leave",
-        style: "destructive",
-        onPress: () => {
-          leaveMutation.mutate(`rider_${business.id}`, {
-            onSuccess: () => {
-              setSelectedBusiness(null);
-              setSheetOpen(false);
-              refetch();
-            },
-          });
+    Alert.alert(
+      "Leave Business",
+      `Are you sure you want to leave ${business.name}? You will stop receiving delivery requests from them.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            leaveMutation.mutate(`rider_${business.id}`, {
+              onSuccess: () => {
+                setSelectedBusiness(null);
+                setSheetOpen(false);
+                refetch();
+              },
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const getAddressText = (business) => {
@@ -117,11 +129,24 @@ export default function RiderBusinessesScreen() {
                   <Avatar.Image src={business.logo_url} />
                 </Avatar>
               ) : (
-                <XStack width={28} height={28} borderRadius={14} backgroundColor="$gray3" alignItems="center" justifyContent="center">
+                <XStack
+                  width={28}
+                  height={28}
+                  borderRadius={14}
+                  backgroundColor="$gray3"
+                  alignItems="center"
+                  justifyContent="center"
+                >
                   <Store size={14} color="$colorMuted" />
                 </XStack>
               )}
-              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color" flexShrink={1}>
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+                flexShrink={1}
+              >
                 {business.name}
               </Text>
               <XStack
@@ -133,7 +158,13 @@ export default function RiderBusinessesScreen() {
                 borderColor="$green"
               >
                 <User size={10} color="$green" />
-                <Text fontSize="$1" color="$green" fontFamily="$body" fontWeight="600" marginLeft={2}>
+                <Text
+                  fontSize="$1"
+                  color="$green"
+                  fontFamily="$body"
+                  fontWeight="600"
+                  marginLeft={2}
+                >
                   RIDER
                 </Text>
               </XStack>
@@ -144,7 +175,12 @@ export default function RiderBusinessesScreen() {
             {addressText && (
               <XStack gap="$1" alignItems="center" marginTop="$1">
                 <MapPin size={12} color="$colorMuted" />
-                <Text fontSize="$2" color="$colorMuted" fontFamily="$body" numberOfLines={1}>
+                <Text
+                  fontSize="$2"
+                  color="$colorMuted"
+                  fontFamily="$body"
+                  numberOfLines={1}
+                >
                   {addressText}
                 </Text>
               </XStack>
@@ -156,7 +192,9 @@ export default function RiderBusinessesScreen() {
     );
   };
 
-  const addressText = selectedBusiness ? getAddressText(selectedBusiness) : null;
+  const addressText = selectedBusiness
+    ? getAddressText(selectedBusiness)
+    : null;
   const canLeave = selectedBusiness && !profile?.is_fleet_managed;
   const hasLocation =
     selectedBusiness &&
@@ -166,10 +204,20 @@ export default function RiderBusinessesScreen() {
     <Card padding="$6" bordered>
       <YStack alignItems="center" gap="$3">
         <Building size={48} color="$colorMuted" />
-        <Text fontSize="$5" fontWeight="600" textAlign="center" fontFamily="$heading">
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          textAlign="center"
+          fontFamily="$heading"
+        >
           No businesses yet
         </Text>
-        <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
+        <Text
+          fontSize="$4"
+          color="$colorSecondary"
+          textAlign="center"
+          fontFamily="$body"
+        >
           You are not linked to any business as a rider yet.
         </Text>
       </YStack>
@@ -177,12 +225,21 @@ export default function RiderBusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      paddingTop={Math.max(insets.top + 8, 16)}
+    >
       <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
         <XStack gap="$2" alignItems="center">
           <BackButton />
           <YStack gap="$1" flex={1}>
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+            <Text
+              fontSize="$8"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+            >
               My Businesses
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -247,7 +304,14 @@ export default function RiderBusinessesScreen() {
                         <Avatar.Image src={selectedBusiness.logo_url} />
                       </Avatar>
                     ) : (
-                      <XStack width={28} height={28} borderRadius={14} backgroundColor="$gray3" alignItems="center" justifyContent="center">
+                      <XStack
+                        width={28}
+                        height={28}
+                        borderRadius={14}
+                        backgroundColor="$gray3"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         <Store size={14} color="$colorMuted" />
                       </XStack>
                     )}
@@ -263,12 +327,22 @@ export default function RiderBusinessesScreen() {
                       borderColor="$green"
                     >
                       <User size={10} color="$green" />
-                      <Text fontSize="$1" color="$green" fontFamily="$body" fontWeight="600" marginLeft={2}>
+                      <Text
+                        fontSize="$1"
+                        color="$green"
+                        fontFamily="$body"
+                        fontWeight="600"
+                        marginLeft={2}
+                      >
                         RIDER
                       </Text>
                     </XStack>
                   </XStack>
-                  <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$4"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     {selectedBusiness.business_number}
                   </Text>
                 </YStack>
@@ -278,16 +352,28 @@ export default function RiderBusinessesScreen() {
                 {/* Address */}
                 {addressText && (
                   <XStack gap="$3" alignItems="flex-start">
-                    <MapPin size={18} color="$success" style={{ marginTop: 2 }} />
+                    <MapPin
+                      size={18}
+                      color="$success"
+                      style={{ marginTop: 2 }}
+                    />
                     <YStack flex={1}>
-                      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                      <Text
+                        fontSize="$2"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
                         Address
                       </Text>
                       <Text fontSize="$4" fontWeight="600" fontFamily="$body">
                         {addressText}
                       </Text>
                       {selectedBusiness.address?.region && (
-                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                        <Text
+                          fontSize="$3"
+                          color="$colorSecondary"
+                          fontFamily="$body"
+                        >
                           {selectedBusiness.address.region}
                         </Text>
                       )}
@@ -296,29 +382,47 @@ export default function RiderBusinessesScreen() {
                 )}
 
                 {/* Fallback coords display */}
-                {!addressText && selectedBusiness.latitude && selectedBusiness.longitude && (
-                  <XStack gap="$3" alignItems="flex-start">
-                    <MapPin size={18} color="$success" style={{ marginTop: 2 }} />
-                    <YStack flex={1}>
-                      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                        Location
-                      </Text>
-                      <Text fontSize="$4" fontWeight="600" fontFamily="$body">
-                        {selectedBusiness.latitude.toFixed(4)}, {selectedBusiness.longitude.toFixed(4)}
-                      </Text>
-                    </YStack>
-                  </XStack>
-                )}
+                {!addressText &&
+                  selectedBusiness.latitude &&
+                  selectedBusiness.longitude && (
+                    <XStack gap="$3" alignItems="flex-start">
+                      <MapPin
+                        size={18}
+                        color="$success"
+                        style={{ marginTop: 2 }}
+                      />
+                      <YStack flex={1}>
+                        <Text
+                          fontSize="$2"
+                          color="$colorSecondary"
+                          fontFamily="$body"
+                        >
+                          Location
+                        </Text>
+                        <Text fontSize="$4" fontWeight="600" fontFamily="$body">
+                          {selectedBusiness.latitude.toFixed(4)},{" "}
+                          {selectedBusiness.longitude.toFixed(4)}
+                        </Text>
+                      </YStack>
+                    </XStack>
+                  )}
 
                 <Separator />
 
                 {/* Actions */}
                 <YStack gap="$3">
+                  <MessageButton
+                    userId={selectedBusiness.id}
+                    displayName={selectedBusiness.name}
+                    displayAvatar={selectedBusiness.logo_url}
+                    contactType="business"
+                  />
+
                   {hasLocation && (
                     <Button
+                      width={"100%"}
+                      variant="outline"
                       icon={<Map size={20} />}
-                      backgroundColor="$primary"
-                      color="white"
                       onPress={() => handleViewOnMap(selectedBusiness)}
                     >
                       View on Map
@@ -327,7 +431,9 @@ export default function RiderBusinessesScreen() {
 
                   {canLeave && (
                     <Button
-                      variant="dangerOutline"
+                      width={"100%"}
+                      backgroundColor="$error"
+                      color="white"
                       icon={<LogOut size={20} />}
                       onPress={() => handleLeave(selectedBusiness)}
                     >
@@ -340,7 +446,6 @@ export default function RiderBusinessesScreen() {
           </ScrollView>
         </Sheet.Frame>
       </Sheet>
-
     </YStack>
   );
 }
