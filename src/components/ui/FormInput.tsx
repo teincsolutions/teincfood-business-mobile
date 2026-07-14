@@ -1,24 +1,32 @@
 // @ts-nocheck
-import { forwardRef, useState, useEffect, ReactNode } from 'react';
-import { Input as TamaguiInput, YStack, XStack, Text, styled, GetProps, Label } from 'tamagui';
-import { Eye, EyeOff } from '@tamagui/lucide-icons';
-import { Pressable } from 'react-native';
+import { forwardRef, useState, useEffect, ReactNode } from "react";
+import {
+  Input as TamaguiInput,
+  YStack,
+  XStack,
+  Text,
+  styled,
+  GetProps,
+  Label,
+} from "tamagui";
+import { Eye, EyeOff } from "@tamagui/lucide-icons";
+import { Pressable } from "react-native";
 
 const BaseInput = styled(TamaguiInput, {
-  backgroundColor: '$backgroundSoft',
+  backgroundColor: "$backgroundSoft",
   borderWidth: 0,
-  borderRadius: '$3',
-  fontFamily: '$body',
-  fontSize: '$4',
-  color: '$color',
+  borderRadius: "$3",
+  fontFamily: "$body",
+  fontSize: "$4",
+  color: "$color",
   height: 60,
-  paddingHorizontal: '$4',
-  placeholderTextColor: '$colorPlaceholder',
-  
+  paddingHorizontal: "$4",
+  placeholderTextColor: "$colorPlaceholder",
+
   focusStyle: {
     borderWidth: 1,
-    borderColor: '$primary',
-    backgroundColor: '$background',
+    borderColor: "$primary",
+    backgroundColor: "$background",
   },
 });
 
@@ -30,42 +38,45 @@ export type FormInputProps = {
   placeholder?: string;
   value?: string;
   onChangeText?: (text: string) => void;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   autoCorrect?: boolean;
   secureTextEntry?: boolean;
   disabled?: boolean;
   required?: boolean;
   name?: string;
   onSubmitEditing?: () => void;
-  returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send';
+  returnKeyType?: "done" | "go" | "next" | "search" | "send";
   blurOnSubmit?: boolean;
 };
 
 /**
- * TeincFoods Form Input Component with Tamagui Form validation
+ * TeincFood Business Form Input Component with Tamagui Form validation
  */
 export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
-  ({ 
-    label, 
-    error, 
-    isPassword, 
-    icon,
-    placeholder,
-    value,
-    onChangeText,
-    keyboardType,
-    autoCapitalize,
-    autoCorrect,
-    secureTextEntry,
-    disabled,
-    required,
-    name,
-    onSubmitEditing,
-    returnKeyType,
-    blurOnSubmit,
-    ...props 
-  }, ref) => {
+  (
+    {
+      label,
+      error,
+      isPassword,
+      icon,
+      placeholder,
+      value,
+      onChangeText,
+      keyboardType,
+      autoCapitalize,
+      autoCorrect,
+      secureTextEntry,
+      disabled,
+      required,
+      name,
+      onSubmitEditing,
+      returnKeyType,
+      blurOnSubmit,
+      ...props
+    },
+    ref,
+  ) => {
     const [secure, setSecure] = useState(isPassword);
     const [isFocused, setIsFocused] = useState(false);
     const [localError, setLocalError] = useState(error);
@@ -78,16 +89,16 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
       <YStack w="100%" gap="$2">
         {label && (
           <Label
-            style={{ fontSize: 14, fontWeight: '400' }}
-            color={localError ? '$error' : '$color.gray600'}
+            style={{ fontSize: 14, fontWeight: "400" }}
+            color={localError ? "$error" : "$color.gray600"}
             fontFamily="$body"
-            htmlFor={name || label.toLowerCase().replace(/\s+/g, '-')}
+            htmlFor={name || label.toLowerCase().replace(/\s+/g, "-")}
           >
             {label}
             {required && <Text color="$error"> *</Text>}
           </Label>
         )}
-        
+
         <XStack w="100%" items="center">
           {icon && (
             <YStack position="absolute" left="$3" zIndex={1}>
@@ -96,11 +107,11 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
           )}
           <BaseInput
             ref={ref}
-            id={name || label?.toLowerCase().replace(/\s+/g, '-')}
+            id={name || label?.toLowerCase().replace(/\s+/g, "-")}
             flex={1}
             secureTextEntry={secure}
-            paddingLeft={icon ? '$10' : '$4'}
-            paddingRight={isPassword ? '$10' : '$4'}
+            paddingLeft={icon ? "$10" : "$4"}
+            paddingRight={isPassword ? "$10" : "$4"}
             placeholder={placeholder}
             value={value}
             onChangeText={(text: string) => {
@@ -116,9 +127,11 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
             blurOnSubmit={blurOnSubmit}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            borderColor={localError ? '$error' : isFocused ? '$primary' : '$borderColor'}
+            borderColor={
+              localError ? "$error" : isFocused ? "$primary" : "$borderColor"
+            }
             borderWidth={localError ? 1 : isFocused ? 1 : 0}
-            backgroundColor={isFocused ? '$background' : '$backgroundSoft'}
+            backgroundColor={isFocused ? "$background" : "$backgroundSoft"}
             {...props}
           />
 
@@ -134,11 +147,16 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
               zIndex={20}
             >
               <Pressable
-                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 onPress={() => setSecure(!secure)}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel={secure ? 'Show password' : 'Hide password'}
+                accessibilityLabel={secure ? "Show password" : "Hide password"}
               >
                 {secure ? (
                   <EyeOff size={20} color="$colorSecondary" />
@@ -157,7 +175,7 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
         )}
       </YStack>
     );
-  }
+  },
 );
 
-FormInput.displayName = 'FormInput';
+FormInput.displayName = "FormInput";

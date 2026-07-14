@@ -1,14 +1,14 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
-import type { Order } from '@/types/order.model';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
+import type { Order } from "@/types/order.model";
 
 interface OrdersState {
   orders: Order[];
 
   // Actions
   addOrder: (order: Order) => void;
-  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
   removeOrder: (orderId: string) => void;
   getActiveOrders: () => Order[];
   getCompletedOrders: () => Order[];
@@ -29,26 +29,26 @@ export const useOrdersStore = create<OrdersState>()(
       updateOrderStatus: (orderId, status) => {
         set((state) => ({
           orders: state.orders.map((o) =>
-            o.id === orderId ? { ...o, status } : o
+            o.id === orderId ? { ...o, status } : o,
           ),
         }));
       },
 
       removeOrder: (orderId) => {
         set((state) => ({
-          orders: state.orders.filter((o) => o.id !== orderId)
+          orders: state.orders.filter((o) => o.id !== orderId),
         }));
       },
 
       getActiveOrders: () => {
         return get().orders.filter(
-          (o) => !['delivered', 'cancelled'].includes(o.status)
+          (o) => !["delivered", "cancelled"].includes(o.status),
         );
       },
 
       getCompletedOrders: () => {
-        return get().orders.filter(
-          (o) => ['delivered', 'cancelled'].includes(o.status)
+        return get().orders.filter((o) =>
+          ["delivered", "cancelled"].includes(o.status),
         );
       },
 
@@ -57,8 +57,8 @@ export const useOrdersStore = create<OrdersState>()(
       },
     }),
     {
-      name: 'teincfoods-orders',
+      name: "TeincFood Business-orders",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );

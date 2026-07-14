@@ -2,14 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  useTheme,
-  Sheet,
-  Separator,
-} from "tamagui";
+import { YStack, XStack, Text, useTheme, Sheet, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapPin, ChevronDown, Check, Navigation } from "@tamagui/lucide-icons";
 import { Button, BackButton } from "@/components/ui";
@@ -25,7 +18,9 @@ export default function LocationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const setCurrentLocation = useLocationStore((state) => state.setCurrentLocation);
+  const setCurrentLocation = useLocationStore(
+    (state) => state.setCurrentLocation,
+  );
 
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
   const [selectedCountryIso, setSelectedCountryIso] = useState("GH");
@@ -55,20 +50,20 @@ export default function LocationScreen() {
         countryCode: selectedCountryIso.toUpperCase(),
       };
 
-      // Save to local store (user is unauthenticated during onboarding, 
+      // Save to local store (user is unauthenticated during onboarding,
       // so location is persisted client-side only until post-auth sync)
       setCurrentLocation(location);
 
       // If already authenticated, go to role home; otherwise go to role selection
       const currentUser = useAuthStore.getState().user;
-      if (currentUser?.role === 'rider') {
-        router.replace('/(rider)/');
-      } else if (currentUser?.role === 'fleet_manager') {
-        router.replace('/(fleet)/');
+      if (currentUser?.role === "rider") {
+        router.replace("/(rider)/");
+      } else if (currentUser?.role === "fleet_manager") {
+        router.replace("/(fleet)/");
       } else if (currentUser) {
-        router.replace('/(seller)/');
+        router.replace("/(seller)/");
       } else {
-        router.replace('/(auth)/role');
+        router.replace("/(auth)/role");
       }
     } catch (err: any) {
       setError(err?.message || "Failed to save location. Please try again.");
@@ -94,11 +89,9 @@ export default function LocationScreen() {
             paddingBottom: Math.max(insets.bottom + 20, 24),
           }}
         >
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
+          <YStack mb="$4">{router.canDismiss() && <BackButton />}</YStack>
 
-          <YStack mb="$6" items={'center'} gap="$3">
+          <YStack mb="$6" items={"center"} gap="$3">
             <YStack
               width={80}
               height={80}
@@ -162,7 +155,11 @@ export default function LocationScreen() {
                     >
                       {selectedCountry?.name || "Select Country"}
                     </Text>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
                       {selectedCountryIso} ({phoneDialCode})
                     </Text>
                   </YStack>
@@ -181,6 +178,7 @@ export default function LocationScreen() {
           <YStack mt="auto" pt="$6" gap="$3">
             <Button
               variant="primary"
+              width={"100%"}
               loading={isLoading}
               onPress={handleContinue}
             >
@@ -189,9 +187,14 @@ export default function LocationScreen() {
             <Button
               variant="ghost"
               height={40}
-              onPress={() => router.back()}
+              onPress={() => router.replace("/(auth)/login")}
             >
-              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
+              <Text
+                fontSize="$3"
+                color="$primary"
+                fontWeight="600"
+                fontFamily="$body"
+              >
                 Back to Login
               </Text>
             </Button>
@@ -228,7 +231,12 @@ export default function LocationScreen() {
             >
               Select Your Country
             </Text>
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" mt="$1">
+            <Text
+              fontSize="$3"
+              color="$colorSecondary"
+              fontFamily="$body"
+              mt="$1"
+            >
               Choose your country for location-based services.
             </Text>
           </YStack>
@@ -254,7 +262,11 @@ export default function LocationScreen() {
                       >
                         {country.name}
                       </Text>
-                      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                      <Text
+                        fontSize="$3"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
                         {country.iso}
                       </Text>
                     </YStack>

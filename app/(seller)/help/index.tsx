@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { ScrollView, Alert, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState } from "react";
+import { ScrollView, Alert, Linking } from "react-native";
+import { useRouter } from "expo-router";
 import {
   YStack,
   XStack,
@@ -10,8 +10,8 @@ import {
   Button,
   Separator,
   TextArea,
-} from 'tamagui';
-import { BackButton, FormInput } from '@/components/ui';
+} from "tamagui";
+import { BackButton, FormInput } from "@/components/ui";
 import {
   ArrowLeft,
   HelpCircle,
@@ -23,8 +23,8 @@ import {
   Book,
   Video,
   FileText,
-} from '@tamagui/lucide-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "@tamagui/lucide-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Help & Support Screen
@@ -32,70 +32,96 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function HelpSupport() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
 
   const faqItems = [
     {
-      question: 'How do I update my menu?',
-      answer: 'Go to Menu section and tap on any item to edit or add new items using the + button.',
+      question: "How do I update my menu?",
+      answer:
+        "Go to Menu section and tap on any item to edit or add new items using the + button.",
     },
     {
-      question: 'How do I manage orders?',
-      answer: 'Orders appear in the Orders tab. You can accept, reject, or mark orders as ready.',
+      question: "How do I manage orders?",
+      answer:
+        "Orders appear in the Orders tab. You can accept, reject, or mark orders as ready.",
     },
     {
-      question: 'When do I receive payouts?',
-      answer: 'Payouts are processed based on your selected schedule in Payment Settings.',
+      question: "When do I receive payouts?",
+      answer:
+        "Payouts are processed based on your selected schedule in Payment Settings.",
     },
     {
-      question: 'How do I change my business hours?',
-      answer: 'Go to Settings > Operating Hours to update your business schedule.',
+      question: "How do I change my business hours?",
+      answer:
+        "Go to Settings > Operating Hours to update your business schedule.",
     },
   ];
 
   const supportOptions = [
     {
       icon: MessageCircle,
-      title: 'Live Chat',
-      description: 'Chat with our support team',
-      action: () => Alert.alert('Live Chat', 'Connecting to support...'),
+      title: "Live Chat",
+      description: "Chat with our support team",
+      action: () => Alert.alert("Live Chat", "Connecting to support..."),
     },
     {
       icon: Phone,
-      title: 'Call Us',
-      description: '+233 XX XXX XXXX',
-      action: () => Linking.openURL('tel:+233XXXXXXXX'),
+      title: "Call Us",
+      description: "+233 XX XXX XXXX",
+      action: () => Linking.openURL("tel:+233XXXXXXXX"),
     },
     {
       icon: Mail,
-      title: 'Email Support',
-      description: 'support@teincfoods.com',
-      action: () => Linking.openURL('mailto:support@teincfoods.com'),
+      title: "Email Support",
+      description: "support@TeincFood Business.com",
+      action: () => Linking.openURL("mailto:support@TeincFood Business.com"),
     },
   ];
 
   const resources = [
-    { icon: Book, title: 'Seller Guide', description: 'Learn how to use the platform' },
-    { icon: Video, title: 'Video Tutorials', description: 'Watch step-by-step guides' },
-    { icon: FileText, title: 'Terms of Service', description: 'Read our terms and conditions' },
+    {
+      icon: Book,
+      title: "Seller Guide",
+      description: "Learn how to use the platform",
+    },
+    {
+      icon: Video,
+      title: "Video Tutorials",
+      description: "Watch step-by-step guides",
+    },
+    {
+      icon: FileText,
+      title: "Terms of Service",
+      description: "Read our terms and conditions",
+    },
   ];
 
   const handleSubmit = async () => {
     if (!subject.trim() || !message.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     setIsSending(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      Alert.alert('Success', 'Your message has been sent. We\'ll get back to you soon!', [
-        { text: 'OK', onPress: () => { setSubject(''); setMessage(''); } },
-      ]);
+      Alert.alert(
+        "Success",
+        "Your message has been sent. We'll get back to you soon!",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setSubject("");
+              setMessage("");
+            },
+          },
+        ],
+      );
     } catch (error) {
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert("Error", "Failed to send message. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -115,7 +141,9 @@ export default function HelpSupport() {
       >
         <XStack gap="$3" alignItems="center">
           <BackButton />
-          <Text fontSize="$6" fontWeight="bold">Help & Support</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            Help & Support
+          </Text>
         </XStack>
       </XStack>
 
@@ -167,7 +195,9 @@ export default function HelpSupport() {
                     </YStack>
                     <YStack flex={1} alignItems="flex-start">
                       <Text fontWeight="bold">{option.title}</Text>
-                      <Text color="$colorMuted" fontSize="$2">{option.description}</Text>
+                      <Text color="$colorMuted" fontSize="$2">
+                        {option.description}
+                      </Text>
                     </YStack>
                     <ChevronRight size={16} color="$colorMuted" />
                   </Button>
@@ -214,12 +244,14 @@ export default function HelpSupport() {
                     gap="$3"
                     padding="$3"
                     pressStyle={{ backgroundColor: "$gray3" }}
-                    onPress={() => Alert.alert(resource.title, 'Opening...')}
+                    onPress={() => Alert.alert(resource.title, "Opening...")}
                   >
                     <resource.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
                       <Text fontWeight="bold">{resource.title}</Text>
-                      <Text color="$colorMuted" fontSize="$2">{resource.description}</Text>
+                      <Text color="$colorMuted" fontSize="$2">
+                        {resource.description}
+                      </Text>
                     </YStack>
                     <ChevronRight size={16} color="$colorMuted" />
                   </Button>
@@ -272,7 +304,7 @@ export default function HelpSupport() {
                 icon={<Send size={18} color="$background" />}
               >
                 <Text color="$background" fontWeight="bold">
-                  {isSending ? 'Sending...' : 'Send Message'}
+                  {isSending ? "Sending..." : "Send Message"}
                 </Text>
               </Button>
             </YStack>

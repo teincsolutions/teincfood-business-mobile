@@ -48,27 +48,60 @@ export default function SplashScreen() {
   const setBiometricEnabled = useSecurityStore((s) => s.setBiometricEnabled);
   const locationHydrated = useLocationStore((s) => s.isHydrated);
   const hasLocation = useLocationStore((s) => s.hasLocation());
-  const storesHydrated = authHydrated && onboardingHydrated && roleHydrated && locationHydrated;
+  const storesHydrated =
+    authHydrated && onboardingHydrated && roleHydrated && locationHydrated;
 
   // Start entrance animations
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(logoScale, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(logoScale, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
       ]),
       Animated.parallel([
-        Animated.timing(textOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(textTranslateY, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textTranslateY, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
       ]),
-      Animated.timing(subtitleOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(loaderOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(subtitleOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(loaderOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
     ]).start();
 
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 0.7, duration: 1000, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.7,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
       ]),
     );
     pulse.start();
@@ -88,7 +121,7 @@ export default function SplashScreen() {
       await new Promise((r) => setTimeout(r, minWait));
 
       // TEMP DEBUG: log access token for manual curl testing
-      if (accessToken) console.log('[DEBUG] Access token:', accessToken);
+      if (accessToken) console.log("[DEBUG] Access token:", accessToken);
 
       if (!accessToken) {
         // No session — check prerequisites in order: onboarding → location → role → login
@@ -129,7 +162,7 @@ export default function SplashScreen() {
           } else {
             setStatusMessage("Confirming identity...");
             const result = await LocalAuthentication.authenticateAsync({
-              promptMessage: "Unlock TeincFoods",
+              promptMessage: "Unlock TeincFood Business",
               fallbackLabel: "Use device passcode",
               cancelLabel: "Cancel",
             });
@@ -176,16 +209,24 @@ export default function SplashScreen() {
       // Navigate to role's home
       if (persistedRole === "seller") setRedirectTarget("/(seller)/");
       else if (persistedRole === "rider") setRedirectTarget("/(rider)/");
-      else if (persistedRole === "fleet_manager") setRedirectTarget("/(fleet)/");
+      else if (persistedRole === "fleet_manager")
+        setRedirectTarget("/(fleet)/");
     };
 
     route();
-  }, [storesHydrated, accessToken, persistedRole, isBiometricEnabled, retryCount]);
+  }, [
+    storesHydrated,
+    accessToken,
+    persistedRole,
+    isBiometricEnabled,
+    retryCount,
+  ]);
 
   // Alert handler (rendered conditionally)
   useEffect(() => {
     if (!showAlert || !alertConfig) return;
-    const { title, description, confirmText, onConfirm, cancelText, onCancel } = alertConfig;
+    const { title, description, confirmText, onConfirm, cancelText, onCancel } =
+      alertConfig;
     const buttons = [];
     if (cancelText) {
       buttons.push({ text: cancelText, onPress: onCancel, style: "cancel" });
@@ -211,52 +252,178 @@ export default function SplashScreen() {
   const dotSize = isTablet ? 14 : 8;
 
   return (
-    <YStack flex={1} items="center" bg="$primary" paddingTop={insets.top} paddingBottom={insets.bottom}>
+    <YStack
+      flex={1}
+      items="center"
+      bg="$primary"
+      paddingTop={insets.top}
+      paddingBottom={insets.bottom}
+    >
       {/* Background gradient overlay */}
-      <YStack position="absolute" top={0} left={0} right={0} bottom={0} opacity={0.1} style={{ background: "radial-gradient(circle at 50% 30%, $white 0%, transparent 60%)" }} />
+      <YStack
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        opacity={0.1}
+        style={{
+          background:
+            "radial-gradient(circle at 50% 30%, $white 0%, transparent 60%)",
+        }}
+      />
 
       {/* Decorative circles */}
-      <YStack position="absolute" top={-60} right={-60} width={isTablet ? 300 : 200} height={isTablet ? 300 : 200} borderRadius={isTablet ? 150 : 100} bg="$white" opacity={0.1} />
-      <YStack position="absolute" bottom={insets.bottom + 100} left={-100} width={isTablet ? 220 : 160} height={isTablet ? 220 : 160} borderRadius={isTablet ? 110 : 80} bg="$white" opacity={0.08} />
+      <YStack
+        position="absolute"
+        top={-60}
+        right={-60}
+        width={isTablet ? 300 : 200}
+        height={isTablet ? 300 : 200}
+        borderRadius={isTablet ? 150 : 100}
+        bg="$white"
+        opacity={0.1}
+      />
+      <YStack
+        position="absolute"
+        bottom={insets.bottom + 100}
+        left={-100}
+        width={isTablet ? 220 : 160}
+        height={isTablet ? 220 : 160}
+        borderRadius={isTablet ? 110 : 80}
+        bg="$white"
+        opacity={0.08}
+      />
 
       {/* Logo + text block */}
-      <YStack items="center" jc="center" marginTop={screenHeight * (isTablet ? 0.3 : 0.28)} gap={isTablet ? "$8" : "$6"} paddingHorizontal="$6">
-        <Animated.View style={{ transform: [{ scale: logoScale }], opacity: logoOpacity }}>
-          <YStack width={logoSize} height={logoSize} borderRadius={logoSize / 2} bg="$white" items="center" jc="center" shadowColor="$shadowColor" shadowOffset={{ width: 0, height: 8 }} shadowOpacity={0.3} shadowRadius={16} elevation={10}>
-            <Image source={require("../../assets/icon.png")} style={{ width: logoSize, height: logoSize, resizeMode: "contain" }} />
+      <YStack
+        items="center"
+        jc="center"
+        marginTop={screenHeight * (isTablet ? 0.3 : 0.28)}
+        gap={isTablet ? "$8" : "$6"}
+        paddingHorizontal="$6"
+      >
+        <Animated.View
+          style={{ transform: [{ scale: logoScale }], opacity: logoOpacity }}
+        >
+          <YStack
+            width={logoSize}
+            height={logoSize}
+            borderRadius={logoSize / 2}
+            bg="$white"
+            items="center"
+            jc="center"
+            shadowColor="$shadowColor"
+            shadowOffset={{ width: 0, height: 8 }}
+            shadowOpacity={0.3}
+            shadowRadius={16}
+            elevation={10}
+          >
+            <Image
+              source={require("../../assets/icon.png")}
+              style={{
+                width: logoSize,
+                height: logoSize,
+                resizeMode: "contain",
+              }}
+            />
           </YStack>
         </Animated.View>
 
-        <Animated.View style={{ opacity: textOpacity, transform: [{ translateY: textTranslateY }] }}>
+        <Animated.View
+          style={{
+            opacity: textOpacity,
+            transform: [{ translateY: textTranslateY }],
+          }}
+        >
           <YStack items="center" gap={isTablet ? "$4" : "$2"}>
-            <Text fontSize={brandFontSize} fontWeight="800" color="$white" fontFamily="$heading" letterSpacing={-1}>Teinc</Text>
+            <Text
+              fontSize={brandFontSize}
+              fontWeight="800"
+              color="$white"
+              fontFamily="$heading"
+              letterSpacing={-1}
+            >
+              Teinc
+            </Text>
             <XStack items="center" gap="$3">
-              <YStack width={isTablet ? 32 : 24} height={2} bg="$white" opacity={0.6} borderRadius={1} />
-              <Text fontSize={isTablet ? 24 : 20} color="$white" opacity={0.9} fontFamily="$body" letterSpacing={4} textTransform="uppercase" fontWeight="600">Food Business</Text>
-              <YStack width={isTablet ? 32 : 24} height={2} bg="$white" opacity={0.6} borderRadius={1} />
+              <YStack
+                width={isTablet ? 32 : 24}
+                height={2}
+                bg="$white"
+                opacity={0.6}
+                borderRadius={1}
+              />
+              <Text
+                fontSize={isTablet ? 24 : 20}
+                color="$white"
+                opacity={0.9}
+                fontFamily="$body"
+                letterSpacing={4}
+                textTransform="uppercase"
+                fontWeight="600"
+              >
+                Food Business
+              </Text>
+              <YStack
+                width={isTablet ? 32 : 24}
+                height={2}
+                bg="$white"
+                opacity={0.6}
+                borderRadius={1}
+              />
             </XStack>
           </YStack>
         </Animated.View>
 
         <Animated.View style={{ opacity: subtitleOpacity }}>
-          <Text fontSize={subtitleFontSize} color="$white" opacity={0.85} fontFamily="$body" ta="center" letterSpacing={0.5}>Your food business companion</Text>
+          <Text
+            fontSize={subtitleFontSize}
+            color="$white"
+            opacity={0.85}
+            fontFamily="$body"
+            ta="center"
+            letterSpacing={0.5}
+          >
+            Your food business companion
+          </Text>
         </Animated.View>
       </YStack>
 
       {/* Loader at bottom */}
-      <YStack position="absolute" bottom={insets.bottom + 40} left={0} right={0} items="center">
-        <Animated.View style={{ opacity: loaderOpacity, transform: [{ scale: pulseAnim }] }}>
+      <YStack
+        position="absolute"
+        bottom={insets.bottom + 40}
+        left={0}
+        right={0}
+        items="center"
+      >
+        <Animated.View
+          style={{ opacity: loaderOpacity, transform: [{ scale: pulseAnim }] }}
+        >
           <YStack items="center" gap="$3">
             <XStack gap={isTablet ? "$4" : "$2"}>
-              {[0, 1, 2].map((idx) => <LoadingDot key={idx} delay={idx * 200} size={dotSize} />)}
+              {[0, 1, 2].map((idx) => (
+                <LoadingDot key={idx} delay={idx * 200} size={dotSize} />
+              ))}
             </XStack>
-            <Text fontSize={statusFontSize} color="$white" opacity={0.75} fontFamily="$body" ta="center">{statusMessage}</Text>
+            <Text
+              fontSize={statusFontSize}
+              color="$white"
+              opacity={0.75}
+              fontFamily="$body"
+              ta="center"
+            >
+              {statusMessage}
+            </Text>
           </YStack>
         </Animated.View>
       </YStack>
 
       <YStack position="absolute" bottom={insets.bottom + 12} right={20}>
-        <Text fontSize={10} color="$white" opacity={0.4} fontFamily="$body">v1.0.0</Text>
+        <Text fontSize={10} color="$white" opacity={0.4} fontFamily="$body">
+          v1.0.0
+        </Text>
       </YStack>
     </YStack>
   );
@@ -268,13 +435,32 @@ function LoadingDot({ delay, size }) {
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 400,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 400,
+          useNativeDriver: true,
+        }),
       ]),
     );
     animation.start();
     return () => animation.stop();
   }, [delay, opacity]);
 
-  return <Animated.View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#FFFFFF", opacity }} />;
+  return (
+    <Animated.View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: "#FFFFFF",
+        opacity,
+      }}
+    />
+  );
 }

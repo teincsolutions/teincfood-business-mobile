@@ -108,7 +108,11 @@ export default function SignupScreen() {
       await authService.sendOTP(normalized, "register");
       router.push({
         pathname: "/(auth)/verification",
-        params: { contactInfo: normalized, type: "register", role: selectedRole },
+        params: {
+          contactInfo: normalized,
+          type: "register",
+          role: selectedRole,
+        },
       });
     } catch (err: any) {
       setError(err?.message || "Failed to send code. Try again.");
@@ -206,8 +210,10 @@ export default function SignupScreen() {
 
       let response: Awaited<ReturnType<typeof authService.loginWithGoogle>>;
       if (provider === "google") response = await authService.loginWithGoogle();
-      else if (provider === "apple") response = await authService.loginWithApple();
-      else if (provider === "facebook") response = await authService.loginWithFacebook();
+      else if (provider === "apple")
+        response = await authService.loginWithApple();
+      else if (provider === "facebook")
+        response = await authService.loginWithFacebook();
       else throw new Error(`Unknown provider: ${provider}`);
 
       setAuth(response.user, response.access_token, response.refresh_token);
@@ -242,10 +248,20 @@ export default function SignupScreen() {
           paddingHorizontal={"$8"}
         >
           <YStack mb="$7" gap="$3">
-            <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">
+            <Text
+              fontSize={30}
+              fontWeight="800"
+              fontFamily="$heading"
+              color="$color"
+            >
               Create Account
             </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
+            <Text
+              fontSize="$4"
+              color="$colorSecondary"
+              fontFamily="$body"
+              lineHeight={22}
+            >
               {method === "phone"
                 ? "Verify your phone to create an account instantly."
                 : "Sign up with email and password."}
@@ -258,7 +274,11 @@ export default function SignupScreen() {
               width="auto"
               variant={method === "phone" ? "primary" : "outline"}
               height={46}
-              onPress={() => { setMethod("phone"); setError(""); setFormErrors({}); }}
+              onPress={() => {
+                setMethod("phone");
+                setError("");
+                setFormErrors({});
+              }}
             >
               PHONE OTP
             </Button>
@@ -267,7 +287,11 @@ export default function SignupScreen() {
               width="auto"
               variant={method === "email" ? "primary" : "outline"}
               height={46}
-              onPress={() => { setMethod("email"); setError(""); setFormErrors({}); }}
+              onPress={() => {
+                setMethod("email");
+                setError("");
+                setFormErrors({});
+              }}
             >
               EMAIL SIGNUP
             </Button>
@@ -277,42 +301,82 @@ export default function SignupScreen() {
             <YStack gap="$4">
               <YStack gap="$2">
                 <XStack gap="$2" ai="center">
-                  <Text fontSize="$3" fontWeight="600" color="$colorSecondary" fontFamily="$body" textTransform="uppercase" letterSpacing={0.5}>
+                  <Text
+                    fontSize="$3"
+                    fontWeight="600"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                    textTransform="uppercase"
+                    letterSpacing={0.5}
+                  >
                     Phone Number
                   </Text>
                   <Text color="$error"> *</Text>
                 </XStack>
                 <XStack gap="$2" items="center">
                   <YStack
-                    width={88} height={60} borderRadius="$3"
+                    width={88}
+                    height={60}
+                    borderRadius="$3"
                     backgroundColor="$backgroundSoft"
-                    borderWidth={1} borderColor={phoneError ? "$error" : "$borderColor"}
-                    justifyContent="center" alignItems="center"
+                    borderWidth={1}
+                    borderColor={phoneError ? "$error" : "$borderColor"}
+                    justifyContent="center"
+                    alignItems="center"
                     pressStyle={{ opacity: 0.85 }}
                     onPress={() => setCountrySheetOpen(true)}
                   >
                     <XStack items="center" gap="$1">
-                      <Text fontSize="$5" fontWeight="700" color="$color" fontFamily="$body">{phoneDialCode}</Text>
+                      <Text
+                        fontSize="$5"
+                        fontWeight="700"
+                        color="$color"
+                        fontFamily="$body"
+                      >
+                        {phoneDialCode}
+                      </Text>
                       <ChevronDown size={14} color="$colorSecondary" />
                     </XStack>
                   </YStack>
                   <TamaguiInput
-                    flex={1} height={60} borderWidth={0} borderRadius="$3"
-                    backgroundColor="$backgroundSoft" color="$color"
-                    fontFamily="$body" fontSize="$4"
-                    keyboardType="phone-pad" placeholder="24 000 0000"
+                    flex={1}
+                    height={60}
+                    borderWidth={0}
+                    borderRadius="$3"
+                    backgroundColor="$backgroundSoft"
+                    color="$color"
+                    fontFamily="$body"
+                    fontSize="$4"
+                    keyboardType="phone-pad"
+                    placeholder="24 000 0000"
                     placeholderTextColor={theme.colorPlaceholder?.val as string}
                     value={phone}
-                    onChangeText={(v) => { setPhone(v); setPhoneError(""); }}
-                    focusStyle={{ borderWidth: 1, borderColor: "$primary", backgroundColor: "$background" }}
+                    onChangeText={(v) => {
+                      setPhone(v);
+                      setPhoneError("");
+                    }}
+                    focusStyle={{
+                      borderWidth: 1,
+                      borderColor: "$primary",
+                      backgroundColor: "$background",
+                    }}
                   />
                 </XStack>
                 <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  {selectedCountry?.name || "Selected country"} ({selectedCountryIso})
+                  {selectedCountry?.name || "Selected country"} (
+                  {selectedCountryIso})
                 </Text>
-                {phoneError ? <Text fontSize="$2" color="$error" fontFamily="$body">{phoneError}</Text> : null}
+                {phoneError ? (
+                  <Text fontSize="$2" color="$error" fontFamily="$body">
+                    {phoneError}
+                  </Text>
+                ) : null}
               </YStack>
-              {error ? <Text fontSize="$2" color="$error" fontFamily="$body">{error}</Text> : null}
+              {error ? (
+                <Text fontSize="$2" color="$error" fontFamily="$body">
+                  {error}
+                </Text>
+              ) : null}
             </YStack>
           ) : (
             <YStack gap="$4">
@@ -320,7 +384,10 @@ export default function SignupScreen() {
                 label="Full Name"
                 placeholder="John Doe"
                 value={fullName}
-                onChangeText={(v) => { setFullName(v); clearError("fullName"); }}
+                onChangeText={(v) => {
+                  setFullName(v);
+                  clearError("fullName");
+                }}
                 error={formErrors.fullName}
                 required
               />
@@ -330,7 +397,10 @@ export default function SignupScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={(v) => { setEmail(v); clearError("email"); }}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  clearError("email");
+                }}
                 error={formErrors.email}
                 required
               />
@@ -338,7 +408,10 @@ export default function SignupScreen() {
                 label="Password"
                 placeholder="Create password"
                 value={password}
-                onChangeText={(v) => { setPassword(v); clearError("password"); }}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  clearError("password");
+                }}
                 isPassword
                 error={formErrors.password}
                 required
@@ -347,12 +420,19 @@ export default function SignupScreen() {
                 label="Confirm Password"
                 placeholder="Re-enter password"
                 value={confirmPassword}
-                onChangeText={(v) => { setConfirmPassword(v); clearError("confirmPassword"); }}
+                onChangeText={(v) => {
+                  setConfirmPassword(v);
+                  clearError("confirmPassword");
+                }}
                 isPassword
                 error={formErrors.confirmPassword}
                 required
               />
-              {error ? <Text fontSize="$2" color="$error" fontFamily="$body">{error}</Text> : null}
+              {error ? (
+                <Text fontSize="$2" color="$error" fontFamily="$body">
+                  {error}
+                </Text>
+              ) : null}
             </YStack>
           )}
 
@@ -373,20 +453,32 @@ export default function SignupScreen() {
             <XStack jc="center" items="center" gap="$4">
               <Button
                 variant="social"
-                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
                 icon={<Facebook size={24} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               />
               <Button
                 variant="social"
-                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
                 icon={<Apple size={24} color="$color" />}
                 onPress={() => handleOIDCLogin("apple")}
               />
               <Button
                 variant="social"
-                backgroundColor="$backgroundStrong" borderWidth={1} borderColor="$borderColor"
-                icon={<Image objectFit="contain" height={24} src={require("assets/icons/icons8-google-100.png")} />}
+                backgroundColor="$backgroundStrong"
+                borderWidth={1}
+                borderColor="$borderColor"
+                icon={
+                  <Image
+                    objectFit="contain"
+                    height={24}
+                    src={require("assets/icons/icons8-google-100.png")}
+                  />
+                }
                 onPress={() => handleOIDCLogin("google")}
               />
             </XStack>
@@ -394,40 +486,121 @@ export default function SignupScreen() {
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?
             </Text>
-            <Button variant="outline" width="100%" onPress={() => router.push({ pathname: "/(auth)/login", params: { role: selectedRole } })}>
+            <Button
+              variant="outline"
+              width="100%"
+              onPress={() =>
+                router.push({
+                  pathname: "/(auth)/login",
+                  params: { role: selectedRole },
+                })
+              }
+            >
               LOG IN
             </Button>
-            <Button variant="ghost" height={40} onPress={() => router.push({ pathname: "/(auth)/role" })}>
-              <Text fontSize="$3" color="$primary" fontWeight="600" fontFamily="$body">
-                Signing up as {selectedRole === "seller" ? "Seller" : selectedRole === "rider" ? "Rider" : "Fleet Manager"} · Switch Role
+            <Button
+              variant="ghost"
+              height={40}
+              onPress={() => router.push({ pathname: "/(auth)/role" })}
+            >
+              <Text
+                fontSize="$3"
+                color="$primary"
+                fontWeight="600"
+                fontFamily="$body"
+              >
+                Signing up as{" "}
+                {selectedRole === "seller"
+                  ? "Seller"
+                  : selectedRole === "rider"
+                    ? "Rider"
+                    : "Fleet Manager"}{" "}
+                · Switch Role
               </Text>
             </Button>
           </YStack>
         </ScrollView>
 
-        <Sheet modal open={countrySheetOpen} onOpenChange={setCountrySheetOpen} snapPoints={[75]} dismissOnSnapToBottom zIndex={100_000}>
-          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.6)" />
-          <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$8" borderTopRightRadius="$8">
+        <Sheet
+          modal
+          open={countrySheetOpen}
+          onOpenChange={setCountrySheetOpen}
+          snapPoints={[75]}
+          dismissOnSnapToBottom
+          zIndex={100_000}
+        >
+          <Sheet.Overlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+            backgroundColor="rgba(0,0,0,0.6)"
+          />
+          <Sheet.Frame
+            backgroundColor="$background"
+            borderTopLeftRadius="$8"
+            borderTopRightRadius="$8"
+          >
             <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
             <YStack px="$5" pt="$3" pb="$4">
-              <Text fontSize="$6" fontWeight="800" color="$color" fontFamily="$heading">Select Country Code</Text>
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" mt="$1">Choose a country for your phone number.</Text>
+              <Text
+                fontSize="$6"
+                fontWeight="800"
+                color="$color"
+                fontFamily="$heading"
+              >
+                Select Country Code
+              </Text>
+              <Text
+                fontSize="$3"
+                color="$colorSecondary"
+                fontFamily="$body"
+                mt="$1"
+              >
+                Choose a country for your phone number.
+              </Text>
             </YStack>
             <ScrollView showsVerticalScrollIndicator={false}>
               <YStack px="$5" pb="$6">
                 {PHONE_COUNTRIES.map((country, index) => (
                   <YStack key={country.iso}>
-                    <XStack items="center" jc="space-between" py="$4" onPress={() => { setSelectedCountryIso(country.iso); setCountrySheetOpen(false); }}>
+                    <XStack
+                      items="center"
+                      jc="space-between"
+                      py="$4"
+                      onPress={() => {
+                        setSelectedCountryIso(country.iso);
+                        setCountrySheetOpen(false);
+                      }}
+                    >
                       <YStack>
-                        <Text fontSize="$4" fontWeight="700" color="$color" fontFamily="$body">{country.name}</Text>
-                        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">{country.iso}</Text>
+                        <Text
+                          fontSize="$4"
+                          fontWeight="700"
+                          color="$color"
+                          fontFamily="$body"
+                        >
+                          {country.name}
+                        </Text>
+                        <Text
+                          fontSize="$3"
+                          color="$colorSecondary"
+                          fontFamily="$body"
+                        >
+                          {country.iso}
+                        </Text>
                       </YStack>
                       <XStack items="center" gap="$2">
-                        <Text fontSize="$4" color="$color" fontFamily="$body">{country.dialCode}</Text>
-                        {selectedCountryIso === country.iso ? <Check size={16} color="$primary" /> : null}
+                        <Text fontSize="$4" color="$color" fontFamily="$body">
+                          {country.dialCode}
+                        </Text>
+                        {selectedCountryIso === country.iso ? (
+                          <Check size={16} color="$primary" />
+                        ) : null}
                       </XStack>
                     </XStack>
-                    {index < PHONE_COUNTRIES.length - 1 ? <Separator borderColor="$borderColor" /> : null}
+                    {index < PHONE_COUNTRIES.length - 1 ? (
+                      <Separator borderColor="$borderColor" />
+                    ) : null}
                   </YStack>
                 ))}
               </YStack>

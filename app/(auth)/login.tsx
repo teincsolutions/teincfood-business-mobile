@@ -60,7 +60,9 @@ export default function LoginScreen() {
   const storedRole = useRoleStore((s) => s.role);
   const selectedRole = (() => {
     const r = storedRole || role;
-    return r === "seller" || r === "rider" || r === "fleet_manager" ? r : "seller";
+    return r === "seller" || r === "rider" || r === "fleet_manager"
+      ? r
+      : "seller";
   })();
   const roleLabel =
     selectedRole === "seller"
@@ -440,7 +442,7 @@ export default function LoginScreen() {
 
           <YStack pt="$6" gap="$3" pb="$2">
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
-              New to TeincFoods?
+              New to TeincFood Business?
             </Text>
             <Button
               variant="outline"

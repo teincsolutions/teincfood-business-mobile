@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
-import type { FoodItem as Food, FoodAddon } from '@/types/food.model';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
+import type { FoodItem as Food, FoodAddon } from "@/types/food.model";
 
 export interface CartItem {
   cartItemId: string; // Unique id combining foodId, size, and addons e.g., 'f1-14inch-addon1-addon2'
@@ -20,7 +20,13 @@ interface CartState {
   promoDiscount: number;
 
   // Actions
-  addItem: (food: Food, quantity: number, size?: string, unitPrice?: number, selectedAddons?: FoodAddon[]) => void;
+  addItem: (
+    food: Food,
+    quantity: number,
+    size?: string,
+    unitPrice?: number,
+    selectedAddons?: FoodAddon[],
+  ) => void;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   setTip: (amount: number) => void;
@@ -38,19 +44,26 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      deliveryFee: 5.00, // Fixed mock delivery fee
-      taxRate: 0.05,     // 5% tax mockup
+      deliveryFee: 5.0, // Fixed mock delivery fee
+      taxRate: 0.05, // 5% tax mockup
       tipAmount: 0,
       promoDiscount: 0,
 
       addItem: (food, quantity, size, unitPrice, selectedAddons = []) => {
         set((state) => {
           // Generate unique cart ID based on food, size, and selected addons
-          const addonIds = selectedAddons.map(a => a.id).sort().join('-');
-          const cartItemId = [food.id, size || 'default', addonIds].filter(Boolean).join('-');
-          
-          const existingItemIndex = state.items.findIndex(item => item.cartItemId === cartItemId);
-          
+          const addonIds = selectedAddons
+            .map((a) => a.id)
+            .sort()
+            .join("-");
+          const cartItemId = [food.id, size || "default", addonIds]
+            .filter(Boolean)
+            .join("-");
+
+          const existingItemIndex = state.items.findIndex(
+            (item) => item.cartItemId === cartItemId,
+          );
+
           if (existingItemIndex >= 0) {
             // Update quantity of existing item
             const newItems = [...state.items];
@@ -58,19 +71,25 @@ export const useCartStore = create<CartState>()(
             return { items: newItems };
           } else {
             // Calculate total price including addons
-            const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+            const addonsTotal = selectedAddons.reduce(
+              (sum, addon) => sum + addon.price,
+              0,
+            );
             const finalPrice = (unitPrice ?? food.price) + addonsTotal;
-            
+
             // Push new item with selected variant price + addon prices
             return {
-              items: [...state.items, { 
-                cartItemId, 
-                food, 
-                quantity, 
-                size, 
-                selectedAddons,
-                price: finalPrice 
-              }]
+              items: [
+                ...state.items,
+                {
+                  cartItemId,
+                  food,
+                  quantity,
+                  size,
+                  selectedAddons,
+                  price: finalPrice,
+                },
+              ],
             };
           }
         });
@@ -78,30 +97,37 @@ export const useCartStore = create<CartState>()(
 
       removeItem: (cartItemId) => {
         set((state) => ({
-          items: state.items.filter(item => item.cartItemId !== cartItemId)
+          items: state.items.filter((item) => item.cartItemId !== cartItemId),
         }));
       },
 
       updateQuantity: (cartItemId, quantity) => {
         set((state) => {
           if (quantity <= 0) {
-             return { items: state.items.filter(item => item.cartItemId !== cartItemId) };
+            return {
+              items: state.items.filter(
+                (item) => item.cartItemId !== cartItemId,
+              ),
+            };
           }
           return {
-            items: state.items.map(item => 
-              item.cartItemId === cartItemId ? { ...item, quantity } : item
-            )
+            items: state.items.map((item) =>
+              item.cartItemId === cartItemId ? { ...item, quantity } : item,
+            ),
           };
         });
       },
 
       setTip: (amount) => set({ tipAmount: amount }),
       setPromoDiscount: (amount) => set({ promoDiscount: amount }),
-      
+
       clearCart: () => set({ items: [], tipAmount: 0, promoDiscount: 0 }),
 
       getSubtotal: () => {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return get().items.reduce(
+          (total, item) => total + item.price * item.quantity,
+          0,
+        );
       },
 
       getTax: () => {
@@ -111,16 +137,23 @@ export const useCartStore = create<CartState>()(
       getTotal: () => {
         const subtotal = get().getSubtotal();
         if (subtotal === 0) return 0;
-        return Math.max(0, subtotal + get().getTax() + get().deliveryFee + get().tipAmount - get().promoDiscount);
+        return Math.max(
+          0,
+          subtotal +
+            get().getTax() +
+            get().deliveryFee +
+            get().tipAmount -
+            get().promoDiscount,
+        );
       },
 
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
-      }
+      },
     }),
     {
-      name: 'teincfoods-cart',
+      name: "TeincFood Business-cart",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );

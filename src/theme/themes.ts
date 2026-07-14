@@ -1,7 +1,7 @@
 import { tokens } from "./tokens";
 
 /**
- * Light and dark themes for TeincFoods.
+ * Light and dark themes for TeincFood Business.
  * Maps semantic token names to concrete color values or token variables.
  */
 
@@ -31,6 +31,7 @@ export const lightTheme = {
   borderColorFocus: tokens.color.orange,
 
   error: tokens.color.red,
+  errorMuted: "rgba(255, 59, 48, 0.15)",
   success: tokens.color.green,
   successMuted: "rgba(52, 199, 89, 0.15)",
   info: tokens.color.blue,
@@ -69,6 +70,7 @@ export const darkTheme = {
   borderColorFocus: tokens.color.orange,
 
   error: "#FF453A",
+  errorMuted: "rgba(255, 69, 58, 0.15)",
   success: "#30D158",
   successDark: tokens.color.greenDark,
   successMuted: "rgba(48, 209, 88, 0.15)",

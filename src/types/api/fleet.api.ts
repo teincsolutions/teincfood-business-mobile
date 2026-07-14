@@ -4,6 +4,7 @@ export interface FleetRiderUser {
   id: string;
   full_name: string;
   phone?: string;
+  avatar_url?: string;
 }
 
 export interface FleetRiderVehicle {

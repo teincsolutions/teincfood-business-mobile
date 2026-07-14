@@ -8,6 +8,7 @@ import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/
 import type { AuthApiResponse } from '@/services/auth.service';
 import type { User } from '@/types/user.model';
 import { extractApiErrorMessage } from '@/utils/error';
+import { unregisterPushTokenOnLogout } from '@/hooks/usePushTokenRegistration';
 
 export interface AuthError {
   code?: string;
@@ -98,6 +99,8 @@ export function useAuth() {
       password,
     });
 
+    await unregisterPushTokenOnLogout();
+
     setAuthAction(
       mapApiUserToUser(response.user),
       response.access_token,
@@ -186,6 +189,7 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     await logoutMutation.mutateAsync();
+    await unregisterPushTokenOnLogout();
     clearAuthAction();
     router.replace('/(auth)/login');
   }, [logoutMutation, clearAuthAction, router]);

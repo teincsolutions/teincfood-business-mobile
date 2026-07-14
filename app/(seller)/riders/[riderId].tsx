@@ -77,8 +77,8 @@ export default function SellerRiderDetailScreen() {
     setConfirmAction(null);
   };
 
-  const statusColor = rider.is_active ? "$green10" : "$red10";
-  const statusBg = rider.is_active ? "$green2" : "$red2";
+  const statusColor = rider.is_active ? "$success" : "$error";
+  const statusBg = rider.is_active ? "$successMuted" : "$errorMuted";
   const statusLabel = rider.is_active
     ? rider.status === "available"
       ? "Available"
@@ -90,21 +90,28 @@ export default function SellerRiderDetailScreen() {
   const vehicle = rider.vehicle;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: "$background" }}
-      contentContainerStyle={{
-        paddingBottom: Math.max(insets.bottom + 20, 24),
-      }}
-    >
-      <YStack padding="$4" gap="$4">
+    <YStack flex={1} paddingTop={Math.max(insets.top + 8, 24)} paddingBottom={insets.bottom + 16} backgroundColor="$background">
+      {/* Header */}
+      <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
         <BackButton />
+        <YStack flex={1}>
+          <Text fontSize="$6" fontWeight="bold">{rider.user?.full_name || "Rider"}</Text>
+          <Text fontSize="$3" color="$colorMuted">{rider.rider_number}</Text>
+        </YStack>
+        <YStack paddingHorizontal="$3" paddingVertical="$1" borderRadius="$2" backgroundColor={statusBg}>
+          <Text color="$background" fontSize="$3" textTransform="capitalize" fontWeight="600">{statusLabel}</Text>
+        </YStack>
+      </XStack>
 
+      <ScrollView>
+        <YStack padding="$4" gap="$4">
         {/* Profile Header */}
         <Card padding="$5" bordered>
           <YStack alignItems="center" gap="$3">
-            <Avatar circular size="$8">
-              <Avatar.Fallback backgroundColor="$gray800">
-                <Text color="white" fontWeight="bold" fontSize="$6">
+            <Avatar circular size="$10">
+              <Avatar.Image src={rider.user?.avatar_url ?? undefined} />
+              <Avatar.Fallback backgroundColor="$gray900">
+                <Text color="white" fontWeight="bold" fontSize="$8">
                   {(rider.user?.full_name || "R").charAt(0)}
                 </Text>
               </Avatar.Fallback>
@@ -117,21 +124,26 @@ export default function SellerRiderDetailScreen() {
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 {rider.rider_number}
               </Text>
-              <YStack
-                paddingHorizontal="$3"
-                paddingVertical="$1"
-                borderRadius="$3"
-                backgroundColor={statusBg}
-              >
-                <Text
-                  fontSize="$3"
-                  color={statusColor}
-                  fontFamily="$body"
-                  fontWeight="600"
+              <XStack gap="$2" alignItems="center">
+                <YStack
+                  paddingHorizontal="$3"
+                  paddingVertical="$1"
+                  borderRadius="$3"
+                  backgroundColor={statusBg}
                 >
-                  {statusLabel}
-                </Text>
-              </YStack>
+                  <Text
+                    fontSize="$3"
+                    color={statusColor}
+                    fontFamily="$body"
+                    fontWeight="600"
+                  >
+                    {statusLabel}
+                  </Text>
+                </YStack>
+                {rider.is_online && (
+                  <YStack width={8} height={8} borderRadius="$full" backgroundColor="$success" />
+                )}
+              </XStack>
             </YStack>
           </YStack>
         </Card>
@@ -263,10 +275,10 @@ export default function SellerRiderDetailScreen() {
               borderRadius="$3"
               backgroundColor={
                 kycStatus === "approved"
-                  ? "$green2"
+                  ? "$successMuted"
                   : kycStatus === "rejected"
-                    ? "$red2"
-                    : "$yellow2"
+                    ? "$errorMuted"
+                    : "$warningMuted"
               }
               alignSelf="flex-start"
             >
@@ -275,10 +287,10 @@ export default function SellerRiderDetailScreen() {
                 fontWeight="600"
                 color={
                   kycStatus === "approved"
-                    ? "$green10"
+                    ? "$success"
                     : kycStatus === "rejected"
-                      ? "$red10"
-                      : "$yellow10"
+                      ? "$error"
+                      : "$warning"
                 }
                 textTransform="capitalize"
               >
@@ -364,70 +376,71 @@ export default function SellerRiderDetailScreen() {
           </YStack>
         </Card>
       </YStack>
-
-      {/* KYC Documents Sheet */}
-      <RiderKycSheet
-        open={kycSheetOpen}
-        onOpenChange={setKycSheetOpen}
-        documents={kycDocuments}
-        kycStatus={kycStatus}
-      />
-
-      {/* Confirm Action Dialog */}
-      {confirmAction && (
-        <YStack
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          backgroundColor="rgba(0,0,0,0.5)"
-          justifyContent="center"
-          alignItems="center"
-          padding="$6"
-        >
-          <Card
-            padding="$6"
-            bordered
-            backgroundColor="$background"
-            width="100%"
-            maxWidth={400}
-          >
-            <YStack gap="$4" alignItems="center">
-              <Text fontSize="$6" fontWeight="bold" textAlign="center">
-                {confirmAction === "suspend"
-                  ? "Suspend Rider?"
-                  : "Activate Rider?"}
-              </Text>
-              <Text fontSize="$4" color="$colorMuted" textAlign="center">
-                {confirmAction === "suspend"
-                  ? "This rider will no longer be able to accept your business's deliveries."
-                  : "This rider will be able to accept your business's deliveries again."}
-              </Text>
-              <XStack gap="$3" width="100%">
-                <Button
-                  flex={1}
-                  variant="outline"
-                  onPress={() => setConfirmAction(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  flex={1}
-                  backgroundColor={
-                    confirmAction === "suspend" ? "$red10" : "$green10"
-                  }
-                  onPress={
-                    confirmAction === "suspend" ? handleSuspend : handleActivate
-                  }
-                >
-                  Confirm
-                </Button>
-              </XStack>
-            </YStack>
-          </Card>
-        </YStack>
-      )}
     </ScrollView>
-  );
+
+    {/* KYC Documents Sheet */}
+    <RiderKycSheet
+      open={kycSheetOpen}
+      onOpenChange={setKycSheetOpen}
+      documents={kycDocuments}
+      kycStatus={kycStatus}
+    />
+
+    {/* Confirm Action Dialog */}
+    {confirmAction && (
+      <YStack
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        backgroundColor="rgba(0,0,0,0.5)"
+        justifyContent="center"
+        alignItems="center"
+        padding="$6"
+      >
+        <Card
+          padding="$6"
+          bordered
+          backgroundColor="$background"
+          width="100%"
+          maxWidth={400}
+        >
+          <YStack gap="$4" alignItems="center">
+            <Text fontSize="$6" fontWeight="bold" textAlign="center">
+              {confirmAction === "suspend"
+                ? "Suspend Rider?"
+                : "Activate Rider?"}
+            </Text>
+            <Text fontSize="$4" color="$colorMuted" textAlign="center">
+              {confirmAction === "suspend"
+                ? "This rider will no longer be able to accept your business's deliveries."
+                : "This rider will be able to accept your business's deliveries again."}
+            </Text>
+            <XStack gap="$3" width="100%">
+              <Button
+                flex={1}
+                variant="outline"
+                onPress={() => setConfirmAction(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                backgroundColor={
+                  confirmAction === "suspend" ? "$error" : "$success"
+                }
+                onPress={
+                  confirmAction === "suspend" ? handleSuspend : handleActivate
+                }
+              >
+                Confirm
+              </Button>
+            </XStack>
+          </YStack>
+        </Card>
+      </YStack>
+    )}
+  </YStack>
+);
 }

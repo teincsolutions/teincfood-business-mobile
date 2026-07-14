@@ -3,9 +3,9 @@
  * Zustand store for kiosk-mode UI preferences
  */
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
 
 interface KioskState {
   // UI preferences
@@ -28,15 +28,17 @@ export const useKioskStore = create<KioskState>()(
     (set) => ({
       ...initialState,
 
-      toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
+      toggleSound: () =>
+        set((state) => ({ soundEnabled: !state.soundEnabled })),
 
-      toggleAutoRefresh: () => set((state) => ({ autoRefresh: !state.autoRefresh })),
+      toggleAutoRefresh: () =>
+        set((state) => ({ autoRefresh: !state.autoRefresh })),
 
       reset: () => set(initialState),
     }),
     {
-      name: 'teincfoods-kiosk-store',
+      name: "TeincFood Business-kiosk-store",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );

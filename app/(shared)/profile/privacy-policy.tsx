@@ -362,7 +362,9 @@ export default function PrivacyPolicy() {
                 please contact us:
               </Text>
               <YStack gap="$1">
-                <Text fontWeight="bold">Email: privacy@teincfoods.com</Text>
+                <Text fontWeight="bold">
+                  Email: privacy@TeincFood Business.com
+                </Text>
                 <Text fontWeight="bold">Phone: +233 XX XXX XXXX</Text>
                 <Text fontWeight="bold">Address: Accra, Ghana</Text>
               </YStack>

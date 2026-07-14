@@ -1,8 +1,13 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
 
-export type NotificationType = 'order' | 'delivery' | 'delivered' | 'promo' | 'system';
+export type NotificationType =
+  | "order"
+  | "delivery"
+  | "delivered"
+  | "promo"
+  | "system";
 
 export interface AppNotification {
   id: string;
@@ -15,7 +20,7 @@ export interface AppNotification {
 
 interface NotificationState {
   notifications: AppNotification[];
-  
+
   // Actions
   addNotification: (notif: AppNotification) => void;
   markAsRead: (id: string) => void;
@@ -39,7 +44,7 @@ export const useNotificationStore = create<NotificationState>()(
       markAsRead: (id) => {
         set((state) => ({
           notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, read: true } : n
+            n.id === id ? { ...n, read: true } : n,
           ),
         }));
       },
@@ -65,8 +70,8 @@ export const useNotificationStore = create<NotificationState>()(
       },
     }),
     {
-      name: 'teincfoods-notifications',
+      name: "TeincFood Business-notifications",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );

@@ -272,7 +272,9 @@ export default function TermsOfService() {
                 at:
               </Text>
               <YStack gap="$1">
-                <Text fontWeight="bold">Email: legal@teincfoods.com</Text>
+                <Text fontWeight="bold">
+                  Email: legal@TeincFood Business.com
+                </Text>
                 <Text fontWeight="bold">Phone: +233 XX XXX XXXX</Text>
                 <Text fontWeight="bold">Address: Accra, Ghana</Text>
               </YStack>

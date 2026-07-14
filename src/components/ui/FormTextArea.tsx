@@ -46,7 +46,7 @@ export type FormTextAreaProps = {
 };
 
 /**
- * TeincFoods Form TextArea Component with Tamagui Form validation
+ * TeincFood Business Form TextArea Component with Tamagui Form validation
  */
 export const FormTextArea = forwardRef<TamaguiTextArea, FormTextAreaProps>(
   (

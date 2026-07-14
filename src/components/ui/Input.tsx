@@ -1,24 +1,31 @@
 // @ts-nocheck
-import { forwardRef, useState } from 'react';
-import { Input as TamaguiInput, YStack, XStack, Text, styled, GetProps } from 'tamagui';
-import { Eye, EyeOff } from '@tamagui/lucide-icons';
-import { Pressable } from 'react-native';
+import { forwardRef, useState } from "react";
+import {
+  Input as TamaguiInput,
+  YStack,
+  XStack,
+  Text,
+  styled,
+  GetProps,
+} from "tamagui";
+import { Eye, EyeOff } from "@tamagui/lucide-icons";
+import { Pressable } from "react-native";
 
 const BaseInput = styled(TamaguiInput, {
-  backgroundColor: '$backgroundSoft',
+  backgroundColor: "$backgroundSoft",
   borderWidth: 0,
-  borderRadius: '$3',
-  fontFamily: '$body',
-  fontSize: '$4',
-  color: '$color',
+  borderRadius: "$3",
+  fontFamily: "$body",
+  fontSize: "$4",
+  color: "$color",
   height: 60, // Match prominent button heights
-  paddingHorizontal: '$4',
-  placeholderTextColor: '$colorPlaceholder',
-  
+  paddingHorizontal: "$4",
+  placeholderTextColor: "$colorPlaceholder",
+
   focusStyle: {
     borderWidth: 1,
-    borderColor: '$primary',
-    backgroundColor: '$background', // slightly separate from soft background when active
+    borderColor: "$primary",
+    backgroundColor: "$background", // slightly separate from soft background when active
   },
 
   // Responsive height
@@ -33,7 +40,7 @@ export type InputProps = GetProps<typeof BaseInput> & {
 };
 
 /**
- * TeincFoods Core Input Component
+ * TeincFood Business Core Input Component
  */
 export const Input = forwardRef<TamaguiInput, InputProps>(
   ({ label, error, isPassword, ...props }, ref) => {
@@ -42,25 +49,25 @@ export const Input = forwardRef<TamaguiInput, InputProps>(
     return (
       <YStack w="100%" gap="$2">
         {label && (
-          <Text 
-            fontSize="$3" 
-            fontWeight="600" 
-            color="$colorSecondary" 
-            fontFamily="$body" 
+          <Text
+            fontSize="$3"
+            fontWeight="600"
+            color="$colorSecondary"
+            fontFamily="$body"
             textTransform="uppercase"
             letterSpacing={0.5}
           >
             {label}
           </Text>
         )}
-        
+
         <XStack w="100%" items="center">
           <BaseInput
             ref={ref}
             flex={1}
             secureTextEntry={secure}
-            paddingRight={isPassword ? '$10' : '$4'}
-            {...(error ? { borderColor: '$error', borderWidth: 1 } : {})}
+            paddingRight={isPassword ? "$10" : "$4"}
+            {...(error ? { borderColor: "$error", borderWidth: 1 } : {})}
             {...props}
           />
 
@@ -76,11 +83,16 @@ export const Input = forwardRef<TamaguiInput, InputProps>(
               zIndex={20}
             >
               <Pressable
-                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 onPress={() => setSecure(!secure)}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel={secure ? 'Show password' : 'Hide password'}
+                accessibilityLabel={secure ? "Show password" : "Hide password"}
               >
                 {secure ? (
                   <EyeOff size={20} color="$colorSecondary" />
@@ -99,5 +111,5 @@ export const Input = forwardRef<TamaguiInput, InputProps>(
         )}
       </YStack>
     );
-  }
+  },
 );

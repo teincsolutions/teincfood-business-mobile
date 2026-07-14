@@ -68,7 +68,9 @@ export async function unregisterPushTokenOnLogout(): Promise<void> {
 
 export function usePushTokenRegistration(enabled = true): void {
   const isAuthenticated = useAuthStore((state) => Boolean(state.user && state.accessToken));
+  const userId = useAuthStore((state) => state.user?.id);
   const ranOnce = useRef(false);
+  const prevUserId = useRef(userId);
 
   // Reset on logout — allows new user on same device to re-register their token
   useEffect(() => {
@@ -78,6 +80,15 @@ export function usePushTokenRegistration(enabled = true): void {
       currentToken = null;
     }
   }, [isAuthenticated]);
+
+  // Reset when user changes (user-switch without intermediate logout)
+  useEffect(() => {
+    if (userId && userId !== prevUserId.current) {
+      ranOnce.current = false;
+      currentToken = null;
+      prevUserId.current = userId;
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (!enabled || !isAuthenticated || ranOnce.current) return;
@@ -129,5 +140,5 @@ export function usePushTokenRegistration(enabled = true): void {
     return () => {
       unsubscribeRefresh?.();
     };
-  }, [enabled, isAuthenticated]);
+  }, [enabled, isAuthenticated, userId]);
 }

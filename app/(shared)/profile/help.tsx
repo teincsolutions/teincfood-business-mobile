@@ -77,7 +77,7 @@ export default function HelpSupport() {
     {
       question: "How do I contact customer support?",
       answer:
-        "You can contact us through: 1) In-app chat support (fastest), 2) Email: support@teincfoods.com, 3) Phone: +233 XX XXX XXXX (Mon-Sun, 8am-10pm).",
+        "You can contact us through: 1) In-app chat support (fastest), 2) Email: support@TeincFood Business.com, 3) Phone: +233 XX XXX XXXX (Mon-Sun, 8am-10pm).",
     },
   ];
 
@@ -100,8 +100,8 @@ export default function HelpSupport() {
     {
       icon: Mail,
       label: "Email Support",
-      description: "support@teincfoods.com",
-      action: () => Linking.openURL("mailto:support@teincfoods.com"),
+      description: "support@TeincFood Business.com",
+      action: () => Linking.openURL("mailto:support@TeincFood Business.com"),
       available: true,
     },
   ];
@@ -305,7 +305,7 @@ export default function HelpSupport() {
               </Text>
               <Text color="$colorMuted">Version 1.0.0</Text>
               <Text color="$colorMuted" fontSize="$2">
-                © 2026 TeincFoods. All rights reserved.
+                © 2026 TeincFood Business. All rights reserved.
               </Text>
             </YStack>
           </Card>

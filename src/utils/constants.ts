@@ -3,30 +3,32 @@
  */
 
 /** Base URL for the API — will be swapped per environment */
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 /** WebSocket URL for Phoenix Channels */
-export const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:4000';
+export const WS_BASE_URL =
+  process.env.EXPO_PUBLIC_WS_URL ?? "ws://localhost:4000";
 
 /** App metadata */
-export const APP_NAME = 'TeincFoods';
-export const APP_VERSION = '1.0.0';
+export const APP_NAME = "TeincFood Business";
+export const APP_VERSION = "1.0.0";
 
 /** Async storage keys */
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth_token',
-  REFRESH_TOKEN: 'refresh_token',
-  USER_PROFILE: 'user_profile',
-  HAS_SEEN_ONBOARDING: 'has_seen_onboarding',
-  THEME_PREFERENCE: 'theme_preference',
-  BUSINESS_DATA: 'business_data',
-  FLEET_DATA: 'fleet_data',
+  AUTH_TOKEN: "auth_token",
+  REFRESH_TOKEN: "refresh_token",
+  USER_PROFILE: "user_profile",
+  HAS_SEEN_ONBOARDING: "has_seen_onboarding",
+  THEME_PREFERENCE: "theme_preference",
+  BUSINESS_DATA: "business_data",
+  FLEET_DATA: "fleet_data",
 } as const;
 
 /** Chat storage keys */
 export const CHAT_STORAGE_KEYS = {
-  MESSAGES: 'chat_messages',
-  OUTBOX: 'chat_outbox',
+  MESSAGES: "chat_messages",
+  OUTBOX: "chat_outbox",
 } as const;
 
 /** Chat configuration */

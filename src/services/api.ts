@@ -27,7 +27,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 };
 
 /**
- * Axios client instance for the TeincFoods API.
+ * Axios client instance for the TeincFood Business API.
  */
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

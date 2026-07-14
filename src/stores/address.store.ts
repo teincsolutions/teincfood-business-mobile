@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
-import type { Address } from '@/types/user.model';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
+import type { Address } from "@/types/user.model";
 
 interface AddressState {
   addresses: Address[];
-  
+
   // Actions
   addAddress: (address: Address) => void;
   updateAddress: (id: string, updates: Partial<Address>) => void;
@@ -28,7 +28,7 @@ export const useAddressStore = create<AddressState>()(
       updateAddress: (id, updates) => {
         set((state) => ({
           addresses: state.addresses.map((a) =>
-            a.id === id ? { ...a, ...updates } : a
+            a.id === id ? { ...a, ...updates } : a,
           ),
         }));
       },
@@ -53,8 +53,8 @@ export const useAddressStore = create<AddressState>()(
       },
     }),
     {
-      name: 'teincfoods-addresses',
+      name: "TeincFood Business-addresses",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );

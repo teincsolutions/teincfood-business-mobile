@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
-import type { PaymentMethod } from '@/types/user.model';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { zustandStorage } from "@/utils/storage";
+import type { PaymentMethod } from "@/types/user.model";
 
 interface PaymentState {
   paymentMethods: PaymentMethod[];
-  
+
   // Actions
   addPaymentMethod: (pm: PaymentMethod) => void;
   removePaymentMethod: (id: string) => void;
@@ -18,18 +18,18 @@ export const usePaymentStore = create<PaymentState>()(
     (set, get) => ({
       paymentMethods: [
         {
-          id: 'pm-1',
-          type: 'mobile_money',
-          mobileMoneyNumber: '+233 20 123 4567',
-          accountHolderName: 'MTN Mobile Money',
+          id: "pm-1",
+          type: "mobile_money",
+          mobileMoneyNumber: "+233 20 123 4567",
+          accountHolderName: "MTN Mobile Money",
           isDefault: true,
         },
         {
-          id: 'pm-2',
-          type: 'card',
-          last4: '4242',
-          cardHolderName: 'Vishal Khadok',
-          cardBrand: 'visa',
+          id: "pm-2",
+          type: "card",
+          last4: "4242",
+          cardHolderName: "Vishal Khadok",
+          cardBrand: "visa",
           isDefault: false,
         },
       ],
@@ -56,12 +56,15 @@ export const usePaymentStore = create<PaymentState>()(
       },
 
       getDefaultPaymentMethod: () => {
-        return get().paymentMethods.find((pm) => pm.isDefault) || get().paymentMethods[0];
+        return (
+          get().paymentMethods.find((pm) => pm.isDefault) ||
+          get().paymentMethods[0]
+        );
       },
     }),
     {
-      name: 'teincfoods-payments',
+      name: "TeincFood Business-payments",
       storage: createJSONStorage(() => zustandStorage),
-    }
-  )
+    },
+  ),
 );
