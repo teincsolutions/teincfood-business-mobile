@@ -157,6 +157,7 @@ export function useAuth() {
 
   const verifyOtpFn = useCallback(async (phone: string, code: string, type?: "login" | "register") => {
     const response = await authService.verifyOTP({ phone, code, type: type || "login" });
+    await unregisterPushTokenOnLogout();
     setAuthAction(
       mapApiUserToUser(response.user),
       response.access_token,
@@ -179,6 +180,7 @@ export function useAuth() {
       ? await authService.loginWithGoogle()
       : await authService.loginWithApple();
 
+    await unregisterPushTokenOnLogout();
     setAuthAction(
       mapApiUserToUser(response.user),
       response.access_token,
