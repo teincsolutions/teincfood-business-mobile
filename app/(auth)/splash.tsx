@@ -13,6 +13,8 @@ import { useSecurityStore } from "@/stores/security.store";
 import { queryClient } from "@/providers/QueryProvider";
 import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
+import { authService } from "@/services/auth.service";
+import { unregisterPushTokenOnLogout } from "@/hooks/usePushTokenRegistration";
 import { useResponsive } from "@/utils/responsive";
 
 export default function SplashScreen() {
@@ -176,9 +178,13 @@ export default function SplashScreen() {
                   description: "We could not verify your identity.",
                   confirmText: "LOG OUT",
                   onConfirm: () => {
-                    clearAuth();
-                    hasShownFailureAlertRef.current = false;
-                    setRedirectTarget("/(auth)/login");
+                    authService.logout().finally(() => {
+                      unregisterPushTokenOnLogout().finally(() => {
+                        clearAuth();
+                        hasShownFailureAlertRef.current = false;
+                        setRedirectTarget("/(auth)/login");
+                      });
+                    });
                   },
                   cancelText: "RETRY",
                   onCancel: () => {
