@@ -76,7 +76,7 @@ export function DrawerMenuItem({
         )}
         {secondaryBadgeCount != null && secondaryBadgeCount > 0 && (
           <XStack
-            backgroundColor="$primary"
+            backgroundColor="$gray9"
             borderRadius="$12"
             minWidth={20}
             height={20}

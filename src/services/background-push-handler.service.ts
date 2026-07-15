@@ -36,7 +36,13 @@ async function displayPushNotification(
   const orderNumber = data.order_number || '';
   const status = data.status || '';
   const actionType = data.action_type;
-  const avatarUrl = data.avatar_url;
+  const avatarUrl = data.avatar_url || data.business_logo || '';
+  const businessName = data.business_name || '';
+  const notifType = data.type || data.notification_category || '';
+
+  // WhatsApp/Facebook-style: use sender/business name as title, clean message as body, avatar as icon
+  const displayTitle = businessName || title;
+  const displayBody = body;
 
   try {
     await ensureNotificationChannels();
@@ -44,8 +50,8 @@ async function displayPushNotification(
     const actions = buildActions(actionType);
 
     await notifee.displayNotification({
-      title,
-      body,
+      title: displayTitle,
+      body: displayBody,
       data: {
         route,
         orderId,
@@ -66,12 +72,10 @@ async function displayPushNotification(
         color: '#FF7622',
         style: {
           type: AndroidStyle.BIGTEXT,
-          text: body,
-          title,
-          summary: orderNumber ? `Order #${orderNumber}` : undefined,
+          text: displayBody,
         },
         actions,
-        pressAction: { id: route ? 'navigate' : 'view_order' },
+        pressAction: { id: orderId ? 'view_order' : 'navigate' },
         ongoing: status !== 'delivered' && status !== 'cancelled' && status !== '',
         autoCancel: status === 'delivered' || status === 'cancelled',
       },
