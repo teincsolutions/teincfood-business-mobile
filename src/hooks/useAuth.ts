@@ -6,31 +6,13 @@ import { useLocationStore } from '@/stores/location.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
 import type { AuthApiResponse } from '@/services/auth.service';
-import type { User } from '@/types/user.model';
+import type { AuthUser } from '@/types/api/auth.api';
 import { extractApiErrorMessage } from '@/utils/error';
-import { unregisterPushTokenOnLogout } from '@/hooks/usePushTokenRegistration';
+import { registerPushTokenOnLogin, teardownPushTokenRefresh, unregisterPushTokenOnLogout } from '@/hooks/usePushTokenRegistration';
 
 export interface AuthError {
   code?: string;
   message: string;
-}
-
-function mapApiUserToUser(apiUser: Record<string, any>): User {
-  return {
-    id: apiUser.id,
-    email: apiUser.email ?? '',
-    full_name: apiUser.full_name ?? '',
-    phone: apiUser.phone ?? '',
-    avatar_url: apiUser.avatar_url ?? null,
-    has_password: apiUser.has_password ?? false,
-    email_verified_at: apiUser.email_verified_at ?? null,
-    phone_verified_at: apiUser.phone_verified_at ?? null,
-    kyc_status: apiUser.kyc_status ?? 'pending',
-    has_completed_kyc: apiUser.has_completed_kyc ?? false,
-    inserted_at: apiUser.inserted_at ?? apiUser.created_at ?? new Date().toISOString(),
-    updated_at: apiUser.updated_at ?? new Date().toISOString(),
-    role: (apiUser.role || apiUser.roles?.[0] || 'buyer') as User['role'],
-  };
 }
 
 export function useAuth() {
@@ -102,11 +84,12 @@ export function useAuth() {
     await unregisterPushTokenOnLogout();
 
     setAuthAction(
-      mapApiUserToUser(response.user),
+      response.user,
       response.access_token,
       response.refresh_token
     );
 
+    registerPushTokenOnLogin();
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, loginMutation, setAuthAction, router, navigatePostAuth]);
 
@@ -136,10 +119,11 @@ export function useAuth() {
 
     if ('access_token' in response && response.access_token) {
       setAuthAction(
-        mapApiUserToUser(response.user),
+        response.user,
         response.access_token,
         response.refresh_token
       );
+      registerPushTokenOnLogin();
       navigatePostAuth();
     }
 
@@ -159,10 +143,11 @@ export function useAuth() {
     const response = await authService.verifyOTP({ phone, code, type: type || "login" });
     await unregisterPushTokenOnLogout();
     setAuthAction(
-      mapApiUserToUser(response.user),
+      response.user,
       response.access_token,
       response.refresh_token
     );
+    registerPushTokenOnLogin();
     navigatePostAuth();
   }, [setAuthAction, navigatePostAuth]);
 
@@ -182,15 +167,17 @@ export function useAuth() {
 
     await unregisterPushTokenOnLogout();
     setAuthAction(
-      mapApiUserToUser(response.user),
+      response.user,
       response.access_token,
       response.refresh_token
     );
+    registerPushTokenOnLogin();
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, setAuthAction, router, navigatePostAuth]);
 
   const logout = useCallback(async () => {
     await logoutMutation.mutateAsync();
+    teardownPushTokenRefresh();
     await unregisterPushTokenOnLogout();
     clearAuthAction();
     router.replace('/(auth)/login');

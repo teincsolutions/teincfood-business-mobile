@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
 
       completeKyc: () =>
         set((state) => ({
-          user: state.user ? { ...state.user, hasCompletedKyc: true } : null,
+          user: state.user ? { ...state.user, has_completed_kyc: true } : null,
         })),
 
       clearAuth: () => {

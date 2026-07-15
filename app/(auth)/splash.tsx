@@ -14,7 +14,7 @@ import { queryClient } from "@/providers/QueryProvider";
 import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
 import { authService } from "@/services/auth.service";
-import { unregisterPushTokenOnLogout } from "@/hooks/usePushTokenRegistration";
+import { registerPushTokenOnLogin, teardownPushTokenRefresh, unregisterPushTokenOnLogout } from "@/hooks/usePushTokenRegistration";
 import { useResponsive } from "@/utils/responsive";
 
 export default function SplashScreen() {
@@ -179,6 +179,7 @@ export default function SplashScreen() {
                   confirmText: "LOG OUT",
                   onConfirm: () => {
                     authService.logout().finally(() => {
+                      teardownPushTokenRefresh();
                       unregisterPushTokenOnLogout().finally(() => {
                         clearAuth();
                         hasShownFailureAlertRef.current = false;
@@ -213,6 +214,7 @@ export default function SplashScreen() {
       });
 
       // Navigate to role's home
+      registerPushTokenOnLogin();
       if (persistedRole === "seller") setRedirectTarget("/(seller)/");
       else if (persistedRole === "rider") setRedirectTarget("/(rider)/");
       else if (persistedRole === "fleet_manager")

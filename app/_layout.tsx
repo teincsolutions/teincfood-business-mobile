@@ -32,7 +32,7 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
-import { usePushTokenRegistration } from '../src/hooks/usePushTokenRegistration';
+import { registerPushTokenOnLogin } from '../src/hooks/usePushTokenRegistration';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
 import {
   registerBackgroundPushHandler,
@@ -88,8 +88,12 @@ function AppShell() {
     registerForegroundPushHandler();
   }, []);
 
-  // Register push token on app startup when authenticated
-  usePushTokenRegistration(isAuthenticated);
+  // Register/refresh push token on every app launch to keep backend active timestamp current
+  useEffect(() => {
+    if (isAuthenticated) {
+      registerPushTokenOnLogin();
+    }
+  }, [isAuthenticated]);
 
   // Handle Notifee notification tap (Android foreground)
   const handleNotifeeAction = useCallback(

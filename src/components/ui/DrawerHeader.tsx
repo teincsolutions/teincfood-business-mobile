@@ -69,13 +69,13 @@ export function DrawerHeader({
               backgroundColor="$color.gray50"
             >
               <Text color="$color" fontWeight="bold" fontSize={avatarTextSize}>
-                {user?.fullName?.charAt(0) || fallbackName.charAt(0)}
+                {user?.full_name?.charAt(0) || fallbackName.charAt(0)}
               </Text>
             </Avatar.Fallback>
           </Avatar>
           <YStack flex={1}>
             <Text color="white" fontWeight="bold" fontSize={nameTextSize}>
-              {user?.fullName || fallbackName}
+              {user?.full_name || fallbackName}
             </Text>
             {user?.email && (
               <Text color="white" opacity={0.8} fontSize={emailTextSize}>

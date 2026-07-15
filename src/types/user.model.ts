@@ -1,21 +1,20 @@
 export type UserRole = 'seller' | 'rider' | 'fleet_manager';
 
-/** Matches the backend's user show/format_user_response shape exactly */
+/** Matches the backend's /users/me + auth response shape exactly. */
 export interface User {
   id: string;
-  email: string;
-  full_name: string;
-  phone: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
   avatar_url: string | null;
   has_password: boolean;
+  roles: string[];
   email_verified_at: string | null;
   phone_verified_at: string | null;
   kyc_status: string;
   has_completed_kyc: boolean;
   inserted_at: string;
   updated_at: string;
-  /** Derived by the frontend — backend returns `roles: string[]` */
-  role: UserRole;
 }
 
 export interface Address {

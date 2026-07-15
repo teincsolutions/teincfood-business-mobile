@@ -4,6 +4,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import { api } from './api';
 import { useAuthStore } from '@/stores/auth.store';
+import type { AuthUser } from '@/types/api/auth.api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -49,7 +50,7 @@ interface RefreshResponse {
 export interface AuthApiResponse {
   access_token: string;
   refresh_token: string;
-  user: Record<string, any>;
+  user: AuthUser;
 }
 
 export const authService = {

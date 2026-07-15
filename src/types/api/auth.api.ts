@@ -38,16 +38,23 @@ export interface AuthResponse {
 
 export interface AuthUser {
   id: string;
-  email: string;
-  full_name: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  has_password: boolean;
   roles: string[];
-  phone?: string;
 }
 
 export interface RegisterResponse {
   status: string;
   message: string;
-  user: AuthUser;
+  user: {
+    email: string;
+    full_name: string;
+    has_password: boolean;
+    roles: string[];
+  };
 }
 
 export interface RefreshResponse {

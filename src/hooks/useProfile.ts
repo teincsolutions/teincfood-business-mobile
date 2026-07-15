@@ -4,15 +4,19 @@ import { profileService } from '@/services/profile.service';
 import { useAuthStore } from '@/stores/auth.store';
 import type { User } from '@/types/user.model';
 
-/** Map snake_case API profile to camelCase User store fields */
+/** Extract snake_case profile fields into store user — no default fallbacks */
 function apiProfileToUser(api: Record<string, any>): Partial<User> {
   return {
-    full_name: api.full_name ?? '',
-    email: api.email ?? '',
-    phone: api.phone ?? '',
-    avatar_url: api.avatar_url ?? undefined,
-    email_verified_at: api.email_verified_at ?? null,
-    phone_verified_at: api.phone_verified_at ?? null,
+    full_name: api.full_name,
+    email: api.email,
+    phone: api.phone,
+    avatar_url: api.avatar_url,
+    email_verified_at: api.email_verified_at,
+    phone_verified_at: api.phone_verified_at,
+    kyc_status: api.kyc_status,
+    has_completed_kyc: api.has_completed_kyc,
+    inserted_at: api.inserted_at,
+    updated_at: api.updated_at,
   };
 }
 
