@@ -32,11 +32,6 @@ function clearStoredTokenId(): void {
 
 async function registerToken(token: string): Promise<void> {
   if (token === currentToken) return;
-  const storedHash = getStoredTokenHash();
-  if (storedHash === token) {
-    currentToken = token;
-    return;
-  }
   try {
     const response = await devicesService.registerPushToken(token);
     console.log('[PushToken] Backend registration response:', JSON.stringify(response));
@@ -45,7 +40,7 @@ async function registerToken(token: string): Promise<void> {
     if (response?.data?.id) {
       mmkvStorage.set(REGISTERED_TOKEN_ID_KEY, response.data.id);
     }
-    console.log('[PushToken] Token stored locally and dedup hash set');
+    console.log('[PushToken] Token stored locally');
   } catch (error) {
     console.warn('[PushToken] Registration failed:', error);
   }
@@ -72,12 +67,23 @@ export function usePushTokenRegistration(enabled = true): void {
   const ranOnce = useRef(false);
   const prevUserId = useRef(userId);
 
-  // Reset on logout — allows new user on same device to re-register their token
+  // Reset on logout — clear local state FIRST (synchronous), then unregister (async).
+  // This eliminates the race where async unregister clears state AFTER registration
+  // has already started, causing registerToken to never call the backend.
   useEffect(() => {
     if (!isAuthenticated) {
-      unregisterPushTokenOnLogout();
-      ranOnce.current = false;
+      const savedTokenId = getStoredTokenId();
+
+      clearStoredTokenId();
+      mmkvStorage.delete(REGISTERED_TOKEN_KEY);
       currentToken = null;
+      ranOnce.current = false;
+
+      if (savedTokenId) {
+        devicesService.unregisterPushToken(savedTokenId).catch((error) => {
+          console.warn('[PushToken] Logout unregister failed:', error);
+        });
+      }
     }
   }, [isAuthenticated]);
 
@@ -86,6 +92,7 @@ export function usePushTokenRegistration(enabled = true): void {
     if (userId && userId !== prevUserId.current) {
       ranOnce.current = false;
       currentToken = null;
+      mmkvStorage.delete(REGISTERED_TOKEN_KEY);
       prevUserId.current = userId;
     }
   }, [userId]);
@@ -119,7 +126,7 @@ export function usePushTokenRegistration(enabled = true): void {
 
         console.log('[PushToken] Getting FCM token...');
         const fcmToken = await messaging().getToken();
-        console.log('[PushToken] FCM token obtained successfully:', fcmToken);
+        console.log('[PushToken] FCM token obtained successfully');
 
         await registerToken(fcmToken);
         console.log('[PushToken] Token registered with backend successfully');
