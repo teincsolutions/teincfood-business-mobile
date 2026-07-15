@@ -215,7 +215,7 @@ export function useConfirmHandoverMutation() {
     mutationFn: (deliveryId: string) => sellerService.confirmHandover(deliveryId),
 
     onSuccess: () => {
-      toast.success("Handover confirmed! Order is now in transit.");
+      toast.success("Handover confirmed! Waiting for rider pickup confirmation.");
     },
 
     onError: (error) => {

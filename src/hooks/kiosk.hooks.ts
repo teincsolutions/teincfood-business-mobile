@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as kioskService from '@/services/kiosk.service';
 import { useBusinessStore } from '@/stores/business.store';
+import { SELLER_KEYS } from '@/hooks/seller.hooks';
+import { toast } from 'sonner-native';
+import { extractApiErrorMessage } from '@/utils/error';
 
 export const KIOSK_KEYS = {
   all: ['kiosk'] as const,
@@ -93,9 +96,11 @@ export function useAssignRiderMutation() {
       kioskService.assignKioskOrderToRider(orderId, riderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
+      toast.success('Rider assigned successfully');
     },
     onError: (error) => {
-      console.debug('Assign rider mutation failed:', error);
+      toast.error(extractApiErrorMessage(error));
     },
   });
 }

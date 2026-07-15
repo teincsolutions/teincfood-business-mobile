@@ -142,6 +142,9 @@ export interface SellerOrderDetail extends SellerOrder {
   notes: string | null;
   delivery_person: DeliveryPerson | null;
   delivery_id: string | null;
+  delivery_status: string | null;
+  merchant_handover_confirmed_at: string | null;
+  rider_pickup_confirmed_at: string | null;
   eta_minutes: number | null;
   status_history: StatusHistoryEntry[];
   business: OrderBusiness | null;

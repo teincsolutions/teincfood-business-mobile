@@ -33,8 +33,8 @@ export async function markKioskOrderReady(orderId: string): Promise<{ data: Kios
   return api.post(`/orders/${orderId}/ready-for-delivery`);
 }
 
-export async function confirmKioskPickup(orderId: string): Promise<{ data: Record<string, unknown> }> {
-  return api.post(`/deliveries/${orderId}/confirm-pickup`);
+export async function confirmKioskPickup(deliveryId: string): Promise<{ data: Record<string, unknown> }> {
+  return api.post(`/deliveries/${deliveryId}/confirm-pickup`);
 }
 
 export async function fetchAvailableRiders(businessId?: string): Promise<{ data: Record<string, unknown>[] }> {

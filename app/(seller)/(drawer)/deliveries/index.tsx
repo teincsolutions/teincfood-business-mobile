@@ -22,7 +22,7 @@ import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { useAvailableRidersQuery, useAssignRiderMutation } from "@/hooks/kiosk.hooks";
 import { formatPriceFromMinor } from "@/utils/currency";
 
-const DELIVERY_STATUSES = ["ready", "on_the_way", "delivered", "cancelled"];
+const DELIVERY_STATUSES = ["ready", "waiting_pickup", "on_the_way", "delivered", "cancelled"];
 
 const STATUS_COLORS = {
   ready: "$green9",
@@ -74,7 +74,7 @@ export default function SellerDeliveries() {
     return orders;
   }, [allOrders, searchQuery]);
 
-  const readyForRider = deliveryOrders.filter((o) => o.status === "ready");
+  const readyForRider = deliveryOrders.filter((o) => o.status === "ready" || o.status === "waiting_pickup");
   const inTransit = deliveryOrders.filter((o) => o.status === "on_the_way");
   const completed = deliveryOrders.filter((o) => o.status === "delivered" || o.status === "cancelled");
 
@@ -165,13 +165,21 @@ export default function SellerDeliveries() {
 
         <Separator />
 
-        {order.status === "ready" ? (
+        {(order.status === "ready" || order.status === "waiting_pickup") && !order.delivery_id ? (
           <Button
             backgroundColor="$primary"
             icon={<Bike size={18} />}
             onPress={() => handleOpenRiderSheet(order.id)}
           >
             Assign Rider
+          </Button>
+        ) : (order.status === "ready" || order.status === "waiting_pickup") && order.delivery_id ? (
+          <Button
+            backgroundColor="$primary"
+            icon={<Bike size={18} />}
+            onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+          >
+            Confirm Handover
           </Button>
         ) : order.status === "on_the_way" && order.delivery_id ? (
           <Button

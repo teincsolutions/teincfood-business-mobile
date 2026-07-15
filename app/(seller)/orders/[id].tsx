@@ -206,6 +206,32 @@ export default function OrderDetails() {
                     </Text>
                   </YStack>
                 </XStack>
+                {order.delivery_status === "assigned" && (
+                  <YStack gap="$2" marginTop="$1">
+                    <Separator />
+                    <Text fontSize="$3" fontWeight="600" color="$colorMuted">Confirmation Progress</Text>
+                    <XStack alignItems="center" gap="$2">
+                      {order.merchant_handover_confirmed_at ? (
+                        <Check size={14} color="$green10" />
+                      ) : (
+                        <Clock size={14} color="$orange9" />
+                      )}
+                      <Text fontSize="$3" color={order.merchant_handover_confirmed_at ? "$green10" : "$orange9"}>
+                        Merchant handover: {order.merchant_handover_confirmed_at ? "Confirmed" : "Pending"}
+                      </Text>
+                    </XStack>
+                    <XStack alignItems="center" gap="$2">
+                      {order.rider_pickup_confirmed_at ? (
+                        <Check size={14} color="$green10" />
+                      ) : (
+                        <Clock size={14} color="$orange9" />
+                      )}
+                      <Text fontSize="$3" color={order.rider_pickup_confirmed_at ? "$green10" : "$orange9"}>
+                        Rider pickup: {order.rider_pickup_confirmed_at ? "Confirmed" : "Pending"}
+                      </Text>
+                    </XStack>
+                  </YStack>
+                )}
                 {order.eta_minutes && (
                   <Text fontSize="$3" color="$colorMuted">ETA: {order.eta_minutes} min</Text>
                 )}
@@ -352,12 +378,12 @@ export default function OrderDetails() {
                 Mark as Ready
               </Button>
             )}
-            {order.status === "ready" && order.delivery_person && (
+            {(order.status === "ready" || order.status === "waiting_pickup") && order.delivery_person && (
               <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
                 Confirm Handover to Rider
               </Button>
             )}
-            {order.status === "ready" && !order.delivery_person && (
+            {(order.status === "ready" || order.status === "waiting_pickup") && !order.delivery_person && (
               <Button variant="primary" width="100%" icon={<Truck size={18} />} onPress={() => setShowRiderSheet(true)}>
                 Assign Rider
               </Button>
@@ -402,7 +428,6 @@ export default function OrderDetails() {
         onSelectRider={(riderId) => {
           assignRider.mutate({ orderId: order!.id, riderId });
           setShowRiderSheet(false);
-          toast.success("Rider assigned successfully");
         }}
       />
 

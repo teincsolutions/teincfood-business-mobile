@@ -174,7 +174,7 @@ export default function KioskMode() {
   const allOrders = data?.data ?? [];
   const pendingOrders = allOrders.filter((o) => o.status === "pending" || o.status === "accepted");
   const preparingOrders = allOrders.filter((o) => o.status === "preparing");
-  const readyOrders = allOrders.filter((o) => o.status === "ready");
+  const readyOrders = allOrders.filter((o) => o.status === "ready" || o.status === "waiting_pickup");
 
   const playSound = (type: "success" | "alert" | "error") => {
     if (!soundEnabled) return;
