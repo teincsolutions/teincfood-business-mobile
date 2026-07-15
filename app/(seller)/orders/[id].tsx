@@ -85,6 +85,7 @@ export default function OrderDetails() {
     onConfirm: () => void;
   } | null>(null);
   const [showRiderSheet, setShowRiderSheet] = useState(false);
+  const [pendingRiderChange, setPendingRiderChange] = useState<{ orderId: string; riderId: string } | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<{ html: string } | null>(null);
   const [printing, setPrinting] = useState(false);
 
@@ -253,35 +254,6 @@ export default function OrderDetails() {
                 {order.delivery_person.name && (
                   <Text fontSize="$3">{order.delivery_person.name}</Text>
                 )}
-                {order.delivery_person.phone && (
-                  <Button variant="outline" size="$3" icon={<Phone size={14} />} width="50%" onPress={() => Linking.openURL(`tel:${order.delivery_person.phone}`)}>
-                    Call Rider
-                  </Button>
-                )}
-                {(order.status === "ready" || order.status === "waiting_pickup") && (
-                  <>
-                    <Separator />
-                    <Button
-                      variant="outline"
-                      size="$3"
-                      width="100%"
-                    onPress={() => {
-                      if (!order.rider_pickup_confirmed_at) {
-                        showDialog(
-                          "Change Rider",
-                          "The current rider will be replaced and notified. Are you sure?",
-                          () => setShowRiderSheet(true),
-                          true,
-                        );
-                      } else {
-                        toast.error("Cannot change rider after pickup confirmation");
-                      }
-                    }}
-                    >
-                      Change Rider
-                    </Button>
-                  </>
-                )}
               </YStack>
             </Card>
           )}
@@ -372,7 +344,8 @@ export default function OrderDetails() {
 
           {/* Action Buttons */}
           <YStack gap="$3" marginTop="$2">
-            {/* Receipt actions — always visible */}
+            <Text fontSize="$4" fontWeight="bold">Documents</Text>
+            <Separator />
             <XStack gap="$3">
               <Button flex={1} variant="outline" height={40} icon={<Eye size={16} />} onPress={handlePreview}>
                 Preview Receipt
@@ -381,6 +354,9 @@ export default function OrderDetails() {
                 {printing ? "Printing..." : "Print Receipt"}
               </Button>
             </XStack>
+
+            <Text fontSize="$4" fontWeight="bold" marginTop="$2">Order Actions</Text>
+            <Separator />
 
             {order.status === "pending" && (
               <>
@@ -404,26 +380,33 @@ export default function OrderDetails() {
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") && order.delivery_person && (
               <>
-                <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
-                  Confirm Handover to Rider
-                </Button>
+                {order.merchant_handover_confirmed_at ? (
+                  <Button variant="primary" width="100%" disabled opacity={0.6}>
+                    Waiting for Rider Pickup Confirmation
+                  </Button>
+                ) : (
+                  <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
+                    Confirm Handover to Rider
+                  </Button>
+                )}
                 {!order.rider_pickup_confirmed_at && (
-                  <Button variant="outline" width="100%" icon={<Truck size={18} />} onPress={() => {
-                    showDialog(
-                      "Change Rider",
-                      "The current rider will be replaced and notified. Are you sure?",
-                      () => setShowRiderSheet(true),
-                      true,
-                    );
-                  }}>
+                  <Button variant="outline" width="100%" onPress={() => setShowRiderSheet(true)}>
                     Change Rider
                   </Button>
                 )}
               </>
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") && !order.delivery_person && (
-              <Button variant="primary" width="100%" icon={<Truck size={18} />} onPress={() => setShowRiderSheet(true)}>
+              <Button variant="primary" width="100%" onPress={() => setShowRiderSheet(true)}>
                 Assign Rider
+              </Button>
+            )}
+
+            <Text fontSize="$4" fontWeight="bold" marginTop="$2">Contact</Text>
+            <Separator />
+            {order.delivery_person?.phone && (
+              <Button variant="outline" width="100%" icon={<Phone size={18} />} onPress={() => Linking.openURL(`tel:${order.delivery_person.phone}`)}>
+                Call Rider ({order.delivery_person.name || "Rider"})
               </Button>
             )}
             {order.user?.phone && (
@@ -464,8 +447,27 @@ export default function OrderDetails() {
         onClose={() => setShowRiderSheet(false)}
         riders={riders ?? []}
         onSelectRider={(riderId) => {
-          assignRider.mutate({ orderId: order!.id, riderId });
           setShowRiderSheet(false);
+          if (order?.delivery_person) {
+            setPendingRiderChange({ orderId: order!.id, riderId });
+          } else {
+            assignRider.mutate({ orderId: order!.id, riderId });
+          }
+        }}
+      />
+
+      <AppAlertDialog
+        open={pendingRiderChange !== null}
+        onOpenChange={() => setPendingRiderChange(null)}
+        title="Change Rider"
+        description="The current rider will be replaced and notified. Are you sure?"
+        confirmText="Change Rider"
+        isDestructive
+        onConfirm={() => {
+          if (pendingRiderChange) {
+            assignRider.mutate(pendingRiderChange);
+            setPendingRiderChange(null);
+          }
         }}
       />
 
