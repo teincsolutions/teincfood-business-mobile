@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { Platform, FlatList, TouchableOpacity, TextInput } from "react-native";
 import {
   YStack,
@@ -54,6 +55,12 @@ export default function InboxScreen() {
     canShowBusinessTab ? "business" : "personal",
   );
   const [search, setSearch] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      Notifications.setBadgeCountAsync(0).catch(() => {});
+    }, []),
+  );
 
   useEffect(() => {
     if (!canShowBusinessTab && tab === "business") {
