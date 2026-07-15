@@ -36,11 +36,12 @@ import { BackButton } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useChat } from "@/hooks/useChat";
 import { getChatClient } from "@/utils/chat-service";
-import type { Message, MessageStatus } from "@teincfood/chat-client";
+import type { Message, MessageStatus, MarkdownToken } from "@teincfood/chat-client";
 import {
   formatTime,
   formatDateSeparator,
   shouldShowDateSeparator,
+  parseMarkdown,
 } from "@teincfood/chat-client";
 
 // ─── HTML entity decoding ──────────────────────────────────────────────────
@@ -66,6 +67,57 @@ function decodeEntities(text: string): string {
     String.fromCharCode(parseInt(num, 10)),
   );
   return result;
+}
+
+// ─── WhatsApp-style markdown renderer ───────────────────────────────────────
+
+const codeFontFamily = Platform.OS === "ios" ? "Menlo" : "monospace";
+
+function renderMarkdown(tokens: MarkdownToken[]) {
+  return tokens.map((token, i) => {
+    switch (token.type) {
+      case "bold":
+        return (
+          <Text key={i} style={{ fontWeight: "700" }}>
+            {token.text}
+          </Text>
+        );
+      case "italic":
+        return (
+          <Text key={i} style={{ fontStyle: "italic" }}>
+            {token.text}
+          </Text>
+        );
+      case "boldItalic":
+        return (
+          <Text key={i} style={{ fontWeight: "700", fontStyle: "italic" }}>
+            {token.text}
+          </Text>
+        );
+      case "strikethrough":
+        return (
+          <Text key={i} style={{ textDecorationLine: "line-through" }}>
+            {token.text}
+          </Text>
+        );
+      case "code":
+        return (
+          <Text
+            key={i}
+            style={{
+              fontFamily: codeFontFamily,
+              backgroundColor: "rgba(0,0,0,0.06)",
+              borderRadius: 4,
+              paddingHorizontal: 3,
+            }}
+          >
+            {token.text}
+          </Text>
+        );
+      default:
+        return token.text;
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -557,7 +609,7 @@ export function ContactChatScreen({
                     borderBottomLeftRadius={isMe ? "$3" : 2}
                   >
                     <Text fontSize="$4" fontFamily="$body" color="$color">
-                      {decodeEntities(msg.content)}
+                      {renderMarkdown(parseMarkdown(decodeEntities(msg.content)))}
                     </Text>
                     <XStack
                       gap={3}
