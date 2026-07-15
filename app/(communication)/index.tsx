@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { FlatList, TouchableOpacity, TextInput } from "react-native";
+import { Platform, FlatList, TouchableOpacity, TextInput } from "react-native";
 import {
   YStack,
   XStack,
@@ -18,7 +18,29 @@ import { Search, MessageSquare, Building2, User } from "@tamagui/lucide-icons";
 import { BackButton } from "@/components/ui";
 import { useContacts } from "@/hooks/useContacts";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
-import { formatTime } from "@teincfood/chat-client";
+import { formatTime, parseMarkdown } from "@teincfood/chat-client";
+import type { MarkdownToken } from "@teincfood/chat-client";
+
+const codeFontFamily = Platform.OS === "ios" ? "Menlo" : "monospace";
+
+function renderMarkdown(tokens: MarkdownToken[]) {
+  return tokens.map((token, i) => {
+    switch (token.type) {
+      case "bold":
+        return <Text key={i} fontWeight="700">{token.text}</Text>;
+      case "italic":
+        return <Text key={i} fontStyle="italic">{token.text}</Text>;
+      case "boldItalic":
+        return <Text key={i} fontWeight="700" fontStyle="italic">{token.text}</Text>;
+      case "strikethrough":
+        return <Text key={i} textDecorationLine="line-through">{token.text}</Text>;
+      case "code":
+        return <Text key={i} fontFamily={codeFontFamily}>{token.text}</Text>;
+      default:
+        return token.text;
+    }
+  });
+}
 
 type TabKey = "business" | "personal";
 
@@ -168,7 +190,7 @@ export default function InboxScreen() {
                     flex={1}
                   >
                     {contact.last_message?.text
-                      ? contact.last_message.text.slice(0, 80) + "..."
+                      ? renderMarkdown(parseMarkdown(contact.last_message.text))
                       : "Tap to start chatting"}
                   </Text>
                   {contact.unread_count > 0 && (
@@ -366,7 +388,6 @@ export default function InboxScreen() {
         initialNumToRender={10}
         windowSize={5}
         maxToRenderPerBatch={10}
-        removeClippedSubviews
       />
     </YStack>
   );

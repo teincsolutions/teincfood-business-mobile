@@ -78,39 +78,31 @@ function renderMarkdown(tokens: MarkdownToken[]) {
     switch (token.type) {
       case "bold":
         return (
-          <Text key={i} style={{ fontWeight: "700" }}>
+          <Text key={i} fontWeight="700">
             {token.text}
           </Text>
         );
       case "italic":
         return (
-          <Text key={i} style={{ fontStyle: "italic" }}>
+          <Text key={i} fontStyle="italic">
             {token.text}
           </Text>
         );
       case "boldItalic":
         return (
-          <Text key={i} style={{ fontWeight: "700", fontStyle: "italic" }}>
+          <Text key={i} fontWeight="700" fontStyle="italic">
             {token.text}
           </Text>
         );
       case "strikethrough":
         return (
-          <Text key={i} style={{ textDecorationLine: "line-through" }}>
+          <Text key={i} textDecorationLine="line-through">
             {token.text}
           </Text>
         );
       case "code":
         return (
-          <Text
-            key={i}
-            style={{
-              fontFamily: codeFontFamily,
-              backgroundColor: "rgba(0,0,0,0.06)",
-              borderRadius: 4,
-              paddingHorizontal: 3,
-            }}
-          >
+          <Text key={i} fontFamily={codeFontFamily}>
             {token.text}
           </Text>
         );
@@ -608,6 +600,17 @@ export function ContactChatScreen({
                     borderBottomRightRadius={isMe ? 2 : "$3"}
                     borderBottomLeftRadius={isMe ? "$3" : 2}
                   >
+                    {isBusiness && !isMe && msg.sender_name && (
+                      <Text
+                        fontSize="$2"
+                        fontWeight="700"
+                        color="$primary"
+                        fontFamily="$body"
+                        marginBottom="$1"
+                      >
+                        {msg.sender_name}
+                      </Text>
+                    )}
                     <Text fontSize="$4" fontFamily="$body" color="$color">
                       {renderMarkdown(parseMarkdown(decodeEntities(msg.content)))}
                     </Text>
