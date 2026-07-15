@@ -40,7 +40,7 @@ function CustomDrawerContent(props: any) {
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
-  const { total: totalUnread } = useUnreadCounts();
+  const { businessUnread, personalUnread } = useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -81,7 +81,7 @@ function CustomDrawerContent(props: any) {
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} fontFamily="$body" badgeCount={totalUnread} />
+          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} fontFamily="$body" badgeCount={businessUnread} secondaryBadgeCount={personalUnread} />
           <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" />
           <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} fontFamily="$body" />
 

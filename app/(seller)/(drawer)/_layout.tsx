@@ -45,7 +45,7 @@ function CustomDrawerContent(props: any) {
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
-  const { total: totalUnread } = useUnreadCounts();
+  const { businessUnread, personalUnread } = useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -154,7 +154,8 @@ function CustomDrawerContent(props: any) {
             sharedPrefix="/(communication)"
             onPress={() => router.push("/(communication)")}
             isActive={isActive}
-            badgeCount={totalUnread}
+            badgeCount={businessUnread}
+            secondaryBadgeCount={personalUnread}
           />
           <DrawerMenuItem
             icon={Bell}

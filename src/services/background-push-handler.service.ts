@@ -1,33 +1,68 @@
 import { Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import notifee, { AndroidStyle } from '@notifee/react-native';
+import notifee, { AndroidAction, AndroidStyle } from '@notifee/react-native';
 import { ensureNotificationChannels } from './android-notifee-channels.service';
 import { getNotificationSound } from './notification-sounds';
 
-const INVITATION_CATEGORIES = ['rider_invitation', 'business_member_invitation'];
+function buildActions(actionType: string | undefined): AndroidAction[] {
+  switch (actionType) {
+    case 'accept_order':
+      return [
+        { title: 'Accept ✅', pressAction: { id: 'accept_order' } },
+        { title: 'Decline ❌', pressAction: { id: 'decline_order' } },
+      ];
+    case 'review_join_request':
+      return [
+        { title: 'Approve ✅', pressAction: { id: 'approve_join_request' } },
+        { title: 'Decline ❌', pressAction: { id: 'decline_join_request' } },
+      ];
+    case 'accept_invitation':
+      return [
+        { title: 'Accept ✅', pressAction: { id: 'accept_invitation' } },
+        { title: 'Dismiss', pressAction: { id: 'decline_invitation' } },
+      ];
+    default:
+      return [];
+  }
+}
 
 async function displayPushNotification(
   title: string,
   body: string,
   data: Record<string, string>,
 ): Promise<void> {
+  const route = data.route || '';
+  const orderId = data.order_id || '';
+  const orderNumber = data.order_number || '';
+  const status = data.status || '';
+  const actionType = data.action_type;
+  const avatarUrl = data.avatar_url;
+
   try {
     await ensureNotificationChannels();
     const sound = getNotificationSound(data.sound);
+    const actions = buildActions(actionType);
 
     await notifee.displayNotification({
       title,
       body,
       data: {
-        orderId: data.order_id || '',
-        orderNumber: data.order_number || '',
-        restaurantName: data.restaurant_name || '',
-        status: data.status || '',
+        route,
+        orderId,
+        orderNumber,
+        status,
+        action_type: actionType || '',
+        notification_category: data.notification_category || '',
+        invitation_id: data.invitation_id || '',
+        join_request_id: data.join_request_id || '',
+        code: data.code || '',
+        avatar_url: avatarUrl || '',
       },
       android: {
-        channelId: 'order-updates',
+        channelId: actions.length > 0 ? 'action-notifications' : 'order-updates',
         sound,
         smallIcon: 'ic_launcher',
+        largeIcon: avatarUrl || undefined,
         color: '#FF7622',
         style: {
           type: AndroidStyle.BIGTEXT,
@@ -35,54 +70,14 @@ async function displayPushNotification(
           title,
           summary: orderNumber ? `Order #${orderNumber}` : undefined,
         },
-        pressAction: { id: 'view_order' },
-        ongoing: status !== 'delivered' && status !== 'cancelled',
+        actions,
+        pressAction: { id: route ? 'navigate' : 'view_order' },
+        ongoing: status !== 'delivered' && status !== 'cancelled' && status !== '',
         autoCancel: status === 'delivered' || status === 'cancelled',
       },
     });
   } catch (error) {
     console.error('[PushHandler] Failed to display notification:', error);
-  }
-}
-
-async function displayInvitationNotification(
-  title: string,
-  body: string,
-  data: Record<string, string>,
-): Promise<void> {
-  try {
-    await ensureNotificationChannels();
-    const sound = getNotificationSound(data.sound);
-    const notificationCategory = data.notification_category || '';
-
-    await notifee.displayNotification({
-      title,
-      body,
-      data: {
-        notification_category: notificationCategory,
-        code: data.code || '',
-        action_required: 'true',
-        action_type: data.action_type || 'accept_invitation',
-      },
-      android: {
-        channelId: 'action-notifications',
-        sound,
-        smallIcon: 'ic_launcher',
-        color: '#FF7622',
-        style: {
-          type: AndroidStyle.BIGTEXT,
-          text: body,
-          title,
-        },
-        pressAction: { id: 'open_invitation' },
-        actions: [
-          { title: 'Accept', pressAction: { id: 'accept_invitation' } },
-          { title: 'Dismiss', pressAction: { id: 'decline_invitation' } },
-        ],
-      },
-    });
-  } catch (error) {
-    console.error('[PushHandler] Failed to display invitation notification:', error);
   }
 }
 
@@ -92,14 +87,7 @@ async function handleRemoteMessage(
   data: Record<string, string> | undefined,
 ): Promise<void> {
   if (!data) return;
-
-  const notificationCategory = data.notification_category;
-
-  if (notificationCategory && INVITATION_CATEGORIES.includes(notificationCategory)) {
-    await displayInvitationNotification(title, body, data);
-  } else {
-    await displayPushNotification(title, body, data);
-  }
+  await displayPushNotification(title, body, data);
 }
 
 let bgRegistered = false;
@@ -111,9 +99,9 @@ export function registerBackgroundPushHandler(): void {
 
   try {
     messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-      const title = remoteMessage.notification?.title || '';
-      const body = remoteMessage.notification?.body || '';
       const ndata = remoteMessage.data as Record<string, string> | undefined;
+      const title = remoteMessage.notification?.title || ndata?.title || '';
+      const body = remoteMessage.notification?.body || ndata?.body || '';
       await handleRemoteMessage(title, body, ndata);
     });
     bgRegistered = true;
@@ -128,9 +116,9 @@ export function registerForegroundPushHandler(): void {
 
   try {
     messaging().onMessage(async (remoteMessage) => {
-      const title = remoteMessage.notification?.title || '';
-      const body = remoteMessage.notification?.body || '';
       const ndata = remoteMessage.data as Record<string, string> | undefined;
+      const title = remoteMessage.notification?.title || ndata?.title || '';
+      const body = remoteMessage.notification?.body || ndata?.body || '';
       await handleRemoteMessage(title, body, ndata);
     });
     fgRegistered = true;

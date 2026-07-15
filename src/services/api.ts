@@ -141,7 +141,11 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
         isRefreshing = false;
-        useAuthStore.getState().clearAuth();
+        // Only clear auth for auth errors (401/403), not server/network errors
+        const refreshStatus = (refreshError as AxiosError).response?.status;
+        if (refreshStatus === 401 || refreshStatus === 403) {
+          useAuthStore.getState().clearAuth();
+        }
         return Promise.reject(refreshError);
       }
     }

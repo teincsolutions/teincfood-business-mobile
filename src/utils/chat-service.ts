@@ -23,14 +23,17 @@ export function getChatClient(): ChatClient {
             body: JSON.stringify({ refresh_token: refreshToken }),
           });
           if (!response.ok) {
-            useAuthStore.getState().clearAuth();
+            // Only clear auth for auth errors, not 5xx server errors
+            if (response.status === 401 || response.status === 403) {
+              useAuthStore.getState().clearAuth();
+            }
             return null;
           }
           const data = await response.json() as AuthTokens;
           useAuthStore.getState().setTokens(data.access_token, data.refresh_token);
           return data;
         } catch {
-          useAuthStore.getState().clearAuth();
+          // Network/server errors — don't clear auth, token likely still valid
           return null;
         }
       },

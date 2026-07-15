@@ -34,11 +34,14 @@ import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
 import { register } from '../src/hooks/usePushTokenRegistration';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
+import { phoenixSocket } from '../src/services/phoenix-socket.service';
 import {
   registerBackgroundPushHandler,
   registerForegroundPushHandler,
 } from '../src/services/background-push-handler.service';
 import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
+import * as sellerService from '../src/services/seller.service';
+import * as fleetService from '../src/services/fleet.service';
 
 // Subscribe to auth store — register push token when session is restored from storage
 let _pushTokenRegistered = false;
@@ -97,27 +100,55 @@ function AppShell() {
     registerForegroundPushHandler();
   }, []);
 
-  // Handle Notifee notification tap (Android foreground)
+  // Handle Notifee notification tap + action button press
   const handleNotifeeAction = useCallback(
     (actionId: string, data: Record<string, string> | undefined) => {
       const orderId = data?.orderId;
       const actionType = data?.action_type;
-      const notificationCategory = data?.notification_category;
       const code = data?.code;
+      const route = data?.route;
+      const joinRequestId = data?.join_request_id;
 
-      if (actionType === 'accept_invitation' && code) {
-        // Navigate to invitations screen where the accept mutation lives
-        router.push('/(shared)/invitations');
-        return;
-      }
-
-      if (actionId === 'decline_invitation' || actionType === 'decline_invitation') {
-        // Decline — no backend endpoint, just dismiss
-        return;
+      switch (actionId) {
+        case 'accept_order':
+          if (orderId) {
+            sellerService.acceptOrder(orderId).catch(console.error);
+            router.push(`/order/${orderId}`);
+          }
+          return;
+        case 'decline_order':
+          if (orderId) {
+            sellerService.rejectOrder(orderId).catch(console.error);
+          }
+          return;
+        case 'approve_join_request':
+          if (joinRequestId) {
+            fleetService.approveJoinRequest(joinRequestId).catch(console.error);
+            if (route) router.push(route);
+          }
+          return;
+        case 'decline_join_request':
+          if (joinRequestId) {
+            fleetService.rejectJoinRequest(joinRequestId).catch(console.error);
+          }
+          return;
+        case 'accept_invitation':
+          if (code) {
+            fleetService.acceptFleetInvitation({ code }).catch(console.error);
+          }
+          if (route) router.push(route);
+          return;
+        case 'decline_invitation':
+          return;
+        case 'navigate':
+          if (route) { router.push(route); return; }
+          break;
       }
 
       if (orderId) {
         router.push(`/order/${orderId}`);
+      } else if (route) {
+        router.push(route);
       }
     },
     [],
@@ -132,7 +163,7 @@ function AppShell() {
 
       switch (type) {
         case EventType.PRESS:
-          handleNotifeeAction(actionId || 'view_order', ndata);
+          handleNotifeeAction(actionId || 'navigate', ndata);
           break;
         case EventType.ACTION_PRESS:
           if (actionId) handleNotifeeAction(actionId, ndata);
@@ -141,6 +172,18 @@ function AppShell() {
     });
 
     return () => unsubscribe();
+  }, [isAuthenticated, handleNotifeeAction]);
+
+  // Cold-start notification handling — process notification that launched the app
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    notifee.getInitialNotification().then((event) => {
+      if (!event) return;
+      const actionId = event.pressAction?.id;
+      const ndata = event.notification?.data as Record<string, string> | undefined;
+      if (actionId) handleNotifeeAction(actionId, ndata);
+    });
   }, [isAuthenticated, handleNotifeeAction]);
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
@@ -163,16 +206,14 @@ function AppShell() {
   }, [fontsLoaded, fontError, isReady]);
 
   useEffect(() => {
-    // Biometric lock logic for AppState changes
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      // Only re-lock if the app was strictly in the background
-      // This avoids loops caused by the system authentication overlay (which is 'inactive')
-      if (
-        appState.current === 'background' &&
-        nextAppState === 'active' &&
-        isBiometricEnabled
-      ) {
-        setIsUnlocked(false);
+      if (appState.current === 'background' && nextAppState === 'active') {
+        if (isAuthenticated && !phoenixSocket.isConnected()) {
+          phoenixSocket.retryConnection();
+        }
+        if (isBiometricEnabled) {
+          setIsUnlocked(false);
+        }
       }
       appState.current = nextAppState;
     });
@@ -180,7 +221,7 @@ function AppShell() {
     return () => {
       subscription.remove();
     };
-  }, [isBiometricEnabled]);
+  }, [isAuthenticated, isBiometricEnabled]);
 
   if (!fontsLoaded && !fontError) {
     return null;

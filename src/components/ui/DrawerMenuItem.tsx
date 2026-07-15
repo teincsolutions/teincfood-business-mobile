@@ -11,6 +11,7 @@ interface DrawerMenuItemProps {
   danger?: boolean;
   fontFamily?: string;
   badgeCount?: number;
+  secondaryBadgeCount?: number;
 }
 
 export function DrawerMenuItem({
@@ -23,6 +24,7 @@ export function DrawerMenuItem({
   danger,
   fontFamily,
   badgeCount,
+  secondaryBadgeCount,
 }: DrawerMenuItemProps) {
   const theme = useTheme();
   const active = drawerName || sharedPrefix ? isActive(drawerName, sharedPrefix) : false;
@@ -69,6 +71,27 @@ export function DrawerMenuItem({
               lineHeight={14}
             >
               {badgeCount > 99 ? "99+" : badgeCount}
+            </Text>
+          </XStack>
+        )}
+        {secondaryBadgeCount != null && secondaryBadgeCount > 0 && (
+          <XStack
+            backgroundColor="$primary"
+            borderRadius="$12"
+            minWidth={20}
+            height={20}
+            paddingHorizontal="$1.5"
+            marginLeft="$1"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Text
+              fontSize={10}
+              fontWeight="700"
+              color="$white"
+              lineHeight={12}
+            >
+              {secondaryBadgeCount > 99 ? "99+" : secondaryBadgeCount}
             </Text>
           </XStack>
         )}

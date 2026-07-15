@@ -1,10 +1,24 @@
 import { Platform } from 'react-native';
+import Crypto from 'expo-crypto';
+import { mmkvStorage } from '@/utils/storage';
 import { api } from './api';
+
+const APP_INSTANCE_ID_KEY = 'app_instance_id';
+
+function getAppInstanceId(): string {
+  let id = mmkvStorage.getString(APP_INSTANCE_ID_KEY);
+  if (!id) {
+    id = Crypto.randomUUID();
+    mmkvStorage.set(APP_INSTANCE_ID_KEY, id);
+  }
+  return id;
+}
 
 export interface PushTokenRegistrationRequest {
   token: string;
   platform: 'ios' | 'android';
   provider: 'fcm' | 'apns';
+  app_instance_id: string;
 }
 
 export const devicesService = {
@@ -14,6 +28,7 @@ export const devicesService = {
       token,
       platform: isIOS ? 'ios' : 'android',
       provider: 'fcm',
+      app_instance_id: getAppInstanceId(),
     };
     return api.post('/devices/push-token', payload);
   },
