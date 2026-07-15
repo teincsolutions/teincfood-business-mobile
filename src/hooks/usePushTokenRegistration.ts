@@ -42,8 +42,14 @@ async function registerToken(token: string): Promise<void> {
   }
 }
 
-export async function registerPushTokenOnLogin(): Promise<void> {
+export async function register(): Promise<void> {
   console.log('[PushToken] Starting push token registration...');
+
+  if (!messaging) {
+    console.error('[PushToken] Firebase messaging not available — skipping registration');
+    return;
+  }
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -76,16 +82,16 @@ export async function registerPushTokenOnLogin(): Promise<void> {
       await registerToken(newToken);
     });
   } catch (error) {
-    console.warn('[PushToken] Failed:', error);
+    console.error('[PushToken] Failed:', error);
   }
 }
 
-export function teardownPushTokenRefresh(): void {
+export function cleanup(): void {
   refreshUnsubscribe?.();
   refreshUnsubscribe = undefined;
 }
 
-export async function unregisterPushTokenOnLogout(): Promise<void> {
+export async function unregister(): Promise<void> {
   const tokenId = getStoredTokenId();
   if (tokenId) {
     try {

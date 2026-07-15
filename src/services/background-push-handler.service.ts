@@ -11,12 +11,6 @@ async function displayPushNotification(
   body: string,
   data: Record<string, string>,
 ): Promise<void> {
-  const orderId = data.order_id;
-  const orderNumber = data.order_number || '';
-  const status = data.status;
-
-  if (!orderId || !status) return;
-
   try {
     await ensureNotificationChannels();
     const sound = getNotificationSound(data.sound);
@@ -25,10 +19,10 @@ async function displayPushNotification(
       title,
       body,
       data: {
-        orderId,
-        orderNumber,
+        orderId: data.order_id || '',
+        orderNumber: data.order_number || '',
         restaurantName: data.restaurant_name || '',
-        status,
+        status: data.status || '',
       },
       android: {
         channelId: 'order-updates',

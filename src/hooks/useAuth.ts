@@ -8,7 +8,7 @@ import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/
 import type { AuthApiResponse } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api/auth.api';
 import { extractApiErrorMessage } from '@/utils/error';
-import { registerPushTokenOnLogin, teardownPushTokenRefresh, unregisterPushTokenOnLogout } from '@/hooks/usePushTokenRegistration';
+import { register, cleanup, unregister } from '@/hooks/usePushTokenRegistration';
 
 export interface AuthError {
   code?: string;
@@ -81,7 +81,7 @@ export function useAuth() {
       password,
     });
 
-    await unregisterPushTokenOnLogout();
+    await unregister();
 
     setAuthAction(
       response.user,
@@ -89,7 +89,7 @@ export function useAuth() {
       response.refresh_token
     );
 
-    registerPushTokenOnLogin();
+    register();
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, loginMutation, setAuthAction, router, navigatePostAuth]);
 
@@ -123,7 +123,7 @@ export function useAuth() {
         response.access_token,
         response.refresh_token
       );
-      registerPushTokenOnLogin();
+      register();
       navigatePostAuth();
     }
 
@@ -141,13 +141,13 @@ export function useAuth() {
 
   const verifyOtpFn = useCallback(async (phone: string, code: string, type?: "login" | "register") => {
     const response = await authService.verifyOTP({ phone, code, type: type || "login" });
-    await unregisterPushTokenOnLogout();
+    await unregister();
     setAuthAction(
       response.user,
       response.access_token,
       response.refresh_token
     );
-    registerPushTokenOnLogin();
+    register();
     navigatePostAuth();
   }, [setAuthAction, navigatePostAuth]);
 
@@ -165,20 +165,20 @@ export function useAuth() {
       ? await authService.loginWithGoogle()
       : await authService.loginWithApple();
 
-    await unregisterPushTokenOnLogout();
+    await unregister();
     setAuthAction(
       response.user,
       response.access_token,
       response.refresh_token
     );
-    registerPushTokenOnLogin();
+    register();
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, setAuthAction, router, navigatePostAuth]);
 
   const logout = useCallback(async () => {
     await logoutMutation.mutateAsync();
-    teardownPushTokenRefresh();
-    await unregisterPushTokenOnLogout();
+    cleanup();
+    await unregister();
     clearAuthAction();
     router.replace('/(auth)/login');
   }, [logoutMutation, clearAuthAction, router]);

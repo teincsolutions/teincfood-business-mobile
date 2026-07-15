@@ -32,13 +32,22 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
-import { registerPushTokenOnLogin } from '../src/hooks/usePushTokenRegistration';
+import { register } from '../src/hooks/usePushTokenRegistration';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
 import {
   registerBackgroundPushHandler,
   registerForegroundPushHandler,
 } from '../src/services/background-push-handler.service';
 import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
+
+// Subscribe to auth store — register push token when session is restored from storage
+let _pushTokenRegistered = false;
+useAuthStore.subscribe((state) => {
+  if (!_pushTokenRegistered && state.isHydrated && state.user && state.accessToken) {
+    _pushTokenRegistered = true;
+    register();
+  }
+});
 
 // Subscribe to auth changes to disconnect WebSocket on logout
 subscribeAuthCleanup();
@@ -88,13 +97,6 @@ function AppShell() {
     registerForegroundPushHandler();
   }, []);
 
-  // Register/refresh push token on every app launch to keep backend active timestamp current
-  useEffect(() => {
-    if (isAuthenticated) {
-      registerPushTokenOnLogin();
-    }
-  }, [isAuthenticated]);
-
   // Handle Notifee notification tap (Android foreground)
   const handleNotifeeAction = useCallback(
     (actionId: string, data: Record<string, string> | undefined) => {
@@ -143,8 +145,9 @@ function AppShell() {
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);
-  const isSeller = user?.role === 'seller';
-  const isRider = user?.role === 'rider';
+  const roles = user?.roles ?? [];
+  const isSeller = roles.includes('seller');
+  const isRider = roles.includes('rider');
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen
@@ -219,7 +222,7 @@ function AppShell() {
               </Stack.Protected>
 
               {/* Fleet Manager routes - protected for fleet managers only */}
-              <Stack.Protected guard={isAuthenticated && user?.role === 'fleet_manager'}>
+              <Stack.Protected guard={isAuthenticated && roles.includes('fleet_manager')}>
                 <Stack.Screen name="(fleet)" />
               </Stack.Protected>
 
