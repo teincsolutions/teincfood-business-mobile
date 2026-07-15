@@ -15,11 +15,12 @@ import {
   Navigation2,
 } from "@tamagui/lucide-icons";
 import { Button, Input } from "@/components/ui";
-import { useSellerOrdersQuery } from "@/hooks/seller.hooks";
+import { useSellerOrdersQuery, useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { useAvailableRidersQuery, useAssignRiderMutation } from "@/hooks/kiosk.hooks";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { formatPriceFromMinor } from "@/utils/currency";
 
 const DELIVERY_STATUSES = ["ready", "waiting_pickup", "on_the_way", "delivered", "cancelled"];
@@ -47,10 +48,13 @@ export default function SellerDeliveries() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showRiderSheet, setShowRiderSheet] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [handoverTarget, setHandoverTarget] = useState<string | null>(null);
+  const [changeRiderTarget, setChangeRiderTarget] = useState<string | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
   const assignRider = useAssignRiderMutation();
+  const confirmHandover = useConfirmHandoverMutation();
 
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
@@ -174,13 +178,26 @@ export default function SellerDeliveries() {
             Assign Rider
           </Button>
         ) : (order.status === "ready" || order.status === "waiting_pickup") && order.delivery_id ? (
-          <Button
-            backgroundColor="$primary"
-            icon={<Bike size={18} />}
-            onPress={() => router.push(`/(seller)/orders/${order.id}`)}
-          >
-            Confirm Handover
-          </Button>
+          <XStack gap="$3">
+            <Button
+              flex={1}
+              backgroundColor="$primary"
+              icon={<Bike size={18} />}
+              onPress={() => setHandoverTarget(order.delivery_id)}
+            >
+              Confirm Handover
+            </Button>
+            <Button
+              flex={1}
+              variant="outline"
+              icon={<Bike size={18} />}
+              onPress={() => {
+                setChangeRiderTarget(order.id);
+              }}
+            >
+              Change Rider
+            </Button>
+          </XStack>
         ) : order.status === "on_the_way" && order.delivery_id ? (
           <Button
             variant="outline"
@@ -254,6 +271,36 @@ export default function SellerDeliveries() {
         onClose={() => { setShowRiderSheet(false); setSelectedOrderId(null); }}
         riders={riders ?? []}
         onSelectRider={handleAssignRider}
+      />
+
+      <AppAlertDialog
+        open={handoverTarget !== null}
+        onOpenChange={() => setHandoverTarget(null)}
+        title="Confirm Handover"
+        description="Hand over this order to the rider?"
+        confirmText="Handover"
+        onConfirm={() => {
+          if (handoverTarget) {
+            confirmHandover.mutate(handoverTarget);
+            setHandoverTarget(null);
+          }
+        }}
+      />
+
+      <AppAlertDialog
+        open={changeRiderTarget !== null}
+        onOpenChange={() => setChangeRiderTarget(null)}
+        title="Change Rider"
+        description="The current rider will be replaced and notified. Are you sure?"
+        confirmText="Change Rider"
+        isDestructive
+        onConfirm={() => {
+          if (changeRiderTarget) {
+            setSelectedOrderId(changeRiderTarget);
+            setChangeRiderTarget(null);
+            setShowRiderSheet(true);
+          }
+        }}
       />
     </YStack>
   );

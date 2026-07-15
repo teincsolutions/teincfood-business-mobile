@@ -258,6 +258,30 @@ export default function OrderDetails() {
                     Call Rider
                   </Button>
                 )}
+                {(order.status === "ready" || order.status === "waiting_pickup") && (
+                  <>
+                    <Separator />
+                    <Button
+                      variant="outline"
+                      size="$3"
+                      width="100%"
+                    onPress={() => {
+                      if (!order.rider_pickup_confirmed_at) {
+                        showDialog(
+                          "Change Rider",
+                          "The current rider will be replaced and notified. Are you sure?",
+                          () => setShowRiderSheet(true),
+                          true,
+                        );
+                      } else {
+                        toast.error("Cannot change rider after pickup confirmation");
+                      }
+                    }}
+                    >
+                      Change Rider
+                    </Button>
+                  </>
+                )}
               </YStack>
             </Card>
           )}
@@ -379,9 +403,23 @@ export default function OrderDetails() {
               </Button>
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") && order.delivery_person && (
-              <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
-                Confirm Handover to Rider
-              </Button>
+              <>
+                <Button variant="primary" width="100%" onPress={() => showDialog("Confirm Handover", "Hand over this order to the rider?", () => confirmHandoverMutation.mutate(order.delivery_id))}>
+                  Confirm Handover to Rider
+                </Button>
+                {!order.rider_pickup_confirmed_at && (
+                  <Button variant="outline" width="100%" icon={<Truck size={18} />} onPress={() => {
+                    showDialog(
+                      "Change Rider",
+                      "The current rider will be replaced and notified. Are you sure?",
+                      () => setShowRiderSheet(true),
+                      true,
+                    );
+                  }}>
+                    Change Rider
+                  </Button>
+                )}
+              </>
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") && !order.delivery_person && (
               <Button variant="primary" width="100%" icon={<Truck size={18} />} onPress={() => setShowRiderSheet(true)}>

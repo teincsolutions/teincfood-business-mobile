@@ -9,13 +9,10 @@ import type { SellerOrder } from '@/types/api';
 interface ReadyOrderCardProps {
   order: SellerOrder;
   onAssignRider: (orderId: string) => void;
-  onHandover: (orderId: string, deliveryId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
 }
 
-export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails }: ReadyOrderCardProps) {
-  const hasDelivery = !!order.delivery_id;
-
+export function ReadyOrderCard({ order, onAssignRider, onViewDetails }: ReadyOrderCardProps) {
   return (
     <Card
       padding="$4"
@@ -66,27 +63,15 @@ export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails
 
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
-          {hasDelivery ? (
-            <Button
-              height="$12"
-              $lg={{ height: "$12" }}
-              backgroundColor="$success"
-              onPress={() => onHandover(order.id, order.delivery_id!)}
-              icon={<Truck size={18} color="white" />}
-            >
-              <Text color="white" fontWeight="bold">HANDOVER TO RIDER</Text>
-            </Button>
-          ) : (
-            <Button
-              height="$12"
-              $lg={{ height: "$12" }}
-              backgroundColor="$primary"
-              onPress={() => onAssignRider(order.id)}
-              icon={<Truck size={18} color="white" />}
-            >
-              <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
-            </Button>
-          )}
+          <Button
+            height="$12"
+            $lg={{ height: "$12" }}
+            backgroundColor="$primary"
+            onPress={() => onAssignRider(order.id)}
+            icon={<Truck size={18} color="white" />}
+          >
+            <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
+          </Button>
         </XStack>
       </YStack>
     </Card>
