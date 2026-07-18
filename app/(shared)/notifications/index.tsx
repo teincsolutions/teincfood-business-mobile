@@ -13,13 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, AppAlertDialog } from "@/components/ui";
-import {
-  useNotificationsQuery,
-  useNotificationsStream,
-  useMarkNotificationReadMutation,
-  useMarkAllNotificationsReadMutation,
-  useClearNotificationsMutation,
-} from "@/hooks/useNotifications";
+import { useNotificationsList, useNotificationsMutations } from "@teincfood/rn-notifications";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
 
 const ICON_MAP: Record<string, [typeof Package, string]> = {
@@ -60,12 +54,10 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: notifications = [], isLoading, refetch, isRefetching } = useNotificationsQuery();
-  useNotificationsStream(true);
+  const { data, isLoading, refetch, isRefetching } = useNotificationsList();
+  const notifications = data?.notifications ?? [];
 
-  const markAsRead = useMarkNotificationReadMutation();
-  const markAllAsRead = useMarkAllNotificationsReadMutation();
-  const clearAll = useClearNotificationsMutation();
+  const { markAsRead, markAllAsRead, clearAll } = useNotificationsMutations();
 
   const [showClearDialog, setShowClearDialog] = useState(false);
   const readTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,19 +65,19 @@ export default function NotificationsScreen() {
   const unread = notifications.filter((n) => !n.read);
   const read_ = notifications.filter((n) => n.read);
 
-  const handleMarkAsRead = useCallback((id: string) => {
+  const handleMarkAsRead = useCallback(async (id: string) => {
     if (readTimeoutRef.current) clearTimeout(readTimeoutRef.current);
-    readTimeoutRef.current = setTimeout(() => {
-      markAsRead.mutate(id);
+    readTimeoutRef.current = setTimeout(async () => {
+      try { await markAsRead(id); } catch { /* ignore */ }
     }, 300);
   }, [markAsRead]);
 
-  const handleMarkAllRead = useCallback(() => {
-    markAllAsRead.mutate();
+  const handleMarkAllRead = useCallback(async () => {
+    try { await markAllAsRead(); } catch { /* ignore */ }
   }, [markAllAsRead]);
 
-  const handleClearAll = useCallback(() => {
-    clearAll.mutate();
+  const handleClearAll = useCallback(async () => {
+    try { await clearAll(); } catch { /* ignore */ }
     setShowClearDialog(false);
   }, [clearAll]);
 

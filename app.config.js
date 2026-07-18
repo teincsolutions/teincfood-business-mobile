@@ -81,7 +81,7 @@ module.exports = {
       "expo-router",
       "expo-font",
       "expo-sharing",
-      "./plugins/withNotifeeRepo.js",
+      ["@teincfood/rn-notifications", {}],
       [
         "expo-location",
         {
@@ -100,9 +100,7 @@ module.exports = {
           androidGoogleMapsApiKey: "AIzaSyBxq-rNf_MsiWif5znkJ3jSmNpe_AYM_Jw",
         },
       ],
-      ["expo-live-activity", { enablePushNotifications: true }],
-      [
-        "expo-image-picker",
+      ["expo-image-picker",
         {
           photosPermission:
             "$(PRODUCT_NAME) needs access to your photos to upload profile pictures and documents.",
@@ -116,35 +114,8 @@ module.exports = {
           iCloudContainerEnvironment: "Production",
         },
       ],
-      [
-        "expo-notifications",
-        {
-          sounds: [
-            "./assets/notification_sound.wav",
-            "./src/sounds/order_new.wav",
-            "./src/sounds/order_status.wav",
-            "./src/sounds/order_alert.wav",
-            "./src/sounds/order_complete.wav",
-            "./src/sounds/order_cancelled.wav",
-            "./src/sounds/rider_pickup.wav",
-            "./src/sounds/rider_opportunity.wav",
-            "./src/sounds/timer_alert.wav",
-            "./src/sounds/notification_default.wav",
-          ],
-        },
-      ],
-      ["@react-native-firebase/app"],
-      [
-        "@react-native-firebase/messaging",
-        {
-          ios: {
-            useFrameworks: "static",
-          },
-        },
-      ],
       ["expo-apple-authentication"],
       "./plugins/withModularHeaders",
-      "./plugins/withAndroidManifestReplace",
       [
         "expo-build-properties",
         {

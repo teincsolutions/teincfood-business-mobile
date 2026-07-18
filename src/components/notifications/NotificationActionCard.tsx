@@ -7,8 +7,8 @@ import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
 } from "@/hooks/useInvitations";
-import { useDismissNotificationActionMutation } from "@/hooks/useNotifications";
-import type { Notification } from "@/services/notifications.service";
+import { useNotificationsMutations } from "@teincfood/rn-notifications";
+import type { Notification } from "@teincfood/rn-notifications";
 
 interface Props {
   notification: Notification;
@@ -17,9 +17,10 @@ interface Props {
 
 export function NotificationActionCard({ notification, onDone }: Props) {
   const [accepting, setAccepting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
   const acceptFleet = useAcceptFleetInvitationMutation();
   const acceptBusiness = useAcceptBusinessInvitationMutation();
-  const dismissAction = useDismissNotificationActionMutation();
+  const { dismissAction } = useNotificationsMutations();
 
   const payload = notification.payload ?? {};
   const actionRequired = payload.action_required === "true";
@@ -32,30 +33,27 @@ export function NotificationActionCard({ notification, onDone }: Props) {
   const isBusinessInvitation = category === "business_member_invitation";
   if (!isRiderInvitation && !isBusinessInvitation) return null;
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     setAccepting(true);
     const mutation = isRiderInvitation ? acceptFleet : acceptBusiness;
-    mutation.mutate(
-      { code },
-      {
-        onSettled: () => {
-          setAccepting(false);
-          dismissAction.mutate(notification.id);
-          onDone();
-        },
-        onError: () => {
-          setAccepting(false);
-        },
-      },
-    );
-  };
-
-  const handleDismiss = () => {
-    dismissAction.mutate(notification.id);
+    try {
+      await mutation.mutateAsync({ code });
+    } catch {
+      setAccepting(false);
+      return;
+    }
+    setAccepting(false);
+    try { await dismissAction(notification.id); } catch { /* ignore */ }
     onDone();
   };
 
-  const isPending = acceptFleet.isPending || acceptBusiness.isPending || dismissAction.isPending;
+  const handleDismiss = async () => {
+    setDismissing(true);
+    try { await dismissAction(notification.id); } catch { /* ignore */ }
+    onDone();
+  };
+
+  const isPending = acceptFleet.isPending || acceptBusiness.isPending || dismissing;
 
   return (
     <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">

@@ -11,12 +11,13 @@ import {
   useLeaveBusinessMutation,
 } from "@/hooks/useInvitations";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
-import { useNotificationsQuery } from "@/hooks/useNotifications";
+import { useNotificationsList } from "@teincfood/rn-notifications";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
   const { data: invitesRes, refetch, isRefetching } = useUserInvitationsQuery();
-  const { data: notifications = [] } = useNotificationsQuery();
+  const { data: notificationsList } = useNotificationsList();
+  const notifications = notificationsList?.notifications ?? [];
   const leaveBusiness = useLeaveBusinessMutation();
 
   const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null);

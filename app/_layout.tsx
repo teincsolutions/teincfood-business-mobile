@@ -7,7 +7,6 @@ import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
 import { YStack } from 'tamagui';
 import {
   useFonts,
@@ -17,7 +16,8 @@ import {
   Sen_700Bold,
   Sen_800ExtraBold,
 } from '@expo-google-fonts/sen';
-import notifee, { EventType } from '@notifee/react-native';
+import { setupNotifications } from '@teincfood/rn-notifications';
+import type { PushNotificationData, NotificationAction } from '@teincfood/rn-notifications';
 
 import tamaguiConfig from '../tamagui.config';
 import { Toaster } from 'sonner-native';
@@ -32,25 +32,12 @@ import { BiometricLockOverlay } from '../src/components/security/BiometricLockOv
 import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
-import { register } from '../src/hooks/usePushTokenRegistration';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
 import { phoenixSocket } from '../src/services/phoenix-socket.service';
-import {
-  registerBackgroundPushHandler,
-  registerForegroundPushHandler,
-} from '../src/services/background-push-handler.service';
 import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
 import * as sellerService from '../src/services/seller.service';
 import * as fleetService from '../src/services/fleet.service';
-
-// Subscribe to auth store — register push token when session is restored from storage
-let _pushTokenRegistered = false;
-useAuthStore.subscribe((state) => {
-  if (!_pushTokenRegistered && state.isHydrated && state.user && state.accessToken) {
-    _pushTokenRegistered = true;
-    register();
-  }
-});
+import { api } from '../src/services/api';
 
 // Subscribe to auth changes to disconnect WebSocket on logout
 subscribeAuthCleanup();
@@ -94,20 +81,40 @@ function AppShell() {
     }
   }, [isAuthenticated, user?.id, accessToken, refreshToken]);
 
-  // Register push notification handlers for background/foreground display
-  useEffect(() => {
-    registerBackgroundPushHandler();
-    registerForegroundPushHandler();
-  }, []);
+  // Build notification action buttons based on action type
+  const notificationActions = useCallback(
+    (data: PushNotificationData): NotificationAction[] => {
+      switch (data.action_type) {
+        case 'accept_order':
+          return [
+            { id: 'accept_order', title: 'Accept' },
+            { id: 'decline_order', title: 'Decline' },
+          ];
+        case 'review_join_request':
+          return [
+            { id: 'approve_join_request', title: 'Approve' },
+            { id: 'decline_join_request', title: 'Decline' },
+          ];
+        case 'accept_invitation':
+          return [
+            { id: 'accept_invitation', title: 'Accept' },
+            { id: 'decline_invitation', title: 'Decline' },
+          ];
+        default:
+          return [];
+      }
+    },
+    [],
+  );
 
-  // Handle Notifee notification tap + action button press
+  // Handle Notifee notification action button press
   const handleNotifeeAction = useCallback(
-    (actionId: string, data: Record<string, string> | undefined) => {
-      const orderId = data?.orderId;
-      const actionType = data?.action_type;
-      const code = data?.code;
-      const route = data?.route;
-      const joinRequestId = data?.join_request_id;
+    (actionId: string, data: PushNotificationData) => {
+      const orderId = data.order_id || data.orderId;
+      const actionType = data.action_type;
+      const code = data.code;
+      const route = data.route;
+      const joinRequestId = data.join_request_id;
 
       switch (actionId) {
         case 'accept_order':
@@ -117,9 +124,7 @@ function AppShell() {
           }
           return;
         case 'decline_order':
-          if (orderId) {
-            sellerService.rejectOrder(orderId).catch(console.error);
-          }
+          if (orderId) sellerService.rejectOrder(orderId).catch(console.error);
           return;
         case 'approve_join_request':
           if (joinRequestId) {
@@ -128,14 +133,10 @@ function AppShell() {
           }
           return;
         case 'decline_join_request':
-          if (joinRequestId) {
-            fleetService.rejectJoinRequest(joinRequestId).catch(console.error);
-          }
+          if (joinRequestId) fleetService.rejectJoinRequest(joinRequestId).catch(console.error);
           return;
         case 'accept_invitation':
-          if (code) {
-            fleetService.acceptFleetInvitation({ code }).catch(console.error);
-          }
+          if (code) fleetService.acceptFleetInvitation({ code }).catch(console.error);
           if (route) router.push(route);
           return;
         case 'decline_invitation':
@@ -154,37 +155,18 @@ function AppShell() {
     [],
   );
 
+  // Set up all notification infrastructure via shared library
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
-      const actionId = detail.pressAction?.id;
-      const ndata = detail.notification?.data as Record<string, string> | undefined;
-
-      switch (type) {
-        case EventType.PRESS:
-          handleNotifeeAction(actionId || 'navigate', ndata);
-          break;
-        case EventType.ACTION_PRESS:
-          if (actionId) handleNotifeeAction(actionId, ndata);
-          break;
-      }
-    });
-
-    return () => unsubscribe();
-  }, [isAuthenticated, handleNotifeeAction]);
-
-  // Cold-start notification handling — process notification that launched the app
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    notifee.getInitialNotification().then((event) => {
-      if (!event) return;
-      const actionId = event.pressAction?.id;
-      const ndata = event.notification?.data as Record<string, string> | undefined;
-      if (actionId) handleNotifeeAction(actionId, ndata);
-    });
-  }, [isAuthenticated, handleNotifeeAction]);
+    setupNotifications({
+      http: api,
+      appType: 'business',
+      buildActions: notificationActions,
+      onActionPress: handleNotifeeAction,
+      navigateToRoute: (route: string) => router.push(route),
+    }).catch(console.error);
+  }, [isAuthenticated]);
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);

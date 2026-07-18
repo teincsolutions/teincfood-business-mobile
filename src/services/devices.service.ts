@@ -19,6 +19,7 @@ export interface PushTokenRegistrationRequest {
   platform: 'ios' | 'android';
   provider: 'fcm' | 'apns';
   app_instance_id: string;
+  app_type?: string;
 }
 
 export const devicesService = {
@@ -29,6 +30,7 @@ export const devicesService = {
       platform: isIOS ? 'ios' : 'android',
       provider: 'fcm',
       app_instance_id: getAppInstanceId(),
+      app_type: 'business',
     };
     return api.post('/devices/push-token', payload);
   },
