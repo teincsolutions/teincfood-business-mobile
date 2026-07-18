@@ -36,6 +36,7 @@ import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useUnreadCount } from "@teincfood/rn-notifications";
 import { copyToClipboard } from "@/utils/copyToClipBoard";
 import { toast } from "sonner-native";
 
@@ -54,6 +55,7 @@ function CustomDrawerContent(props: any) {
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
   const { businessUnread, personalUnread } = useUnreadCounts();
+  const { data: notificationUnread } = useUnreadCount();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -157,7 +159,7 @@ function CustomDrawerContent(props: any) {
           <Separator marginVertical="$2" />
 
           <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} badgeCount={businessUnread} secondaryBadgeCount={personalUnread} />
-          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} />
+          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} badgeCount={notificationUnread} />
           <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} />
 
           <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(rider)/settings")} isActive={isActive} />

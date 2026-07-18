@@ -1,13 +1,15 @@
-// @ts-nocheck
 import { useState } from "react";
-import { XStack } from "tamagui";
+import { XStack, Text } from "tamagui";
 import { Check, X } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
 } from "@/hooks/useInvitations";
 import { useNotificationsMutations } from "@teincfood/rn-notifications";
+import * as sellerService from "@/services/seller.service";
+import * as fleetService from "@/services/fleet.service";
 import type { Notification } from "@teincfood/rn-notifications";
 
 interface Props {
@@ -15,7 +17,21 @@ interface Props {
   onDone: () => void;
 }
 
+type ActionKind = "invitation" | "accept_order" | "review_join_request";
+
+function resolveActionKind(payload: Record<string, unknown> | null): ActionKind | null {
+  if (!payload) return null;
+  const actionType = payload.action_type as string | undefined;
+  if (actionType === "accept_order") return "accept_order";
+  if (actionType === "review_join_request") return "review_join_request";
+  const category = payload.notification_category as string | undefined;
+  if (category === "rider_invitation" || category === "business_member_invitation") return "invitation";
+  if (!actionType && payload.action_required === "true") return "invitation";
+  return null;
+}
+
 export function NotificationActionCard({ notification, onDone }: Props) {
+  const router = useRouter();
   const [accepting, setAccepting] = useState(false);
   const [dismissing, setDismissing] = useState(false);
   const acceptFleet = useAcceptFleetInvitationMutation();
@@ -23,37 +39,75 @@ export function NotificationActionCard({ notification, onDone }: Props) {
   const { dismissAction } = useNotificationsMutations();
 
   const payload = notification.payload ?? {};
-  const actionRequired = payload.action_required === "true";
-  const category = payload.notification_category;
-  const code = payload.code;
+  const actionKind = resolveActionKind(payload);
+  const code = payload.code as string | undefined;
+  const orderId = payload.order_id as string | undefined;
+  const joinRequestId = payload.join_request_id as string | undefined;
+  const route = payload.route as string | undefined;
 
-  if (!actionRequired || !code) return null;
+  if (!actionKind) return null;
 
-  const isRiderInvitation = category === "rider_invitation";
-  const isBusinessInvitation = category === "business_member_invitation";
-  if (!isRiderInvitation && !isBusinessInvitation) return null;
+  const isPrimaryDisabled = accepting || dismissing;
 
-  const handleAccept = async () => {
+  const handlePrimary = async () => {
     setAccepting(true);
-    const mutation = isRiderInvitation ? acceptFleet : acceptBusiness;
     try {
-      await mutation.mutateAsync({ code });
+      switch (actionKind) {
+        case "invitation": {
+          const category = payload.notification_category as string;
+          const mutation = category === "rider_invitation" ? acceptFleet : acceptBusiness;
+          await mutation.mutateAsync({ code });
+          break;
+        }
+        case "accept_order":
+          if (orderId) {
+            await sellerService.acceptOrder(orderId);
+            router.push(route ?? `/order/${orderId}`);
+          }
+          break;
+        case "review_join_request":
+          if (joinRequestId) {
+            await fleetService.approveJoinRequest(joinRequestId);
+            if (route) router.push(route);
+          }
+          break;
+      }
+      await dismissAction(notification.id);
     } catch {
-      setAccepting(false);
-      return;
+      // error handled below
     }
     setAccepting(false);
-    try { await dismissAction(notification.id); } catch { /* ignore */ }
     onDone();
   };
 
-  const handleDismiss = async () => {
+  const handleSecondary = async () => {
     setDismissing(true);
-    try { await dismissAction(notification.id); } catch { /* ignore */ }
+    try {
+      switch (actionKind) {
+        case "accept_order":
+          if (orderId) await sellerService.rejectOrder(orderId);
+          break;
+        case "review_join_request":
+          if (joinRequestId) await fleetService.rejectJoinRequest(joinRequestId);
+          break;
+        case "invitation":
+          break;
+      }
+      await dismissAction(notification.id);
+    } catch {
+      // ignore
+    }
+    setDismissing(false);
     onDone();
   };
 
-  const isPending = acceptFleet.isPending || acceptBusiness.isPending || dismissing;
+  const primaryLabel =
+    actionKind === "review_join_request"
+      ? accepting ? "Approving..." : "Approve"
+      : accepting ? "Accepting..." : "Accept";
+
+  const secondaryLabel =
+    actionKind === "invitation" ? "Dismiss" : "Decline";
 
   return (
     <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
@@ -62,20 +116,25 @@ export function NotificationActionCard({ notification, onDone }: Props) {
         size="$3"
         backgroundColor="$green10"
         icon={<Check size={14} />}
-        onPress={handleAccept}
-        disabled={isPending}
+        onPress={handlePrimary}
+        disabled={isPrimaryDisabled}
       >
-        {accepting ? "Accepting..." : "Accept"}
+        <Text fontSize="$3" fontWeight="700" color="white">
+          {primaryLabel}
+        </Text>
       </Button>
       <Button
         flex={1}
         size="$3"
         variant="outline"
-        icon={<X size={14} />}
-        onPress={handleDismiss}
-        disabled={isPending}
+        borderColor="$red10"
+        icon={<X size={14} color="$red10" />}
+        onPress={handleSecondary}
+        disabled={isPrimaryDisabled}
       >
-        Dismiss
+        <Text fontSize="$3" fontWeight="600" color="$red10">
+          {secondaryLabel}
+        </Text>
       </Button>
     </XStack>
   );

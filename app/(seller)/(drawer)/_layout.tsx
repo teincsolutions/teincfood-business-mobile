@@ -31,6 +31,7 @@ import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useUnreadCount } from "@teincfood/rn-notifications";
 
 /**
  * Custom Drawer Content
@@ -46,6 +47,7 @@ function CustomDrawerContent(props: any) {
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
   const { businessUnread, personalUnread } = useUnreadCounts();
+  const { data: notificationUnread } = useUnreadCount();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -163,6 +165,7 @@ function CustomDrawerContent(props: any) {
             sharedPrefix="/(shared)/notifications"
             onPress={() => router.push("/(shared)/notifications")}
             isActive={isActive}
+            badgeCount={notificationUnread}
           />
           <DrawerMenuItem
             icon={MailOpen}

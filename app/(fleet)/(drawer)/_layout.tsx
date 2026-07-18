@@ -26,6 +26,7 @@ import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useDeliveryRealtimeUpdates } from "@/hooks/useDeliveryRealtimeUpdates";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useUnreadCount } from "@teincfood/rn-notifications";
 
 /**
  * Custom Drawer Content for Fleet Manager
@@ -41,6 +42,7 @@ function CustomDrawerContent(props: any) {
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
   const { businessUnread, personalUnread } = useUnreadCounts();
+  const { data: notificationUnread } = useUnreadCount();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;

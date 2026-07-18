@@ -23,6 +23,8 @@ const ICON_MAP: Record<string, [typeof Package, string]> = {
   promo: [Bell, "$orange9"],
   system: [Bell, "$colorSecondary"],
   announcement: [Bell, "$orange9"],
+  invitation: [CheckCircle, "$green10"],
+  join_request: [CheckCircle, "$primary"],
 };
 
 function getIcon(type: string): [typeof Package, string] {
@@ -60,6 +62,8 @@ export default function NotificationsScreen() {
   const { markAsRead, markAllAsRead, clearAll } = useNotificationsMutations();
 
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const readTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unread = notifications.filter((n) => !n.read);
@@ -73,13 +77,29 @@ export default function NotificationsScreen() {
   }, [markAsRead]);
 
   const handleMarkAllRead = useCallback(async () => {
+    setIsMarkingAllRead(true);
     try { await markAllAsRead(); } catch { /* ignore */ }
+    setIsMarkingAllRead(false);
   }, [markAllAsRead]);
 
   const handleClearAll = useCallback(async () => {
+    setIsClearing(true);
     try { await clearAll(); } catch { /* ignore */ }
+    setIsClearing(false);
     setShowClearDialog(false);
   }, [clearAll]);
+
+  const handleNotificationPress = useCallback((item: (typeof notifications)[0]) => {
+    handleMarkAsRead(item.id);
+    const p = item.payload ?? {};
+    if (p.route) {
+      router.push(p.route);
+    } else if (p.order_id) {
+      router.push(`/order/${p.order_id}`);
+    } else if (p.delivery_id) {
+      router.push(`/deliveries/${p.delivery_id}`);
+    }
+  }, [handleMarkAsRead, router]);
 
   const renderItem = useCallback(({ item }: { item: (typeof notifications)[0] }) => {
     const [Icon, iconColor] = getIcon(item.type);
@@ -89,7 +109,7 @@ export default function NotificationsScreen() {
         backgroundColor={isRead ? "$background" : "$orangeMuted"}
         borderBottomWidth={1}
         borderBottomColor="$gray100"
-        onPress={() => handleMarkAsRead(item.id)}
+        onPress={() => handleNotificationPress(item)}
       >
         <YStack padding="$4" gap="$1">
           <XStack gap="$3" alignItems="flex-start">
@@ -131,16 +151,14 @@ export default function NotificationsScreen() {
             </YStack>
           </XStack>
 
-          {item.payload?.action_required === "true" && (
-            <NotificationActionCard
-              notification={item}
-              onDone={() => {}}
-            />
-          )}
+          <NotificationActionCard
+            notification={item}
+            onDone={refetch}
+          />
         </YStack>
       </YStack>
     );
-  }, [handleMarkAsRead]);
+  }, [handleNotificationPress, refetch]);
 
   if (isLoading) {
     return (
@@ -170,31 +188,41 @@ export default function NotificationsScreen() {
           Notifications
         </Text>
 
-        <XStack gap="$2">
+        <XStack gap="$2" flexShrink={0} alignItems="center">
           {unread.length > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               width="auto"
-              height={36}
-              paddingHorizontal="$3"
-              icon={<Check size={14} />}
+              height={32}
+              minWidth={0}
+              flexShrink={0}
+              backgroundColor="$backgroundStrong"
+              paddingHorizontal="$2.5"
+              icon={isMarkingAllRead ? <Spinner size={14} color="$primary" /> : <Check size={14} color="$primary" />}
               onPress={handleMarkAllRead}
-              loading={markAllAsRead.isPending}
+              disabled={isMarkingAllRead}
             >
-              Read All
+              <Text fontSize="$2" fontWeight="700" color="$primary">
+                {isMarkingAllRead ? "..." : "Read All"}
+              </Text>
             </Button>
           )}
           {notifications.length > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               width="auto"
-              height={36}
-              paddingHorizontal="$3"
-              icon={<Trash2 size={14} />}
+              height={32}
+              minWidth={0}
+              flexShrink={0}
+              backgroundColor="$backgroundStrong"
+              paddingHorizontal="$2.5"
+              icon={isClearing ? <Spinner size={14} color="$error" /> : <Trash2 size={14} color="$error" />}
               onPress={() => setShowClearDialog(true)}
-              loading={clearAll.isPending}
+              disabled={isClearing}
             >
-              Clear
+              <Text fontSize="$2" fontWeight="700" color="$error">
+                {isClearing ? "..." : "Clear"}
+              </Text>
             </Button>
           )}
         </XStack>
