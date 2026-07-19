@@ -1,13 +1,15 @@
 //@ts-nocheck
 import { useState } from "react";
-import { XStack, Text } from "tamagui";
+import { XStack } from "tamagui";
 import { Check, X } from "@tamagui/lucide-icons";
-import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
+  useUserInvitationsQuery,
 } from "@/hooks/useInvitations";
+import { useSellerOrderQuery } from "@/hooks/seller.hooks";
+import { useJoinRequestsQuery } from "@/hooks/useFleet";
 import { useNotificationsMutations } from "@teincfood/rn-notifications";
 import * as sellerService from "@/services/seller.service";
 import * as fleetService from "@/services/fleet.service";
@@ -38,7 +40,6 @@ function resolveActionKind(
 }
 
 export function NotificationActionCard({ notification, onDone }: Props) {
-  const router = useRouter();
   const [accepting, setAccepting] = useState(false);
   const [dismissing, setDismissing] = useState(false);
   const acceptFleet = useAcceptFleetInvitationMutation();
@@ -50,9 +51,83 @@ export function NotificationActionCard({ notification, onDone }: Props) {
   const code = payload.code as string | undefined;
   const orderId = payload.order_id as string | undefined;
   const joinRequestId = payload.join_request_id as string | undefined;
-  const route = payload.route as string | undefined;
+  const orderQuery = useSellerOrderQuery(
+    orderId!,
+    actionKind === "accept_order" && !!orderId,
+  );
+  const joinRequestsQuery = useJoinRequestsQuery(
+    actionKind === "review_join_request" && !!joinRequestId,
+  );
+  const invitationsQuery = useUserInvitationsQuery();
 
   if (!actionKind) return null;
+
+  if (actionKind === "accept_order" && orderQuery.data) {
+    const order = orderQuery.data.data;
+    if (order && order.status !== "pending") {
+      const accepted =
+        order.status === "accepted" ||
+        order.status === "confirmed" ||
+        order.status === "preparing" ||
+        order.status === "ready" ||
+        order.status === "picked_up" ||
+        order.status === "delivered";
+      return (
+        <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
+          <Button
+            variant={accepted ? "success" : "danger"}
+            disabled
+            icon={({ size, color }) =>
+              accepted ? <Check size={size} color={color} /> : <X size={size} color={color} />
+            }
+          >
+            {accepted ? "Accepted" : "Declined"}
+          </Button>
+        </XStack>
+      );
+    }
+  }
+
+  if (actionKind === "review_join_request" && joinRequestsQuery.data) {
+    const matching = joinRequestsQuery.data.data.find(
+      (r) => r.id === joinRequestId,
+    );
+    if (matching && matching.status !== "pending") {
+      const approved = matching.status === "approved";
+      return (
+        <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
+          <Button
+            variant={approved ? "success" : "danger"}
+            disabled
+            icon={({ size, color }) =>
+              approved ? <Check size={size} color={color} /> : <X size={size} color={color} />
+            }
+          >
+            {approved ? "Approved" : "Rejected"}
+          </Button>
+        </XStack>
+      );
+    }
+  }
+
+  if (actionKind === "invitation" && invitationsQuery.data) {
+    const matching = invitationsQuery.data.data.find(
+      (inv) => inv.code === code,
+    );
+    if (matching && matching.status !== "pending") {
+      return (
+        <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
+          <Button
+            variant="success"
+            disabled
+            icon={({ size, color }) => <Check size={size} color={color} />}
+          >
+            Accepted
+          </Button>
+        </XStack>
+      );
+    }
+  }
 
   const isPrimaryDisabled = accepting || dismissing;
 
@@ -70,13 +145,11 @@ export function NotificationActionCard({ notification, onDone }: Props) {
         case "accept_order":
           if (orderId) {
             await sellerService.acceptOrder(orderId);
-            router.push(route ?? `/order/${orderId}`);
           }
           break;
         case "review_join_request":
           if (joinRequestId) {
             await fleetService.approveJoinRequest(joinRequestId);
-            if (route) router.push(route);
           }
           break;
       }
