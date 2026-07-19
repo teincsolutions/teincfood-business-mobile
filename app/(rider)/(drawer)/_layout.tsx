@@ -36,7 +36,6 @@ import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
-import { useUnreadCount } from "@teincfood/rn-notifications";
 import { copyToClipboard } from "@/utils/copyToClipBoard";
 import { toast } from "sonner-native";
 
@@ -54,8 +53,7 @@ function CustomDrawerContent(props: any) {
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
-  const { businessUnread, personalUnread } = useUnreadCounts();
-  const { data: notificationUnread } = useUnreadCount();
+  const { businessUnread, personalUnread, notificationUnread } = useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;

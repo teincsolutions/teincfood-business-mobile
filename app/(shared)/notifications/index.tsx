@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { useCallback, useRef, useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Spinner } from "tamagui";
 import {
   Bell,
@@ -53,7 +52,6 @@ function formatTime(dateString: string): string {
 }
 
 export default function NotificationsScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const { data, isLoading, refetch, isRefetching } = useNotificationsList();
@@ -91,15 +89,7 @@ export default function NotificationsScreen() {
 
   const handleNotificationPress = useCallback((item: (typeof notifications)[0]) => {
     handleMarkAsRead(item.id);
-    const p = item.payload ?? {};
-    if (p.route) {
-      router.push(p.route);
-    } else if (p.order_id) {
-      router.push(`/order/${p.order_id}`);
-    } else if (p.delivery_id) {
-      router.push(`/deliveries/${p.delivery_id}`);
-    }
-  }, [handleMarkAsRead, router]);
+  }, [handleMarkAsRead]);
 
   const renderItem = useCallback(({ item }: { item: (typeof notifications)[0] }) => {
     const [Icon, iconColor] = getIcon(item.type);

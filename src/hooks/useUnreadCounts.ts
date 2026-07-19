@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useContacts } from '@/hooks/useContacts';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
+import { useUnreadCount } from '@teincfood/rn-notifications';
 
 export function useUnreadCounts() {
   const { activeBusinessId } = useActiveBusiness();
@@ -10,6 +11,7 @@ export function useUnreadCounts() {
     activeBusinessId ?? undefined,
   );
   const { contacts: personalContacts } = useContacts('buyer');
+  const { data: notificationUnread } = useUnreadCount();
 
   return useMemo(() => {
     const businessUnread =
@@ -20,6 +22,7 @@ export function useUnreadCounts() {
       businessUnread,
       personalUnread,
       total: businessUnread + personalUnread,
+      notificationUnread,
     };
-  }, [bizContacts, personalContacts]);
+  }, [bizContacts, personalContacts, notificationUnread]);
 }
