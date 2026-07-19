@@ -54,8 +54,21 @@ export function useClaimOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => riderService.acceptDelivery(orderId),
     onSuccess: () => {
-      toast.success("Delivery accepted!");
+      toast.success("Interest claimed! You'll be notified when ready.");
       queryClient.invalidateQueries({ queryKey: [...RIDER_KEYS.all, 'available-orders'] });
+    },
+    onError: (error) => {
+      toast.error(extractApiErrorMessage(error));
+    },
+  });
+}
+
+export function useSelfAssignMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => riderService.selfAssignDelivery(orderId),
+    onSuccess: () => {
+      toast.success("Delivery assigned! Confirm handover with the restaurant.");
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.activeDelivery() });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
@@ -165,7 +178,7 @@ export function useUpdateDeliveryStatusMutation() {
 export function useAcceptDeliveryMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => riderService.acceptDelivery(orderId),
+    mutationFn: (orderId: string) => riderService.selfAssignDelivery(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...RIDER_KEYS.all, 'available-orders'] });
       queryClient.invalidateQueries({ queryKey: RIDER_KEYS.deliveries() });

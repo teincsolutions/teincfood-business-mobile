@@ -3,6 +3,7 @@ import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidAction, AndroidStyle } from '@notifee/react-native';
 import { ensureNotificationChannels } from './android-notifee-channels.service';
 import { getNotificationSound } from './notification-sounds';
+import { getChatClient } from '@/utils/chat-service';
 
 function buildActions(actionType: string | undefined): AndroidAction[] {
   switch (actionType) {
@@ -85,6 +86,18 @@ async function displayPushNotification(
   }
 }
 
+function parseFcmPayload(data: Record<string, string>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(data)) {
+    try {
+      result[key] = JSON.parse(value)
+    } catch {
+      result[key] = value
+    }
+  }
+  return result
+}
+
 async function handleRemoteMessage(
   title: string,
   body: string,
@@ -92,6 +105,9 @@ async function handleRemoteMessage(
 ): Promise<void> {
   if (!data) return;
   await displayPushNotification(title, body, data);
+  try {
+    getChatClient().handlePushPayload(parseFcmPayload(data))
+  } catch {}
 }
 
 let bgRegistered = false;

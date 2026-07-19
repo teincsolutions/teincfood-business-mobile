@@ -84,7 +84,7 @@ function CustomDrawerContent(props: any) {
           <Separator marginVertical="$2" />
 
           <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} fontFamily="$body" badgeCount={businessUnread} secondaryBadgeCount={personalUnread} />
-          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" badgeCount={notificationUnread} />
           <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} fontFamily="$body" />
 
           <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(fleet)/settings")} isActive={isActive} fontFamily="$body" />

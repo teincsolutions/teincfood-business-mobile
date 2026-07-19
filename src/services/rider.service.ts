@@ -89,6 +89,10 @@ export async function acceptDelivery(orderId: string): Promise<{ data: Record<st
   return api.post('/deliveries/claim', { order_id: orderId });
 }
 
+export async function selfAssignDelivery(orderId: string): Promise<{ data: Record<string, unknown> }> {
+  return api.post('/deliveries/self-assign', { order_id: orderId });
+}
+
 export async function markDeliveryInTransit(deliveryId: string): Promise<{ data: Record<string, unknown> }> {
   return api.post(`/deliveries/${deliveryId}/in-transit`);
 }

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Clock } from "@tamagui/lucide-icons";
+import { Clock, CheckCircle } from "@tamagui/lucide-icons";
 import { BackButton } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
