@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import Crypto from 'expo-crypto';
+import { randomUUID } from 'expo-crypto';
 import { mmkvStorage } from '@/utils/storage';
 import { api } from './api';
 
@@ -8,7 +8,7 @@ const APP_INSTANCE_ID_KEY = 'app_instance_id';
 function getAppInstanceId(): string {
   let id = mmkvStorage.getString(APP_INSTANCE_ID_KEY);
   if (!id) {
-    id = Crypto.randomUUID();
+    id = randomUUID();
     mmkvStorage.set(APP_INSTANCE_ID_KEY, id);
   }
   return id;
