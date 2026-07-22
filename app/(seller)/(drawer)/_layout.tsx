@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Drawer } from "expo-router/drawer";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,10 +33,31 @@ import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useFilteredNavItems } from "@/hooks/useBusinessNavItems";
 
-/**
- * Custom Drawer Content
- */
+const iconMap = {
+  LayoutDashboard,
+  ShoppingBag,
+  UtensilsCrossed,
+  BarChart3,
+  User,
+  Settings,
+  Bell,
+  Monitor,
+  ChefHat,
+  MessageSquare,
+  Users,
+  Bike,
+  MailOpen,
+  Truck,
+  DollarSign,
+  CreditCard,
+};
+
+function mapIcon(name: string) {
+  return iconMap[name] || LayoutDashboard;
+}
+
 function CustomDrawerContent(props: any) {
   const theme = useTheme();
   const router = useRouter();
@@ -44,6 +65,7 @@ function CustomDrawerContent(props: any) {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const navItems = useFilteredNavItems();
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
@@ -62,6 +84,11 @@ function CustomDrawerContent(props: any) {
     router.replace("/(auth)/login");
   };
 
+  const badgeMap = {
+    messages: businessUnread,
+    notifications: notificationUnread,
+  };
+
   return (
     <YStack flex={1} backgroundColor="$background">
       <DrawerHeader
@@ -70,7 +97,6 @@ function CustomDrawerContent(props: any) {
         onNavigateCreateBusiness={() => router.push("/(shared)/businesses/add")}
       />
 
-      {/* Menu Items */}
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={{
@@ -80,124 +106,27 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
-          <DrawerMenuItem
-            icon={LayoutDashboard}
-            label="Dashboard"
-            drawerName="dashboard/index"
-            onPress={() => router.push("/(seller)/dashboard")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={CreditCard}
-            label="POS Terminal"
-            onPress={() => router.push("/(seller)/pos")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={Monitor}
-            label="Callout Display"
-            onPress={() => router.push("/(seller)/display")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={ChefHat}
-            label="Kitchen Display"
-            onPress={() => router.push("/(seller)/kitchen")}
-            isActive={isActive}
-          />
-          <Separator marginVertical="$2" />
-          <DrawerMenuItem
-            icon={ShoppingBag}
-            label="Orders"
-            drawerName="orders/index"
-            onPress={() => router.push("/(seller)/orders")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={Truck}
-            label="Deliveries"
-            drawerName="deliveries/index"
-            onPress={() => router.push("/(seller)/deliveries")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={UtensilsCrossed}
-            label="Menu"
-            drawerName="menu/index"
-            onPress={() => router.push("/(seller)/menu")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={BarChart3}
-            label="Analytics"
-            drawerName="analytics/index"
-            onPress={() => router.push("/(seller)/analytics")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={Users}
-            label="Members"
-            drawerName="members/index"
-            onPress={() => router.push("/(seller)/members")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={Bike}
-            label="Riders"
-            drawerName="riders/index"
-            onPress={() => router.push("/(seller)/riders")}
-            isActive={isActive}
-          />
+          {navItems.map((item) => {
+            if (item.separator) {
+              return <Separator key={item.key} marginVertical="$2" />;
+            }
 
-          <DrawerMenuItem
-            icon={DollarSign}
-            label="Wallet & Billing"
-            sharedPrefix="/(shared)/wallet"
-            onPress={() => router.push("/(shared)/wallet")}
-            isActive={isActive}
-          />
+            const Icon = mapIcon(item.icon);
+            const badgeCount = badgeMap[item.key];
 
-          <Separator marginVertical="$2" />
-
-          <DrawerMenuItem
-            icon={MessageSquare}
-            label="Messages"
-            sharedPrefix="/(communication)"
-            onPress={() => router.push("/(communication)")}
-            isActive={isActive}
-            badgeCount={businessUnread}
-            secondaryBadgeCount={personalUnread}
-          />
-          <DrawerMenuItem
-            icon={Bell}
-            label="Notifications"
-            sharedPrefix="/(shared)/notifications"
-            onPress={() => router.push("/(shared)/notifications")}
-            isActive={isActive}
-            badgeCount={notificationUnread}
-          />
-          <DrawerMenuItem
-            icon={MailOpen}
-            label="Invitations"
-            sharedPrefix="/(shared)/invitations"
-            onPress={() => router.push("/(shared)/invitations")}
-            isActive={isActive}
-          />
-
-          <DrawerMenuItem
-            icon={Settings}
-            label="Settings"
-            drawerName="settings/index"
-            onPress={() => router.push("/(seller)/settings")}
-            isActive={isActive}
-          />
-          <DrawerMenuItem
-            icon={User}
-            label="Profile"
-            drawerName="profile"
-            onPress={() => router.push("/(seller)/profile")}
-            isActive={isActive}
-          />
+            return (
+              <DrawerMenuItem
+                key={item.key}
+                icon={Icon}
+                label={item.label}
+                drawerName={item.drawerName}
+                sharedPrefix={item.sharedPrefix}
+                onPress={() => router.push(item.route)}
+                isActive={isActive}
+                badgeCount={badgeCount}
+              />
+            );
+          })}
 
           <Separator marginVertical="$2" />
 
@@ -210,7 +139,6 @@ function CustomDrawerContent(props: any) {
         </YStack>
       </DrawerContentScrollView>
 
-      {/* Logout Confirmation Dialog */}
       <AppAlertDialog
         open={showLogoutDialog}
         onOpenChange={setShowLogoutDialog}
@@ -224,10 +152,6 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-/**
- * Seller Drawer Navigation
- * Contains Dashboard, Orders, Menu, Analytics, Settings, and Profile.
- */
 export const unstable_settings = {
   initialRouteName: "index",
 };

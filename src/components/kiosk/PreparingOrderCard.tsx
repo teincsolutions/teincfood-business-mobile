@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack, Separator } from 'tamagui';
-import { Clock, CheckCircle, FileText, User } from '@tamagui/lucide-icons';
+import { Clock, CheckCircle, FileText, User, Printer } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatPriceFromMinor } from '@/utils/currency';
@@ -10,9 +10,10 @@ interface PreparingOrderCardProps {
   order: SellerOrder;
   onMarkReady: (orderId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
+  onPrint?: (orderId: string) => void;
 }
 
-export function PreparingOrderCard({ order, onMarkReady, onViewDetails }: PreparingOrderCardProps) {
+export function PreparingOrderCard({ order, onMarkReady, onViewDetails, onPrint }: PreparingOrderCardProps) {
   return (
     <Card
       padding="$4"
@@ -62,7 +63,14 @@ export function PreparingOrderCard({ order, onMarkReady, onViewDetails }: Prepar
         <Separator />
 
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
+            {onPrint && (
+              <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
+                <Printer size={14} />
+              </Button>
+            )}
+          </XStack>
           <Button
             height="$12"
             $lg={{ height: "$12" }}

@@ -30,6 +30,7 @@ import {
   SELLER_KEYS,
 } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -168,6 +169,7 @@ export default function SellerOrders() {
     hasNextPage,
   } = useSellerOrdersQuery(true, filterParams);
   const cancelOrder = useCancelOrderMutation();
+  const canReject = useHasCapability('orders_reject');
 
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
@@ -246,7 +248,7 @@ export default function SellerOrders() {
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
           />
-          {CANCELLABLE_STATUSES.includes(item.status) && (
+          {canReject && CANCELLABLE_STATUSES.includes(item.status) && (
             <Button
               variant="dangerOutline"
               height={40}
@@ -348,7 +350,7 @@ export default function SellerOrders() {
           icon={<Printer size={16} />}
           onPress={() => handlePrint(item)}
         />
-        {CANCELLABLE_STATUSES.includes(item.status) && (
+        {canReject && CANCELLABLE_STATUSES.includes(item.status) && (
           <Button
             variant="dangerOutline"
             height={40}

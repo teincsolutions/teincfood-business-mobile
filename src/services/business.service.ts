@@ -15,6 +15,7 @@ import type {
   TaxRule,
   TaxRuleListResponse,
   TaxRuleResponse,
+  BusinessMembershipResponse,
 } from '@/types/api';
 
 // ─── My Businesses ───
@@ -25,6 +26,10 @@ export async function fetchMyBusinesses(): Promise<BusinessListResponse> {
 
 export async function fetchMyMemberships(): Promise<BusinessMembershipListResponse> {
   return api.get<BusinessMembershipListResponse>('/businesses/me/memberships');
+}
+
+export async function fetchMyBusinessMembership(businessId: string): Promise<BusinessMembershipResponse> {
+  return api.get<BusinessMembershipResponse>(`/businesses/${businessId}/my-membership`);
 }
 
 // ─── Business CRUD ───

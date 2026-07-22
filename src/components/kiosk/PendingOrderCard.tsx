@@ -7,6 +7,7 @@ import {
   ChefHat,
   FileText,
   User,
+  Printer,
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,7 @@ interface PendingOrderCardProps {
   onReject: (orderId: string) => void;
   onStartPreparing: (orderId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
+  onPrint?: (orderId: string) => void;
   getTimeSince: (dateString: string | null | undefined) => number;
 }
 
@@ -28,6 +30,7 @@ export function PendingOrderCard({
   onReject,
   onStartPreparing,
   onViewDetails,
+  onPrint,
   getTimeSince,
 }: PendingOrderCardProps) {
   const isAccepted = order.status === "accepted";
@@ -100,9 +103,16 @@ export function PendingOrderCard({
         <Separator />
 
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold">
-            {formatPriceFromMinor(order.total_minor, order.currency)}
-          </Text>
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize="$5" fontWeight="bold">
+              {formatPriceFromMinor(order.total_minor, order.currency)}
+            </Text>
+            {onPrint && (
+              <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
+                <Printer size={14} />
+              </Button>
+            )}
+          </XStack>
           {isAccepted ? (
             <Button
               height="$12"

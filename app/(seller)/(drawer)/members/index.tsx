@@ -12,6 +12,7 @@ import {
   useRemoveMemberMutation,
 } from "@/hooks/useBusinessMembers";
 import { useBusinessRolesQuery } from "@/hooks/useRoles";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
 const ROLE_LABELS: Record<string, string> = {
   chief: "Chef",
@@ -34,6 +35,7 @@ export default function MembersScreen() {
 
   const members = response?.data ?? [];
   const roles = rolesData?.data ?? {};
+  const canManageMembers = useHasCapability('business_members_manage');
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteIdentifier, setInviteIdentifier] = useState("");
   const [inviteRole, setInviteRole] = useState("manager");
@@ -74,9 +76,11 @@ export default function MembersScreen() {
         <YStack flex={1}>
           <Text fontSize="$6" fontWeight="bold">Members</Text>
         </YStack>
-        <Button icon={<UserPlus size={18} />} backgroundColor="$primary" onPress={() => setInviteSheetOpen(true)}>
-          Invite
-        </Button>
+        {canManageMembers && (
+          <Button icon={<UserPlus size={18} />} backgroundColor="$primary" onPress={() => setInviteSheetOpen(true)}>
+            Invite
+          </Button>
+        )}
       </XStack>
 
       <FlatList
@@ -104,7 +108,7 @@ export default function MembersScreen() {
               <YStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" backgroundColor={ROLE_COLORS[item.role] || "$gray9"}>
                 <Text fontSize="$2" color="white" fontWeight="600">{ROLE_LABELS[item.role] || item.role}</Text>
               </YStack>
-              {item.role !== "chief" && (
+              {item.role !== "chief" && canManageMembers && (
                 <Button
                   size="$3"
                   icon={<X size={14} />}
@@ -138,18 +142,18 @@ export default function MembersScreen() {
               />
 
               <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">Role</Text>
+                <Text fontSize="$3" color="$colorMuted">Select a Role</Text>
                 <YStack gap="$2">
                   {Object.entries(roles).map(([key, role]: [string, any]) => {
                     const selected = inviteRole === key;
                     const color = ROLE_COLORS[key];
-                    const capCount = role.capabilities?.length ?? 0;
+                    const caps = role.capabilities ?? [];
                     return (
                       <XStack
                         key={key}
                         backgroundColor={selected ? "$backgroundSoft" : "$background"}
                         borderColor={selected ? color : "$borderColor"}
-                        borderWidth={1}
+                        borderWidth={selected ? 2 : 1}
                         borderRadius="$4"
                         overflow="hidden"
                         pressStyle={{ opacity: 0.8, backgroundColor: "$backgroundHover" }}
@@ -157,36 +161,27 @@ export default function MembersScreen() {
                         cursor="pointer"
                       >
                         <YStack width={selected ? 4 : 0} backgroundColor={color} />
-                        <YStack flex={1} padding="$3.5" gap="$1">
-                          <Text fontWeight={selected ? "bold" : "500"} fontSize="$4" color={selected ? "$color" : "$color"}>
+                        <YStack flex={1} padding="$3.5" gap="$1.5">
+                          <Text fontWeight={selected ? "bold" : "500"} fontSize="$4">
                             {role.label}
                           </Text>
-                          <Text fontSize="$2" color="$colorMuted">
-                            {capCount} capability{capCount !== 1 ? "ies" : "y"}
-                          </Text>
+                          {caps.slice(0, 4).map((cap: { key: string; label: string }) => (
+                            <XStack key={cap.key} gap="$1.5" alignItems="center">
+                              <Check size={11} color="$green10" />
+                              <Text fontSize="$2" color="$colorMuted">{cap.label}</Text>
+                            </XStack>
+                          ))}
+                          {caps.length > 4 && (
+                            <Text fontSize="$2" color="$colorMuted" fontStyle="italic">
+                              +{caps.length - 4} more...
+                            </Text>
+                          )}
                         </YStack>
                       </XStack>
                     );
                   })}
                 </YStack>
               </YStack>
-
-              {/* Permissions for selected role */}
-              {inviteRole && roles[inviteRole] && (
-                <YStack gap="$3" backgroundColor="$backgroundSoft" borderRadius="$3" padding="$3">
-                  <Text fontSize="$3" fontWeight="600" color="$colorMuted">Capabilities</Text>
-                  <Separator />
-                  {roles[inviteRole].capabilities.map((cap: { key: string; label: string; description: string }) => (
-                    <XStack key={cap.key} gap="$2">
-                      <Check size={14} color="$green10" style={{ marginTop: 3 }} />
-                      <YStack flex={1} gap="$1">
-                        <Text fontSize="$3" fontWeight="500">{cap.label}</Text>
-                        <Text fontSize="$2" color="$colorMuted">{cap.description}</Text>
-                      </YStack>
-                    </XStack>
-                  ))}
-                </YStack>
-              )}
 
               <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteIdentifier.trim()}>
                 {inviteMember.isPending ? "Sending..." : "Send Invitation"}

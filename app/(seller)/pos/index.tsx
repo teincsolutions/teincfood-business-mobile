@@ -37,6 +37,7 @@ import {
   LogOut,
   DoorClosed,
   PanelLeftClose,
+  Printer,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
@@ -141,6 +142,12 @@ function TabBar({
   const itemCount = usePOSStore((s) =>
     s.items.reduce((sum, i) => sum + i.quantity, 0),
   );
+  const defaultPrinterId = usePrinterStore((s) => s.defaultPrinterId);
+  const printers = usePrinterStore((s) => s.printers);
+  const autoPrint = usePrinterStore((s) => s.autoPrint);
+  const defaultPrinter = printers.find((p) => p.id === defaultPrinterId);
+  const hasPrinter = !!defaultPrinter;
+
   const tabs: { key: POSTab; label: string; icon: any; badge?: number }[] = [
     {
       key: "new_order",
@@ -158,6 +165,7 @@ function TabBar({
       borderBottomWidth={1}
       borderBottomColor="$borderColor"
       paddingHorizontal="$2"
+      alignItems="center"
     >
       <Button
         chromeless
@@ -176,6 +184,18 @@ function TabBar({
           <PanelLeftClose size={20} color="$colorSecondary" />
         )}
       </Button>
+
+      <XStack gap="$1" alignItems="center" marginRight="$2">
+        <YStack
+          width={8}
+          height={8}
+          borderRadius="$full"
+          backgroundColor={hasPrinter ? "$success" : "$gray8"}
+        />
+        <Text fontSize="$2" color="$colorMuted" numberOfLines={1} maxWidth={80}>
+          {hasPrinter ? defaultPrinter.name : "No printer"}
+        </Text>
+      </XStack>
 
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
@@ -1212,7 +1232,7 @@ const getTimeSince = (dateString: string | null | undefined): number => {
   return Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
 };
 
-function POSReadyCard({ order }: { order: SellerOrder }) {
+function POSReadyCard({ order, onPrint }: { order: SellerOrder; onPrint?: (id: string) => void }) {
   return (
     <Card padding="$4" bordered backgroundColor="$green2" borderColor="$success" borderWidth={1}>
       <YStack gap="$2">
@@ -1232,6 +1252,13 @@ function POSReadyCard({ order }: { order: SellerOrder }) {
         <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
           {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
         </Text>
+        <XStack justifyContent="flex-end">
+          {onPrint && (
+            <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
+              <Printer size={14} />
+            </Button>
+          )}
+        </XStack>
       </YStack>
     </Card>
   );
@@ -1275,6 +1302,14 @@ function InProgressTab() {
     );
   }
 
+  if (isFetching) {
+    return (
+      <YStack flex={1} alignItems="center" justifyContent="center">
+        <Spinner size="large" color="$primary" />
+      </YStack>
+    );
+  }
+
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {isTablet ? (
@@ -1304,6 +1339,7 @@ function InProgressTab() {
                   onReject={() => {}}
                   onStartPreparing={() => startPreparing.mutate(order.id)}
                   onViewDetails={() => {}}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
                 />
               ))
             )}
@@ -1333,6 +1369,7 @@ function InProgressTab() {
                       order={order}
                       onMarkReady={() => markReady.mutate(order.id)}
                       onViewDetails={() => {}}
+                      onPrint={(id) => printService.printOrderReceipt(id)}
                     />
                   ))
                 )}
@@ -1355,7 +1392,7 @@ function InProgressTab() {
                   </Card>
                 ) : (
                   readyOrders.map((order) => (
-                    <POSReadyCard key={order.id} order={order} />
+                    <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
                   ))
                 )}
               </YStack>
@@ -1384,10 +1421,12 @@ function InProgressTab() {
                       order={order}
                       onMarkReady={() => markReady.mutate(order.id)}
                       onViewDetails={() => {}}
+                      onPrint={(id) => printService.printOrderReceipt(id)}
                     />
                   ))
                 )}
               </YStack>
+
               <YStack gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <CheckCircle size={20} color="$green10" />
@@ -1405,7 +1444,7 @@ function InProgressTab() {
                   </Card>
                 ) : (
                   readyOrders.map((order) => (
-                    <POSReadyCard key={order.id} order={order} />
+                    <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
                   ))
                 )}
               </YStack>
@@ -1439,6 +1478,7 @@ function InProgressTab() {
                   onReject={() => {}}
                   onStartPreparing={() => startPreparing.mutate(order.id)}
                   onViewDetails={() => {}}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
                 />
               ))
             )}
@@ -1466,6 +1506,7 @@ function InProgressTab() {
                   order={order}
                   onMarkReady={() => markReady.mutate(order.id)}
                   onViewDetails={() => {}}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
                 />
               ))
             )}
@@ -1488,7 +1529,7 @@ function InProgressTab() {
               </Card>
             ) : (
               readyOrders.map((order) => (
-                <POSReadyCard key={order.id} order={order} />
+                <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
               ))
             )}
           </YStack>
@@ -1652,6 +1693,13 @@ function TodayTab() {
                     {item.status.replace(/_/g, " ")}
                   </Text>
                 </YStack>
+                <Button
+                  size="$2"
+                  icon={<Printer size={14} />}
+                  variant="outline"
+                  marginTop="$2"
+                  onPress={() => printService.printOrderReceipt(item.id)}
+                />
               </YStack>
             </XStack>
           </Card>

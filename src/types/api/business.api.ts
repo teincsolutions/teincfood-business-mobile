@@ -55,6 +55,20 @@ export interface BusinessMembershipListResponse {
   data: BusinessMembership[];
 }
 
+// ─── My Business Membership (from /businesses/:business_id/my-membership) ───
+
+export interface BusinessMembershipDetail {
+  business_id: string;
+  role: string;
+  source: string;
+  status: string;
+  capabilities: string[];
+}
+
+export interface BusinessMembershipResponse {
+  data: BusinessMembershipDetail;
+}
+
 // ─── Business Member ───
 
 export interface BusinessMember {
