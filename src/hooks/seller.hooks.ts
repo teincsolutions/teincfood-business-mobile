@@ -231,7 +231,7 @@ export function useConfirmHandoverMutation() {
 export function useCancelOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.cancelOrder(orderId),
+    mutationFn: (orderId: string) => sellerService.rejectOrder(orderId),
     onSuccess: () => {
       toast.success("Order cancelled");
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });

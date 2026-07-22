@@ -22,6 +22,7 @@ import {
   MailOpen,
   Truck,
   DollarSign,
+  CreditCard,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
@@ -86,15 +87,18 @@ function CustomDrawerContent(props: any) {
             isActive={isActive}
           />
           <DrawerMenuItem
-            icon={Monitor}
-            label="Kiosk Mode"
-            drawerName="dashboard/kiosk"
-            onPress={() => router.push("/(seller)/dashboard/kiosk")}
+            icon={CreditCard}
+            label="POS Terminal"
+            onPress={() => router.push("/(seller)/pos")}
             isActive={isActive}
           />
-
+          <DrawerMenuItem
+            icon={Monitor}
+            label="Callout Display"
+            onPress={() => router.push("/(seller)/display")}
+            isActive={isActive}
+          />
           <Separator marginVertical="$2" />
-
           <DrawerMenuItem
             icon={ShoppingBag}
             label="Orders"
@@ -297,14 +301,11 @@ export default function SellerDrawerLayout() {
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
 
-        {/* Kiosk Mode */}
+        {/* Kiosk Mode — legacy (route kept for references) */}
         <Drawer.Screen
           name="dashboard/kiosk"
           options={{
             title: "Kiosk Mode",
-            drawerIcon: ({ color, size }) => (
-              <Monitor color={color} size={size} />
-            ),
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

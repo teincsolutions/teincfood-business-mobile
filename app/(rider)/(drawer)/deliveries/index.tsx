@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState, useCallback, useMemo } from 'react';
-import { TouchableOpacity, FlatList, RefreshControl, Alert } from 'react-native';
-import { YStack, Text, Card, XStack, Separator } from 'tamagui';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { TouchableOpacity, FlatList, RefreshControl, Alert, ActivityIndicator } from 'react-native';
+import { YStack, Text, Card, XStack, Separator, useMedia } from 'tamagui';
 import {
   Truck,
   MapPin,
@@ -53,17 +53,38 @@ export default function RiderDeliveries() {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const media = useMedia();
+  const columns = media.md ? 2 : 1;
+
+  const [refreshing, setRefreshing] = useState(false);
+  const loadingMore = useRef(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !loadingMore.current) {
+      loadingMore.current = true;
+      fetchNextPage().finally(() => {
+        loadingMore.current = false;
+      });
+    }
+  }, [hasNextPage, fetchNextPage]);
+
   useRiderDeliveryRealtimeUpdates();
 
   const { data: profileData } = useRiderProfileQuery();
   const {
     data: deliveries = [],
-    isLoading,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
   } = useRiderDeliveriesQuery(true, {
     q: searchQuery || undefined,
   });
@@ -197,12 +218,12 @@ export default function RiderDeliveries() {
   );
 
   const AvailableOrderCard = ({ order }: { order: any }) => (
-    <Card padding="$4" bordered marginBottom="$3" backgroundColor="$greenLight">
+    <Card padding="$4" bordered backgroundColor="$greenLight">
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
           <XStack gap="$2" alignItems="center">
             <Package size={16} color="$success" />
-            <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
+            <Text fontSize="$5" fontWeight="800" fontFamily="$heading" numberOfLines={1} ellipsis>
               {order.order_number}
             </Text>
           </XStack>
@@ -211,7 +232,7 @@ export default function RiderDeliveries() {
           </YStack>
         </XStack>
 
-        <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
+        <Text fontSize="$3" fontFamily="$body" color="$colorSecondary" numberOfLines={1} ellipsis>
           {order.business_name}
         </Text>
 
@@ -219,7 +240,7 @@ export default function RiderDeliveries() {
           <MapPin size={14} color="$primary" />
           <YStack flex={1}>
             <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">{order.business_name}</Text>
-            <Text fontSize="$3" fontFamily="$body">{order.business_address || order.business_name}</Text>
+            <Text fontSize="$3" fontFamily="$body" numberOfLines={1} ellipsis>{order.business_address || order.business_name}</Text>
           </YStack>
         </XStack>
 
@@ -227,7 +248,7 @@ export default function RiderDeliveries() {
           <Truck size={14} color="$success" />
           <YStack flex={1}>
             <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">Dropoff</Text>
-            <Text fontSize="$3" fontFamily="$body">{formatDeliveryAddress(order.delivery_address)}</Text>
+            <Text fontSize="$3" fontFamily="$body" numberOfLines={1} ellipsis>{formatDeliveryAddress(order.delivery_address)}</Text>
           </YStack>
         </XStack>
 
@@ -266,71 +287,73 @@ export default function RiderDeliveries() {
   );
 
   const renderDelivery = ({ item: delivery }) => (
-    <Card padding="$4" bordered marginBottom="$3">
-      <YStack gap="$3">
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="800" fontFamily="$heading">
-            {delivery.order_number || 'Delivery'}
-          </Text>
-          <YStack
-            paddingHorizontal="$3"
-            paddingVertical="$1"
-            borderRadius="$10"
-            backgroundColor={getStatusColor(delivery.status)}
-          >
-            <Text color="white" fontSize="$2" fontFamily="$body" textTransform="capitalize">
-              {delivery.status.replace('_', ' ')}
+    <YStack flex={1} px="$2" mb="$3">
+      <Card padding="$4" bordered>
+        <YStack gap="$3">
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$5" fontWeight="800" fontFamily="$heading" numberOfLines={1} ellipsis>
+              {delivery.order_number || 'Delivery'}
             </Text>
-          </YStack>
-        </XStack>
-
-        <YStack gap="$2">
-          <XStack gap="$2" alignItems="center">
-            <MapPin size={14} color="$primary" />
-            <Text fontSize="$3" fontFamily="$body" color="$color">
-              Pickup: {delivery.pickup || 'Pickup location'}
-            </Text>
+            <YStack
+              paddingHorizontal="$3"
+              paddingVertical="$1"
+              borderRadius="$10"
+              backgroundColor={getStatusColor(delivery.status)}
+            >
+              <Text color="white" fontSize="$2" fontFamily="$body" textTransform="capitalize">
+                {delivery.status.replace('_', ' ')}
+              </Text>
+            </YStack>
           </XStack>
 
-          {delivery.eta_minutes ? (
+          <YStack gap="$2">
             <XStack gap="$2" alignItems="center">
-              <Clock size={14} color="$colorMuted" />
-              <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
-                ETA: {getDeliveryEtaDisplay(delivery)}
+              <MapPin size={14} color="$primary" />
+              <Text fontSize="$3" fontFamily="$body" color="$color" numberOfLines={1} ellipsis>
+                Pickup: {delivery.pickup || 'Pickup location'}
               </Text>
             </XStack>
-          ) : null}
 
-          <XStack gap="$2" alignItems="center">
-            <Truck size={14} color="$success" />
-            <Text fontSize="$3" fontFamily="$body" color="$color">
-              Dropoff: {delivery.dropoff || 'Dropoff location'}
+            {delivery.eta_minutes ? (
+              <XStack gap="$2" alignItems="center">
+                <Clock size={14} color="$colorMuted" />
+                <Text fontSize="$3" fontFamily="$body" color="$colorSecondary">
+                  ETA: {getDeliveryEtaDisplay(delivery)}
+                </Text>
+              </XStack>
+            ) : null}
+
+            <XStack gap="$2" alignItems="center">
+              <Truck size={14} color="$success" />
+              <Text fontSize="$3" fontFamily="$body" color="$color" numberOfLines={1} ellipsis>
+                Dropoff: {delivery.dropoff || 'Dropoff location'}
+              </Text>
+            </XStack>
+          </YStack>
+
+          <Separator />
+
+          <XStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$success">
+              +{delivery.currency || 'GHS'} {((delivery.earnings_minor || 0) / 100).toFixed(2)}
             </Text>
+            <Button
+              variant="ghost"
+              width="auto"
+              paddingHorizontal="$3"
+              onPress={() => router.push(`/(rider)/deliveries/${delivery.id}`)}
+            >
+              <XStack gap="$1" alignItems="center">
+                <Text fontSize="$3" fontFamily="$body" fontWeight="600" color="$primary">
+                  View Details
+                </Text>
+                <ChevronRight size={14} color="$primary" />
+              </XStack>
+            </Button>
           </XStack>
         </YStack>
-
-        <Separator />
-
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$success">
-            +{delivery.currency || 'GHS'} {((delivery.earnings_minor || 0) / 100).toFixed(2)}
-          </Text>
-          <Button
-            variant="ghost"
-            width="auto"
-            paddingHorizontal="$3"
-            onPress={() => router.push(`/(rider)/deliveries/${delivery.id}`)}
-          >
-            <XStack gap="$1" alignItems="center">
-              <Text fontSize="$3" fontFamily="$body" fontWeight="600" color="$primary">
-                View Details
-              </Text>
-              <ChevronRight size={14} color="$primary" />
-            </XStack>
-          </Button>
-        </XStack>
-      </YStack>
-    </Card>
+      </Card>
+    </YStack>
   );
 
   const ListEmptyComponent = () => (
@@ -350,9 +373,9 @@ export default function RiderDeliveries() {
   );
 
   const ListFooterComponent = () => (
-    isFetchingNextPage ? (
+    hasNextPage ? (
       <YStack padding="$4" alignItems="center">
-        <Text fontSize="$3" color="$colorSecondary">Loading more...</Text>
+        <ActivityIndicator />
       </YStack>
     ) : null
   );
@@ -415,7 +438,7 @@ export default function RiderDeliveries() {
   );
 
   const renderAvailableOrder = ({ item: order }) => (
-    <YStack paddingHorizontal="$4">
+    <YStack flex={1} px="$2" mb="$3">
       <AvailableOrderCard order={order} />
     </YStack>
   );
@@ -432,20 +455,24 @@ export default function RiderDeliveries() {
       {/* Available tab — simple ordered list */}
       {tab === 'available' ? (
         <FlatList
+          key={`grid-${columns}`}
           data={data}
           keyExtractor={(item) => item.order_id || item.id}
+          numColumns={columns}
           renderItem={renderItem}
           ListEmptyComponent={ListEmptyComponent}
+          ListFooterComponent={ListFooterComponent}
+          columnWrapperStyle={columns > 1 ? { paddingHorizontal: 8 } : undefined}
           contentContainerStyle={{
-            paddingHorizontal: 0,
+            paddingHorizontal: columns > 1 ? 8 : 0,
             paddingTop: 16,
             paddingBottom: insets.bottom + 16,
             flexGrow: 1,
           }}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching || claimOrder.isPending}
-              onRefresh={refetch}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
             />
           }
           initialNumToRender={10}
@@ -473,27 +500,26 @@ export default function RiderDeliveries() {
           </XStack>
 
           <FlatList
+            key={`deliveries-grid-${columns}`}
             data={filteredDeliveries}
             keyExtractor={(item) => item.id}
+            numColumns={columns}
             renderItem={renderDelivery}
             ListEmptyComponent={ListEmptyComponent}
             ListFooterComponent={ListFooterComponent}
+            columnWrapperStyle={columns > 1 ? { paddingHorizontal: 8 } : undefined}
             contentContainerStyle={{
-              paddingHorizontal: '$4',
+              paddingHorizontal: columns > 1 ? 8 : 16,
               paddingBottom: insets.bottom + 16,
               flexGrow: 1,
             }}
             refreshControl={
               <RefreshControl
-                refreshing={isRefetching || claimOrder.isPending}
-                onRefresh={refetch}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
               />
             }
-            onEndReached={() => {
-              if (hasNextPage && !isFetchingNextPage) {
-                fetchNextPage();
-              }
-            }}
+            onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
             initialNumToRender={10}
             windowSize={5}

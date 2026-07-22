@@ -1,0 +1,372 @@
+// @ts-nocheck
+import { useState, useMemo } from "react";
+import {
+  YStack,
+  XStack,
+  Text,
+  Image,
+  Separator,
+  Sheet,
+  Checkbox,
+  Dialog,
+  Adapt,
+  Label,
+  Spinner,
+  ScrollView,
+} from "tamagui";
+import { ShoppingCart, Plus, Minus, X, Check } from "@tamagui/lucide-icons";
+import { toast } from "sonner-native";
+import { formatPriceFromMinor } from "@/utils/currency";
+import { usePOSStore } from "@/stores/pos.store";
+import type { MenuItem } from "@/types/api/menu.api";
+import { Button } from "../ui";
+
+interface ItemCustomizerSheetProps {
+  item: MenuItem;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}
+
+export function ItemCustomizerSheet({
+  item,
+  open,
+  onOpenChange,
+}: ItemCustomizerSheetProps) {
+  const addItem = usePOSStore((s) => s.addItem);
+
+  const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    item.variants.length > 0 ? item.variants[0].id : null,
+  );
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+
+  const selectedVariant =
+    item.variants.find((v) => v.id === selectedVariantId) || null;
+  const selectedAddons = item.extras.filter((e) =>
+    selectedAddonIds.includes(e.id),
+  );
+
+  const effectiveUnitPrice = useMemo(() => {
+    if (selectedVariant) return selectedVariant.price.amountMinor;
+    return item.basePrice.amountMinor;
+  }, [item, selectedVariant]);
+
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.amountMinor, 0);
+  const totalPrice = (effectiveUnitPrice + addonsTotal) * quantity;
+
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddonIds((prev) =>
+      prev.includes(addonId)
+        ? prev.filter((id) => id !== addonId)
+        : [...prev, addonId],
+    );
+  };
+
+  const handleClose = () => {
+    setQuantity(1);
+    setSelectedAddonIds([]);
+    if (item.variants.length > 0) setSelectedVariantId(item.variants[0].id);
+    onOpenChange(false);
+  };
+
+  const handleAddToCart = () => {
+    addItem(item, quantity, selectedVariant, selectedAddons);
+    handleClose();
+    toast.success(`${item.name} added to cart`);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <Adapt when="sm" platform="touch">
+        <Sheet snapPoints={[70]} modal dismissOnSnapToBottom>
+          <Sheet.Frame padding={0} backgroundColor="$background">
+            <Adapt.Contents />
+          </Sheet.Frame>
+          <Sheet.Overlay backgroundColor="rgba(0,0,0,0.4)" />
+        </Sheet>
+      </Adapt>
+
+      <Dialog.Portal>
+        <Dialog.Overlay
+          key="overlay"
+          animation="quick"
+          opacity={0.5}
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(15,23,42,0.4)"
+        />
+        <Dialog.Content
+          key="content"
+          animation="quick"
+          enterStyle={{ y: 20, opacity: 0 }}
+          exitStyle={{ y: 20, opacity: 0 }}
+          width="92%"
+          maxWidth={440}
+          backgroundColor="$background"
+          borderRadius="$6"
+          padding={0}
+          overflow="hidden"
+        >
+          {/* Close button */}
+          <XStack position="absolute" top="$3" right="$3" zIndex={10}>
+            <XStack
+              width={36}
+              height={36}
+              borderRadius="$full"
+              backgroundColor="rgba(0,0,0,0.35)"
+              justifyContent="center"
+              alignItems="center"
+              onPress={handleClose}
+            >
+              <X size={16} color="white" />
+            </XStack>
+          </XStack>
+
+          {/* Hero image */}
+          <YStack height={200} width="100%" backgroundColor="$gray200">
+            {item.image_url ? (
+              <Image
+                source={{ uri: item.image_url }}
+                width="100%"
+                height={200}
+                objectFit="cover"
+              />
+            ) : (
+              <YStack flex={1} justifyContent="center" alignItems="center">
+                <Text
+                  fontSize="$10"
+                  color="$colorSecondary"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                >
+                  {item.name?.charAt(0).toUpperCase() ?? "F"}
+                </Text>
+              </YStack>
+            )}
+          </YStack>
+
+          {/* Content */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          >
+            <YStack padding="$5" gap="$4">
+              {/* Name + price */}
+              <XStack justifyContent="space-between" alignItems="flex-start">
+                <YStack flex={1} paddingRight="$3" gap="$1">
+                  <Text
+                    fontSize="$6"
+                    fontWeight="800"
+                    fontFamily="$heading"
+                    color="$color"
+                    numberOfLines={2}
+                  >
+                    {item.name}
+                  </Text>
+                  {item.description && (
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                      numberOfLines={2}
+                    >
+                      {item.description}
+                    </Text>
+                  )}
+                </YStack>
+                <YStack alignItems="flex-end">
+                  <Text
+                    fontSize="$6"
+                    fontWeight="800"
+                    fontFamily="$body"
+                    color="$primary"
+                  >
+                    {formatPriceFromMinor(effectiveUnitPrice)}
+                  </Text>
+                  {selectedVariant && (
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      {selectedVariant.name}
+                    </Text>
+                  )}
+                </YStack>
+              </XStack>
+
+              <Separator borderColor="$borderColor" />
+
+              {/* Size variants */}
+              {item.variants.length > 0 && (
+                <YStack gap="$3">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
+                    SIZE
+                  </Text>
+                  <XStack flexWrap="wrap" gap="$2.5">
+                    {item.variants.map((variant) => {
+                      const isActive = selectedVariantId === variant.id;
+                      return (
+                        <Button
+                          key={variant.id}
+                          onPress={() => setSelectedVariantId(variant.id)}
+                          variant={isActive ? "primary" : "ghost"}
+                          borderColor={isActive ? "$primary" : "$borderColor"}
+                          borderWidth={isActive ? 0 : 1}
+                          width="auto"
+                          minWidth={0}
+                          height={40}
+                        >
+                          {`${variant.name} ${formatPriceFromMinor(variant.price.amountMinor)}`}
+                        </Button>
+                      );
+                    })}
+                  </XStack>
+                </YStack>
+              )}
+
+              {/* Extras */}
+              {item.extras.length > 0 && (
+                <YStack gap="$3">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
+                    EXTRAS
+                  </Text>
+                  <YStack gap="$2">
+                    {item.extras.map((addon) => {
+                      const selected = selectedAddonIds.includes(addon.id);
+                      return (
+                        <XStack
+                          key={addon.id}
+                          alignItems="center"
+                          justifyContent="space-between"
+                          backgroundColor="$backgroundStrong"
+                          borderRadius="$4"
+                          padding="$4"
+                          onPress={() => toggleAddon(addon.id)}
+                          pressStyle={{ opacity: 0.8 }}
+                        >
+                          <XStack alignItems="center" gap="$4" flex={1}>
+                            <Checkbox
+                              checked={selected}
+                              onCheckedChange={() => toggleAddon(addon.id)}
+                              width={28}
+                              height={28}
+                              backgroundColor={
+                                selected ? "$primary" : "$background"
+                              }
+                              borderColor={
+                                selected ? "$primary" : "$borderColor"
+                              }
+                              borderRadius="$3"
+                            >
+                              <Checkbox.Indicator
+                                justifyContent="center"
+                                alignItems="center"
+                              >
+                                <Check size={24} color="white" />
+                              </Checkbox.Indicator>
+                            </Checkbox>
+                            <Label
+                              flex={1}
+                              onPress={() => toggleAddon(addon.id)}
+                            >
+                              <Text
+                                fontSize="$5"
+                                fontWeight="600"
+                                color="$color"
+                              >
+                                {addon.name}
+                              </Text>
+                            </Label>
+                          </XStack>
+                          <Text fontSize="$5" fontWeight="700" color="$primary">
+                            +{formatPriceFromMinor(addon.amountMinor)}
+                          </Text>
+                        </XStack>
+                      );
+                    })}
+                  </YStack>
+                </YStack>
+              )}
+
+              {/* Quantity + Add to Cart */}
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                marginTop="$2"
+              >
+                <XStack
+                  alignItems="center"
+                  backgroundColor="$background"
+                  borderRadius="$full"
+                  paddingHorizontal="$1.5"
+                  paddingVertical="$1.5"
+                  gap="$1.5"
+                  borderWidth={1}
+                  borderColor="$borderColor"
+                >
+                  <Button
+                    width={36}
+                    height={36}
+                    circular
+                    chromeless
+                    backgroundColor="$backgroundSoft"
+                    padding={0}
+                    icon={<Minus size={16} color="$color" />}
+                    onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                  />
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    color="$color"
+                    fontFamily="$body"
+                    minWidth={24}
+                    textAlign="center"
+                  >
+                    {quantity}
+                  </Text>
+                  <Button
+                    width={36}
+                    height={36}
+                    circular
+                    chromeless
+                    backgroundColor="$backgroundSoft"
+                    padding={0}
+                    icon={<Plus size={16} color="$color" />}
+                    onPress={() => setQuantity(quantity + 1)}
+                  />
+                </XStack>
+
+                <Button
+                  variant="primary"
+                  height={52}
+                  onPress={handleAddToCart}
+                  icon={<ShoppingCart size={18} color="white" />}
+                >
+                  <Text
+                    color="white"
+                    fontWeight="800"
+                    fontFamily="$body"
+                    fontSize="$4"
+                  >
+                    Add to Cart · {formatPriceFromMinor(totalPrice)}
+                  </Text>
+                </Button>
+              </XStack>
+            </YStack>
+          </ScrollView>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog>
+  );
+}

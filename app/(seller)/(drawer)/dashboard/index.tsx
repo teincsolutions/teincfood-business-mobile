@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Store,
   Package,
+  CreditCard,
   X,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
@@ -44,7 +45,9 @@ export default function SellerDashboard() {
   // Fetch business KYC status (fresh every mount)
   const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
   const bizKycStatus = bizKyc?.kyc_status;
-  const bannerRoute = activeBusinessId ? `/(shared)/kyc?type=business&id=${activeBusinessId}` : '/(shared)/businesses';
+  const bannerRoute = activeBusinessId
+    ? `/(shared)/kyc?type=business&id=${activeBusinessId}`
+    : "/(shared)/businesses";
 
   // TanStack Query hooks
   const { data, isLoading, refetch } = useSellerDashboardQuery(
@@ -109,10 +112,7 @@ export default function SellerDashboard() {
         backgroundColor="$background"
       >
         {/* Service Status */}
-        <ServiceStatusBanner
-          kyc_status={bizKycStatus}
-          kycRoute={bannerRoute}
-        />
+        <ServiceStatusBanner kyc_status={bizKycStatus} kycRoute={bannerRoute} />
 
         {/* No Business Banner */}
         {!hasBusiness && !dismissNoBusiness && (
@@ -289,17 +289,6 @@ export default function SellerDashboard() {
                 </XStack>
               </Button>
             </XStack>
-            <Button
-              variant="outline"
-              onPress={() => router.push("/(seller)/analytics")}
-            >
-              <XStack gap="$2" alignItems="center">
-                <TrendingUp size={18} color="$color" />
-                <Text fontFamily="$body" fontWeight="bold">
-                  View Analytics
-                </Text>
-              </XStack>
-            </Button>
           </YStack>
         </Card>
 
@@ -311,9 +300,8 @@ export default function SellerDashboard() {
                 Recent Orders
               </Text>
               <Button
+                width={"auto"}
                 variant="outline"
-                height={36}
-                paddingHorizontal="$3"
                 onPress={() => router.push("/(seller)/orders")}
               >
                 View All
@@ -341,10 +329,7 @@ export default function SellerDashboard() {
                       paddingVertical="$1"
                       borderRadius="$2"
                     >
-                      <Text
-                        fontSize="$2"
-                        color="$color.white"
-                      >
+                      <Text fontSize="$2" color="$color.white">
                         {formatStatus(order.status)}
                       </Text>
                     </YStack>

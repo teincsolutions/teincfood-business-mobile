@@ -214,7 +214,6 @@ export default function SellerRidersScreen() {
 
           <XStack gap="$3">
             <Button
-              flex={1}
               size="$3"
               backgroundColor="$green10"
               icon={<Check size={14} />}
@@ -224,7 +223,6 @@ export default function SellerRidersScreen() {
               Approve
             </Button>
             <Button
-              flex={1}
               size="$3"
               backgroundColor="$red10"
               icon={<X size={14} />}
@@ -326,6 +324,8 @@ export default function SellerRidersScreen() {
             {["all", "available", "busy", "offline"].map((s) => (
               <Button
                 key={s}
+                height="$12"
+                width="auto"
                 variant={filterStatus === s ? "primary" : "outline"}
                 onPress={() => setFilterStatus(s)}
               >

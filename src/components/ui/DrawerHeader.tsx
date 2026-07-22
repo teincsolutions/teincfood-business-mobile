@@ -23,6 +23,7 @@ import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useProfileQuery } from "@/hooks/useProfile";
 import { useResponsive } from "@/utils/responsive";
 import { copyToClipboard } from "@/utils/copyToClipBoard";
+import { toast } from "sonner-native";
 
 interface DrawerHeaderProps {
   fallbackName?: string;

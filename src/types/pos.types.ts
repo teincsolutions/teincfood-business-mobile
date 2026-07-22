@@ -1,0 +1,90 @@
+import type { MenuItem, MenuItemVariantResponse, MenuItemAddonResponse, MenuCategory } from '@/types/api/menu.api';
+import type { SellerOrder, OrderItem } from '@/types/api/seller.api';
+import type { OrderTaxLine } from '@/types/api/seller.api';
+
+export type POSOrderType = 'takeout' | 'dine_in';
+export type POSPaymentMethod = 'cash' | 'mobile_money';
+
+export interface POSSelectedAddon {
+  addon_id: string;
+  name: string;
+  price_minor: number;
+}
+
+export interface POSCartItem {
+  id: string;
+  menu_item: MenuItem;
+  quantity: number;
+  selected_variant: MenuItemVariantResponse | null;
+  selected_addons: POSSelectedAddon[];
+  notes: string;
+  unit_price_minor: number;
+}
+
+export interface POSCartState {
+  items: POSCartItem[];
+  subtotal_minor: number;
+  item_count: number;
+}
+
+export interface POSCheckoutForm {
+  customer_name: string;
+  customer_phone: string;
+  order_type: POSOrderType;
+  pos_payment_method: POSPaymentMethod;
+}
+
+/** Matches backend calculate_items input — server ignores extra keys */
+export interface POSOrderItemRequest {
+  menu_item_id: string;
+  quantity: number;
+  variant_id?: string;
+  addon_ids?: string[];
+}
+
+export interface POSOrderCreateRequest {
+  order_type: POSOrderType;
+  customer_name: string;
+  customer_phone: string;
+  pos_payment_method: POSPaymentMethod;
+  items: POSOrderItemRequest[];
+  notes?: string;
+}
+
+export interface POSOrderPreviewRequest {
+  items: POSOrderItemRequest[];
+  order_type?: POSOrderType;
+  customer_name?: string;
+}
+
+export interface POSPricing {
+  subtotal_minor: number;
+  discounted_subtotal_minor: number;
+  delivery_fee_minor: number;
+  tax_minor: number;
+  tip_minor: number;
+  discount_minor: number;
+  total_minor: number;
+  currency_code: string;
+  promo_code?: string | null;
+  tax_lines: OrderTaxLine[];
+}
+
+export interface POSOrderPreviewResponse {
+  data: POSPricing;
+}
+
+export interface POSOrder extends SellerOrder {
+  order_type: POSOrderType;
+  callout_number: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  pos_payment_method: POSPaymentMethod | null;
+  paid_at: string | null;
+}
+
+export interface POSOrderCreateResponse {
+  data: POSOrder;
+}
+
+export type POSTab = 'new_order' | 'in_progress' | 'today';

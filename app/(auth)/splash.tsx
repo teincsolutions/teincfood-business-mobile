@@ -202,9 +202,9 @@ export default function SplashScreen() {
         }
       }
 
-      // Prefetch businesses — reads from persisted cache instantly, refetches in background
+      // Prefetch businesses — splash stays visible until data is ready
       setStatusMessage("Loading your businesses...");
-      queryClient.prefetchQuery({
+      await queryClient.prefetchQuery({
         queryKey: BUSINESSES_QUERY_KEY,
         queryFn: async () => {
           const res = await businessService.fetchMyBusinesses();

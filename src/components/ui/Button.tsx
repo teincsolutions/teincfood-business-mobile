@@ -14,15 +14,9 @@ const StyledButton = styled(TamaguiButton, {
   alignItems: "center",
   height: 48, // Mockups use very tall/prominent buttons
   width: "auto",
-  maxW: 420, // Limit max width for large screens
-  self: "center",
   pressStyle: {
     opacity: 0.8,
   },
-
-  // Responsive base height
-  $md: { height: 48 },
-  $lg: { height: 56 },
 
   variants: {
     variant: {
@@ -125,7 +119,7 @@ export type ButtonProps = GetProps<typeof StyledButton> & {
 };
 
 /**
- * TeincFood Business Core Button Component
+ * TeincFood Core Button Component
  */
 export const Button = forwardRef<TamaguiButton, ButtonProps>(
   ({ children, loading, variant, disabled, icon, ...props }, ref) => {

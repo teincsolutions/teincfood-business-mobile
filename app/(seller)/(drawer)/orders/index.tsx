@@ -10,6 +10,7 @@ import {
   Spinner,
   Sheet,
   ScrollView,
+  Tooltip,
 } from "tamagui";
 import {
   FileText,
@@ -72,6 +73,10 @@ const DEFAULT_CHIPS = [
 ];
 const CANCELLABLE_STATUSES = ["pending", "accepted", "preparing"];
 
+function actionLabel(status: string) {
+  return status === "pending" ? "Reject" : "Cancel";
+}
+
 function formatStatus(status: string) {
   return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 }
@@ -93,7 +98,7 @@ export default function SellerOrders() {
 
   const COL_ITEMS = 45;
   const COL_TIME = 70;
-  const COL_ACTIONS = 240;
+  const COL_ACTIONS = 270;
   const FIXED_TOTAL = COL_ITEMS + COL_TIME + COL_ACTIONS;
 
   const [containerWidth, setContainerWidth] = useState(0);
@@ -106,7 +111,27 @@ export default function SellerOrders() {
       : ["pending", "accepted", "preparing", "ready"],
   );
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadingMore = useRef(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !loadingMore.current) {
+      loadingMore.current = true;
+      fetchNextPage().finally(() => {
+        loadingMore.current = false;
+      });
+    }
+  }, [hasNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -130,12 +155,9 @@ export default function SellerOrders() {
 
   const {
     data,
-    isLoading,
     refetch,
-    isRefetching,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
   } = useSellerOrdersQuery(true, filterParams);
   const cancelOrder = useCancelOrderMutation();
 
@@ -147,7 +169,7 @@ export default function SellerOrders() {
   const remaining = Math.max(300, availWidth - FIXED_TOTAL - 48);
   const colWidths = {
     order: Math.max(100, Math.round(remaining * 0.25)),
-    customer: Math.max(120, Math.round(remaining * 0.32)),
+    customer: Math.max(108, Math.round(remaining * 0.28)),
     status: Math.max(80, Math.round(remaining * 0.18)),
     total: Math.max(100, Math.round(remaining * 0.25)),
     items: COL_ITEMS,
@@ -215,17 +237,15 @@ export default function SellerOrders() {
             height={40}
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
-          >
-            Print
-          </Button>
+          />
           {CANCELLABLE_STATUSES.includes(item.status) && (
             <Button
               variant="dangerOutline"
               height={40}
               icon={<FileText size={14} />}
-              onPress={() => setCancelTarget(item.id)}
+              onPress={() => setCancelTarget({ id: item.id, status: item.status })}
             >
-              Cancel
+              {actionLabel(item.status)}
             </Button>
           )}
         </XStack>
@@ -251,9 +271,13 @@ export default function SellerOrders() {
         {item.order_number}
       </Text>
       <YStack width={colWidths.customer}>
-        <Text fontSize="$4" numberOfLines={1}>
-          {item.user?.full_name || "—"}
-        </Text>
+        <Tooltip label={item.user?.full_name || "—"}>
+          <Tooltip.Trigger>
+            <Text fontSize="$4" numberOfLines={1} ellipsis>
+              {item.user?.full_name || "—"}
+            </Text>
+          </Tooltip.Trigger>
+        </Tooltip>
         <Text fontSize="$3" color="$colorMuted">
           {item.user?.phone || ""}
         </Text>
@@ -315,9 +339,7 @@ export default function SellerOrders() {
           paddingHorizontal="$3"
           icon={<Printer size={16} />}
           onPress={() => handlePrint(item)}
-        >
-          Print
-        </Button>
+        />
         {CANCELLABLE_STATUSES.includes(item.status) && (
           <Button
             variant="dangerOutline"
@@ -326,7 +348,7 @@ export default function SellerOrders() {
             icon={<FileText size={16} />}
             onPress={() => setCancelTarget(item.id)}
           >
-            Cancel
+            {actionLabel(item.status)}
           </Button>
         )}
       </XStack>
@@ -507,21 +529,19 @@ export default function SellerOrders() {
                 data={allOrders}
                 keyExtractor={(item) => item.id}
                 renderItem={renderTabletRow}
-                onEndReached={() => {
-                  if (hasNextPage) fetchNextPage();
-                }}
+                onEndReached={onEndReached}
                 onEndReachedThreshold={0.5}
                 refreshControl={
                   <RefreshControl
-                    refreshing={isRefetching}
-                    onRefresh={refetch}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
                   />
                 }
                 contentContainerStyle={{
                   paddingBottom: Math.max(insets.bottom + 20, 24),
                 }}
                 ListFooterComponent={
-                  isFetchingNextPage ? (
+                  hasNextPage ? (
                     <YStack padding="$4" alignItems="center">
                       <ActivityIndicator />
                     </YStack>
@@ -540,9 +560,7 @@ export default function SellerOrders() {
           data={allOrders}
           keyExtractor={(item) => item.id}
           renderItem={renderPhoneCard}
-          onEndReached={() => {
-            if (hasNextPage) fetchNextPage();
-          }}
+          onEndReached={onEndReached}
           onEndReachedThreshold={0.5}
           contentContainerStyle={{
             padding: 16,
@@ -550,10 +568,10 @@ export default function SellerOrders() {
             paddingBottom: Math.max(insets.bottom + 20, 24),
           }}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListFooterComponent={
-            isFetchingNextPage ? (
+            hasNextPage ? (
               <YStack padding="$4" alignItems="center">
                 <ActivityIndicator />
               </YStack>
@@ -672,13 +690,13 @@ export default function SellerOrders() {
       <AppAlertDialog
         open={cancelTarget !== null}
         onOpenChange={() => setCancelTarget(null)}
-        title="Cancel Order"
-        description="Are you sure you want to cancel this order? This cannot be undone."
-        confirmText="Cancel Order"
+        title={`${actionLabel(cancelTarget?.status ?? "pending")} Order`}
+        description={`Are you sure you want to ${(actionLabel(cancelTarget?.status ?? "pending")).toLowerCase()} this order? This cannot be undone.`}
+        confirmText={`${actionLabel(cancelTarget?.status ?? "pending")} Order`}
         isDestructive
         onConfirm={() => {
           if (cancelTarget) {
-            cancelOrder.mutate(cancelTarget);
+            cancelOrder.mutate(cancelTarget.id);
             setCancelTarget(null);
           }
         }}

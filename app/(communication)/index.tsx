@@ -56,27 +56,29 @@ export default function InboxScreen() {
   );
   const [search, setSearch] = useState("");
 
-  useFocusEffect(
-    useCallback(() => {
-      Notifications.setBadgeCountAsync(0).catch(() => {});
-    }, []),
-  );
-
   useEffect(() => {
     if (!canShowBusinessTab && tab === "business") {
       setTab("personal");
     }
   }, [canShowBusinessTab, tab]);
 
-  const { contacts: bizContactsData } = useContacts(
+  const { contacts: bizContactsData, refresh: refreshBiz } = useContacts(
     "business",
     activeBusinessId ?? undefined,
     search || undefined,
   );
-  const { contacts: personalContactsData } = useContacts(
+  const { contacts: personalContactsData, refresh: refreshPersonal } = useContacts(
     "buyer",
     undefined,
     search || undefined,
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      Notifications.setBadgeCountAsync(0).catch(() => {});
+      refreshBiz();
+      refreshPersonal();
+    }, [refreshBiz, refreshPersonal]),
   );
 
   const bizContacts = bizContactsData || [];

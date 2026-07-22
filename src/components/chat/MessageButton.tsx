@@ -8,6 +8,7 @@ interface MessageButtonProps {
   displayAvatar?: string;
   size?: "small" | "medium";
   contactType?: string;
+  flex?: number;
 }
 
 export function MessageButton({
@@ -16,6 +17,7 @@ export function MessageButton({
   displayAvatar,
   size = "medium",
   contactType,
+  flex,
 }: MessageButtonProps) {
   const openChat = useOpenUserChat();
 
@@ -36,8 +38,8 @@ export function MessageButton({
   return (
     <Button
       variant="primary"
-      width="100%"
       icon={<MessageSquare />}
+      flex={flex}
       onPress={() => openChat(userId, displayName, displayAvatar, contactType)}
     >
       Message

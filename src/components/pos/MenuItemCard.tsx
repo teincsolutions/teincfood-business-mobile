@@ -1,0 +1,161 @@
+// @ts-nocheck
+import { useState } from "react";
+import { Card, YStack, XStack, Text, Image, useMedia } from "tamagui";
+import { Plus } from "@tamagui/lucide-icons";
+import { formatPriceFromMinor } from "@/utils/currency";
+import type { MenuItem } from "@/types/api/menu.api";
+import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
+import { Button } from "../ui";
+
+interface MenuItemCardProps {
+  item: MenuItem;
+}
+
+export function MenuItemCard({ item }: MenuItemCardProps) {
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const media = useMedia();
+  const isTablet = media.md;
+
+  return (
+    <>
+      <Card
+        elevate
+        width="100%"
+        marginBottom="$3"
+        backgroundColor="$background"
+        borderRadius="$5"
+        pressStyle={{ scale: 0.98 }}
+        onPress={() => setShowCustomizer(true)}
+        $md={{ borderRadius: "$6" }}
+      >
+        <Card.Header
+          padding={0}
+          borderTopLeftRadius="$5"
+          borderTopRightRadius="$5"
+          backgroundColor="$gray200"
+          position="relative"
+          $md={{ borderTopLeftRadius: "$6", borderTopRightRadius: "$6" }}
+        >
+          <YStack
+            width="100%"
+            height={120}
+            borderTopLeftRadius="$5"
+            borderTopRightRadius="$5"
+            overflow="hidden"
+            backgroundColor="$gray200"
+            $md={{
+              height: 180,
+              borderTopLeftRadius: "$6",
+              borderTopRightRadius: "$6",
+            }}
+          >
+            {item.image_url ? (
+              <Image
+                source={{ uri: item.image_url }}
+                width="100%"
+                height={120}
+                objectFit="cover"
+                $md={{ height: 180 }}
+              />
+            ) : (
+              <YStack
+                width="100%"
+                height={120}
+                $md={{ height: 180 }}
+                backgroundColor={
+                  item.id
+                    ? ["#E8E8E8", "#D4D4D4", "#F0F0F0", "#E5E5E5"][
+                        item.id.charCodeAt(0) % 4
+                      ]
+                    : "#E8E8E8"
+                }
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Text
+                  fontSize="$7"
+                  color="$colorSecondary"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                >
+                  {item.name ? item.name.charAt(0).toUpperCase() : "F"}
+                </Text>
+              </YStack>
+            )}
+          </YStack>
+          {!item.is_available && (
+            <YStack
+              position="absolute"
+              top="$2"
+              left="$2"
+              backgroundColor="$error"
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius="$full"
+            >
+              <Text fontSize="$2" color="white" fontWeight="700">
+                Unavailable
+              </Text>
+            </YStack>
+          )}
+        </Card.Header>
+
+        <YStack padding="$3" gap="$1" $md={{ padding: "$5", gap: "$2" }}>
+          <Text
+            fontSize="$4"
+            fontWeight="700"
+            fontFamily="$heading"
+            color="$color"
+            numberOfLines={1}
+            $md={{ fontSize: "$6" }}
+          >
+            {item.name}
+          </Text>
+          <Text
+            fontSize="$2"
+            color="$colorSecondary"
+            fontFamily="$body"
+            numberOfLines={1}
+            $md={{ fontSize: "$4" }}
+          >
+            {item.description ?? ""}
+          </Text>
+
+          <XStack
+            justifyContent="space-between"
+            alignItems="center"
+            marginTop="$2"
+          >
+            <Text
+              fontSize="$4"
+              fontWeight="800"
+              fontFamily="$body"
+              color="$primary"
+              $md={{ fontSize: "$6" }}
+            >
+              {formatPriceFromMinor(item.basePrice.amountMinor)}
+            </Text>
+            <Button
+              variant="primary"
+              size="$4"
+              height="$8"
+              width="$8"
+              rounded="$full"
+              onPress={() => setShowCustomizer(true)}
+              $md={{ height: 48, width: 48 }}
+              icon={({ color, size }) => (
+                <Plus size={isTablet ? 22 : 18} color={color} />
+              )}
+            />
+          </XStack>
+        </YStack>
+      </Card>
+
+      <ItemCustomizerSheet
+        item={item}
+        open={showCustomizer}
+        onOpenChange={setShowCustomizer}
+      />
+    </>
+  );
+}

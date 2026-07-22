@@ -1,5 +1,14 @@
 // @ts-nocheck
-import { YStack, Text, Card, XStack, Separator, Switch, ScrollView, Spinner } from "tamagui";
+import {
+  YStack,
+  Text,
+  Card,
+  XStack,
+  Separator,
+  Switch,
+  ScrollView,
+  Spinner,
+} from "tamagui";
 import {
   Building,
   Clock,
@@ -22,9 +31,9 @@ import {
   useNotificationPreferencesQuery,
   useUpdateNotificationPreferencesMutation,
 } from "@/hooks/useNotificationPreferences";
-import * as businessService from '@/services/business.service';
-import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import * as businessService from "@/services/business.service";
+import { toast } from "sonner-native";
+import { extractApiErrorMessage } from "@/utils/error";
 
 /**
  * Seller Settings Screen
