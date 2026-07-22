@@ -226,6 +226,9 @@ export default function MembersScreen() {
           backgroundColor="$background"
           borderTopLeftRadius="$6"
           borderTopRightRadius="$6"
+          alignSelf="center"
+          width="100%"
+          $gtSm={{ maxWidth: 700 }}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <ScrollView>
