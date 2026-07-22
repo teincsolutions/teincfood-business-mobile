@@ -1,10 +1,44 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl, TextInput } from "react-native";
-import { YStack, XStack, Text, Card, Avatar, Sheet, Separator, Button, Input, ScrollView } from "tamagui";
-import { UserPlus, X, ChevronRight, Mail, Phone, Check } from "@tamagui/lucide-icons";
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Avatar,
+  Sheet,
+  Separator,
+  Input,
+  ScrollView,
+} from "tamagui";
+import {
+  UserPlus,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  Phone,
+  Check,
+  Users,
+  ClipboardList,
+  CheckCheck,
+  Eye,
+  Ban,
+  CookingPot,
+  ClipboardCheck,
+  CreditCard,
+  Truck,
+  BarChart3,
+  Receipt,
+  ArrowUpRight,
+  Menu,
+  Tag,
+  Bike,
+  Calculator,
+} from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   useBusinessMembersQuery,
@@ -18,27 +52,35 @@ const ROLE_LABELS: Record<string, string> = {
   chief: "Chef",
   sales: "Sales",
   manager: "Manager",
+  cashier: "Cashier",
 };
 
-const ROLE_COLORS = {
-  chief: "$orange9",
-  sales: "$blue9",
-  manager: "$green9",
+const ROLE_COLORS: Record<string, string> = {
+  chief: "$primary",
+  sales: "$blue",
+  manager: "$green",
+  cashier: "$yellow",
 };
 
 export default function MembersScreen() {
   const insets = useSafeAreaInsets();
-  const { data: response, isLoading, refetch, isRefetching } = useBusinessMembersQuery();
+  const {
+    data: response,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useBusinessMembersQuery();
   const { data: rolesData } = useBusinessRolesQuery();
   const inviteMember = useInviteMemberMutation();
   const removeMember = useRemoveMemberMutation();
 
   const members = response?.data ?? [];
   const roles = rolesData?.data ?? {};
-  const canManageMembers = useHasCapability('business_members_manage');
+  const canManageMembers = useHasCapability("business_members_manage");
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteIdentifier, setInviteIdentifier] = useState("");
   const [inviteRole, setInviteRole] = useState("manager");
+  const [showAllCaps, setShowAllCaps] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState(null);
 
@@ -56,6 +98,7 @@ export default function MembersScreen() {
         setInviteSheetOpen(false);
         setInviteIdentifier("");
         setInviteRole("manager");
+        setShowAllCaps(false);
       },
     });
   };
@@ -71,13 +114,25 @@ export default function MembersScreen() {
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
       {/* Header */}
-      <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
+      <XStack
+        padding="$4"
+        alignItems="center"
+        gap="$3"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+      >
         <BackButton />
         <YStack flex={1}>
-          <Text fontSize="$6" fontWeight="bold">Members</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            Members
+          </Text>
         </YStack>
         {canManageMembers && (
-          <Button icon={<UserPlus size={18} />} backgroundColor="$primary" onPress={() => setInviteSheetOpen(true)}>
+          <Button
+            icon={<UserPlus size={18} />}
+            variant="primary"
+            onPress={() => setInviteSheetOpen(true)}
+          >
             Invite
           </Button>
         )}
@@ -86,34 +141,65 @@ export default function MembersScreen() {
       <FlatList
         data={members}
         keyExtractor={(item) => item.user_id}
-        refreshControl={<RefreshControl refreshing={isRefetching || isLoading} onRefresh={refetch} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching || isLoading}
+            onRefresh={refetch}
+          />
+        }
         contentContainerStyle={{ padding: 16, gap: 12 }}
         ListEmptyComponent={
-          <YStack flex={1} justifyContent="center" alignItems="center" padding="$8" gap="$3">
+          <YStack
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
+            padding="$8"
+            gap="$3"
+          >
             <UserPlus size={48} color="$gray5" />
-            <Text color="$colorMuted" fontSize="$5">No members yet</Text>
-            <Text color="$colorMuted" textAlign="center">Invite staff to help manage your business</Text>
+            <Text color="$colorMuted" fontSize="$5">
+              No members yet
+            </Text>
+            <Text color="$colorMuted" textAlign="center">
+              Invite staff to help manage your business
+            </Text>
           </YStack>
         }
         renderItem={({ item }) => (
           <Card padding="$4" bordered>
             <XStack alignItems="center" gap="$3">
               <Avatar circular size="$5">
-                <Avatar.Fallback backgroundColor={ROLE_COLORS[item.role] || "$gray9"} />
+                <Avatar.Fallback
+                  backgroundColor={ROLE_COLORS[item.role] || "$gray9"}
+                />
               </Avatar>
               <YStack flex={1}>
-                <Text fontWeight="bold">{item.user?.full_name || "Pending"}</Text>
-                <Text fontSize="$3" color="$colorMuted">{item.user?.email || "Invitation sent"}</Text>
+                <Text fontWeight="bold">
+                  {item.user?.full_name || "Pending"}
+                </Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  {item.user?.email || "Invitation sent"}
+                </Text>
               </YStack>
-              <YStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" backgroundColor={ROLE_COLORS[item.role] || "$gray9"}>
-                <Text fontSize="$2" color="white" fontWeight="600">{ROLE_LABELS[item.role] || item.role}</Text>
+              <YStack
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+                borderRadius="$2"
+                backgroundColor={ROLE_COLORS[item.role] || "$gray9"}
+              >
+                <Text fontSize="$2" color="white" fontWeight="600">
+                  {ROLE_LABELS[item.role] || item.role}
+                </Text>
               </YStack>
               {item.role !== "chief" && canManageMembers && (
                 <Button
                   size="$3"
-                  icon={<X size={14} />}
-                  backgroundColor="$red10"
-                  onPress={() => { setRemovingMember(item); setRemoveDialogOpen(true); }}
+                  icon={({ color, size }) => <X size={size} color={color} />}
+                  variant="danger"
+                  onPress={() => {
+                    setRemovingMember(item);
+                    setRemoveDialogOpen(true);
+                  }}
                 />
               )}
             </XStack>
@@ -122,13 +208,31 @@ export default function MembersScreen() {
       />
 
       {/* Invite Sheet */}
-      <Sheet modal open={inviteSheetOpen} onOpenChange={setInviteSheetOpen} snapPoints={[75]} dismissOnSnapToBottom zIndex={200_000}>
-        <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
+      <Sheet
+        modal
+        open={inviteSheetOpen}
+        onOpenChange={setInviteSheetOpen}
+        snapPoints={[75]}
+        dismissOnSnapToBottom
+        zIndex={200_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+        >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <ScrollView>
             <YStack padding="$6" gap="$4">
-              <Text fontSize="$6" fontWeight="bold">Invite Member</Text>
+              <Text fontSize="$6" fontWeight="bold">
+                Invite Member
+              </Text>
               <Text fontSize="$3" color="$colorMuted">
                 Enter the member's email or phone number
               </Text>
@@ -141,52 +245,163 @@ export default function MembersScreen() {
                 autoCorrect={false}
               />
 
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">Select a Role</Text>
-                <YStack gap="$2">
+              <YStack gap="$3">
+                <Text fontSize="$3" fontWeight="600" color="$colorMuted">
+                  Select a Role
+                </Text>
+                <XStack gap="$2" flexWrap="wrap">
                   {Object.entries(roles).map(([key, role]: [string, any]) => {
                     const selected = inviteRole === key;
-                    const color = ROLE_COLORS[key];
-                    const caps = role.capabilities ?? [];
+                    const roleColor = ROLE_COLORS[key] || "$primary";
+                    const capCount = (role.capabilities ?? []).length;
                     return (
-                      <XStack
+                      <Card
                         key={key}
-                        backgroundColor={selected ? "$backgroundSoft" : "$background"}
-                        borderColor={selected ? color : "$borderColor"}
+                        bordered
+                        flex={1}
+                        minWidth={100}
+                        backgroundColor={selected ? roleColor : "$background"}
+                        borderColor={selected ? roleColor : "$borderColor"}
                         borderWidth={selected ? 2 : 1}
                         borderRadius="$4"
-                        overflow="hidden"
-                        pressStyle={{ opacity: 0.8, backgroundColor: "$backgroundHover" }}
-                        onPress={() => setInviteRole(key)}
+                        pressStyle={{ opacity: 0.85 }}
+                        onPress={() => {
+                          setInviteRole(key);
+                          setShowAllCaps(false);
+                        }}
                         cursor="pointer"
                       >
-                        <YStack width={selected ? 4 : 0} backgroundColor={color} />
-                        <YStack flex={1} padding="$3.5" gap="$1.5">
-                          <Text fontWeight={selected ? "bold" : "500"} fontSize="$4">
+                        <YStack alignItems="center" gap="$1" padding="$2.5">
+                          <Text
+                            fontSize="$4"
+                            fontWeight={selected ? "bold" : "500"}
+                            textAlign="center"
+                          >
                             {role.label}
                           </Text>
-                          {caps.slice(0, 4).map((cap: { key: string; label: string }) => (
-                            <XStack key={cap.key} gap="$1.5" alignItems="center">
-                              <Check size={11} color="$green10" />
-                              <Text fontSize="$2" color="$colorMuted">{cap.label}</Text>
-                            </XStack>
-                          ))}
-                          {caps.length > 4 && (
-                            <Text fontSize="$2" color="$colorMuted" fontStyle="italic">
-                              +{caps.length - 4} more...
-                            </Text>
-                          )}
+                          <Text
+                            fontSize="$2"
+                            color={selected ? "$color" : "$colorMuted"}
+                            opacity={selected ? 0.8 : 1}
+                          >
+                            {capCount} {capCount === 1 ? "cap" : "caps"}
+                          </Text>
                         </YStack>
-                      </XStack>
+                      </Card>
                     );
                   })}
-                </YStack>
+                </XStack>
               </YStack>
 
-              <Button backgroundColor="$primary" onPress={handleInvite} disabled={!inviteIdentifier.trim()}>
+              {inviteRole && roles[inviteRole] && (
+                <Card
+                  bordered
+                  borderRadius="$4"
+                  padding="$4"
+                  backgroundColor="$backgroundSoft"
+                >
+                  <YStack gap="$3">
+                    <XStack alignItems="center" gap="$2">
+                      <YStack
+                        width={3}
+                        height={20}
+                        borderRadius="$2"
+                        backgroundColor={ROLE_COLORS[inviteRole] || "$gray9"}
+                      />
+                      <Text fontSize="$4" fontWeight="bold">
+                        {roles[inviteRole].label} Capabilities
+                      </Text>
+                    </XStack>
+                    <Separator />
+                    <YStack gap="$1">
+                      {(roles[inviteRole].capabilities ?? [])
+                        .slice(0, showAllCaps ? undefined : 4)
+                        .map((cap: { key: string; label: string }) => {
+                          const IconComponent =
+                            {
+                              business_members_manage: Users,
+                              orders_create: ClipboardList,
+                              orders_accept: CheckCheck,
+                              orders_read: Eye,
+                              orders_reject: Ban,
+                              orders_start_preparing: CookingPot,
+                              orders_mark_ready: ClipboardCheck,
+                              payments_process: CreditCard,
+                              deliveries_assign: Truck,
+                              deliveries_all: Truck,
+                              finance_read: BarChart3,
+                              finance_billing_manage: Receipt,
+                              finance_withdraw: ArrowUpRight,
+                              menu_manage: Menu,
+                              promos_manage: Tag,
+                              riders_manage: Bike,
+                              tax_rules_manage: Calculator,
+                            }[cap.key] || Check;
+                          return (
+                            <XStack
+                              key={cap.key}
+                              gap="$3"
+                              alignItems="center"
+                              paddingVertical="$2.5"
+                            >
+                              <YStack
+                                width={32}
+                                height={32}
+                                borderRadius="$3"
+                                backgroundColor="$gray3"
+                                alignItems="center"
+                                justifyContent="center"
+                              >
+                                <IconComponent size={16} color="$color" />
+                              </YStack>
+                              <YStack flex={1}>
+                                <Text fontSize="$3" fontWeight="500">
+                                  {cap.label}
+                                </Text>
+                              </YStack>
+                            </XStack>
+                          );
+                        })}
+                      {(roles[inviteRole].capabilities ?? []).length > 4 && (
+                        <XStack
+                          gap="$2"
+                          alignItems="center"
+                          justifyContent="center"
+                          paddingVertical="$3"
+                          cursor="pointer"
+                          pressStyle={{ opacity: 0.7 }}
+                          onPress={() => setShowAllCaps(!showAllCaps)}
+                        >
+                          <Text fontSize="$3" fontWeight="600" color="$primary">
+                            {showAllCaps
+                              ? "Show less"
+                              : `Show all ${(roles[inviteRole].capabilities ?? []).length} capabilities`}
+                          </Text>
+                          {showAllCaps ? (
+                            <ChevronUp size={16} color="$primary" />
+                          ) : (
+                            <ChevronDown size={16} color="$primary" />
+                          )}
+                        </XStack>
+                      )}
+                    </YStack>
+                  </YStack>
+                </Card>
+              )}
+
+              <Button
+                variant="primary"
+                onPress={handleInvite}
+                disabled={!inviteIdentifier.trim()}
+              >
                 {inviteMember.isPending ? "Sending..." : "Send Invitation"}
               </Button>
-              <Button variant="outline" onPress={() => setInviteSheetOpen(false)}>Cancel</Button>
+              <Button
+                variant="outline"
+                onPress={() => setInviteSheetOpen(false)}
+              >
+                Cancel
+              </Button>
             </YStack>
           </ScrollView>
         </Sheet.Frame>
