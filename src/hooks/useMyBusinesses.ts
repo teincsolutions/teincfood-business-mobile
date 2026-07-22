@@ -16,6 +16,11 @@ export interface MyBusinessEntry {
 }
 
 function mapInvitation(inv: UserInvitation): MyBusinessEntry | null {
+  if (!inv || !inv.type) {
+    console.debug('[useMyBusinesses] mapInvitation: invalid invitation', inv);
+    return null;
+  }
+
   switch (inv.type) {
     case 'business_owner':
       return {

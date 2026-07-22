@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "tamagui";
 import {
-  Clock,
+  Timer,
   Utensils,
   CheckCircle,
   LogOut,
@@ -33,7 +33,7 @@ function LiveClock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
+    <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
       {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
     </Text>
   );
@@ -51,39 +51,34 @@ function StatusColumn({
   orders: any[];
 }) {
   return (
-    <YStack flex={1} minWidth={280} gap="$3">
-      <XStack gap="$2" alignItems="center" justifyContent="center">
-        <Icon size={28} color={color} />
-        <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color={color}>
+    <YStack flex={1} minWidth={200} gap="$1.5">
+      <XStack gap="$1" alignItems="center" justifyContent="center">
+        <Icon size={18} color={color} />
+        <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color={color}>
           {label}
         </Text>
-        <YStack backgroundColor={color} borderRadius="$full" px="$3" py="$1">
-          <Text color="white" fontSize="$5" fontWeight="800">
+        <YStack backgroundColor={color} borderRadius="$full" px="$2" py="$0.5">
+          <Text color="white" fontSize="$2" fontWeight="700">
             {orders.length}
           </Text>
         </YStack>
       </XStack>
 
       {orders.length === 0 ? (
-        <Card
-          padding="$8"
-          backgroundColor="$backgroundStrong"
-          borderRadius="$6"
-          alignItems="center"
-          justifyContent="center"
-          minHeight={200}
-        >
-          <CheckCircle size={48} color="$gray200" />
-          <Text fontSize="$5" color="$colorSecondary" fontFamily="$body" marginTop="$3">
-            No {label.toLowerCase()} orders
+        <Card padding="$2" backgroundColor="$backgroundStrong" borderRadius="$3" alignItems="center" justifyContent="center" minHeight={60}>
+          <CheckCircle size={18} color="$gray200" />
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" marginTop="$1">
+            None
           </Text>
         </Card>
       ) : (
-        <YStack gap="$3">
+        <XStack flexWrap="wrap" gap="$1">
           {orders.map((order) => (
-            <CalloutCard key={order.id} order={order} />
+            <YStack key={order.id} width="49%">
+              <CalloutCard order={order} />
+            </YStack>
           ))}
-        </YStack>
+        </XStack>
       )}
     </YStack>
   );
@@ -92,7 +87,7 @@ function StatusColumn({
 export default function CalloutDisplay() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const business = useActiveBusiness();
+  const { activeBusiness } = useActiveBusiness();
   const securityStore = useSecurityStore();
   const [exiting, setExiting] = useState(false);
 
@@ -145,41 +140,41 @@ export default function CalloutDisplay() {
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
       <XStack
-        paddingHorizontal="$6"
-        paddingVertical="$4"
+        paddingHorizontal="$4"
+        paddingVertical="$3"
         alignItems="center"
         justifyContent="space-between"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
         <YStack>
-          <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
-            {business?.name || "Order Display"}
+          <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+            {activeBusiness?.name || "Order Display"}
           </Text>
         </YStack>
-        <XStack gap="$4" alignItems="center">
+        <XStack gap="$3" alignItems="center">
           <LiveClock />
           <Button
             chromeless
             circular
-            width={44}
-            height={44}
+            width={36}
+            height={36}
             padding={0}
             pressStyle={{ opacity: 0.6 }}
             disabled={exiting}
             onPress={handleExit}
           >
-            {exiting ? <Spinner size="small" /> : <LogOut size={22} color="$colorSecondary" />}
+            {exiting ? <Spinner size="small" /> : <LogOut size={18} color="$colorSecondary" />}
           </Button>
         </XStack>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <XStack padding="$6" gap="$6" alignItems="flex-start">
+        <XStack padding="$3" gap="$3" alignItems="flex-start">
           <StatusColumn
             label="Pending"
             color="$orange10"
-            icon={Clock}
+            icon={Timer}
             orders={pendingOrders}
           />
           <StatusColumn

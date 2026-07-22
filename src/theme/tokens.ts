@@ -1,4 +1,3 @@
-import { green } from "react-native-reanimated/lib/typescript/Colors";
 import { createTokens } from "tamagui";
 
 export const tokens = createTokens({

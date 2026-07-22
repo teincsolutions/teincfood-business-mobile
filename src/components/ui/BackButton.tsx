@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { ArrowLeft } from "@tamagui/lucide-icons";
 import { useNavigation, useRouter } from "expo-router";
-import { Button, styled } from "tamagui";
+import { Button } from "./Button";
 
 interface BackButtonProps {
   onPress?: () => void;

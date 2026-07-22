@@ -20,4 +20,22 @@ export function useSellerAnalyticsQuery(period = 'today', enabled = true) {
   });
 }
 
-export { SELLER_ANALYTICS_KEYS as sellerAnalyticsKeys };
+export const REVENUE_KEYS = {
+  all: ['revenue-summary'] as const,
+  summary: (businessId: string, period: string) =>
+    [...REVENUE_KEYS.all, businessId, period] as const,
+};
+
+export function useRevenueSummaryQuery(period: string = 'today', enabled = true) {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useQuery({
+    queryKey: REVENUE_KEYS.summary(activeBusinessId ?? '', period),
+    queryFn: () =>
+      sellerAnalyticsService.fetchRevenueSummary(activeBusinessId!, period),
+    enabled: enabled && Boolean(activeBusinessId),
+    staleTime: 30000,
+  });
+}
+
+export { SELLER_ANALYTICS_KEYS as sellerAnalyticsKeys, REVENUE_KEYS as revenueKeys };

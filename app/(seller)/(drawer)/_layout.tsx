@@ -14,6 +14,7 @@ import {
   Settings,
   Bell,
   Monitor,
+  ChefHat,
   LogOut,
   Menu,
   MessageSquare,
@@ -96,6 +97,12 @@ function CustomDrawerContent(props: any) {
             icon={Monitor}
             label="Callout Display"
             onPress={() => router.push("/(seller)/display")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={ChefHat}
+            label="Kitchen Display"
+            onPress={() => router.push("/(seller)/kitchen")}
             isActive={isActive}
           />
           <Separator marginVertical="$2" />

@@ -7,10 +7,12 @@ export default function SellerLayout() {
   const segments = useSegments();
 
   useEffect(() => {
-    const enabled = useDisplayStore.getState().calloutDisplayEnabled;
+    const displayStore = useDisplayStore.getState();
     const currentPath = segments.join('/');
-    if (enabled && !currentPath.includes('display')) {
+    if (displayStore.calloutDisplayEnabled && !currentPath.includes('display')) {
       router.replace('/(seller)/display');
+    } else if (displayStore.kitchenDisplayEnabled && !currentPath.includes('kitchen')) {
+      router.replace('/(seller)/kitchen');
     }
   }, []);
 

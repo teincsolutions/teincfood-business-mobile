@@ -1,17 +1,9 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack } from "tamagui";
-import { Clock } from "@tamagui/lucide-icons";
 import type { SellerOrder } from "@/types/api/seller.api";
 
 interface CalloutCardProps {
   order: SellerOrder;
-}
-
-function timeAgo(dateStr: string) {
-  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
 const STATUS_STYLES: Record<string, { border: string; bg: string; badgeBg: string; label: string }> = {
@@ -26,36 +18,24 @@ export function CalloutCard({ order }: CalloutCardProps) {
 
   return (
     <Card
-      padding="$5"
+      padding="$1.5"
       backgroundColor={style.bg}
-      borderLeftWidth={8}
+      borderLeftWidth={4}
       borderLeftColor={style.border}
-      borderRadius="$5"
-      elevate
+      borderRadius="$3"
     >
-      <YStack gap="$2" alignItems="center">
-        <Text fontSize="$9" fontWeight="900" fontFamily="$heading" color="$color" letterSpacing={3}>
+      <YStack gap="$1" alignItems="center">
+        <Text fontSize="$10" fontWeight="800" fontFamily="$heading" color="$color" letterSpacing={2}>
           #{order.callout_number}
         </Text>
-        {order.customer_name && (
-          <Text fontSize="$5" fontFamily="$body" color="$colorSecondary" numberOfLines={1}>
-            {order.customer_name}
-          </Text>
-        )}
         <XStack
           backgroundColor={style.badgeBg}
-          paddingHorizontal="$3"
-          paddingVertical="$1"
+          paddingHorizontal="$1.5"
+          paddingVertical="$0.5"
           borderRadius="$full"
         >
-          <Text color="white" fontSize="$3" fontWeight="700" textTransform="uppercase">
+          <Text color="white" fontSize="$1" fontWeight="700" textTransform="uppercase">
             {style.label}
-          </Text>
-        </XStack>
-        <XStack gap="$1" alignItems="center" marginTop="$1">
-          <Clock size={14} color="$colorMuted" />
-          <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-            {timeAgo(order.inserted_at)}
           </Text>
         </XStack>
       </YStack>

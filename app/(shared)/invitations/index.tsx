@@ -4,7 +4,7 @@ import { FlatList, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Clock, CheckCircle } from "@tamagui/lucide-icons";
-import { BackButton } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   useUserInvitationsQuery,
@@ -46,7 +46,9 @@ export default function InvitationsScreen() {
       (n) =>
         n.payload?.code === item.code &&
         n.payload?.notification_category ===
-          (item.type === "fleet_rider" ? "rider_invitation" : "business_member_invitation"),
+          (item.type === "fleet_rider"
+            ? "rider_invitation"
+            : "business_member_invitation"),
     );
 
     return (
@@ -68,7 +70,9 @@ export default function InvitationsScreen() {
           {matchingNotif && (
             <NotificationActionCard
               notification={matchingNotif}
-              onDone={() => setConfirmedIds((prev) => new Set(prev).add(item.id))}
+              onDone={() =>
+                setConfirmedIds((prev) => new Set(prev).add(item.id))
+              }
             />
           )}
         </YStack>
@@ -106,9 +110,7 @@ export default function InvitationsScreen() {
           </YStack>
         ) : (
           <Button
-            variant="outline"
-            borderColor="$red10"
-            color="$red10"
+            variant="danger"
             size="$3"
             onPress={() => setConfirmLeaveId(item.id)}
             disabled={leaveBusiness.isPending}
@@ -156,7 +158,9 @@ export default function InvitationsScreen() {
         data={data}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) =>
-          item.status === "pending" ? renderPending({ item }) : renderJoined({ item })
+          item.status === "pending"
+            ? renderPending({ item })
+            : renderJoined({ item })
         }
         contentContainerStyle={{
           padding: 16,

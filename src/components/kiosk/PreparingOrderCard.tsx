@@ -32,11 +32,11 @@ export function PreparingOrderCard({ order, onMarkReady, onViewDetails }: Prepar
           </Badge>
         </XStack>
 
-        {order.user?.full_name && (
+        {(order.customer_name || order.user?.full_name) && (
           <XStack gap="$1" alignItems="center">
             <User size={14} color="$colorMuted" />
             <Text fontSize="$3" color="$colorMuted">
-              {order.user.full_name}
+              {order.customer_name || order.user.full_name}
             </Text>
           </XStack>
         )}

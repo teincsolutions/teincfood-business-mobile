@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -58,8 +58,8 @@ import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
-import { paymentService } from "@/services/payment.service";
 import type {
   MenuItem,
   MenuItemVariantResponse,
@@ -72,9 +72,7 @@ import type {
   POSPaymentMethod,
   POSCartItem,
 } from "@/types/pos.types";
-import { MenuItemCard } from "@/components/pos/MenuItemCard";
-import { CashPaymentSheet } from "@/components/pos/CashPaymentSheet";
-import { MobileMoneySheet } from "@/components/pos/MobileMoneySheet";
+import { MenuItemCard, CashPaymentSheet, PaymentProcessingModal } from "@/components/pos";
 import { PendingOrderCard, PreparingOrderCard } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { FlatList } from "react-native-gesture-handler";
@@ -700,8 +698,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const clearAll = usePOSStore((s) => s.clearAll);
   const createOrder = useCreatePOSOrderMutation();
   const [showCashSheet, setShowCashSheet] = useState(false);
-  const [showMoMoSheet, setShowMoMoSheet] = useState(false);
-  const [paymentPhone, setPaymentPhone] = useState("");
+  const [lastOrderNumber, setLastOrderNumber] = useState<string | null>(null);
+  const [lastCompletedOrderId, setLastCompletedOrderId] = useState<string | null>(null);
+  const paymentFlow = usePOSPaymentFlow();
   const previewOrder = usePOSOrderPreviewQuery(
     items,
     checkoutForm.order_type,
@@ -742,16 +741,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     },
   ];
 
-  const handlePlaceOrder = useCallback(() => {
-    if (checkoutForm.pos_payment_method === "cash") {
-      setShowCashSheet(true);
-    } else {
-      setShowMoMoSheet(true);
-    }
-  }, [checkoutForm.pos_payment_method]);
-
   const executePlaceOrder = useCallback(
-    (phone?: string) => {
+    () => {
       const { autoPrint } = usePrinterStore.getState();
 
       const orderItems = items.map((i) => ({
@@ -767,7 +758,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       createOrder.mutate(
         {
           order_type: checkoutForm.order_type,
-          customer_name: checkoutForm.customer_name || "Walk-in",
+          customer_name: checkoutForm.customer_name || undefined,
           customer_phone: checkoutForm.customer_phone,
           pos_payment_method: checkoutForm.pos_payment_method,
           items: orderItems,
@@ -776,36 +767,51 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           onSuccess: (response) => {
             const orderId = response.data.id;
             const calloutNumber = response.data.callout_number;
+            setLastOrderNumber(response.data.order_number);
             clearAll();
             toast.success(`Order #${calloutNumber} placed!`);
 
-            if (autoPrint) {
-              printService.printOrderReceipt(orderId);
-            }
-
-            if (checkoutForm.pos_payment_method !== "cash" && phone) {
-              paymentService
-                .initiatePayment({
-                  order_id: orderId,
-                  amount_minor: total,
-                  phone,
-                  channel: "mobile_money",
-                  provider: "paystack",
-                })
-                .then(() => {
-                  toast.success("Payment prompt sent to customer's phone");
-                })
-                .catch((err) => {
-                  console.debug("Payment initiation failed", err);
-                  toast.error("Failed to send payment prompt");
-                });
+            if (checkoutForm.pos_payment_method === "cash") {
+              if (autoPrint) {
+                printService.printOrderReceipt(orderId);
+              }
+            } else {
+              if (autoPrint) {
+                setLastCompletedOrderId(orderId);
+              }
+              paymentFlow.startCheckout(orderId, total);
             }
           },
         },
       );
     },
-    [items, checkoutForm, createOrder, clearAll, total],
+    [items, checkoutForm, createOrder, clearAll, total, paymentFlow.startCheckout],
   );
+
+  const handlePlaceOrder = useCallback(() => {
+    if (checkoutForm.pos_payment_method === "cash") {
+      setShowCashSheet(true);
+    } else {
+      executePlaceOrder();
+    }
+  }, [checkoutForm.pos_payment_method, executePlaceOrder]);
+
+  useEffect(() => {
+    if (paymentFlow.state === 'success') {
+      if (lastCompletedOrderId) {
+        printService.printOrderReceipt(lastCompletedOrderId);
+        setLastCompletedOrderId(null);
+      }
+      const timer = setTimeout(() => paymentFlow.reset(), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [paymentFlow.state, paymentFlow.reset, lastCompletedOrderId]);
+
+  useEffect(() => {
+    if (paymentFlow.state === 'failed') {
+      setLastCompletedOrderId(null);
+    }
+  }, [paymentFlow.state]);
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -1187,17 +1193,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         isProcessing={createOrder.isPending}
       />
 
-      <MobileMoneySheet
-        open={showMoMoSheet}
-        onOpenChange={setShowMoMoSheet}
-        totalMinor={total}
-        customerName={checkoutForm.customer_name || "Walk-in"}
-        onConfirm={(phone) => {
-          setPaymentPhone(phone);
-          setShowMoMoSheet(false);
-          executePlaceOrder(phone);
-        }}
-        isProcessing={createOrder.isPending}
+      <PaymentProcessingModal
+        open={paymentFlow.state !== 'idle'}
+        state={paymentFlow.state}
+        errorMsg={paymentFlow.errorMsg}
+        orderNumber={lastOrderNumber}
+        amountMinor={total}
+        onClose={paymentFlow.reset}
       />
     </YStack>
   );
@@ -1248,7 +1250,7 @@ function InProgressTab() {
   const activeOrders = useMemo(
     () =>
       (orders ?? []).filter((o) =>
-        ["pending", "accepted", "preparing", "ready"].includes(o.status),
+        ["pending", "awaiting_payment", "accepted", "preparing", "ready"].includes(o.status),
       ),
     [orders],
   );
@@ -1513,17 +1515,39 @@ function TodayTab() {
   });
   const insets = useSafeAreaInsets();
 
-  const completedOrders = useMemo(
-    () =>
-      (orders ?? []).filter((o) =>
-        ["delivered", "completed", "cancelled"].includes(o.status),
-      ),
-    [orders],
+  const allTodayOrders = useMemo(() => orders ?? [], [orders]);
+
+  const ACTIVE_STATUSES = ["pending", "awaiting_payment", "accepted", "preparing", "ready"];
+  const COMPLETED_STATUSES = ["delivered", "completed", "cancelled"];
+
+  const activeOrders = useMemo(
+    () => allTodayOrders.filter((o) => ACTIVE_STATUSES.includes(o.status)),
+    [allTodayOrders],
   );
+  const completedOrders = useMemo(
+    () => allTodayOrders.filter((o) => COMPLETED_STATUSES.includes(o.status)),
+    [allTodayOrders],
+  );
+
+  const sortedOrders = useMemo(
+    () => [...activeOrders, ...completedOrders],
+    [activeOrders, completedOrders],
+  );
+
+  const showActive = activeOrders.length > 0;
+  const showCompleted = completedOrders.length > 0;
+
+  const statusColor = (status: string) => {
+    if (["pending", "awaiting_payment", "accepted"].includes(status)) return "$orange9";
+    if (status === "preparing") return "$blue9";
+    if (status === "ready") return "$green9";
+    if (status === "cancelled") return "$red9";
+    return "$gray9";
+  };
 
   return (
     <FlatList
-      data={completedOrders}
+      data={sortedOrders}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{
         padding: 20,
@@ -1542,34 +1566,19 @@ function TodayTab() {
       onEndReachedThreshold={0.5}
       ListHeaderComponent={
         <YStack marginBottom="$4">
-          <Text
-            fontSize="$6"
-            fontWeight="700"
-            fontFamily="$heading"
-            color="$color"
-          >
+          <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
             Today's Orders
           </Text>
-          <Text
-            fontSize="$4"
-            color="$colorSecondary"
-            fontFamily="$body"
-            marginTop="$1"
-          >
-            {completedOrders.length} order
-            {completedOrders.length !== 1 ? "s" : ""}
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$1">
+            {allTodayOrders.length} order{allTodayOrders.length !== 1 ? "s" : ""}
+            {showActive ? ` (${activeOrders.length} active)` : ""}
           </Text>
         </YStack>
       }
       ListEmptyComponent={
         <YStack padding="$8" alignItems="center" gap="$3">
           <Package size={80} color="$gray200" />
-          <Text
-            fontSize="$5"
-            fontWeight="600"
-            color="$colorSecondary"
-            textAlign="center"
-          >
+          <Text fontSize="$5" fontWeight="600" color="$colorSecondary" textAlign="center">
             No orders today yet
           </Text>
           <Button variant="outline" height={44} onPress={refetch}>
@@ -1584,65 +1593,69 @@ function TodayTab() {
           </YStack>
         ) : null
       }
-      renderItem={({ item }) => (
-        <Card
-          elevate
-          padding="$4"
-          marginBottom="$3"
-          backgroundColor="$backgroundStrong"
-          borderRadius="$5"
-        >
-          <XStack justifyContent="space-between" alignItems="flex-start">
-            <YStack flex={1} gap="$1">
-              <Text
-                fontWeight="700"
-                fontSize="$5"
-                fontFamily="$heading"
-                color="$color"
-              >
-                {item.order_number}
-              </Text>
-              {item.user && (
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  {item.user.full_name}
-                </Text>
-              )}
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {new Date(item.inserted_at).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+      renderItem={({ item, index }) => (
+        <>
+          {index === 0 && showActive && (
+            <YStack paddingVertical="$2" paddingHorizontal="$1">
+              <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$orange10">
+                In Progress
               </Text>
             </YStack>
-            <YStack alignItems="flex-end" gap="$1">
-              <Text
-                fontWeight="800"
-                fontSize="$5"
-                fontFamily="$body"
-                color="$primary"
-              >
-                {formatPriceFromMinor(item.total_minor)}
+          )}
+          {index === activeOrders.length && showCompleted && (
+            <YStack paddingVertical="$2" paddingHorizontal="$1" marginTop="$2">
+              <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$gray10">
+                Completed
               </Text>
-              <YStack
-                backgroundColor={
-                  item.status === "cancelled" ? "$error" : "$success"
-                }
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-                borderRadius="$full"
-              >
-                <Text
-                  fontSize="$2"
-                  color="white"
-                  fontWeight="700"
-                  textTransform="capitalize"
-                >
-                  {item.status}
+            </YStack>
+          )}
+          <Card
+            elevate
+            padding="$4"
+            marginBottom="$3"
+            backgroundColor="$backgroundStrong"
+            borderRadius="$5"
+          >
+            <XStack justifyContent="space-between" alignItems="flex-start">
+              <YStack flex={1} gap="$1">
+                <Text fontWeight="700" fontSize="$5" fontFamily="$heading" color="$color">
+                  {item.order_number}
+                </Text>
+                {item.customer_name && (
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    {item.customer_name}
+                  </Text>
+                )}
+                {item.user && !item.customer_name && (
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    {item.user.full_name}
+                  </Text>
+                )}
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  {new Date(item.inserted_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </Text>
               </YStack>
-            </YStack>
-          </XStack>
-        </Card>
+              <YStack alignItems="flex-end" gap="$1">
+                <Text fontWeight="800" fontSize="$5" fontFamily="$body" color="$primary">
+                  {formatPriceFromMinor(item.total_minor)}
+                </Text>
+                <YStack
+                  backgroundColor={statusColor(item.status)}
+                  paddingHorizontal="$2"
+                  paddingVertical="$1"
+                  borderRadius="$full"
+                >
+                  <Text fontSize="$2" color="white" fontWeight="700" textTransform="capitalize">
+                    {item.status.replace(/_/g, " ")}
+                  </Text>
+                </YStack>
+              </YStack>
+            </XStack>
+          </Card>
+        </>
       )}
       initialNumToRender={10}
       windowSize={5}

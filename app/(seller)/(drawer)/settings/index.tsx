@@ -19,6 +19,8 @@ import {
   MailOpen,
   Printer,
   Percent,
+  Monitor,
+  ChefHat,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -27,6 +29,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
+import { useDisplayStore } from "@/stores/display.store";
 import {
   useNotificationPreferencesQuery,
   useUpdateNotificationPreferencesMutation,
@@ -49,6 +52,25 @@ export default function SellerSettings() {
   const { data: prefsRes } = useNotificationPreferencesQuery();
   const updatePrefs = useUpdateNotificationPreferencesMutation();
   const notificationsEnabled = prefsRes?.data?.order_notifications ?? true;
+
+  const calloutEnabled = useDisplayStore((s) => s.calloutDisplayEnabled);
+  const kitchenEnabled = useDisplayStore((s) => s.kitchenDisplayEnabled);
+
+  const handleToggleCallout = (enabled: boolean) => {
+    if (enabled) {
+      useDisplayStore.getState().enableCalloutDisplay();
+    } else {
+      useDisplayStore.getState().disableCalloutDisplay();
+    }
+  };
+
+  const handleToggleKitchen = (enabled: boolean) => {
+    if (enabled) {
+      useDisplayStore.getState().enableKitchenDisplay();
+    } else {
+      useDisplayStore.getState().disableKitchenDisplay();
+    }
+  };
 
   const handleToggleNotifications = (enabled: boolean) => {
     updatePrefs.mutate({ order_notifications: enabled });
@@ -268,6 +290,68 @@ export default function SellerSettings() {
                 )}
               </YStack>
             ))}
+          </Card>
+
+          {/* Display Settings */}
+          <Card padding="$4" bordered>
+            <YStack gap="$4">
+              <Text
+                fontSize="$3"
+                fontWeight="700"
+                fontFamily="$body"
+                color="$colorSecondary"
+                textTransform="uppercase"
+                letterSpacing={0.5}
+              >
+                Display Settings
+              </Text>
+
+              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+                <YStack flex={1}>
+                  <XStack gap="$2" alignItems="center">
+                    <Monitor size={18} color="$colorSecondary" />
+                    <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                      Callout Display
+                    </Text>
+                  </XStack>
+                  <Text color="$colorSecondary" fontSize="$3" fontFamily="$body" marginLeft={26}>
+                    Customer order status screen for wall-mounted display
+                  </Text>
+                </YStack>
+                <Switch
+                  size="$5"
+                  checked={calloutEnabled}
+                  onCheckedChange={handleToggleCallout}
+                  backgroundColor={calloutEnabled ? "$orange9" : "$gray600"}
+                >
+                  <Switch.Thumb animation="quick" backgroundColor="$white" />
+                </Switch>
+              </XStack>
+
+              <Separator />
+
+              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+                <YStack flex={1}>
+                  <XStack gap="$2" alignItems="center">
+                    <ChefHat size={18} color="$colorSecondary" />
+                    <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                      Kitchen Display
+                    </Text>
+                  </XStack>
+                  <Text color="$colorSecondary" fontSize="$3" fontFamily="$body" marginLeft={26}>
+                    Order preparation pipeline for kitchen staff
+                  </Text>
+                </YStack>
+                <Switch
+                  size="$5"
+                  checked={kitchenEnabled}
+                  onCheckedChange={handleToggleKitchen}
+                  backgroundColor={kitchenEnabled ? "$blue9" : "$gray600"}
+                >
+                  <Switch.Thumb animation="quick" backgroundColor="$white" />
+                </Switch>
+              </XStack>
+            </YStack>
           </Card>
 
           {/* Danger Zone */}

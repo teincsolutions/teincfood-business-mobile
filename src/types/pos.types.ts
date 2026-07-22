@@ -76,7 +76,7 @@ export interface POSOrderPreviewResponse {
 
 export interface POSOrder extends SellerOrder {
   order_type: POSOrderType;
-  callout_number: string;
+  callout_number: number | null;
   customer_name: string | null;
   customer_phone: string | null;
   pos_payment_method: POSPaymentMethod | null;

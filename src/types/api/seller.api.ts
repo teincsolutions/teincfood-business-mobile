@@ -110,6 +110,12 @@ export interface StatusHistoryEntry {
 export interface SellerOrder {
   id: string;
   order_number: string;
+  callout_number: number | null;
+  order_type: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  pos_payment_method: string | null;
+  paid_at: string | null;
   status: string;
   delivery_id: string | null;
   delivery_status: string | null;

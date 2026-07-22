@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { YStack, Text, Card, Button, XStack, Separator, Avatar } from "tamagui";
+import { YStack, Text, Card, XStack, Separator, Avatar } from "tamagui";
 import {
   User,
   Mail,
@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useProfileQuery } from "@/hooks/useProfile";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
+import { Button } from "@/components/ui";
 
 /**
  * Seller Profile Screen

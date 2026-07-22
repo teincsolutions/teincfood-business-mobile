@@ -39,6 +39,7 @@ import { formatPriceFromMinor } from "@/utils/currency";
 
 const FILTER_CHIPS = [
   { key: "pending", label: "Pending", color: "$yellow9" },
+  { key: "awaiting_payment", label: "Awaiting Payment", color: "$orange9" },
   { key: "accepted", label: "Accepted", color: "$orange9" },
   { key: "preparing", label: "Preparing", color: "$blue9" },
   { key: "ready", label: "Ready", color: "$green9" },
@@ -51,6 +52,7 @@ const FILTER_CHIPS = [
 
 const CHIP_COLORS = {
   pending: "$yellow9",
+  awaiting_payment: "$orange9",
   accepted: "$orange9",
   preparing: "$blue9",
   ready: "$green9",
@@ -63,6 +65,7 @@ const CHIP_COLORS = {
 
 const DEFAULT_CHIPS = [
   "pending",
+  "awaiting_payment",
   "accepted",
   "preparing",
   "ready",
@@ -71,7 +74,12 @@ const DEFAULT_CHIPS = [
   "arrived",
   "delivered",
 ];
-const CANCELLABLE_STATUSES = ["pending", "accepted", "preparing"];
+const CANCELLABLE_STATUSES = [
+  "pending",
+  "awaiting_payment",
+  "accepted",
+  "preparing",
+];
 
 function actionLabel(status: string) {
   return status === "pending" ? "Reject" : "Cancel";
@@ -108,7 +116,7 @@ export default function SellerOrders() {
   const [activeChips, setActiveChips] = useState<string[]>(
     isTablet
       ? [...DEFAULT_CHIPS]
-      : ["pending", "accepted", "preparing", "ready"],
+      : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
   );
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
@@ -215,7 +223,7 @@ export default function SellerOrders() {
           </YStack>
         </XStack>
         <XStack justifyContent="space-between">
-          <Text fontSize="$4">{item.user?.full_name || "Customer"}</Text>
+          <Text fontSize="$4">{item.customer_name || item.user?.full_name || "Customer"}</Text>
           <Text fontSize="$5" fontWeight="bold" color="$primary">
             {formatPriceFromMinor(item.total_minor, item.currency)}
           </Text>
@@ -271,15 +279,15 @@ export default function SellerOrders() {
         {item.order_number}
       </Text>
       <YStack width={colWidths.customer}>
-        <Tooltip label={item.user?.full_name || "—"}>
+        <Tooltip label={item.customer_name || item.user?.full_name || "—"}>
           <Tooltip.Trigger>
             <Text fontSize="$4" numberOfLines={1} ellipsis>
-              {item.user?.full_name || "—"}
+              {item.customer_name || item.user?.full_name || "—"}
             </Text>
           </Tooltip.Trigger>
         </Tooltip>
         <Text fontSize="$3" color="$colorMuted">
-          {item.user?.phone || ""}
+          {item.customer_phone || item.user?.phone || ""}
         </Text>
       </YStack>
       <YStack
@@ -594,7 +602,7 @@ export default function SellerOrders() {
                     setActiveChips(
                       isTablet
                         ? [...DEFAULT_CHIPS]
-                        : ["pending", "accepted", "preparing", "ready"],
+                        : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
                     );
                   }}
                 >

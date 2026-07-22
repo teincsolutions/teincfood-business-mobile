@@ -31,7 +31,47 @@ export interface SellerAnalyticsResponse {
   data: SellerAnalyticsData;
 }
 
+export interface RevenuePaymentMethod {
+  method: string;
+  revenue_minor: number;
+  count: number;
+  percentage: number;
+}
+
+export interface RevenueOrderType {
+  type: string;
+  revenue_minor: number;
+  count: number;
+}
+
+export interface RevenueByDay {
+  date: string;
+  revenue_minor: number;
+  count: number;
+}
+
+export interface RevenueSummaryData {
+  period: string;
+  currency: string;
+  total_revenue_minor: number;
+  total_orders: number;
+  average_order_value_minor: number;
+  by_payment_method: RevenuePaymentMethod[];
+  by_order_type: RevenueOrderType[];
+  by_day: RevenueByDay[];
+}
+
+export interface RevenueSummaryResponse {
+  data: RevenueSummaryData;
+}
+
 export async function fetchSellerAnalytics(businessId: string, period?: string): Promise<SellerAnalyticsResponse> {
   const params = period ? { period } : undefined;
   return api.get(`/businesses/${businessId}/analytics`, { params });
+}
+
+export async function fetchRevenueSummary(businessId: string, period = 'today'): Promise<RevenueSummaryResponse> {
+  return api.get(`/businesses/${businessId}/revenue-summary`, {
+    params: { period },
+  });
 }

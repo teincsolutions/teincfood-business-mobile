@@ -4,6 +4,7 @@ import * as posService from '@/services/pos.service';
 import { useBusinessStore } from '@/stores/business.store';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
+import { SELLER_KEYS } from './seller.hooks';
 import type { POSOrderCreateRequest, POSOrderPreviewResponse } from '@/types/pos.types';
 import type { POSCartItem, POSOrderType, POSOrderItemRequest } from '@/types/pos.types';
 
@@ -50,6 +51,7 @@ export function useCreatePOSOrderMutation() {
       posService.createPOSOrder(businessId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: POS_KEYS.orders(businessId) });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
       toast.success('Order created successfully');
     },
     onError: (error) => {
