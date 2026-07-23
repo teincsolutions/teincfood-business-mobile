@@ -230,7 +230,7 @@ export function ContactChatScreen({
   const currentUserId = useAuthStore((state) => state.user?.id || "");
 
   const client = getChatClient();
-  const { messages, send, loadMore, sendTyping, markRead } =
+  const { messages, send, loadMore, sendTyping, markRead, typingUserId } =
     useChat(conversationId);
 
   useEffect(() => {
@@ -665,7 +665,14 @@ export function ContactChatScreen({
             );
           })}
 
-          {/* Typing indicator — placeholder; app doesn't receive remote typing yet */}
+          {typingUserId && typingUserId !== currentUserId && (
+            <XStack alignItems="center" gap="$2" paddingVertical="$1">
+              <TypingDots />
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                typing...
+              </Text>
+            </XStack>
+          )}
         </ScrollView>
 
         {/* Input bar */}
