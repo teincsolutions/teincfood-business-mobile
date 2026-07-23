@@ -33,6 +33,7 @@ import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";
+import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@/types/api";
@@ -111,14 +112,13 @@ export default function SellerOrders() {
   const FIXED_TOTAL = COL_ITEMS + COL_TIME + COL_ACTIONS;
 
   const [containerWidth, setContainerWidth] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = useFilterStore((s) => s.ordersSearchQuery);
+  const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
+  const activeChips = useFilterStore((s) => s.ordersActiveChips);
+  const setActiveChips = useFilterStore((s) => s.setOrdersActiveChips);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [activeChips, setActiveChips] = useState<string[]>(
-    isTablet
-      ? [...DEFAULT_CHIPS]
-      : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
-  );
+  const hasInitFilter = useRef(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -151,6 +151,22 @@ export default function SellerOrders() {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, [searchQuery]);
+
+  // Initialize persistent filters on first mount
+  useEffect(() => {
+    if (hasInitFilter.current) return;
+    hasInitFilter.current = true;
+    if (activeChips.length === 0) {
+      setActiveChips(
+        isTablet
+          ? [...DEFAULT_CHIPS]
+          : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
+      );
+    }
+    if (searchQuery) {
+      setDebouncedSearch(searchQuery);
+    }
+  }, []);
 
   const filterParams = useMemo(() => {
     const params: { status?: string; q?: string } = {};
@@ -189,9 +205,11 @@ export default function SellerOrders() {
   const tableTotal = Object.values(colWidths).reduce((a, b) => a + b, 0) + 48;
 
   const toggleChip = (key: string) => {
-    setActiveChips((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
+    useFilterStore.setState((state) => ({
+      ordersActiveChips: state.ordersActiveChips.includes(key)
+        ? state.ordersActiveChips.filter((k) => k !== key)
+        : [...state.ordersActiveChips, key],
+    }));
   };
 
   const handlePrint = useCallback(async (order: SellerOrder) => {
@@ -641,6 +659,7 @@ export default function SellerOrders() {
           borderTopRightRadius="$6"
           padding="$4"
           paddingBottom={insets.bottom + 16}
+          {...(isTablet ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4">

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo } from "react";
 import { ScrollView, TouchableOpacity } from "react-native";
-import { YStack, Text, Card, XStack, Separator, Spinner } from "tamagui";
+import { YStack, Text, Card, XStack, Separator, Spinner, useMedia } from "tamagui";
 import {
   TrendingUp,
   DollarSign,
@@ -96,6 +96,7 @@ function PaymentBar({ method, revenue_minor, count, percentage, totalColor }: {
 
 export default function SellerAnalytics() {
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const [period, setPeriod] = useState("today");
 
   const { data: revenueData, isLoading: revenueLoading } = useRevenueSummaryQuery(period);
@@ -123,7 +124,7 @@ export default function SellerAnalytics() {
   return (
     <YStack flex={1} backgroundColor="$background">
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" paddingBottom={insets.bottom + 24} gap="$4">
+        <YStack padding="$4" paddingBottom={insets.bottom + 24} gap="$4" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
           {/* Header */}
           <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
             Analytics

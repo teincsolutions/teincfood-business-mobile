@@ -10,6 +10,7 @@ import {
   Sheet,
   Separator,
   Input as TamaguiInput,
+  useMedia,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -40,6 +41,7 @@ type Tab = "riders" | "requests";
 
 export default function SellerRidersScreen() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<Tab>("riders");
   const [searchQuery, setSearchQuery] = useState("");
@@ -268,7 +270,7 @@ export default function SellerRidersScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <YStack padding="$4" gap="$2">
         <Text
           fontSize="$7"
@@ -399,7 +401,9 @@ export default function SellerRidersScreen() {
           backgroundColor="$background"
           borderTopLeftRadius="$6"
           borderTopRightRadius="$6"
-          padding="$6"
+          padding="$5"
+          paddingBottom={insets.bottom + 16}
+          {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4">

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { YStack, XStack, Text, Separator, Sheet, ScrollView } from "tamagui";
+import { YStack, XStack, Text, Separator, Sheet, ScrollView, useMedia } from "tamagui";
 import {
   Clock,
   X,
@@ -32,6 +32,7 @@ export function OrderDetailsSheet({
   getTimeSince,
 }: OrderDetailsSheetProps) {
   const { isTablet } = useResponsive();
+  const media = useMedia();
 
   if (!order) return null;
 
@@ -89,7 +90,7 @@ export function OrderDetailsSheet({
   return (
     <Sheet modal open={visible} onOpenChange={(open) => !open && onClose()} snapPoints={[80]} dismissOnSnapToBottom zIndex={200_000}>
       <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-      <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$5">
+      <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$5" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
         <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
 
         <ScrollView showsVerticalScrollIndicator={false}>

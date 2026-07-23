@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useRouter } from "expo-router";
-import { YStack, Text, Card, XStack, ScrollView, Separator, Switch, Sheet } from "tamagui";
+import { YStack, Text, Card, XStack, ScrollView, Separator, Switch, Sheet, useMedia } from "tamagui";
 import { Percent, Plus, Pencil, Trash2, ChevronRight } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -35,6 +35,7 @@ function appliesLabel(value: string) {
 
 export default function TaxSettings() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const { data, isLoading } = useBusinessTaxRulesQuery();
@@ -123,7 +124,7 @@ export default function TaxSettings() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 24)}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 24)} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       {/* Header */}
       <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
         <BackButton />
@@ -190,7 +191,7 @@ export default function TaxSettings() {
       {/* Add/Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen} snapPoints={[70]} dismissOnSnapToBottom modal>
         <Sheet.Overlay />
-        <Sheet.Frame padding="$4" paddingBottom={insets.bottom + 16}>
+        <Sheet.Frame padding="$4" paddingBottom={insets.bottom + 16} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle />
           <Text fontSize="$5" fontWeight="bold" marginBottom="$4">
             {editingRule ? 'Edit Tax Rule' : 'Add Tax Rule'}

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { YStack, Text, Card, XStack, Separator, Sheet } from "tamagui";
+import { YStack, Text, Card, XStack, Separator, Sheet, useMedia } from "tamagui";
 import { ScrollView, Linking, Modal } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,6 +63,7 @@ function formatDate(iso: string) {
 export default function OrderDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
 
   // Live order updates for this specific order
@@ -136,7 +137,7 @@ export default function OrderDetails() {
   }
 
   return (
-    <YStack flex={1} paddingTop={Math.max(insets.top + 8, 24)} paddingBottom={insets.bottom + 16} backgroundColor="$background">
+    <YStack flex={1} paddingTop={Math.max(insets.top + 8, 24)} paddingBottom={insets.bottom + 16} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       {/* Header */}
       <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
         <BackButton />

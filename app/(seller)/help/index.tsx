@@ -10,6 +10,7 @@ import {
   Button,
   Separator,
   TextArea,
+  useMedia,
 } from "tamagui";
 import { BackButton, FormInput } from "@/components/ui";
 import {
@@ -31,6 +32,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  */
 export default function HelpSupport() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -128,7 +130,7 @@ export default function HelpSupport() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       {/* Header */}
       <XStack
         padding="$4"

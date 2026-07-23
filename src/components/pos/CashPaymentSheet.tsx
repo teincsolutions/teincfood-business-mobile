@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useMemo } from "react";
-import { YStack, XStack, Text, Button, Separator, Sheet } from "tamagui";
+import { YStack, XStack, Text, Button, Separator, Sheet, useMedia } from "tamagui";
 import { NumericKeypad } from "./NumericKeypad";
 import { formatPriceFromMinor } from "@/utils/currency";
 
@@ -21,6 +21,7 @@ export function CashPaymentSheet({
   onConfirm,
   isProcessing,
 }: CashPaymentSheetProps) {
+  const media = useMedia();
   const [tenderedText, setTenderedText] = useState("");
 
   const tenderedMinor = useMemo(() => {
@@ -67,6 +68,7 @@ export function CashPaymentSheet({
         borderTopLeftRadius="$6"
         borderTopRightRadius="$6"
         padding="$5"
+        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
       >
         <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
         <YStack gap="$4" flex={1}>

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { FlatList } from "react-native";
-import { YStack, XStack, Text, Spinner, Separator } from "tamagui";
+import { YStack, XStack, Text, Spinner, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowUpRight,
@@ -26,6 +26,7 @@ function formatDate(iso: string) {
 
 export default function TransactionHistoryScreen() {
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const {
     data,
     isLoading,
@@ -145,7 +146,7 @@ export default function TransactionHistoryScreen() {
       </YStack>
 
       {/* Transaction list */}
-      <YStack flex={1} paddingHorizontal="$4" $gtSm={{ paddingHorizontal: "$6", maxWidth: 600 }} alignSelf="center" width="100%">
+      <YStack flex={1} paddingHorizontal="$4" alignSelf="center" width="100%" {...(media.md || media.lg ? { maxWidth: 600 } : {})}>
         <FlatList
           data={entries}
           keyExtractor={(item) => item.id}

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { ScrollView } from "react-native";
-import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
+import { YStack, XStack, Text, Card, Spinner, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -21,6 +21,7 @@ function formatMinor(amount: number, currency = "GHS") {
 export default function WalletScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const role = useRoleStore((s) => s.role);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
   const { data: allBalances, isLoading: loadingAll } = useAllBalancesQuery();
@@ -41,10 +42,10 @@ export default function WalletScreen() {
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 16)}
         gap="$4"
-        $gtSm={{ padding: "$6", maxWidth: 600 }}
         alignSelf="center"
         width="100%"
         flex={1}
+        {...(media.md || media.lg ? { maxWidth: 600 } : {})}
       >
         <XStack gap="$2" alignItems="center">
           <BackButton />

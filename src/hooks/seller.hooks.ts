@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { SellerOrder as ApiSellerOrder } from '@/types/api/seller.api';
-import type { BusinessOrdersParams } from '@/services/seller.service';
+import type { BusinessOrdersParams, BusinessDeliveriesParams } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
 import { useBusinessStore } from '@/stores/business.store';
 import { toast } from 'sonner-native';
@@ -10,6 +10,8 @@ export const SELLER_KEYS = {
   all: ['seller'] as const,
   orders: (businessId?: string, filters?: BusinessOrdersParams) =>
     [...SELLER_KEYS.all, 'orders', businessId, filters].filter((x) => x !== undefined) as readonly any[],
+  deliveries: (businessId?: string, filters?: BusinessDeliveriesParams) =>
+    [...SELLER_KEYS.all, 'deliveries', businessId, filters].filter((x) => x !== undefined) as readonly any[],
   order: (id: string, businessId?: string) => [...SELLER_KEYS.all, 'order', id, businessId] as const,
 };
 
@@ -45,6 +47,30 @@ export function useSellerOrderQuery(orderId: string, enabled = true) {
     queryFn: () => sellerService.fetchSellerOrder(orderId),
     enabled: enabled && Boolean(orderId),
     staleTime: 5000,
+  });
+}
+
+export function useBusinessDeliveriesQuery(
+  enabled = true,
+  filters?: { status?: string; search?: string },
+) {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useInfiniteQuery({
+    queryKey: SELLER_KEYS.deliveries(activeBusinessId, filters),
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: BusinessDeliveriesParams = { page: pageParam, page_size: 20 };
+      if (filters?.status) params.status = filters.status;
+      if (filters?.search) params.search = filters.search;
+      return sellerService.fetchBusinessDeliveries(activeBusinessId!, params);
+    },
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination ?? {};
+      return page < total_pages ? page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    select: (data) => data.pages.flatMap((p) => p.data),
+    enabled: enabled && Boolean(activeBusinessId),
   });
 }
 

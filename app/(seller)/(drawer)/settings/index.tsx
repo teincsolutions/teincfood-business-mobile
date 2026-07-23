@@ -8,6 +8,7 @@ import {
   Switch,
   ScrollView,
   Spinner,
+  useMedia,
 } from "tamagui";
 import {
   Building,
@@ -43,6 +44,7 @@ import { extractApiErrorMessage } from "@/utils/error";
  */
 export default function SellerSettings() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
   const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
@@ -173,7 +175,7 @@ export default function SellerSettings() {
   ];
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack
           paddingHorizontal="$4"

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { Sheet, YStack, XStack, Text, TextArea } from "tamagui";
+import { Sheet, YStack, XStack, Text, TextArea, useMedia } from "tamagui";
 import { Star } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui";
 
@@ -11,6 +11,7 @@ interface RatingModalProps {
 }
 
 export function RatingModal({ open, onOpenChange, orderId }: RatingModalProps) {
+  const media = useMedia();
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -53,6 +54,7 @@ export function RatingModal({ open, onOpenChange, orderId }: RatingModalProps) {
         backgroundColor="$background"
         borderTopLeftRadius="$8"
         borderTopRightRadius="$8"
+        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
       >
         {submitted ? (
           <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">

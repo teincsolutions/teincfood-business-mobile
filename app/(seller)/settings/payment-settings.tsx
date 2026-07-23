@@ -10,6 +10,7 @@ import {
   Button as TamaguiButton,
   Switch,
   Separator,
+  useMedia,
 } from 'tamagui';
 import { ArrowLeft, Save, CreditCard, Building, Clock } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
@@ -20,6 +21,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function PaymentSettings() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
   const queryClient = useQueryClient();
@@ -67,7 +69,7 @@ export default function PaymentSettings() {
   ];
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 24)}

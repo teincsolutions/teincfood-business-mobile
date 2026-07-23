@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card } from "tamagui";
+import { YStack, XStack, Text, Card, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Clock, CheckCircle } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
@@ -15,6 +15,7 @@ import { useNotificationsList } from "@teincfood/rn-notifications";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const { data: invitesRes, refetch, isRefetching } = useUserInvitationsQuery();
   const { data: notificationsList } = useNotificationsList();
   const notifications = notificationsList?.notifications ?? [];
@@ -125,7 +126,7 @@ export default function InvitationsScreen() {
   const data = [...pending, ...joined];
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <XStack
         padding="$4"
         alignItems="center"

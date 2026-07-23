@@ -11,6 +11,7 @@ import {
   Separator,
   Input,
   ScrollView,
+  useMedia,
 } from "tamagui";
 import {
   UserPlus,
@@ -64,6 +65,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function MembersScreen() {
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const {
     data: response,
     isLoading,
@@ -85,6 +87,7 @@ export default function MembersScreen() {
   const [removingMember, setRemovingMember] = useState(null);
 
   const handleInvite = () => {
+    if (inviteMember.isPending) return;
     const identifier = inviteIdentifier.trim();
     if (!identifier) return;
     const data: Record<string, string> = { role: inviteRole };
@@ -104,15 +107,14 @@ export default function MembersScreen() {
   };
 
   const handleRemove = () => {
-    if (removingMember) {
-      removeMember.mutate(removingMember.user_id);
-      setRemoveDialogOpen(false);
-      setRemovingMember(null);
-    }
+    if (removeMember.isPending || !removingMember) return;
+    removeMember.mutate(removingMember.user_id);
+    setRemoveDialogOpen(false);
+    setRemovingMember(null);
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       {/* Header */}
       <XStack
         padding="$4"
@@ -226,9 +228,8 @@ export default function MembersScreen() {
           backgroundColor="$background"
           borderTopLeftRadius="$6"
           borderTopRightRadius="$6"
-          alignSelf="center"
-          width="100%"
-          $gtSm={{ maxWidth: 700 }}
+          padding="$5"
+          {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <ScrollView>
@@ -395,7 +396,7 @@ export default function MembersScreen() {
               <Button
                 variant="primary"
                 onPress={handleInvite}
-                disabled={!inviteIdentifier.trim()}
+                disabled={!inviteIdentifier.trim() || inviteMember.isPending}
               >
                 {inviteMember.isPending ? "Sending..." : "Send Invitation"}
               </Button>

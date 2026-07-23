@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Linking } from "react-native";
-import { YStack, XStack, Text, Sheet, Separator, Card } from "tamagui";
+import { YStack, XStack, Text, Sheet, Separator, Card, useMedia } from "tamagui";
 import {
   ExternalLink,
   ShieldCheck,
@@ -24,6 +24,7 @@ export function RiderKycSheet({
   documents,
   kycStatus,
 }: RiderKycSheetProps) {
+  const media = useMedia();
   const statusColor =
     kycStatus === "approved"
       ? "$green10"
@@ -66,6 +67,7 @@ export function RiderKycSheet({
         backgroundColor="$background"
         borderTopLeftRadius="$6"
         borderTopRightRadius="$6"
+        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
       >
         <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
 

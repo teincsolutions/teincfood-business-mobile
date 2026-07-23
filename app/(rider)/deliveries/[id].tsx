@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useRef, useState, useEffect, useCallback } from "react";
 import { ScrollView, TouchableOpacity, Linking, Platform, StyleSheet, View, useWindowDimensions } from "react-native";
-import { YStack, XStack, Text, Card, Separator, Avatar, Sheet } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Avatar, Sheet, useMedia } from "tamagui";
 import {
   MapPin,
   Navigation,
@@ -50,6 +50,7 @@ export default function RiderDeliveryDetails() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
+  const media = useMedia();
 
   useRiderDeliveryRealtimeUpdates();
 
@@ -280,7 +281,7 @@ export default function RiderDeliveryDetails() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
-        <YStack padding="$4" gap="$4">
+        <YStack padding="$4" gap="$4" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
           {/* Order Info */}
           <Card padding="$4" bordered>
             <YStack gap="$3">
@@ -579,7 +580,7 @@ export default function RiderDeliveryDetails() {
         zIndex={200_000}
       >
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" alignItems="center" paddingTop="$4">
             <Text fontSize="$6" fontWeight="bold">Complete Delivery?</Text>
@@ -604,7 +605,7 @@ export default function RiderDeliveryDetails() {
         zIndex={200_000}
       >
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" paddingTop="$4">
             <Text fontSize="$6" fontWeight="bold">Report Issue</Text>
@@ -629,7 +630,7 @@ export default function RiderDeliveryDetails() {
         zIndex={200_000}
       >
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4" alignItems="center" paddingTop="$4">
             <Text fontSize="$6" fontWeight="bold">

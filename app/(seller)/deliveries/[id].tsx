@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { ScrollView, Linking, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Avatar, useMedia } from "tamagui";
 import {
   MapPin,
   Navigation,
@@ -40,6 +40,7 @@ const DEFAULT_REGION = {
 
 export default function SellerDeliveryDetail() {
   const router = useRouter();
+  const media = useMedia();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
 
@@ -100,7 +101,7 @@ export default function SellerDeliveryDetail() {
       <ScrollView
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
-        <YStack padding="$4" gap="$4">
+        <YStack padding="$4" gap="$4" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
           {/* Map */}
           {hasCoords && (
             <Card padding="$0" bordered overflow="hidden" height={200}>

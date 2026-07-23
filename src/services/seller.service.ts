@@ -71,6 +71,22 @@ export async function fetchBusinessOrderByNumber(businessId: string, orderNumber
   return api.get<SellerOrderDetailResponse>(`/businesses/${businessId}/orders/${orderNumber}`);
 }
 
+// ─── Deliveries ───
+
+export interface BusinessDeliveriesParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  search?: string;
+}
+
+export async function fetchBusinessDeliveries(
+  businessId: string,
+  params?: BusinessDeliveriesParams,
+): Promise<SellerOrdersResponse> {
+  return api.get<SellerOrdersResponse>(`/businesses/${businessId}/deliveries`, { params });
+}
+
 // ─── Legacy alias ───
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<{ data: SellerOrder }> {

@@ -11,6 +11,7 @@ import {
   Switch,
   Input as TamaguiInput,
   useTheme,
+  useMedia,
 } from 'tamagui';
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { toast } from 'sonner-native';
@@ -86,6 +87,7 @@ export function MenuFormSheet({
   categories,
 }: MenuFormSheetProps) {
   const theme = useTheme();
+  const media = useMedia();
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
@@ -181,7 +183,7 @@ export function MenuFormSheet({
           exitStyle={{ opacity: 0 }}
           backgroundColor="rgba(0,0,0,0.6)"
         />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
 
           <KeyboardAvoidingView
@@ -534,7 +536,7 @@ export function MenuFormSheet({
           exitStyle={{ opacity: 0 }}
           backgroundColor="rgba(0,0,0,0.5)"
         />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack px="$5" pt="$3" pb="$2">
             <Text fontSize="$5" fontWeight="800" fontFamily="$heading" color="$color">

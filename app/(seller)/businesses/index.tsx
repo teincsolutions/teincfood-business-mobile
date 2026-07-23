@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card, Button, Separator, Sheet, ScrollView, Avatar } from "tamagui";
+import { YStack, XStack, Text, Card, Button, Separator, Sheet, ScrollView, Avatar, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -19,6 +19,7 @@ import type { Business } from "@/types/api";
 
 export default function SellerBusinessesScreen() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["seller", "businesses"],
@@ -150,7 +151,7 @@ export default function SellerBusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
         <XStack gap="$2" alignItems="center">
           <BackButton />
@@ -206,6 +207,7 @@ export default function SellerBusinessesScreen() {
           borderTopRightRadius="$6"
           padding="$4"
           paddingBottom={Math.max(insets.bottom, 16)}
+          {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <ScrollView showsVerticalScrollIndicator={false} flex={1}>

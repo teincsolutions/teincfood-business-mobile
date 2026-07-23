@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import { ScrollView, Pressable } from "react-native";
-import { YStack, XStack, Text, Card, Separator, Switch, Sheet, Spinner } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Switch, Sheet, Spinner, useMedia } from "tamagui";
 import {
   Printer,
   Plus,
@@ -22,6 +22,7 @@ import Zeroconf from 'react-native-zeroconf';
 
 export default function PrinterSettings() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const printers = usePrinterStore((s) => s.printers);
   const defaultPrinterId = usePrinterStore((s) => s.defaultPrinterId);
@@ -147,7 +148,7 @@ export default function PrinterSettings() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
       <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
         <BackButton />
         <Text fontSize="$6" fontWeight="bold">Printer Settings</Text>
@@ -282,7 +283,7 @@ export default function PrinterSettings() {
       {/* Add Manual Sheet */}
       <Sheet modal open={addSheetOpen} onOpenChange={setAddSheetOpen} snapPoints={[55]} dismissOnSnapToBottom zIndex={200_000}>
         <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6">
+        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$6"           {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4">
             <Text fontSize="$6" fontWeight="bold">Add Printer Manually</Text>

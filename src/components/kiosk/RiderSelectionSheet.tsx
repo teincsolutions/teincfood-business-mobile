@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { FlatList } from 'react-native';
-import { YStack, XStack, Text, Card, Sheet } from 'tamagui';
+import { YStack, XStack, Text, Card, Sheet, useMedia } from 'tamagui';
 import { Star, Phone, Bike, Car, Navigation, X } from '@tamagui/lucide-icons';
 import { Button } from '@/components/ui/Button';
 import { useResponsive } from '@/utils/responsive';
@@ -20,6 +20,7 @@ export function RiderSelectionSheet({
   onSelectRider,
 }: RiderSelectionSheetProps) {
   const { isTablet } = useResponsive();
+  const media = useMedia();
 
   const getVehicleIcon = (type: string) => {
     switch (type) {
@@ -35,7 +36,7 @@ export function RiderSelectionSheet({
   return (
     <Sheet modal open={visible} onOpenChange={(open) => !open && onClose()} snapPoints={[70]} dismissOnSnapToBottom zIndex={200_000}>
       <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} backgroundColor="rgba(0,0,0,0.5)" />
-      <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$5">
+      <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" padding="$5" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
         <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
         <XStack justifyContent="space-between" alignItems="center" marginBottom="$4">
           <Text fontSize="$6" fontWeight="bold">Select a Rider</Text>

@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback } from "react";
-import { FlatList, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card, Avatar, Separator, Badge } from "tamagui";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { FlatList, RefreshControl, Pressable } from "react-native";
+import { YStack, XStack, Text, Card, Avatar, Separator, Badge, useMedia, ScrollView } from "tamagui";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -15,15 +15,21 @@ import {
   Navigation2,
 } from "@tamagui/lucide-icons";
 import { Button, Input } from "@/components/ui";
-import { useSellerOrdersQuery, useConfirmHandoverMutation } from "@/hooks/seller.hooks";
+import { useBusinessDeliveriesQuery, useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
+import { useFilterStore } from "@/stores/filter.store";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { useAvailableRidersQuery, useAssignRiderMutation } from "@/hooks/kiosk.hooks";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { formatPriceFromMinor } from "@/utils/currency";
 
-const DELIVERY_STATUSES = ["ready", "waiting_pickup", "on_the_way", "delivered", "cancelled"];
+const DELIVERY_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "ready,waiting_pickup", label: "Ready" },
+  { key: "on_the_way", label: "In Transit" },
+  { key: "delivered,cancelled", label: "Completed" },
+];
 
 const STATUS_COLORS = {
   ready: "$green9",
@@ -44,43 +50,58 @@ const DELIVERY_STATUS_COLORS = {
 
 export default function SellerDeliveries() {
   const router = useRouter();
+  const media = useMedia();
+  const isWide = media.md || media.lg;
   const insets = useSafeAreaInsets();
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = useFilterStore((s) => s.deliveriesSearchQuery);
+  const setSearchQuery = useFilterStore((s) => s.setDeliveriesSearchQuery);
+  const activeFilter = useFilterStore((s) => s.deliveriesActiveFilter);
+  const setActiveFilter = useFilterStore((s) => s.setDeliveriesActiveFilter);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showRiderSheet, setShowRiderSheet] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [handoverTarget, setHandoverTarget] = useState<string | null>(null);
   const [changeRiderTarget, setChangeRiderTarget] = useState<string | null>(null);
 
-  const { data, isLoading, refetch, isRefetching } = useSellerOrdersQuery();
+  const backendFilters = {
+    status: activeFilter !== "all" ? activeFilter : undefined,
+    search: debouncedSearch || undefined,
+  };
+
+  const {
+    data: deliveryOrders,
+    isLoading,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useBusinessDeliveriesQuery(true, backendFilters);
+
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
   const assignRider = useAssignRiderMutation();
   const confirmHandover = useConfirmHandoverMutation();
 
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
-  const allOrders = data ?? [];
-
-  // Orders that need delivery (have delivery_address) and are in delivery-relevant statuses
-  const deliveryOrders = useMemo(() => {
-    let orders = allOrders.filter(
-      (o) =>
-        o.delivery_address &&
-        DELIVERY_STATUSES.includes(o.status),
-    );
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      orders = orders.filter(
-        (o) =>
-          o.order_number.toLowerCase().includes(q) ||
-          o.user?.full_name?.toLowerCase().includes(q),
-      );
+  // Initialize persistent filters on first mount
+  const hasInitFilter = useRef(false);
+  useEffect(() => {
+    if (hasInitFilter.current) return;
+    hasInitFilter.current = true;
+    if (searchQuery) {
+      setDebouncedSearch(searchQuery);
     }
-    return orders;
-  }, [allOrders, searchQuery]);
+  }, []);
 
-  const readyForRider = deliveryOrders.filter((o) => o.status === "ready" || o.status === "waiting_pickup");
-  const inTransit = deliveryOrders.filter((o) => o.status === "on_the_way");
-  const completed = deliveryOrders.filter((o) => o.status === "delivered" || o.status === "cancelled");
+  const handleSearch = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(text);
+    }, 400);
+  }, []);
 
   const handleOpenRiderSheet = (orderId: string) => {
     setSelectedOrderId(orderId);
@@ -93,6 +114,15 @@ export default function SellerDeliveries() {
     setShowRiderSheet(false);
     setSelectedOrderId(null);
   };
+
+  const loadingMore = useRef(false);
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage && !loadingMore.current) {
+      loadingMore.current = true;
+      fetchNextPage().finally(() => { loadingMore.current = false; });
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderDelivery = ({ item: order }) => (
     <Card
@@ -228,39 +258,68 @@ export default function SellerDeliveries() {
             <Input
               placeholder="Search deliveries..."
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={handleSearch}
             />
           </YStack>
         </XStack>
 
-        {/* Section tabs */}
-        <XStack gap="$3">
-          {[
-            { key: "ready", label: `Ready (${readyForRider.length})` },
-            { key: "in_transit", label: `In Transit (${inTransit.length})` },
-            { key: "completed", label: `Completed (${completed.length})` },
-          ].map((tab) => (
-            <Text key={tab.key} fontSize="$3" color="$colorMuted">{tab.label}</Text>
-          ))}
-        </XStack>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <XStack gap="$2">
+            {DELIVERY_FILTERS.map((f) => {
+              const active = activeFilter === f.key;
+              return (
+                <Pressable key={f.key} onPress={() => setActiveFilter(f.key)}>
+                  <YStack
+                    paddingHorizontal="$3"
+                    paddingVertical="$1.5"
+                    borderRadius="$10"
+                    backgroundColor={active ? "$primary" : "$backgroundSoft"}
+                    borderWidth={1}
+                    borderColor={active ? "$primary" : "$borderColor"}
+                  >
+                    <Text
+                      fontSize="$3"
+                      fontWeight="600"
+                      color={active ? "white" : "$color"}
+                    >
+                      {f.label}
+                    </Text>
+                  </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+        </ScrollView>
       </YStack>
 
       <FlatList
         data={deliveryOrders}
+        key={isWide ? 'deliveries-grid' : 'deliveries-list'}
+        numColumns={isWide ? 3 : 1}
         keyExtractor={(item) => item.id}
         renderItem={renderDelivery}
         contentContainerStyle={{
           padding: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
+        columnWrapperStyle={isWide ? { gap: 12 } : undefined}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack padding="$4" alignItems="center">
+              <Text fontSize="$3" color="$colorMuted">Loading more...</Text>
+            </YStack>
+          ) : null
         }
         ListEmptyComponent={
           <YStack alignItems="center" padding="$8" gap="$3">
             <Truck size={48} color="$colorMuted" />
             <Text fontSize="$5" color="$colorMuted" textAlign="center">
-              No delivery orders found
+              {isLoading ? "Loading..." : "No delivery orders found"}
             </Text>
           </YStack>
         }

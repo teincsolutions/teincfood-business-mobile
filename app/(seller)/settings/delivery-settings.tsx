@@ -11,6 +11,7 @@ import {
   Slider,
   Input,
   styled,
+  useMedia,
 } from "tamagui";
 import {
   Save,
@@ -55,6 +56,7 @@ const fromMinor = (minor: number) => (minor / 100).toFixed(2);
 
 export default function DeliverySettings() {
   const router = useRouter();
+  const media = useMedia();
   const insets = useSafeAreaInsets();
   const { activeBusinessId } = useActiveBusiness();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -137,6 +139,7 @@ export default function DeliverySettings() {
         flex={1}
         paddingTop={Math.max(insets.top + 8, 24)}
         backgroundColor="$background"
+        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}
       >
         {/* Header */}
         <XStack

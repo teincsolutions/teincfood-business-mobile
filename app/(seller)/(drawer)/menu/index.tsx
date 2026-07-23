@@ -10,6 +10,7 @@ import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { useFilterStore } from "@/stores/filter.store";
 import { CategoryPill } from "@/components/home/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import { useBusinessStore } from "@/stores/business.store";
@@ -38,7 +39,8 @@ export default function SellerMenu() {
   const { isTablet, columns, width } = useResponsive();
 
   // ── State (must be before hooks that use them) ──
-  const [activeCategory, setActiveCategory] = useState("");
+  const activeCategory = useFilterStore((s) => s.menuActiveCategory);
+  const setActiveCategory = useFilterStore((s) => s.setMenuActiveCategory);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [form, setForm] = useState<MenuItemForm>({ ...EMPTY_FORM });
