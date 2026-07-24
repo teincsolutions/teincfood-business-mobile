@@ -22,6 +22,7 @@ export function useRiderLocationTracking({ riderId, enabled }: UseRiderLocationT
     console.log('[LocationTracking] Starting riderId=%s topic=%s', riderId, topic);
 
     async function start() {
+    try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted' || cancelled) {
         console.log('[LocationTracking] Permission not granted or cancelled');
@@ -71,7 +72,10 @@ export function useRiderLocationTracking({ riderId, enabled }: UseRiderLocationT
       } else {
         watcher.remove();
       }
+    } catch (error) {
+      console.warn('[LocationTracking] Failed to start location tracking:', error);
     }
+  }
 
     start();
 

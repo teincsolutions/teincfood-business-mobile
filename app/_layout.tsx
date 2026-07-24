@@ -1,6 +1,16 @@
 // @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+
+// Global handler for unhandled errors — prevents the app from freezing
+// when a non-fatal async error slips through.
+const defaultHandler = global.ErrorUtils?.getGlobalHandler?.();
+if (global.ErrorUtils?.setGlobalHandler) {
+  global.ErrorUtils.setGlobalHandler((error: unknown, isFatal: boolean) => {
+    if (!isFatal) console.warn('[GlobalError] Non-fatal:', error);
+    else defaultHandler?.(error, isFatal);
+  });
+}
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Stack, router } from 'expo-router';

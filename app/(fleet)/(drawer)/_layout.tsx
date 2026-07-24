@@ -157,8 +157,8 @@ export default function FleetDrawerLayout() {
           ),
           headerTintColor: theme.color.val,
           headerTitleStyle: {
-            fontFamily: "$heading",
-            fontSize: "$10",
+            fontFamily: "Sen_600SemiBold",
+            fontSize: 36,
           },
           drawerStyle: {
             backgroundColor: theme.background.val,

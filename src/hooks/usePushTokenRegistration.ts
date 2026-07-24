@@ -82,7 +82,12 @@ export async function register(): Promise<void> {
       await registerToken(newToken);
     });
   } catch (error) {
-    console.error('[PushToken] Failed:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('FIS_AUTH_ERROR')) {
+      console.warn('[PushToken] FIS_AUTH_ERROR — Firebase not configured for this device/emulator. Push notifications unavailable.');
+    } else {
+      console.error('[PushToken] Failed:', error);
+    }
   }
 }
 

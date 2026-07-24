@@ -205,7 +205,7 @@ export default function SellerDrawerLayout() {
             headerTintColor: theme.color.val,
             headerTitleStyle: {
               fontFamily: "Sen_600SemiBold",
-              fontSize: "$10",
+              fontSize: 36,
             },
             drawerStyle: {
               backgroundColor: theme.background.val,

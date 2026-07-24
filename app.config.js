@@ -9,7 +9,7 @@ module.exports = {
     slug: "teinc-food-business",
     owner: "teincsolutions",
     version: "1.0.0",
-    orientation: "portrait",
+    orientation: "default",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
     scheme: "teincfood.business",
