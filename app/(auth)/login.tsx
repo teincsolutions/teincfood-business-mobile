@@ -90,15 +90,9 @@ export default function LoginScreen() {
   }, [currentLocation?.countryCode]);
 
   const goPostAuth = () => {
-    // Get user from auth store to check role
-    const user = useAuthStore.getState().user;
-    if (user?.role === "seller") {
-      router.replace("/(seller)/");
-    } else if (user?.role === "rider") {
-      router.replace("/(rider)/");
-    } else if (user?.role === "fleet_manager") {
-      router.replace("/(fleet)/");
-    }
+    // Go through splash so stores fully propagate and Stack.Protected
+    // guards re-evaluate before navigating to role-grouped routes.
+    router.replace("/(auth)/splash");
   };
 
   const handleSendCode = async () => {
@@ -156,15 +150,9 @@ export default function LoginScreen() {
       });
       setAuth(
         {
-          id: response.user.id,
+          ...response.user,
           fullName: response.user.full_name,
-          email: response.user.email,
-          phone: response.user.phone,
-          username: response.user.username,
           role: selectedRole,
-          avatar_url: response.user.avatar_url,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         },
         response.access_token,
         response.refresh_token,

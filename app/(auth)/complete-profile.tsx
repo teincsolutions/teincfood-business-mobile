@@ -16,7 +16,7 @@ export default function CompleteProfileScreen() {
   const { role } = useLocalSearchParams<{ role?: string }>();
   const storedRole = useRoleStore((s) => s.role);
   const user = useAuthStore((s) => s.user);
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const updateUser = useAuthStore((s) => s.updateUser);
   const selectedRole = (() => {
     const r = storedRole || role;
     return r === "seller" || r === "rider" || r === "fleet_manager" ? r : "seller";
@@ -52,15 +52,10 @@ export default function CompleteProfileScreen() {
         email: email.trim().toLowerCase(),
       });
 
-      setAuth(
-        {
-          ...user,
-          fullName: fullName.trim(),
-          email: email.trim().toLowerCase(),
-        },
-        null,
-        null,
-      );
+      updateUser({
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+      });
 
       router.replace(
         selectedRole === "seller"

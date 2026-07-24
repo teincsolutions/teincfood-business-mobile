@@ -191,9 +191,7 @@ export default function SignupScreen() {
   };
 
   const goPostAuth = () => {
-    if (selectedRole === "seller") router.replace("/(seller)/");
-    else if (selectedRole === "rider") router.replace("/(rider)/");
-    else if (selectedRole === "fleet_manager") router.replace("/(fleet)/");
+    router.replace("/(auth)/splash");
   };
 
   const handleOIDCLogin = async (provider: string) => {
@@ -216,7 +214,7 @@ export default function SignupScreen() {
         response = await authService.loginWithFacebook();
       else throw new Error(`Unknown provider: ${provider}`);
 
-      setAuth(response.user, response.access_token, response.refresh_token);
+      setAuth({ ...response.user, role: selectedRole }, response.access_token, response.refresh_token);
       goPostAuth();
     } catch {
       setError(`Failed to sign in with ${provider}`);

@@ -170,9 +170,11 @@ function AppShell() {
 
   const isReady = authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const isAuthenticated = Boolean(user && accessToken);
-  const roles = user?.roles ?? [];
-  const isSeller = roles.includes('seller');
-  const isRider = roles.includes('rider');
+  // Use the user's selected intent (user.role) rather than backend-assigned
+  // roles (user.roles).  New users who selected "seller" only have
+  // roles: ["buyer"] until they create a business.
+  const isSeller = user?.role === 'seller';
+  const isRider = user?.role === 'rider';
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen
@@ -245,7 +247,7 @@ function AppShell() {
               </Stack.Protected>
 
               {/* Fleet Manager routes - protected for fleet managers only */}
-              <Stack.Protected guard={isAuthenticated && roles.includes('fleet_manager')}>
+              <Stack.Protected guard={isAuthenticated && user?.role === 'fleet_manager'}>
                 <Stack.Screen name="(fleet)" />
               </Stack.Protected>
 

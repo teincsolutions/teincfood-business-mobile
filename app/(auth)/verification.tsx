@@ -74,13 +74,9 @@ export default function VerificationScreen() {
       router.replace("/(auth)/complete-profile");
       return;
     }
-    if (selectedRole === "seller") {
-      router.replace("/(seller)/");
-    } else if (selectedRole === "rider") {
-      router.replace("/(rider)/");
-    } else if (selectedRole === "fleet_manager") {
-      router.replace("/(fleet)/");
-    }
+    // Go through splash so stores propagate and Stack.Protected guards
+    // re-evaluate before navigating to role-grouped routes.
+    router.replace("/(auth)/splash");
   };
 
   const handleVerify = async (code?: string) => {
