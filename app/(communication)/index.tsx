@@ -85,6 +85,18 @@ export default function InboxScreen() {
   const personalContacts = personalContactsData || [];
   const contacts = tab === "business" ? bizContacts : personalContacts;
 
+  useEffect(() => {
+    if (bizContacts.length > 0) {
+      console.debug("[Inbox] First business contact sample:", JSON.stringify(bizContacts[0]));
+    }
+  }, [bizContacts]);
+
+  useEffect(() => {
+    if (personalContacts.length > 0) {
+      console.debug("[Inbox] First personal contact sample:", JSON.stringify(personalContacts[0]));
+    }
+  }, [personalContacts]);
+
   const handleContactPress = useCallback(
     (contact: {
       id: string;
