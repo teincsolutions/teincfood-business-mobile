@@ -36,7 +36,8 @@ export default function SellerMenu() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
-  const { isTablet, columns, width } = useResponsive();
+  const { isTablet, isLandscape } = useResponsive();
+  const menuColumns = !isTablet ? 1 : isLandscape ? 3 : 2;
 
   // ── State (must be before hooks that use them) ──
   const activeCategory = useFilterStore((s) => s.menuActiveCategory);
@@ -297,10 +298,11 @@ export default function SellerMenu() {
 
       {/* List */}
       <FlatList
+        key={`menu-grid-${menuColumns}`}
         data={data}
         keyExtractor={(item) => item.id}
         extraData={data?.length}
-        numColumns={isTablet ? columns(400) : 1}
+        numColumns={menuColumns}
         renderItem={({ item }) => (
           <YStack flex={1} padding="$1" maxWidth={isTablet ? '50%' : '100%'}>
             <MenuItemCard

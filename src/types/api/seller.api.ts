@@ -164,3 +164,46 @@ export type SellerOrdersResponse = PaginatedResponse<SellerOrder>;
 export interface SellerOrderDetailResponse {
   data: SellerOrderDetail;
 }
+
+// ─── Delivery Item (from serialize_delivery/1) ───
+
+export interface DeliveryOrderItem {
+  id: string;
+  menu_item: OrderMenuItem | null;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+export interface DeliveryRider {
+  id: string;
+  rider_number: string | null;
+  name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+}
+
+export interface BusinessDelivery {
+  id: string;
+  status: string;
+  rider_pickup_confirmed_at: string | null;
+  merchant_handover_confirmed_at: string | null;
+  inserted_at: string;
+  order: {
+    id: string;
+    order_number: string;
+    status: string;
+    customer_name: string | null;
+    customer_phone: string | null;
+    total_minor: number;
+    subtotal_minor: number;
+    delivery_fee_minor: number;
+    currency: string;
+    delivery_address: OrderDeliveryAddress | null;
+    user: OrderUser | null;
+    items: DeliveryOrderItem[];
+  } | null;
+  rider: DeliveryRider | null;
+}
+
+export type BusinessDeliveriesResponse = PaginatedResponse<BusinessDelivery>;
