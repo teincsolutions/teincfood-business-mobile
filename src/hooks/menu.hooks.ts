@@ -193,11 +193,33 @@ export function useToggleAvailabilityMutation() {
   return useMutation({
     mutationFn: ({ id, available }: { id: string; available: boolean }) =>
       menuService.toggleItemAvailability(id, available),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
+    onMutate: async ({ id, available }) => {
+      await queryClient.cancelQueries({ queryKey: MENU_KEYS.items(businessId) });
+      const previous = queryClient.getQueriesData({ queryKey: MENU_KEYS.items(businessId) });
+      queryClient.setQueriesData({ queryKey: MENU_KEYS.items(businessId) }, (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            data: page.data?.map((item: any) =>
+              item.id === id ? { ...item, is_available: available } : item
+            ),
+          })),
+        };
+      });
+      return { previous };
     },
-    onError: (e) => {
+    onError: (e, _vars, ctx) => {
+      if (ctx?.previous) {
+        for (const [key, data] of ctx.previous) {
+          queryClient.setQueryData(key, data);
+        }
+      }
       toast.error(extractApiErrorMessage(e));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
     },
   });
 }

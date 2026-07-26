@@ -19,15 +19,18 @@ export function useBusinessesQuery() {
     gcTime: 1000 * 60 * 30,
   });
 
-  // Sync query data to Zustand store
+  // Sync query data to Zustand store — always refresh activeBusiness
+  // with fresh API data so fields like business_number, is_open are present.
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.data || query.data.length === 0) return;
     setBusinesses(query.data);
-    if (query.data.length > 0) {
-      const store = useBusinessStore.getState();
-      if (!store.activeBusiness) {
-        store.setActiveBusiness(query.data[0] as any);
-      }
+    const store = useBusinessStore.getState();
+    const currentId = store.activeBusiness?.id;
+    const fresh = currentId
+      ? query.data.find((b) => b.id === currentId)
+      : query.data[0];
+    if (fresh) {
+      store.setActiveBusiness(fresh as any);
     }
   }, [query.data]);
 

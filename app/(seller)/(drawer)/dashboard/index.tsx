@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { useState, useCallback } from "react";
-import { ScrollView, RefreshControl } from "react-native";
+import { ScrollView, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { formatPrice, formatPriceFromMinor } from "@/utils/currency";
 import { YStack, XStack, Text, Card, Separator, Switch, Avatar } from "tamagui";
@@ -40,7 +40,7 @@ export default function SellerDashboard() {
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
-  const isStoreOpen = activeBusiness?.manuallyClosed !== true;
+  const isStoreOpen = activeBusiness?.is_open !== false;
 
   // Fetch business KYC status (fresh every mount)
   const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
@@ -74,7 +74,11 @@ export default function SellerDashboard() {
     if (!activeBusiness?.id) return;
     setTogglingStore(true);
     try {
-      await businessService.toggleBusinessOpen(activeBusiness.id);
+      const result = await businessService.toggleBusinessOpen(activeBusiness.id);
+      const updated = result?.data;
+      if (updated?.is_open !== undefined) {
+        useBusinessStore.getState().setActiveBusiness(updated);
+      }
     } catch (e) {
       toast.error(extractApiErrorMessage(e));
     } finally {
@@ -311,33 +315,38 @@ export default function SellerDashboard() {
             <Separator />
 
             {recentOrders.map((order, index) => (
-              <YStack key={order.id} gap="$2">
-                <XStack justifyContent="space-between" alignItems="center">
-                  <YStack>
-                    <Text fontWeight="bold">{order.order_number}</Text>
-                    <Text fontSize="$3" color="$colorMuted">
-                      {order.item_count} items •{" "}
-                      {formatPrice(
-                        order.total_minor ? order.total_minor / 100 : 0,
-                      )}
-                    </Text>
-                  </YStack>
-                  <XStack gap="$2" alignItems="center">
-                    <YStack
-                      backgroundColor={getStatusColor(order.status)}
-                      paddingHorizontal="$2"
-                      paddingVertical="$1"
-                      borderRadius="$2"
-                    >
-                      <Text fontSize="$2" color="$color.white">
-                        {formatStatus(order.status)}
+              <Pressable
+                key={order.id}
+                onPress={() => router.push(`/(seller)/orders/${order.id}`)}
+              >
+                <YStack gap="$2">
+                  <XStack justifyContent="space-between" alignItems="center">
+                    <YStack>
+                      <Text fontWeight="bold">{order.order_number}</Text>
+                      <Text fontSize="$3" color="$colorMuted">
+                        {order.item_count} items •{" "}
+                        {formatPrice(
+                          order.total_minor ? order.total_minor / 100 : 0,
+                        )}
                       </Text>
                     </YStack>
-                    <ChevronRight size={16} color="$colorMuted" />
+                    <XStack gap="$2" alignItems="center">
+                      <YStack
+                        backgroundColor={getStatusColor(order.status)}
+                        paddingHorizontal="$2"
+                        paddingVertical="$1"
+                        borderRadius="$2"
+                      >
+                        <Text fontSize="$2" color="$color.white">
+                          {formatStatus(order.status)}
+                        </Text>
+                      </YStack>
+                      <ChevronRight size={16} color="$colorMuted" />
+                    </XStack>
                   </XStack>
-                </XStack>
-                {index < recentOrders.length - 1 && <Separator />}
-              </YStack>
+                  {index < recentOrders.length - 1 && <Separator />}
+                </YStack>
+              </Pressable>
             ))}
           </YStack>
         </Card>

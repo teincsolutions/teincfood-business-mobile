@@ -95,15 +95,17 @@ export function DrawerHeader({
               alignItems="center"
               paddingHorizontal="$2"
             >
-              <Text
-                fontSize="$1"
-                color="white"
-                opacity={0.6}
-                verticalAlign={"bottom"}
-              >
-                Bus.ID: #{activeBusiness?.business_number}
-                <Copy color="$white" size="$4" />
-              </Text>
+              {activeBusiness?.business_number && (
+                <Text
+                  fontSize="$1"
+                  color="white"
+                  opacity={0.6}
+                  verticalAlign={"bottom"}
+                >
+                  Bus.ID: #{activeBusiness?.business_number}
+                  <Copy color="$white" size="$4" />
+                </Text>
+              )}
             </XStack>
           </YStack>
         </XStack>

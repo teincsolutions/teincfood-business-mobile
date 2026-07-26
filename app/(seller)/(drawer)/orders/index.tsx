@@ -116,6 +116,7 @@ export default function SellerOrders() {
   const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
   const activeChips = useFilterStore((s) => s.ordersActiveChips);
   const setActiveChips = useFilterStore((s) => s.setOrdersActiveChips);
+  const filterHydrated = useFilterStore((s) => s.isHydrated);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitFilter = useRef(false);
@@ -152,8 +153,9 @@ export default function SellerOrders() {
     };
   }, [searchQuery]);
 
-  // Initialize persistent filters on first mount
+  // Initialize persistent filters once hydration is complete
   useEffect(() => {
+    if (!filterHydrated) return;
     if (hasInitFilter.current) return;
     hasInitFilter.current = true;
     if (activeChips.length === 0) {
@@ -166,7 +168,7 @@ export default function SellerOrders() {
     if (searchQuery) {
       setDebouncedSearch(searchQuery);
     }
-  }, []);
+  }, [filterHydrated]);
 
   const filterParams = useMemo(() => {
     const params: { status?: string; q?: string } = {};

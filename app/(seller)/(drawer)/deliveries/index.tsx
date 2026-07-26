@@ -84,6 +84,7 @@ export default function SellerDeliveries() {
   const setSearchQuery = useFilterStore((s) => s.setDeliveriesSearchQuery);
   const activeFilter = useFilterStore((s) => s.deliveriesActiveFilter);
   const setActiveFilter = useFilterStore((s) => s.setDeliveriesActiveFilter);
+  const filterHydrated = useFilterStore((s) => s.isHydrated);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitFilter = useRef(false);
@@ -127,12 +128,13 @@ export default function SellerDeliveries() {
   }, [searchQuery]);
 
   useEffect(() => {
+    if (!filterHydrated) return;
     if (hasInitFilter.current) return;
     hasInitFilter.current = true;
     if (searchQuery) {
       setDebouncedSearch(searchQuery);
     }
-  }, []);
+  }, [filterHydrated]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

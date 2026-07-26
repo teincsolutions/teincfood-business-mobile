@@ -69,12 +69,16 @@ async function displayPushNotification(
         channelId: actions.length > 0 ? 'action-notifications' : 'order-updates',
         sound,
         smallIcon: 'ic_launcher',
-        largeIcon: avatarUrl || undefined,
+        ...(avatarUrl ? { largeIcon: avatarUrl } : {}),
         color: '#FF7622',
-        style: {
-          type: AndroidStyle.BIGTEXT,
-          text: displayBody,
-        },
+        ...(displayBody
+          ? {
+              style: {
+                type: AndroidStyle.BIGTEXT,
+                text: displayBody,
+              },
+            }
+          : {}),
         actions,
         pressAction: { id: orderId ? 'view_order' : 'navigate' },
         ongoing: status !== 'delivered' && status !== 'cancelled' && status !== '',

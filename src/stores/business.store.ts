@@ -38,15 +38,18 @@ export const useBusinessStore = create<BusinessState>()(
       isHydrated: false,
 
       setBusinesses: (businesses) =>
-        set((state) => ({
-          businesses,
-          activeBusiness:
-            state.activeBusiness
-              ? state.activeBusiness
-              : businesses.length === 1
-                ? (businesses[0] as any)
-                : null,
-        })),
+        set((state) => {
+          let active = state.activeBusiness;
+          if (active) {
+            // Refresh activeBusiness from fresh data to pick up any
+            // fields the persisted copy might be missing (e.g. business_number).
+            const fresh = businesses.find((b) => b.id === active?.id);
+            if (fresh) active = fresh as any;
+          } else if (businesses.length === 1) {
+            active = businesses[0] as any;
+          }
+          return { businesses, activeBusiness: active };
+        }),
 
       setActiveBusiness: (business) => set({ activeBusiness: business }),
 

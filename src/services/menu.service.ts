@@ -120,5 +120,5 @@ export async function deleteMenuItem(id: string): Promise<void> {
 }
 
 export async function toggleItemAvailability(id: string, available: boolean): Promise<MenuItemResponse> {
-  return api.put<MenuItemResponse>(`/menu/items/${id}`, { is_available: available });
+  return api.put<MenuItemResponse>(`/menu/items/${id}`, { available });
 }
