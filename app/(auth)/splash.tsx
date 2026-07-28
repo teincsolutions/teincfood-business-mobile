@@ -118,7 +118,7 @@ export default function SplashScreen() {
       setStatusMessage("Ready");
 
       const elapsed = Date.now() - mountedTime;
-      const minWait = Math.max(0, 3000 - elapsed);
+      const minWait = Math.max(0, 8000 - elapsed);
 
       await new Promise((r) => setTimeout(r, minWait));
 
@@ -263,7 +263,7 @@ export default function SplashScreen() {
     <YStack
       flex={1}
       items="center"
-      bg="$primary"
+      bg="$white"
       paddingTop={insets.top}
       paddingBottom={insets.bottom}
     >
@@ -274,10 +274,10 @@ export default function SplashScreen() {
         left={0}
         right={0}
         bottom={0}
-        opacity={0.1}
+        opacity={0.05}
         style={{
           background:
-            "radial-gradient(circle at 50% 30%, $white 0%, transparent 60%)",
+            "radial-gradient(circle at 50% 30%, $primary 0%, transparent 60%)",
         }}
       />
 
@@ -289,8 +289,8 @@ export default function SplashScreen() {
         width={isTablet ? 300 : 200}
         height={isTablet ? 300 : 200}
         borderRadius={isTablet ? 150 : 100}
-        bg="$white"
-        opacity={0.1}
+        bg="$primary"
+        opacity={0.15}
       />
       <YStack
         position="absolute"
@@ -299,8 +299,8 @@ export default function SplashScreen() {
         width={isTablet ? 220 : 160}
         height={isTablet ? 220 : 160}
         borderRadius={isTablet ? 110 : 80}
-        bg="$white"
-        opacity={0.08}
+        bg="$primary"
+        opacity={0.1}
       />
 
       {/* Logo + text block */}
@@ -318,14 +318,9 @@ export default function SplashScreen() {
             width={logoSize}
             height={logoSize}
             borderRadius={logoSize / 2}
-            bg="$white"
+            bg="transparent"
             items="center"
             jc="center"
-            shadowColor="$shadowColor"
-            shadowOffset={{ width: 0, height: 8 }}
-            shadowOpacity={0.3}
-            shadowRadius={16}
-            elevation={10}
           >
             <Image
               source={require("../../assets/icon.png")}
@@ -344,57 +339,69 @@ export default function SplashScreen() {
             transform: [{ translateY: textTranslateY }],
           }}
         >
-          <YStack items="center" gap={isTablet ? "$4" : "$2"}>
+          <YStack items="center" gap={isTablet ? "$1" : "$0"}>
             <Text
               fontSize={brandFontSize}
               fontWeight="800"
-              color="$white"
+              color="#2E3248"
               fontFamily="$heading"
               letterSpacing={-1}
             >
-              Teinc
+              Teinc<Text color="$primary">Food</Text>
             </Text>
-            <XStack items="center" gap="$3">
-              <YStack
-                width={isTablet ? 32 : 24}
-                height={2}
-                bg="$white"
-                opacity={0.6}
-                borderRadius={1}
-              />
-              <Text
-                fontSize={isTablet ? 24 : 20}
-                color="$white"
-                opacity={0.9}
-                fontFamily="$body"
-                letterSpacing={4}
-                textTransform="uppercase"
-                fontWeight="600"
-              >
-                Food Business
-              </Text>
-              <YStack
-                width={isTablet ? 32 : 24}
-                height={2}
-                bg="$white"
-                opacity={0.6}
-                borderRadius={1}
-              />
-            </XStack>
+            <Text
+              fontSize={isTablet ? 24 : 20}
+              color="#2E3248"
+              opacity={0.9}
+              fontFamily="$body"
+              letterSpacing={4}
+              textTransform="uppercase"
+              fontWeight="600"
+            >
+              Business
+            </Text>
           </YStack>
         </Animated.View>
 
         <Animated.View style={{ opacity: subtitleOpacity }}>
-          <Text
-            fontSize={subtitleFontSize}
-            color="$white"
-            opacity={0.85}
-            fontFamily="$body"
-            ta="center"
-            letterSpacing={0.5}
-          >
-            Your food business companion
-          </Text>
+          <XStack items="center" gap="$0" jc="center">
+            <Text
+              fontSize={subtitleFontSize}
+              color="#2E3248"
+              opacity={0.7}
+              fontFamily="$body"
+              ta="center"
+              letterSpacing={0.5}
+            >
+              Manage
+            </Text>
+            <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
+              .
+            </Text>
+            <Text
+              fontSize={subtitleFontSize}
+              color="#2E3248"
+              opacity={0.7}
+              fontFamily="$body"
+              ta="center"
+              letterSpacing={0.5}
+            >
+              Deliver
+            </Text>
+            <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
+              .
+            </Text>
+            <Text
+              fontSize={subtitleFontSize}
+              color="#2E3248"
+              opacity={0.7}
+              fontFamily="$body"
+              ta="center"
+              letterSpacing={0.5}
+            >
+              Grow
+            </Text>
+          </XStack>
         </Animated.View>
       </YStack>
 
@@ -417,8 +424,8 @@ export default function SplashScreen() {
             </XStack>
             <Text
               fontSize={statusFontSize}
-              color="$white"
-              opacity={0.75}
+              color="#2E3248"
+              opacity={0.6}
               fontFamily="$body"
               ta="center"
             >
@@ -429,7 +436,7 @@ export default function SplashScreen() {
       </YStack>
 
       <YStack position="absolute" bottom={insets.bottom + 12} right={20}>
-        <Text fontSize={10} color="$white" opacity={0.4} fontFamily="$body">
+        <Text fontSize={10} color="#2E3248" opacity={0.3} fontFamily="$body">
           v1.0.0
         </Text>
       </YStack>
@@ -466,7 +473,7 @@ function LoadingDot({ delay, size }) {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: "#FF7622",
         opacity,
       }}
     />

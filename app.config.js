@@ -16,7 +16,7 @@ module.exports = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#FF7622",
+      backgroundColor: "#FFFFFF",
     },
     ios: {
       supportsTablet: true,
@@ -49,13 +49,17 @@ module.exports = {
     android: {
       allowBackup: false,
       adaptiveIcon: {
-        backgroundColor: "#FF7622",
-        foregroundImage: "./assets/android-icon-foreground.png",
-        backgroundImage: "./assets/android-icon-background.png",
+      backgroundColor: "#FFFFFF",
+      foregroundImage: "./assets/android-icon-foreground.png",
+      backgroundImage: "./assets/android-icon-background.png",
         monochromeImage: "./assets/android-icon-monochrome.png",
       },
       package: "com.teincfood.business",
       predictiveBackGestureEnabled: false,
+      notification: {
+        icon: "@drawable/ic_notification",
+        color: "#ff7622",
+      },
       permissions: [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -100,7 +104,8 @@ module.exports = {
           androidGoogleMapsApiKey: "AIzaSyBxq-rNf_MsiWif5znkJ3jSmNpe_AYM_Jw",
         },
       ],
-      ["expo-image-picker",
+      [
+        "expo-image-picker",
         {
           photosPermission:
             "$(PRODUCT_NAME) needs access to your photos to upload profile pictures and documents.",
@@ -116,6 +121,7 @@ module.exports = {
       ],
       ["expo-apple-authentication"],
       "./plugins/withModularHeaders",
+      "./plugins/withAndroidNotificationIcons",
       [
         "expo-build-properties",
         {
