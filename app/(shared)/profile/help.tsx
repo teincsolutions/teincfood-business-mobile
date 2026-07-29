@@ -77,7 +77,7 @@ export default function HelpSupport() {
     {
       question: "How do I contact customer support?",
       answer:
-        "You can contact us through: 1) In-app chat support (fastest), 2) Email: support@TeincFood Business.com, 3) Phone: +233 XX XXX XXXX (Mon-Sun, 8am-10pm).",
+        "You can contact us through: 1) In-app chat support (fastest), 2) Email: support@teincfood.com, 3) Phone: +233 50 398 1913 (Mon-Sun, 8am-10pm).",
     },
   ];
 
@@ -93,15 +93,15 @@ export default function HelpSupport() {
     {
       icon: Phone,
       label: "Call Us",
-      description: "+233 XX XXX XXXX",
-      action: () => Linking.openURL("tel:+233XXXXXXXX"),
+      description: "+233 50 398 1913",
+      action: () => Linking.openURL("tel:+233503981913"),
       available: true,
     },
     {
       icon: Mail,
       label: "Email Support",
-      description: "support@TeincFood Business.com",
-      action: () => Linking.openURL("mailto:support@TeincFood Business.com"),
+      description: "support@teincfood.com",
+      action: () => Linking.openURL("mailto:support@teincfood.com"),
       available: true,
     },
   ];
@@ -209,7 +209,16 @@ export default function HelpSupport() {
               </Text>
               <Separator />
               {quickHelpLinks.map((link, index) => (
-                <TouchableOpacity key={index}>
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    if (link.label === "Report an Issue") {
+                      router.push("/(communication)/chat/support");
+                    } else {
+                      router.push("/(shared)/profile/help");
+                    }
+                  }}
+                >
                   <XStack
                     padding="$3"
                     borderRadius="$4"

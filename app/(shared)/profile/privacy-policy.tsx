@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { ScrollView, TouchableOpacity } from "react-native";
+import { ScrollView, TouchableOpacity, Linking } from "react-native";
 import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import {
   Shield,
@@ -362,10 +362,16 @@ export default function PrivacyPolicy() {
                 please contact us:
               </Text>
               <YStack gap="$1">
-                <Text fontWeight="bold">
-                  Email: privacy@TeincFood Business.com
-                </Text>
-                <Text fontWeight="bold">Phone: +233 XX XXX XXXX</Text>
+                <TouchableOpacity onPress={() => Linking.openURL("mailto:support@teincfood.com")}>
+                  <Text fontWeight="bold" color="$primary">
+                    Email: support@teincfood.com
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => Linking.openURL("tel:+233503981913")}>
+                  <Text fontWeight="bold" color="$primary">
+                    Phone: +233 50 398 1913
+                  </Text>
+                </TouchableOpacity>
                 <Text fontWeight="bold">Address: Accra, Ghana</Text>
               </YStack>
             </YStack>

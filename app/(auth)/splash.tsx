@@ -123,7 +123,7 @@ export default function SplashScreen() {
       setStatusMessage("Ready");
 
       const elapsed = Date.now() - mountedTime;
-      const minWait = Math.max(0, 8000 - elapsed);
+      const minWait = Math.max(0, 3000 - elapsed);
 
       await new Promise((r) => setTimeout(r, minWait));
 

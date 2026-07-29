@@ -66,19 +66,19 @@ export default function HelpSupport() {
       icon: MessageCircle,
       title: "Live Chat",
       description: "Chat with our support team",
-      action: () => Alert.alert("Live Chat", "Connecting to support..."),
+      action: () => router.push("/(communication)/chat/support"),
     },
     {
       icon: Phone,
       title: "Call Us",
-      description: "+233 XX XXX XXXX",
-      action: () => Linking.openURL("tel:+233XXXXXXXX"),
+      description: "+233 50 398 1913",
+      action: () => Linking.openURL("tel:+233503981913"),
     },
     {
       icon: Mail,
       title: "Email Support",
-      description: "support@TeincFood Business.com",
-      action: () => Linking.openURL("mailto:support@TeincFood Business.com"),
+      description: "support@teincfood.com",
+      action: () => Linking.openURL("mailto:support@teincfood.com"),
     },
   ];
 
@@ -246,7 +246,13 @@ export default function HelpSupport() {
                     gap="$3"
                     padding="$3"
                     pressStyle={{ backgroundColor: "$gray3" }}
-                    onPress={() => Alert.alert(resource.title, "Opening...")}
+                    onPress={() => {
+                      if (resource.title === "Terms of Service") {
+                        router.push("/(shared)/profile/terms");
+                      } else {
+                        Alert.alert(resource.title, resource.description);
+                      }
+                    }}
                   >
                     <resource.icon size={20} color="$colorMuted" />
                     <YStack flex={1} alignItems="flex-start">
