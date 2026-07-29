@@ -49,9 +49,9 @@ module.exports = {
     android: {
       allowBackup: false,
       adaptiveIcon: {
-      backgroundColor: "#FFFFFF",
-      foregroundImage: "./assets/android-icon-foreground.png",
-      backgroundImage: "./assets/android-icon-background.png",
+        backgroundColor: "#FFFFFF",
+        foregroundImage: "./assets/android-icon-foreground.png",
+        backgroundImage: "./assets/android-icon-background.png",
         monochromeImage: "./assets/android-icon-monochrome.png",
       },
       package: "com.teincfood.business",
