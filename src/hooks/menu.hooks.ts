@@ -8,8 +8,14 @@ import * as menuService from "@/services/menu.service";
 import { uploadImage } from "@/services/upload.service";
 import type { MenuItem } from "@/services/menu.service";
 import { useBusinessStore } from "@/stores/business.store";
+import { useConnectivityStore } from "@/stores/connectivity.store";
+import { useReferenceDataSync, useReferenceData } from "@/reference/hooks";
+import { referenceSyncService } from "@/reference/service";
+import { openSyncDatabase } from "@/db/connection";
+import { getReferenceData } from "@/reference/operations";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
+import type { MenuItemListResponse, MenuCategoryListResponse } from "@/types/api";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
 
@@ -30,6 +36,22 @@ function useBusinessId() {
 
 export function useMenuItemsQuery(filters?: { search?: string; category_ids?: string; sort?: string }, enabled = true) {
   const businessId = useBusinessId();
+  const isOnline = useConnectivityStore((s) => s.isOnline);
+
+  useReferenceDataSync(businessId, {
+    keys: ["menu:items", "menu:categories"],
+    enabled: enabled && !!businessId && isOnline,
+  });
+
+  const cachedQuery = useReferenceData<MenuItemListResponse>("menu:items");
+
+  const cachedPlaceholder = cachedQuery.data?.payload
+    ? {
+        pages: [cachedQuery.data.payload],
+        pageParams: [1],
+      }
+    : undefined;
+
   return useInfiniteQuery({
     queryKey: [...MENU_KEYS.items(businessId), filters],
     queryFn: ({ pageParam = 1 }) =>
@@ -41,6 +63,7 @@ export function useMenuItemsQuery(filters?: { search?: string; category_ids?: st
         : undefined,
     enabled: enabled && !!businessId,
     staleTime: 1000 * 30,
+    placeholderData: cachedPlaceholder,
     select: (data) => data.pages.flatMap((p) => p.data),
   });
 }
@@ -49,10 +72,20 @@ export function useMenuItemsQuery(filters?: { search?: string; category_ids?: st
 
 export function useMenuCategoriesQuery() {
   const businessId = useBusinessId();
+  const isOnline = useConnectivityStore((s) => s.isOnline);
+
+  useReferenceDataSync(businessId, {
+    keys: ["menu:categories"],
+    enabled: !!businessId && isOnline,
+  });
+
+  const cachedQuery = useReferenceData<MenuCategoryListResponse>("menu:categories");
+
   return useQuery({
     queryKey: MENU_KEYS.categories(businessId),
     queryFn: () => menuService.fetchBusinessCategories(businessId!),
     enabled: !!businessId,
+    initialData: cachedQuery.data?.payload,
   });
 }
 
