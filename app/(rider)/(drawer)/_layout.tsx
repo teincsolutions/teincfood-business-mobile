@@ -53,7 +53,8 @@ function CustomDrawerContent(props: any) {
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
-  const { businessUnread, personalUnread, notificationUnread } = useUnreadCounts();
+  const { businessUnread, personalUnread, notificationUnread } =
+    useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -113,28 +114,30 @@ function CustomDrawerContent(props: any) {
                 {user?.email || "rider@example.com"}
               </Text>
             </XStack>
-            <XStack
-              onPress={async () => {
-                await copyToClipboard(riderProfile?.rider_number);
-                console.log("ID copied", riderProfile?.rider_number);
-                toast.success("Rider ID copied to clipboard");
-              }}
-              gap="$1"
-              marginTop="$2"
-              alignItems="center"
-            >
-              <Text
-                color="white"
-                opacity={0.6}
-                verticalAlign={"bottom"}
-                fontSize="$2"
+            {riderProfile?.rider_number && (
+              <XStack
+                onPress={async () => {
+                  await copyToClipboard(riderProfile?.rider_number);
+                  console.log("ID copied", riderProfile?.rider_number);
+                  toast.success("Rider ID copied to clipboard");
+                }}
+                gap="$1"
+                marginTop="$2"
+                alignItems="center"
               >
-                Rider ID: #{riderProfile?.rider_number}
-              </Text>
-              <ButtonIcon color="$color.gray300">
-                <Copy color="$white" />
-              </ButtonIcon>
-            </XStack>
+                <Text
+                  color="white"
+                  opacity={0.6}
+                  verticalAlign={"bottom"}
+                  fontSize="$2"
+                >
+                  Rider ID: #{riderProfile?.rider_number}
+                </Text>
+                <ButtonIcon color="$color.gray300">
+                  <Copy color="$white" />
+                </ButtonIcon>
+              </XStack>
+            )}
           </YStack>
         </XStack>
       </YStack>
@@ -146,26 +149,88 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1 }}
       >
         <YStack padding="$2" gap="$1">
-          <DrawerMenuItem icon={Home} label="Dashboard" drawerName="home/index" onPress={() => router.push("/(rider)/home")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={Home}
+            label="Dashboard"
+            drawerName="home/index"
+            onPress={() => router.push("/(rider)/home")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={Truck} label="Deliveries" drawerName="deliveries/index" onPress={() => router.push("/(rider)/deliveries")} isActive={isActive} />
-          <DrawerMenuItem icon={DollarSign} label="Earnings" drawerName="earnings/index" onPress={() => router.push("/(rider)/earnings")} isActive={isActive} />
-          <DrawerMenuItem icon={DollarSign} label="Wallet & Billing" sharedPrefix="/(shared)/wallet" onPress={() => router.push("/(shared)/wallet")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={Truck}
+            label="Deliveries"
+            drawerName="deliveries/index"
+            onPress={() => router.push("/(rider)/deliveries")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={DollarSign}
+            label="Earnings"
+            drawerName="earnings/index"
+            onPress={() => router.push("/(rider)/earnings")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={DollarSign}
+            label="Wallet & Billing"
+            sharedPrefix="/(shared)/wallet"
+            onPress={() => router.push("/(shared)/wallet")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} badgeCount={businessUnread} secondaryBadgeCount={personalUnread} />
-          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} badgeCount={notificationUnread} />
-          <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={MessageSquare}
+            label="Messages"
+            sharedPrefix="/(communication)"
+            onPress={() => router.push("/(communication)")}
+            isActive={isActive}
+            badgeCount={businessUnread}
+            secondaryBadgeCount={personalUnread}
+          />
+          <DrawerMenuItem
+            icon={Bell}
+            label="Notifications"
+            sharedPrefix="/(shared)/notifications"
+            onPress={() => router.push("/(shared)/notifications")}
+            isActive={isActive}
+            badgeCount={notificationUnread}
+          />
+          <DrawerMenuItem
+            icon={MailOpen}
+            label="Invitations"
+            sharedPrefix="/(shared)/invitations"
+            onPress={() => router.push("/(shared)/invitations")}
+            isActive={isActive}
+          />
 
-          <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(rider)/settings")} isActive={isActive} />
-          <DrawerMenuItem icon={User} label="Profile" drawerName="profile" onPress={() => router.push("/(rider)/profile")} isActive={isActive} />
+          <DrawerMenuItem
+            icon={Settings}
+            label="Settings"
+            drawerName="settings/index"
+            onPress={() => router.push("/(rider)/settings")}
+            isActive={isActive}
+          />
+          <DrawerMenuItem
+            icon={User}
+            label="Profile"
+            drawerName="profile"
+            onPress={() => router.push("/(rider)/profile")}
+            isActive={isActive}
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={LogOut} label="Logout" onPress={() => setShowLogoutDialog(true)} danger />
+          <DrawerMenuItem
+            icon={LogOut}
+            label="Logout"
+            onPress={() => setShowLogoutDialog(true)}
+            danger
+          />
         </YStack>
       </DrawerContentScrollView>
 
