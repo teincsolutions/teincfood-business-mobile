@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+import { useConnectivityStore } from '../src/stores/connectivity.store';
+import { openSyncDatabase } from '../src/db/connection';
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
@@ -81,6 +83,19 @@ function AppShell() {
 
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
+
+  // Initialize offline-first SQLite database
+  useEffect(() => {
+    openSyncDatabase().catch((error) => {
+      console.error('[SQLite] Failed to open sync database:', error);
+    });
+  }, []);
+
+  // Initialize connectivity monitoring
+  useEffect(() => {
+    const unsubscribe = useConnectivityStore.getState().initialize();
+    return unsubscribe;
+  }, []);
 
   // Connect ChatClient WebSocket for real-time messaging
   useEffect(() => {

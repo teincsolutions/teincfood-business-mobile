@@ -7,6 +7,7 @@ import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
 import type { AuthApiResponse } from '@/services/auth.service';
 import type { AuthUser } from '@/types/api/auth.api';
+import type { User } from '@/types/user.model';
 import { extractApiErrorMessage } from '@/utils/error';
 import { register, cleanup, unregister } from '@/hooks/usePushTokenRegistration';
 
@@ -84,7 +85,7 @@ export function useAuth() {
     await unregister();
 
     setAuthAction(
-      response.user,
+      response.user as User,
       response.access_token,
       response.refresh_token
     );
@@ -119,7 +120,7 @@ export function useAuth() {
 
     if ('access_token' in response && response.access_token) {
       setAuthAction(
-        response.user,
+        response.user as User,
         response.access_token,
         response.refresh_token
       );
@@ -143,7 +144,7 @@ export function useAuth() {
     const response = await authService.verifyOTP({ phone, code, type: type || "login" });
     await unregister();
     setAuthAction(
-      response.user,
+      response.user as User,
       response.access_token,
       response.refresh_token
     );
@@ -167,7 +168,7 @@ export function useAuth() {
 
     await unregister();
     setAuthAction(
-      response.user,
+      response.user as User,
       response.access_token,
       response.refresh_token
     );
