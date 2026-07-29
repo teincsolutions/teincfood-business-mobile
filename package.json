@@ -16,7 +16,9 @@
     "eas:submit:ios": "npx eas submit --platform ios --profile production",
     "eas:submit:android": "npx eas submit --platform android --profile production",
     "test": "jest",
-    "lint": "npx tsc --noEmit"
+    "lint": "npx tsc --noEmit",
+    "e2e:rest": "npx ts-node temp-e2e/rest-order.e2e.ts",
+    "e2e:lan": "npx ts-node temp-e2e/lan-node.e2e.ts"
   },
   "dependencies": {
     "@babel/core": "^7.29.0",
@@ -94,6 +96,7 @@
   },
   "devDependencies": {
     "@tamagui/babel-plugin": "^1.120.0",
+    "@types/node": "^26.1.2",
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
   },

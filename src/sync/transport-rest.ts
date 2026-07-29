@@ -52,9 +52,14 @@ export class RestTransport implements Transport {
 
     switch (command_type) {
       case "order:create": {
+        const posPayload = {
+          ...(payload as unknown as POSOrderCreateRequest),
+          command_id: command.command_id,
+          local_order_number: (payload as { order_number?: string }).order_number,
+        };
         const response = await posService.createPOSOrder(
           business_id,
-          payload as unknown as POSOrderCreateRequest,
+          posPayload as unknown as POSOrderCreateRequest,
         );
         return this.wrapResponse("order.created", response.data as unknown as Record<string, unknown>, entity_id, timestamp, command);
       }

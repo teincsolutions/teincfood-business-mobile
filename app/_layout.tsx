@@ -5,6 +5,7 @@ import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
 import { localNodeService } from '../src/local-node/service';
 import { syncEngine } from '../src/sync/engine';
+import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
@@ -85,6 +86,9 @@ function AppShell() {
 
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
+
+  // Bridge sync-engine reconciliation events to TanStack Query
+  useSyncReconciliation();
 
   // Initialize offline-first SQLite database
   useEffect(() => {

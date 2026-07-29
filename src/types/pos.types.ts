@@ -49,6 +49,10 @@ export interface POSOrderCreateRequest {
   pos_payment_method: POSPaymentMethod;
   items: POSOrderItemRequest[];
   notes?: string;
+  /** Client-generated command id for offline idempotency */
+  command_id?: string;
+  /** Locally allocated order number when created offline */
+  local_order_number?: string;
 }
 
 export interface POSOrderPreviewRequest {
