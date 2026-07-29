@@ -18,7 +18,8 @@
     "test": "jest",
     "lint": "npx tsc --noEmit",
     "e2e:rest": "npx ts-node temp-e2e/rest-order.e2e.ts",
-    "e2e:lan": "npx ts-node temp-e2e/lan-node.e2e.ts"
+    "e2e:lan": "npx ts-node temp-e2e/lan-node.e2e.ts",
+    "e2e:reference": "npx ts-node temp-e2e/reference-data.e2e.ts"
   },
   "dependencies": {
     "@babel/core": "^7.29.0",

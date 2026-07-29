@@ -29,7 +29,7 @@ export interface ReferenceDataRecord<T = unknown> {
 export interface ReferenceVersionInfo {
   key: ReferenceDataKey;
   version: string;
-  updatedAt: string;
+  updated_at: string;
 }
 
 export interface ReferenceSyncOptions {
