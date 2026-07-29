@@ -14,9 +14,9 @@
  */
 
 const API_URL = process.env.E2E_API_URL || "http://localhost:4000";
-const EMAIL = process.env.E2E_EMAIL || "";
-const PASSWORD = process.env.E2E_PASSWORD || "";
-const BUSINESS_ID = process.env.E2E_BUSINESS_ID || "";
+const EMAIL = process.env.E2E_EMAIL || "seller@teincfood.local";
+const PASSWORD = process.env.E2E_PASSWORD || "password123";
+let BUSINESS_ID = process.env.E2E_BUSINESS_ID || "";
 const MENU_ITEM_ID = process.env.E2E_MENU_ITEM_ID || "";
 
 async function request(method: string, path: string, body?: unknown, token?: string) {
@@ -52,7 +52,21 @@ async function login(): Promise<string> {
     email: EMAIL,
     password: PASSWORD,
   });
-  return result.data.access_token;
+  const token = result.access_token;
+  if (!token) throw new Error("Login did not return access_token");
+  return token;
+}
+
+async function discoverBusiness(token: string): Promise<string> {
+  if (BUSINESS_ID) return BUSINESS_ID;
+  const result = await request("GET", "/api/v1/businesses/me", undefined, token);
+  const businesses = result.data as Array<{ id: string }>;
+  if (!businesses || businesses.length === 0) {
+    throw new Error("No businesses found for user; set E2E_BUSINESS_ID");
+  }
+  BUSINESS_ID = businesses[0].id;
+  console.log("[REST E2E] Discovered business", BUSINESS_ID);
+  return BUSINESS_ID;
 }
 
 async function getMenuItem(token: string): Promise<string> {
@@ -66,12 +80,13 @@ async function getMenuItem(token: string): Promise<string> {
 }
 
 async function main() {
-  if (!EMAIL || !PASSWORD || !BUSINESS_ID) {
-    console.error("Set E2E_EMAIL, E2E_PASSWORD and E2E_BUSINESS_ID");
+  if (!EMAIL || !PASSWORD) {
+    console.error("Set E2E_EMAIL and E2E_PASSWORD");
     process.exit(1);
   }
 
   const token = await login();
+  await discoverBusiness(token);
   const menuItemId = await getMenuItem(token);
   const commandId = `cmd_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   const localOrderNumber = `TFL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-0001`;
