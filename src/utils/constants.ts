@@ -25,6 +25,7 @@ export const STORAGE_KEYS = {
   THEME_PREFERENCE: "theme_preference",
   BUSINESS_DATA: "business_data",
   FLEET_DATA: "fleet_data",
+  LOCAL_NODE_DATA: "local_node_data",
 } as const;
 
 /** Chat storage keys */

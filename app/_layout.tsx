@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
+import { localNodeService } from '../src/local-node/service';
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
@@ -95,6 +96,13 @@ function AppShell() {
   useEffect(() => {
     const unsubscribe = useConnectivityStore.getState().initialize();
     return unsubscribe;
+  }, []);
+
+  // Initialize Local Node / LAN service
+  useEffect(() => {
+    localNodeService.initialize().catch((error) => {
+      console.error('[LocalNode] Failed to initialize:', error);
+    });
   }, []);
 
   // Connect ChatClient WebSocket for real-time messaging

@@ -14,6 +14,8 @@
 
 import type { Command, DomainEvent, Transport } from "@/sync/types";
 import { restTransport } from "@/sync/transport-rest";
+import { localNodeTransport } from "@/sync/transport-local-node";
+import { useConnectivityStore } from "@/stores/connectivity.store";
 import { syncLogger } from "@/utils/sync-logger";
 
 interface SyncEngineOptions {
@@ -32,8 +34,10 @@ class SyncEngine {
   /**
    * Execute a command through the appropriate transport.
    *
-   * In Phase 1 this always uses the REST transport. Later phases will queue
-   * or route to the Local Node based on connectivity.
+   * Transport selection:
+   *   - Cloud reachable and REST transport available → REST
+   *   - Local Node enabled and available → LocalNodeTransport
+   *   - Otherwise queue locally (Phase 4)
    */
   async execute(command: Command): Promise<DomainEvent[]> {
     syncLogger.command(command, "issued");
@@ -63,11 +67,21 @@ class SyncEngine {
   }
 
   private selectTransport(_command: Command): Transport {
-    // Phase 1: always use REST. Future phases will consider:
-    //   - is cloud reachable? → REST
-    //   - is local node available? → LocalNodeTransport
-    //   - offline? → queue via QueuedTransport
-    const transport = this.transports[0];
+    const isCloudReachable = useConnectivityStore.getState().isCloudReachable;
+
+    // Prefer cloud when reachable.
+    if (isCloudReachable === "reachable" && restTransport.isAvailable()) {
+      return restTransport;
+    }
+
+    // Fall back to Local Node if enabled.
+    if (localNodeTransport.isAvailable()) {
+      return localNodeTransport;
+    }
+
+    // Default to REST even if cloud looks unreachable; the HTTP failure will
+    // trigger queueing in Phase 4.
+    const transport = this.transports.find((t) => t.isAvailable()) ?? this.transports[0];
     if (!transport) {
       throw new Error("SyncEngine: no transports configured");
     }
@@ -81,5 +95,5 @@ class SyncEngine {
 }
 
 export const syncEngine = new SyncEngine({
-  transports: [restTransport],
+  transports: [restTransport, localNodeTransport],
 });

@@ -1,0 +1,56 @@
+/**
+ * Local Node Transport.
+ *
+ * Routes commands to the elected Local Node over the LAN and receives events
+ * broadcast by the Local Node.
+ */
+
+import type { Command, DomainEvent, Transport } from "@/sync/types";
+import { useLocalNodeStore } from "@/stores/local-node.store";
+import { localNodeService } from "@/local-node/service";
+import { syncLogger } from "@/utils/sync-logger";
+
+export class LocalNodeTransport implements Transport {
+  readonly name = "local_node";
+
+  isAvailable(): boolean {
+    const store = useLocalNodeStore.getState();
+    if (!store.isLocalNodeEnabled) return false;
+
+    // If this device is the Local Node, it is always available.
+    if (localNodeService.isLocalNode()) return true;
+
+    // Otherwise, we must be connected to the elected node.
+    return localNodeService.isConnectedToNode();
+  }
+
+  subscribe(): () => void {
+    // Events are received through the LocalNodeService event pipeline.
+    return () => undefined;
+  }
+
+  async execute(command: Command): Promise<DomainEvent[]> {
+    syncLogger.transport(this, "executing", {
+      command_type: command.command_type,
+      command_id: command.command_id,
+    });
+
+    if (localNodeService.isLocalNode()) {
+      // This device is the Local Node: execute locally.
+      const event = await localNodeService.handleNodeCommand(command);
+      syncLogger.transport(this, "completed", {
+        command_type: command.command_type,
+        event_type: event?.event_type,
+      });
+      return event ? [event] : [];
+    }
+
+    // Client: send command to the Local Node.
+    // Phase 4: LocalNodeService will expose a client to execute commands.
+    throw new Error(
+      "LocalNodeTransport client execution not implemented in Phase 3",
+    );
+  }
+}
+
+export const localNodeTransport = new LocalNodeTransport();

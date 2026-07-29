@@ -22,6 +22,7 @@ import {
   Percent,
   Monitor,
   ChefHat,
+  Server,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -165,6 +166,12 @@ export default function SellerSettings() {
       label: "Payment Settings",
       description: "Bank account, payout schedule",
       route: "/(seller)/settings/payment-settings",
+    },
+    {
+      icon: Server,
+      label: "Local Node",
+      description: "Multi-terminal LAN & offline mode",
+      route: "/(seller)/settings/local-node",
     },
     {
       icon: Palette,
