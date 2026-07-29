@@ -1,3 +1,5 @@
+import Constants from "expo-constants";
+
 /**
  * Application-wide constants.
  */
@@ -48,3 +50,6 @@ export const OTP_RESEND_DELAY_SECONDS = 60;
 
 /** Pagination defaults */
 export const DEFAULT_PAGE_SIZE = 20;
+
+// Access the version safely using optional chaining
+export const appVersion = Constants.expoConfig?.version;

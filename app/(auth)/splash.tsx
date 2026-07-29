@@ -14,8 +14,13 @@ import { queryClient } from "@/providers/QueryProvider";
 import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
 import { authService } from "@/services/auth.service";
-import { register, cleanup, unregister } from "@/hooks/usePushTokenRegistration";
+import {
+  register,
+  cleanup,
+  unregister,
+} from "@/hooks/usePushTokenRegistration";
 import { useResponsive } from "@/utils/responsive";
+import { appVersion } from "@/utils/constants";
 
 export default function SplashScreen() {
   const insets = useSafeAreaInsets();
@@ -347,7 +352,10 @@ export default function SplashScreen() {
               fontFamily="$heading"
               letterSpacing={-1}
             >
-              Teinc<Text color="$primary">Food</Text>
+              Teinc
+              <Text fontWeight="800" fontFamily="$heading" color="$primary">
+                Food
+              </Text>
             </Text>
             <Text
               fontSize={isTablet ? 24 : 20}
@@ -437,7 +445,7 @@ export default function SplashScreen() {
 
       <YStack position="absolute" bottom={insets.bottom + 12} right={20}>
         <Text fontSize={10} color="#2E3248" opacity={0.3} fontFamily="$body">
-          v1.0.0
+          v{appVersion}
         </Text>
       </YStack>
     </YStack>

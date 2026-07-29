@@ -2,11 +2,7 @@
 import { FlatList } from "react-native";
 import { YStack, XStack, Text, Spinner, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  Clock,
-} from "@tamagui/lucide-icons";
+import { ArrowUpRight, ArrowDownLeft, Clock } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import { useWalletHistoryQuery } from "@/hooks/useWallet";
 
@@ -27,13 +23,8 @@ function formatDate(iso: string) {
 export default function TransactionHistoryScreen() {
   const insets = useSafeAreaInsets();
   const media = useMedia();
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    hasNextPage,
-  } = useWalletHistoryQuery();
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useWalletHistoryQuery();
 
   const entries = data?.entries ?? [];
 
@@ -58,14 +49,19 @@ export default function TransactionHistoryScreen() {
           )}
         </YStack>
         <YStack flex={1} gap="$1">
-          <Text fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
+          <Text
+            fontSize="$4"
+            fontWeight="500"
+            fontFamily="$body"
+            color="$color"
+          >
             {item.description || (isCredit ? "Credit" : "Debit")}
           </Text>
           <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
             {formatDate(item.inserted_at)}
           </Text>
         </YStack>
-        <YStack alignItems="flex-end">
+        <YStack maxWidth={"30%"} alignItems="flex-end">
           <Text
             fontSize="$4"
             fontWeight="600"
@@ -94,10 +90,20 @@ export default function TransactionHistoryScreen() {
     return (
       <YStack alignItems="center" paddingTop="$10" gap="$3">
         <Clock size={48} color="$colorMuted" />
-        <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$colorSecondary">
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          fontFamily="$heading"
+          color="$colorSecondary"
+        >
           No transactions yet
         </Text>
-        <Text fontSize="$3" color="$colorMuted" fontFamily="$body" textAlign="center">
+        <Text
+          fontSize="$3"
+          color="$colorMuted"
+          fontFamily="$body"
+          textAlign="center"
+        >
           Your wallet transactions will appear here
         </Text>
       </YStack>
@@ -135,7 +141,12 @@ export default function TransactionHistoryScreen() {
         <XStack gap="$2" alignItems="center">
           <BackButton />
           <YStack gap="$1" flex={1}>
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+            <Text
+              fontSize="$8"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+            >
               Transactions
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
@@ -146,7 +157,13 @@ export default function TransactionHistoryScreen() {
       </YStack>
 
       {/* Transaction list */}
-      <YStack flex={1} paddingHorizontal="$4" alignSelf="center" width="100%" {...(media.md || media.lg ? { maxWidth: 600 } : {})}>
+      <YStack
+        flex={1}
+        paddingHorizontal="$4"
+        alignSelf="center"
+        width="100%"
+        {...(media.md || media.lg ? { maxWidth: 600 } : {})}
+      >
         <FlatList
           data={entries}
           keyExtractor={(item) => item.id}
@@ -154,7 +171,10 @@ export default function TransactionHistoryScreen() {
           ListEmptyComponent={ListEmpty}
           ListFooterComponent={ListFooter}
           ItemSeparatorComponent={() => <Separator />}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: insets.bottom + 20,
+          }}
           initialNumToRender={20}
         />
       </YStack>

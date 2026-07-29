@@ -3,7 +3,13 @@ import { useState } from "react";
 import { FlatList } from "react-native";
 import { YStack, XStack, Text, Card, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { DollarSign, Download, CircleDashed } from "@tamagui/lucide-icons";
+import {
+  DollarSign,
+  Download,
+  CircleDashed,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import {
@@ -36,55 +42,67 @@ export default function RiderEarningsScreen() {
 
   const periodLabel = PERIODS.find((p) => p.key === period)?.label ?? "Today";
 
-  const renderTransaction = ({ item: transaction }) => (
-    <Card key={transaction.id} padding="$3" bordered marginBottom="$3">
-      <XStack justifyContent="space-between" alignItems="center">
-        <XStack gap="$3" alignItems="center">
-          <YStack
-            width={40}
-            height={40}
-            borderRadius="$10"
-            backgroundColor="$green2"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <DollarSign size={20} color="$green10" />
-          </YStack>
-          <YStack>
-            <Text fontSize="$4" fontWeight="500" fontFamily="$heading">
-              {transaction.description ||
-                `Order #${transaction.id?.slice(0, 8)}`}
+  const renderTransaction = ({ item: transaction }) => {
+    const isCredit = transaction.type === "credit";
+
+    return (
+      <Card key={transaction.id} padding="$3" bordered marginBottom="$3">
+        <XStack justifyContent="space-between" alignItems="center">
+          <XStack gap="$3" width={"75%"} alignItems="center">
+            <YStack
+              width={40}
+              height={40}
+              borderRadius="$10"
+              backgroundColor="$green2"
+              alignItems="center"
+              justifyContent="center"
+            >
+              {isCredit ? (
+                <ArrowDownLeft size={16} color="$green10" />
+              ) : (
+                <ArrowUpRight size={16} color="$red10" />
+              )}
+            </YStack>
+            <YStack maxWidth={"80%"}>
+              <Text
+                numberOfLines={3}
+                fontSize="$4"
+                fontWeight="500"
+                fontFamily="$heading"
+              >
+                {transaction.description}
+              </Text>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                {transaction.inserted_at
+                  ? new Date(transaction.inserted_at).toLocaleDateString()
+                  : ""}
+              </Text>
+            </YStack>
+          </XStack>
+          <YStack width={"25%"} alignItems="flex-end">
+            <Text
+              fontSize="$4"
+              fontWeight="600"
+              color="$green10"
+              fontFamily="$heading"
+            >
+              {`${transaction.type === "debit" ? "-" : "+"} ${transaction.amount_minor != null ? formatPriceFromMinor(transaction.amount_minor) : ""}`}
             </Text>
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              {transaction.inserted_at
-                ? new Date(transaction.inserted_at).toLocaleDateString()
-                : ""}
-            </Text>
+            <YStack
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+              borderRadius="$2"
+              backgroundColor="$green2"
+            >
+              <Text fontSize="$2" color="$green10" fontFamily="$body">
+                {transaction.type}
+              </Text>
+            </YStack>
           </YStack>
         </XStack>
-        <YStack alignItems="flex-end">
-          <Text
-            fontSize="$4"
-            fontWeight="600"
-            color="$green10"
-            fontFamily="$heading"
-          >
-            {`${transaction.type === "debit" ? "-" : "+"} ${transaction.amount_minor != null ? formatPriceFromMinor(transaction.amount_minor) : ""}`}
-          </Text>
-          <YStack
-            paddingHorizontal="$2"
-            paddingVertical="$1"
-            borderRadius="$2"
-            backgroundColor="$green2"
-          >
-            <Text fontSize="$2" color="$green10" fontFamily="$body">
-              {transaction.type}
-            </Text>
-          </YStack>
-        </YStack>
-      </XStack>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   const ListHeaderComponent = () => (
     <YStack gap="$4" padding="$4" paddingBottom="$2">
@@ -126,7 +144,7 @@ export default function RiderEarningsScreen() {
             alignItems="center"
             justifyContent="center"
           >
-            <DollarSign size={32} color="white" />
+            <DollarSign size={32} color="$white" />
           </YStack>
           <YStack alignItems="center">
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
