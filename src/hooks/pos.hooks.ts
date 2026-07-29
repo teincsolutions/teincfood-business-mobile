@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import * as posService from '@/services/pos.service';
+import { posRepository } from '@/repositories/pos.repository';
 import { useBusinessStore } from '@/stores/business.store';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
@@ -30,7 +30,7 @@ export function usePOSOrdersQuery(
       if (filters?.order_type) params.order_type = filters.order_type;
       if (filters?.date_from) params.date_from = filters.date_from;
       if (filters?.date_to) params.date_to = filters.date_to;
-      return posService.fetchBusinessOrders(businessId!, params);
+      return posRepository.fetchOrders(businessId!, params);
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -48,7 +48,7 @@ export function useCreatePOSOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: POSOrderCreateRequest) =>
-      posService.createPOSOrder(businessId!, data),
+      posRepository.createOrder(businessId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: POS_KEYS.orders(businessId) });
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
@@ -95,10 +95,11 @@ export function usePOSOrderPreviewQuery(
             ? i.selected_addons.map((a) => a.addon_id)
             : undefined,
       }));
-      return posService.fetchPOSOrderPreview(businessId!, {
+      return posRepository.fetchPreview({
+        businessId: businessId!,
         items: orderItems,
-        order_type: orderType,
-        customer_name: customerName || undefined,
+        orderType,
+        customerName: customerName || undefined,
       });
     },
     enabled: !!businessId && items.length > 0,

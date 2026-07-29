@@ -2,6 +2,7 @@ import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tansta
 import type { SellerOrder as ApiSellerOrder } from '@/types/api/seller.api';
 import type { BusinessOrdersParams, BusinessDeliveriesParams } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
+import { orderRepository } from '@/repositories/order.repository';
 import { useBusinessStore } from '@/stores/business.store';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
@@ -85,8 +86,22 @@ export function useUpdateOrderStatusMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
-      sellerService.updateOrderStatus(orderId, status),
+    mutationFn: async ({ orderId, status, businessId }: { orderId: string; status: string; businessId: string }) => {
+      switch (status) {
+        case 'preparing':
+          return orderRepository.startPreparingOrder({ orderId, businessId });
+        case 'ready':
+          return orderRepository.markOrderReady({ orderId, businessId });
+        case 'accepted':
+          return orderRepository.acceptOrder({ orderId, businessId });
+        case 'rejected':
+          return orderRepository.rejectOrder({ orderId, businessId });
+        case 'cancelled':
+          return orderRepository.cancelOrder({ orderId, businessId });
+        default:
+          return sellerService.updateOrderStatus(orderId, status);
+      }
+    },
 
     onMutate: async ({ orderId, status }) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
@@ -113,10 +128,14 @@ export function useUpdateOrderStatusMutation() {
 }
 
 export function useStartPreparingOrderMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.startPreparingOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.startPreparingOrder({ orderId, businessId: activeBusinessId });
+    },
 
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
@@ -147,10 +166,14 @@ export function useStartPreparingOrderMutation() {
 }
 
 export function useMarkOrderReadyMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.markOrderReady(orderId),
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.markOrderReady({ orderId, businessId: activeBusinessId });
+    },
 
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
@@ -181,10 +204,14 @@ export function useMarkOrderReadyMutation() {
 }
 
 export function useAcceptOrderMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.acceptOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.acceptOrder({ orderId, businessId: activeBusinessId });
+    },
 
     onMutate: async (orderId) => {
       await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
@@ -215,10 +242,14 @@ export function useAcceptOrderMutation() {
 }
 
 export function useRejectOrderMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.rejectOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.rejectOrder({ orderId, businessId: activeBusinessId });
+    },
 
     onSuccess: () => {
       toast.success("Order rejected");
@@ -235,10 +266,14 @@ export function useRejectOrderMutation() {
 }
 
 export function useConfirmHandoverMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
 
-  return   useMutation({
-    mutationFn: (deliveryId: string) => sellerService.confirmHandover(deliveryId),
+  return useMutation({
+    mutationFn: (deliveryId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.confirmHandover({ deliveryId, businessId: activeBusinessId });
+    },
 
     onSuccess: () => {
       toast.success("Handover confirmed! Waiting for rider pickup confirmation.");
@@ -255,9 +290,13 @@ export function useConfirmHandoverMutation() {
 }
 
 export function useCancelOrderMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => sellerService.rejectOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.cancelOrder({ orderId, businessId: activeBusinessId });
+    },
     onSuccess: () => {
       toast.success("Order cancelled");
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });

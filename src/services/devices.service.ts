@@ -5,7 +5,7 @@ import { api } from './api';
 
 const APP_INSTANCE_ID_KEY = 'app_instance_id';
 
-function getAppInstanceId(): string {
+export function getAppInstanceId(): string {
   let id = mmkvStorage.getString(APP_INSTANCE_ID_KEY);
   if (!id) {
     id = randomUUID();

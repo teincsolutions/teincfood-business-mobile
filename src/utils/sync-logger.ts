@@ -89,7 +89,7 @@ class SyncLogger {
     });
   }
 
-  transport(transport: Pick<Transport, "name">, action: "available" | "unavailable" | "executing" | "error", data?: Record<string, unknown>): void {
+  transport(transport: Pick<Transport, "name">, action: "available" | "unavailable" | "executing" | "completed" | "error", data?: Record<string, unknown>): void {
     this.debug("SyncEngine:Transport", `Transport ${action}`, {
       transport: transport.name,
       ...data,

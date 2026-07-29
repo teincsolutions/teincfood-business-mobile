@@ -27,7 +27,7 @@ export interface EventMetadata {
   entity_id: string;
 }
 
-export interface DomainEvent<T = Record<string, unknown>> extends EventMetadata {
+export interface DomainEvent<T = unknown> extends EventMetadata {
   payload: T;
 }
 
@@ -50,7 +50,7 @@ export interface CommandMetadata {
   entity_id?: string;
 }
 
-export interface Command<T = Record<string, unknown>> extends CommandMetadata {
+export interface Command<T = unknown> extends CommandMetadata {
   payload: T;
 }
 
@@ -101,7 +101,7 @@ export interface Transport {
    * Execute a command and return resulting domain events.
    * The transport is responsible for network serialization only.
    */
-  execute<T>(command: Command<T>): Promise<DomainEvent[]>;
+  execute(command: Command): Promise<DomainEvent[]>;
 
   /**
    * Subscribe to events pushed by the transport.

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as kioskService from '@/services/kiosk.service';
+import { orderRepository } from '@/repositories/order.repository';
 import { useBusinessStore } from '@/stores/business.store';
 import { SELLER_KEYS } from '@/hooks/seller.hooks';
 import { toast } from 'sonner-native';
@@ -48,7 +49,10 @@ export function useAcceptKioskOrderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => kioskService.acceptKioskOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!businessId) throw new Error('No active business');
+      return orderRepository.acceptOrder({ orderId, businessId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
     },
@@ -59,7 +63,10 @@ export function useRejectKioskOrderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => kioskService.rejectKioskOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!businessId) throw new Error('No active business');
+      return orderRepository.rejectOrder({ orderId, businessId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
     },
@@ -70,7 +77,10 @@ export function useStartPreparingKioskOrderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => kioskService.startPreparingKioskOrder(orderId),
+    mutationFn: (orderId: string) => {
+      if (!businessId) throw new Error('No active business');
+      return orderRepository.startPreparingOrder({ orderId, businessId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
     },
@@ -81,7 +91,10 @@ export function useMarkKioskOrderReadyMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (orderId: string) => kioskService.markKioskOrderReady(orderId),
+    mutationFn: (orderId: string) => {
+      if (!businessId) throw new Error('No active business');
+      return orderRepository.markOrderReady({ orderId, businessId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
     },
@@ -92,8 +105,10 @@ export function useAssignRiderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, riderId }: { orderId: string; riderId: string }) =>
-      kioskService.assignKioskOrderToRider(orderId, riderId),
+    mutationFn: ({ orderId, riderId }: { orderId: string; riderId: string }) => {
+      if (!businessId) throw new Error('No active business');
+      return orderRepository.assignRider({ orderId, riderId, businessId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
