@@ -58,6 +58,7 @@ import {
 import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
+import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
@@ -721,6 +722,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const [lastOrderNumber, setLastOrderNumber] = useState<string | null>(null);
   const [lastCompletedOrderId, setLastCompletedOrderId] = useState<string | null>(null);
   const paymentFlow = usePOSPaymentFlow();
+  const isCloudReachable = useConnectivityStore(
+    (s) => s.isCloudReachable === "reachable",
+  );
   const previewOrder = usePOSOrderPreviewQuery(
     items,
     checkoutForm.order_type,
@@ -746,6 +750,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     label: string;
     icon: any;
     description: string;
+    disabled?: boolean;
   }[] = [
     {
       key: "cash",
@@ -757,9 +762,17 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       key: "mobile_money",
       label: "Mobile Money",
       icon: Smartphone,
-      description: "Pay via Paystack",
+      description: isCloudReachable ? "Pay via Paystack" : "Requires internet",
+      disabled: !isCloudReachable,
     },
   ];
+
+  // Switch to cash automatically when mobile money is selected offline.
+  useEffect(() => {
+    if (!isCloudReachable && checkoutForm.pos_payment_method === "mobile_money") {
+      updateCheckoutForm({ pos_payment_method: "cash" });
+    }
+  }, [isCloudReachable, checkoutForm.pos_payment_method, updateCheckoutForm]);
 
   const executePlaceOrder = useCallback(
     () => {
@@ -785,9 +798,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         },
         {
           onSuccess: (response) => {
-            const orderId = response.data.id;
-            const calloutNumber = response.data.callout_number;
-            setLastOrderNumber(response.data.order_number);
+            const orderId = response.id;
+            const calloutNumber = response.callout_number;
+            setLastOrderNumber(response.order_number);
             clearAll();
             toast.success(`Order #${calloutNumber} placed!`);
 
@@ -809,12 +822,18 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   );
 
   const handlePlaceOrder = useCallback(() => {
+    if (checkoutForm.pos_payment_method === "mobile_money" && !isCloudReachable) {
+      toast.error("Mobile money requires an internet connection");
+      updateCheckoutForm({ pos_payment_method: "cash" });
+      return;
+    }
+
     if (checkoutForm.pos_payment_method === "cash") {
       setShowCashSheet(true);
     } else {
       executePlaceOrder();
     }
-  }, [checkoutForm.pos_payment_method, executePlaceOrder]);
+  }, [checkoutForm.pos_payment_method, isCloudReachable, executePlaceOrder, updateCheckoutForm]);
 
   useEffect(() => {
     if (paymentFlow.state === 'success') {
@@ -995,14 +1014,20 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     padding="$4"
                     gap="$2"
                     alignItems="center"
-                    pressStyle={{ opacity: 0.8 }}
-                    onPress={() =>
-                      updateCheckoutForm({ pos_payment_method: pm.key })
+                    pressStyle={pm.disabled ? undefined : { opacity: 0.8 }}
+                    opacity={pm.disabled ? 0.5 : 1}
+                    disabled={pm.disabled}
+                    onPress={
+                      pm.disabled
+                        ? undefined
+                        : () => updateCheckoutForm({ pos_payment_method: pm.key })
                     }
                   >
                     <YStack
                       backgroundColor={
-                        selected ? "rgba(255,255,255,0.2)" : "$backgroundSoft"
+                        selected && !pm.disabled
+                          ? "rgba(255,255,255,0.2)"
+                          : "$backgroundSoft"
                       }
                       padding="$2"
                       borderRadius="$3"

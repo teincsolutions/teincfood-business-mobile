@@ -4,6 +4,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
 import { localNodeService } from '../src/local-node/service';
+import { syncEngine } from '../src/sync/engine';
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
@@ -103,6 +104,24 @@ function AppShell() {
     localNodeService.initialize().catch((error) => {
       console.error('[LocalNode] Failed to initialize:', error);
     });
+  }, []);
+
+  // Replay queued commands when cloud connectivity returns
+  useEffect(() => {
+    const unsubscribe = useConnectivityStore.subscribe((state, prevState) => {
+      const becameReachable =
+        state.isCloudReachable === 'reachable' &&
+        prevState.isCloudReachable !== 'reachable';
+      const cameOnline =
+        state.isOnline && !prevState.isOnline;
+
+      if (becameReachable || cameOnline) {
+        syncEngine.replayQueuedCommands().catch((error) => {
+          console.error('[SyncEngine] Replay failed:', error);
+        });
+      }
+    });
+    return unsubscribe;
   }, []);
 
   // Connect ChatClient WebSocket for real-time messaging

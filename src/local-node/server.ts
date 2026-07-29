@@ -181,13 +181,11 @@ export class LocalNodeServer {
     if (message.type === "command") {
       const command = message.payload as Command;
       const events = (await this.options.onCommand?.(command, socket)) ?? [];
-      for (const event of events) {
-        this.send(socket, {
-          type: "event",
-          id: generateUUID(),
-          payload: event,
-        });
-      }
+      this.send(socket, {
+        type: "command_response",
+        id: message.id,
+        payload: events,
+      });
     }
   }
 

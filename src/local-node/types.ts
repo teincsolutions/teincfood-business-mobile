@@ -6,6 +6,7 @@ import type { Command, DomainEvent } from "@/sync/types";
 
 export type LocalNodeMessageType =
   | "command"
+  | "command_response"
   | "event"
   | "ping"
   | "pong"
@@ -21,6 +22,11 @@ export interface LocalNodeMessage {
 export interface LocalNodeCommandMessage extends LocalNodeMessage {
   type: "command";
   payload: Command;
+}
+
+export interface LocalNodeCommandResponseMessage extends LocalNodeMessage {
+  type: "command_response";
+  payload: DomainEvent[];
 }
 
 export interface LocalNodeEventMessage extends LocalNodeMessage {

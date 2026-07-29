@@ -11,7 +11,8 @@
 import { useLocalNodeStore, type DiscoveredNode } from "@/stores/local-node.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { getAppInstanceId } from "@/services/devices.service";
-import { syncEngine } from "@/sync/engine";
+import { restTransport } from "@/sync/transport-rest";
+import { commandQueueService } from "@/sync/command-queue.service";
 import { syncLogger } from "@/utils/sync-logger";
 import { LocalNodeServer } from "./server";
 import { LocalNodeClient } from "./client";
@@ -61,6 +62,10 @@ class LocalNodeService {
 
   isConnectedToNode(): boolean {
     return this.client?.isConnected() ?? false;
+  }
+
+  getClient(): LocalNodeClient | null {
+    return this.client;
   }
 
   getElectedNode(): LocalNodeInfo | null {
@@ -147,29 +152,24 @@ class LocalNodeService {
   }
 
   async handleNodeCommand(command: Command): Promise<DomainEvent | null> {
-    // Phase 3 stub: commands received by the Local Node are forwarded to the
-    // cloud if reachable, otherwise queued. For now, return a placeholder
-    // event so the LAN plumbing can be tested.
     syncLogger.command(command, "executing", { via: "local_node" });
 
-    const isOnline = useConnectivityStore.getState().isOnline;
-    if (isOnline) {
-      const events = await syncEngine.execute(command);
+    const { isCloudReachable } = useConnectivityStore.getState();
+    const cloudReachable = isCloudReachable === "reachable";
+
+    if (cloudReachable) {
+      // Forward to cloud via REST directly to avoid a loop through the Local
+      // Node transport.
+      const events = await restTransport.execute(command);
       return events[0] ?? null;
     }
 
-    // Offline: queue and return optimistic event (Phase 4 will implement).
-    return {
-      event_id: `evt_${Date.now()}`,
-      event_type: `${command.command_type.replace(":", ".")}_queued`,
-      event_version: "1.0",
-      entity_id: command.entity_id ?? command.command_id,
-      user_id: command.user_id,
-      device_id: command.device_id,
-      payload: command.payload as Record<string, unknown>,
-      timestamp: new Date().toISOString(),
-    };
+    // Cloud unreachable: queue on the Local Node and return optimistic event.
+    // Client terminals will display the same pending state.
+    const event = await commandQueueService.enqueue(command);
+    return event;
   }
 }
+
 
 export const localNodeService = new LocalNodeService();

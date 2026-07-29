@@ -46,10 +46,12 @@ export class LocalNodeTransport implements Transport {
     }
 
     // Client: send command to the Local Node.
-    // Phase 4: LocalNodeService will expose a client to execute commands.
-    throw new Error(
-      "LocalNodeTransport client execution not implemented in Phase 3",
-    );
+    const client = localNodeService.getClient();
+    if (!client) {
+      throw new Error("LocalNodeTransport: no client connected to Local Node");
+    }
+
+    return client.execute(command);
   }
 }
 

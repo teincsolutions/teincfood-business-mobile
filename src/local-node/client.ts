@@ -149,6 +149,15 @@ export class LocalNodeClient {
       return;
     }
 
+    if (message.type === "command_response") {
+      const pending = this.pendingReplies.get(message.id);
+      if (pending) {
+        this.pendingReplies.delete(message.id);
+        pending.resolve(message.payload as DomainEvent[]);
+      }
+      return;
+    }
+
     if (message.type === "event") {
       const event = message.payload as DomainEvent;
       if (this.eventHandler) {
