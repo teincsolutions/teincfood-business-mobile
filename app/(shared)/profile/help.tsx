@@ -310,11 +310,11 @@ export default function HelpSupport() {
           <Card padding="$4" bordered backgroundColor="$gray2">
             <YStack gap="$2" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
-                TeincFood Business
+                Teinc Food Business
               </Text>
               <Text color="$colorMuted">Version 1.0.0</Text>
               <Text color="$colorMuted" fontSize="$2">
-                © 2026 TeincFood Business. All rights reserved.
+                © 2026 Teinc Food Business. All rights reserved.
               </Text>
             </YStack>
           </Card>

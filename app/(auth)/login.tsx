@@ -430,7 +430,7 @@ export default function LoginScreen() {
 
           <YStack pt="$6" gap="$3" pb="$2">
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
-              New to TeincFood Business?
+              New to Teinc Food Business?
             </Text>
             <Button
               variant="outline"

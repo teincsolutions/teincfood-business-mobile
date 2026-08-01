@@ -23,7 +23,7 @@ export const useRoleStore = create<RoleState>()(
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
     }),
     {
-      name: "TeincFood Business-role",
+      name: "Teinc Food Business-role",
       storage: createJSONStorage(() => zustandStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);

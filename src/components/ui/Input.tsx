@@ -40,7 +40,7 @@ export type InputProps = GetProps<typeof BaseInput> & {
 };
 
 /**
- * TeincFood Business Core Input Component
+ * Teinc Food Business Core Input Component
  */
 export const Input = forwardRef<TamaguiInput, InputProps>(
   ({ label, error, isPassword, ...props }, ref) => {

@@ -1,7 +1,7 @@
 import { tokens } from "./tokens";
 
 /**
- * Light and dark themes for TeincFood Business.
+ * Light and dark themes for Teinc Food Business.
  * Maps semantic token names to concrete color values or token variables.
  */
 

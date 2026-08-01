@@ -1,8 +1,18 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { zustandStorage } from "@/utils/storage";
-import type { MenuItem, MenuItemVariantResponse, MenuItemAddonResponse } from "@/types/api/menu.api";
-import type { POSCartItem, POSSelectedAddon, POSCheckoutForm, POSOrderType, POSPaymentMethod } from "@/types/pos.types";
+import type {
+  MenuItem,
+  MenuItemVariantResponse,
+  MenuItemAddonResponse,
+} from "@/types/api/menu.api";
+import type {
+  POSCartItem,
+  POSSelectedAddon,
+  POSCheckoutForm,
+  POSOrderType,
+  POSPaymentMethod,
+} from "@/types/pos.types";
 
 interface POSStoreState {
   items: POSCartItem[];
@@ -70,7 +80,9 @@ export const usePOSStore = create<POSStoreState>()(
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === cartItemId ? { ...i, quantity: i.quantity + quantity } : i,
+                i.id === cartItemId
+                  ? { ...i, quantity: i.quantity + quantity }
+                  : i,
               ),
             };
           }
@@ -120,7 +132,7 @@ export const usePOSStore = create<POSStoreState>()(
       },
     }),
     {
-      name: "TeincFood-pos-cart",
+      name: "Teinc Food-pos-cart",
       storage: createJSONStorage(() => zustandStorage),
       partialize: (state) => ({
         items: state.items,

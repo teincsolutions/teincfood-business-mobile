@@ -57,7 +57,7 @@ export default function TermsOfService() {
               </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                Welcome to TeincFood Business ("we," "our," or "us"). These
+                Welcome to Teinc Food Business ("we," "our," or "us"). These
                 Terms of Service ("Terms") govern your use of our mobile
                 application and services. By accessing or using our platform,
                 you agree to be bound by these Terms.
@@ -74,7 +74,7 @@ export default function TermsOfService() {
               <Separator />
               <YStack gap="$2">
                 <Text color="$colorMuted" lineHeight="$1">
-                  • "Platform" refers to the TeincFood Business mobile
+                  • "Platform" refers to the Teinc Food Business mobile
                   application and related services.
                 </Text>
                 <Text color="$colorMuted" lineHeight="$1">
@@ -197,7 +197,7 @@ export default function TermsOfService() {
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
                 All content on our Platform, including text, graphics, logos,
-                and software, is the property of TeincFood Business or its
+                and software, is the property of Teinc Food Business or its
                 licensors and is protected by intellectual property laws. You
                 may not use, reproduce, or distribute any content without our
                 permission.
@@ -272,12 +272,18 @@ export default function TermsOfService() {
                 at:
               </Text>
               <YStack gap="$1">
-                <TouchableOpacity onPress={() => Linking.openURL("mailto:support@teincfood.com")}>
+                <TouchableOpacity
+                  onPress={() =>
+                    Linking.openURL("mailto:support@teincfood.com")
+                  }
+                >
                   <Text fontWeight="bold" color="$primary">
                     Email: support@teincfood.com
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => Linking.openURL("tel:+233503981913")}>
+                <TouchableOpacity
+                  onPress={() => Linking.openURL("tel:+233503981913")}
+                >
                   <Text fontWeight="bold" color="$primary">
                     Phone: +233 50 398 1913
                   </Text>

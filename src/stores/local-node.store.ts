@@ -62,7 +62,10 @@ export const useLocalNodeStore = create<LocalNodeState>()(
       setLocalNodePort: (port) => set({ localNodePort: port }),
 
       designateThisDevice: () => {
-        set({ electedNodeDeviceId: getAppInstanceId(), isLocalNodeEnabled: true });
+        set({
+          electedNodeDeviceId: getAppInstanceId(),
+          isLocalNodeEnabled: true,
+        });
       },
 
       electNode: (deviceId) => set({ electedNodeDeviceId: deviceId }),
@@ -92,7 +95,7 @@ export const useLocalNodeStore = create<LocalNodeState>()(
       clearDiscoveredNodes: () => set({ discoveredNodes: [] }),
     }),
     {
-      name: STORAGE_KEYS.LOCAL_NODE_DATA ?? "TeincFood-local-node",
+      name: STORAGE_KEYS.LOCAL_NODE_DATA ?? "Teinc Food-local-node",
       storage: createJSONStorage(() => zustandStorage),
       partialize: (state) => ({
         isLocalNodeEnabled: state.isLocalNodeEnabled,

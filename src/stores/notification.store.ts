@@ -70,7 +70,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
     }),
     {
-      name: "TeincFood Business-notifications",
+      name: "Teinc Food Business-notifications",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

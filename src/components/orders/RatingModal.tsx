@@ -54,7 +54,9 @@ export function RatingModal({ open, onOpenChange, orderId }: RatingModalProps) {
         backgroundColor="$background"
         borderTopLeftRadius="$8"
         borderTopRightRadius="$8"
-        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
+        {...(media.md || media.lg
+          ? { maxWidth: 600, alignSelf: "center" }
+          : {})}
       >
         {submitted ? (
           <YStack flex={1} justifyContent="center" alignItems="center" gap="$4">
@@ -73,7 +75,7 @@ export function RatingModal({ open, onOpenChange, orderId }: RatingModalProps) {
               fontFamily="$body"
               textAlign="center"
             >
-              Your feedback helps us improve TeincFood Business.
+              Your feedback helps us improve Teinc Food Business.
             </Text>
           </YStack>
         ) : (

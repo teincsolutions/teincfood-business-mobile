@@ -187,7 +187,7 @@ export default function SharedProfile() {
 
           <YStack alignItems="center" padding="$4">
             <Text color="$colorMuted" fontSize="$2">
-              TeincFood Business v1.0.0
+              Teinc Food Business v1.0.0
             </Text>
           </YStack>
         </YStack>

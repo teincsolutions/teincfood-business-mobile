@@ -20,7 +20,7 @@ export function BiometricLockOverlay({ onUnlock }: BiometricLockOverlayProps) {
     setError(null);
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Unlock TeincFood Business",
+        promptMessage: "Unlock Teinc Food Business",
         fallbackLabel: "Use Passcode",
         cancelLabel: "Cancel",
         disableDeviceFallback: false,

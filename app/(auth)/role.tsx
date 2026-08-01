@@ -57,7 +57,7 @@ export default function RoleScreen() {
             Choose Your Role
           </Text>
           <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-            Select how you want to use TeincFood Business
+            Select how you want to use Teinc Food Business
           </Text>
         </YStack>
 

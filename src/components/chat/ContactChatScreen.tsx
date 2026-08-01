@@ -36,7 +36,11 @@ import { BackButton } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useChat } from "@/hooks/useChat";
 import { getChatClient } from "@/utils/chat-service";
-import type { Message, MessageStatus, MarkdownToken } from "@teincfood/chat-client";
+import type {
+  Message,
+  MessageStatus,
+  MarkdownToken,
+} from "@teincfood/chat-client";
 import {
   formatTime,
   formatDateSeparator,
@@ -264,7 +268,7 @@ export function ContactChatScreen({
     }
   }, [connectionState, markRead, client]);
 
-  const isSupport = propDisplayName === "TeincFood Support";
+  const isSupport = propDisplayName === "Teinc Food Support";
   const displayName = propDisplayName;
   const displayPhone = phoneNumber;
 
@@ -612,7 +616,9 @@ export function ContactChatScreen({
                       </Text>
                     )}
                     <Text fontSize="$4" fontFamily="$body" color="$color">
-                      {renderMarkdown(parseMarkdown(decodeEntities(msg.content)))}
+                      {renderMarkdown(
+                        parseMarkdown(decodeEntities(msg.content)),
+                      )}
                     </Text>
                     <XStack
                       gap={3}

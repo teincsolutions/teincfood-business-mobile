@@ -6,7 +6,7 @@ import { headingFont, bodyFont } from "./src/theme/fonts";
 import { themes } from "./src/theme/themes";
 
 /**
- * TeincFood Business Tamagui Configuration
+ * Teinc Food Business Tamagui Configuration
  *
  * Extends the default v5 config with our custom design system:
  * - Brand orange color palette

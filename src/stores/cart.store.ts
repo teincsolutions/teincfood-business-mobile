@@ -152,7 +152,7 @@ export const useCartStore = create<CartState>()(
       },
     }),
     {
-      name: "TeincFood Business-cart",
+      name: "Teinc Food Business-cart",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

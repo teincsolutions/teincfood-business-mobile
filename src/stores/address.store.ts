@@ -53,7 +53,7 @@ export const useAddressStore = create<AddressState>()(
       },
     }),
     {
-      name: "TeincFood Business-addresses",
+      name: "Teinc Food Business-addresses",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

@@ -119,7 +119,7 @@ export type ButtonProps = GetProps<typeof StyledButton> & {
 };
 
 /**
- * TeincFood Core Button Component
+ * Teinc Food Core Button Component
  */
 export const Button = forwardRef<TamaguiButton, ButtonProps>(
   ({ children, loading, variant, disabled, icon, ...props }, ref) => {

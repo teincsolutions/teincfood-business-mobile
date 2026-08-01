@@ -36,7 +36,7 @@ export const useLocationStore = create<LocationState>()(
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
     }),
     {
-      name: "TeincFood Business-location",
+      name: "Teinc Food Business-location",
       storage: createJSONStorage(() => zustandStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);

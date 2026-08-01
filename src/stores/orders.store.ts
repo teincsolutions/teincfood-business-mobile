@@ -57,7 +57,7 @@ export const useOrdersStore = create<OrdersState>()(
       },
     }),
     {
-      name: "TeincFood Business-orders",
+      name: "Teinc Food Business-orders",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

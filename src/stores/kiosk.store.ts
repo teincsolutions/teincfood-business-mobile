@@ -37,7 +37,7 @@ export const useKioskStore = create<KioskState>()(
       reset: () => set(initialState),
     }),
     {
-      name: "TeincFood Business-kiosk-store",
+      name: "Teinc Food Business-kiosk-store",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

@@ -66,7 +66,7 @@ export default function PrivacyPolicy() {
               </Text>
               <Separator />
               <Text color="$colorMuted" lineHeight="$1">
-                At TeincFood Business, we take your privacy seriously. This
+                At Teinc Food Business, we take your privacy seriously. This
                 Privacy Policy explains how we collect, use, disclose, and
                 safeguard your information when you use our mobile application
                 and services.
@@ -362,12 +362,18 @@ export default function PrivacyPolicy() {
                 please contact us:
               </Text>
               <YStack gap="$1">
-                <TouchableOpacity onPress={() => Linking.openURL("mailto:support@teincfood.com")}>
+                <TouchableOpacity
+                  onPress={() =>
+                    Linking.openURL("mailto:support@teincfood.com")
+                  }
+                >
                   <Text fontWeight="bold" color="$primary">
                     Email: support@teincfood.com
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => Linking.openURL("tel:+233503981913")}>
+                <TouchableOpacity
+                  onPress={() => Linking.openURL("tel:+233503981913")}
+                >
                   <Text fontWeight="bold" color="$primary">
                     Phone: +233 50 398 1913
                   </Text>

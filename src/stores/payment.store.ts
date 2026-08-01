@@ -63,7 +63,7 @@ export const usePaymentStore = create<PaymentState>()(
       },
     }),
     {
-      name: "TeincFood Business-payments",
+      name: "Teinc Food Business-payments",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

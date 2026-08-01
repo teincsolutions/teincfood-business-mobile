@@ -51,7 +51,7 @@ export type FormInputProps = {
 };
 
 /**
- * TeincFood Business Form Input Component with Tamagui Form validation
+ * Teinc Food Business Form Input Component with Tamagui Form validation
  */
 export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
   (

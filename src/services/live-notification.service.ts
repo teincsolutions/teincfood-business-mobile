@@ -235,7 +235,7 @@ class LiveNotificationService {
       {
         id: "view_order",
         label: "View Order",
-        deeplink: `TeincFood Business://track/${orderId}`,
+        deeplink: `Teinc Food Business://track/${orderId}`,
       },
     ];
 
@@ -243,7 +243,7 @@ class LiveNotificationService {
       actions.push({
         id: "call_rider",
         label: "Call Rider",
-        deeplink: `TeincFood Business://track/${orderId}?action=call`,
+        deeplink: `Teinc Food Business://track/${orderId}?action=call`,
       });
     }
 

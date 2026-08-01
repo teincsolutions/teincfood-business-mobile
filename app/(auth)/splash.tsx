@@ -169,7 +169,7 @@ export default function SplashScreen() {
           } else {
             setStatusMessage("Confirming identity...");
             const result = await LocalAuthentication.authenticateAsync({
-              promptMessage: "Unlock TeincFood Business",
+              promptMessage: "Unlock Teinc Food Business",
               fallbackLabel: "Use device passcode",
               cancelLabel: "Cancel",
             });
@@ -352,7 +352,7 @@ export default function SplashScreen() {
               fontFamily="$heading"
               letterSpacing={-1}
             >
-              Teinc
+              Teinc{" "}
               <Text fontWeight="800" fontFamily="$heading" color="$primary">
                 Food
               </Text>

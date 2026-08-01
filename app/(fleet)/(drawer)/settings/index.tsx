@@ -317,7 +317,7 @@ export default function FleetSettingsScreen() {
         {/* App Info */}
         <YStack gap="$2" alignItems="center" marginTop="$4">
           <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-            TeincFood Business v1.0.0
+            Teinc Food Business v1.0.0
           </Text>
           <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
             © 2026 Teinc Solutions

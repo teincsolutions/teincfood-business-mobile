@@ -32,7 +32,7 @@ export const useDisplayStore = create<DisplayStore>()(
       disableKitchenDisplay: () => set({ kitchenDisplayEnabled: false }),
     }),
     {
-      name: "TeincFood-display-settings",
+      name: "Teinc Food-display-settings",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),

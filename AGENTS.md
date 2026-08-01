@@ -1,4 +1,4 @@
-# AGENTS.md — TeincFood Business Integration Checklist
+# AGENTS.md — Teinc Food Business Integration Checklist
 
 This file is for AI coding agents. Always re-read this file before starting work and check off completed items.
 
@@ -16,7 +16,7 @@ This file is for AI coding agents. Always re-read this file before starting work
 - **No manual data mapping** — every backend API resource gets a dedicated service file in `src/services/` with a corresponding model file in `src/models/`. Model types use **snake_case** to match the backend exactly. Never manually remap fields (e.g. `apiUser.full_name || apiUser.fullName`). The service passes raw API shapes; any camelCase conversion happens only at the hook boundary via a mapper function.
 - **Type per purpose, no field renaming** — never define a type that renames fields from the backend response/request shape. If you need types for different purposes (e.g. one for API responses, one for form state, one for API requests), create separate explicit interfaces in the appropriate file (`@/types/api/*` for API shapes, `@/types/*.types` for UI/form shapes). Each interface must use field names true to its purpose — form types can have `price: string` (input string), API types have `price_minor: number` (minor units). Never use one type to represent two different shapes with renamed fields.
 - **Backend first** — before writing a service/hook, check if the endpoint exists in `docs/openapi.json` or look in `../TeincFoodBackend/lib/teinc_food_backend_web/router.ex`. Do not invent endpoints.
-- **Port from buyer app** — for shared hooks/services/screens, check `../TeincFood/src/` first. The buyer app has real implementations of auth, chat, WebSocket, profile, addresses, push tokens, places, etc.
+- **Port from buyer app** — for shared hooks/services/screens, check `../Teinc Food/src/` first. The buyer app has real implementations of auth, chat, WebSocket, profile, addresses, push tokens, places, etc.
 - **Account upgrade flow** — all users register as `buyer` role by default. Role selection at registration is intent only. On login, user picks a role from a role selector screen. To become `seller`/`fleet_manager`, user must **create a business**. To become `rider`, user must **create a rider profile**. Until they complete one of these, the user is `buyer` and has no access to role-grouped screens. After role selection, detect which prerequisite is incomplete and show the completion screen. Once completed, role upgrades and they enter the correct role group.
 - **KYC is optional** — show/prompt KYC but let user complete it later.
 - **Paginated endpoints use useInfiniteQuery** — when a backend endpoint returns `{ data: [...], pagination: {...} }`, the hook must use `useInfiniteQuery` with `select` to flatten pages. Never use `useQuery` for paginated responses.

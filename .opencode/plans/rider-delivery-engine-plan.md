@@ -33,6 +33,7 @@ Every dashboard currently shows hardcoded defaults or fetches from the wrong end
 ### 2a. Rider dashboard endpoint
 
 - [ ] Backend — Create `GET /riders/dashboard` returning live stats:
+
   ```json
   {
     "data": {
@@ -49,12 +50,14 @@ Every dashboard currently shows hardcoded defaults or fetches from the wrong end
   - `today_deliveries` — count of today's deliveries
   - `available_deliveries` — count of `:ready` orders without active delivery (reuse `Orders.list_available_for_rider` count)
   - `total_deliveries` — lifetime delivery count for this rider
+
 - [ ] Backend — Wire into `rider_controller.ex` with proper auth
 - [ ] Backend — Update OpenAPI docs
 
 ### 2b. Seller dashboard endpoint
 
 - [ ] Backend — Create `GET /businesses/:id/dashboard` returning:
+
   ```json
   {
     "data": {
@@ -76,12 +79,14 @@ Every dashboard currently shows hardcoded defaults or fetches from the wrong end
   - `active_orders` — count of `:accepted` / `:preparing` / `:ready` orders
   - `average_rating` — average of ratings (from reviews table or placeholder)
   - `recent_orders` — last 5 orders with basic info
+
 - [ ] Backend — Wire into `business_controller.ex`
 - [ ] Backend — Update OpenAPI docs
 
 ### 2c. Fleet dashboard endpoint
 
 - [ ] Backend — Create `GET /businesses/:id/fleet/dashboard` returning:
+
   ```json
   {
     "data": {
@@ -98,6 +103,7 @@ Every dashboard currently shows hardcoded defaults or fetches from the wrong end
   ```
 
   - Derived from summing rider earnings + aggregating rider/vehicle statuses for this business
+
 - [ ] Backend — Wire into `business_controller.ex` or new `fleet_controller.ex`
 - [ ] Backend — Update OpenAPI docs
 
@@ -400,7 +406,7 @@ Every dashboard currently shows hardcoded defaults or fetches from the wrong end
 | `priv/repo/migrations/*_create_eta_models.exs`                          | **Create**                                                                                                             |
 | `config/config.exs`                                                     | **Modify** — add crontab entries for metrics + eta workers                                                             |
 
-### Frontend (TeincFood Business)
+### Frontend (Teinc Food Business)
 
 | File                                          | Action                                                                                   |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------- |

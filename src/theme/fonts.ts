@@ -1,7 +1,7 @@
 import { createFont } from "tamagui";
 
 /**
- * Typography system derived from the TeincFood Business mockups.
+ * Typography system derived from the Teinc Food Business mockups.
  * Using @expo-google-fonts/sen.
  */
 

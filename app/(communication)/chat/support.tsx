@@ -16,26 +16,42 @@ export default function SupportChatScreen() {
         const conv = await client.conversations.startSupportChat();
         if (!cancelled) setConversationId(conv.id);
       } catch (e) {
-        console.error('[Chat] Failed to create support conversation:', e);
+        console.error("[Chat] Failed to create support conversation:", e);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
-        <Text fontSize="$4" color="$colorSecondary">Connecting to support...</Text>
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$background"
+      >
+        <Text fontSize="$4" color="$colorSecondary">
+          Connecting to support...
+        </Text>
       </YStack>
     );
   }
 
   if (!conversationId) {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">
-        <Text fontSize="$4" color="$error">Failed to connect to support</Text>
+      <YStack
+        flex={1}
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$background"
+      >
+        <Text fontSize="$4" color="$error">
+          Failed to connect to support
+        </Text>
       </YStack>
     );
   }
@@ -43,7 +59,7 @@ export default function SupportChatScreen() {
   return (
     <ContactChatScreen
       conversationId={conversationId}
-      displayName="TeincFood Support"
+      displayName="Teinc Food Support"
     />
   );
 }

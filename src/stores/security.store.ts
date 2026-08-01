@@ -16,7 +16,7 @@ export const useSecurityStore = create<SecurityState>()(
       resetSecurity: () => set({ isBiometricEnabled: false }),
     }),
     {
-      name: "TeincFood Business-security",
+      name: "Teinc Food Business-security",
       storage: createJSONStorage(() => zustandStorage),
     },
   ),
