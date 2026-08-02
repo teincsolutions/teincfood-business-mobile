@@ -30,7 +30,11 @@ import {
 import { useDisplayStore } from "@/stores/display.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
-import { PendingOrderCard, PreparingOrderCard } from "@/components/kiosk";
+import {
+  PendingOrderCard,
+  PreparingOrderCard,
+  ReadyOrderCard,
+} from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import type { SellerOrder } from "@/types/api";
 
@@ -44,31 +48,6 @@ function LiveClock() {
     <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
       {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
     </Text>
-  );
-}
-
-function KitchenReadyCard({ order }: { order: SellerOrder }) {
-  return (
-    <Card padding="$4" bordered backgroundColor="$green2" borderColor="$success" borderWidth={1}>
-      <YStack gap="$2">
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$8" fontWeight="bold" fontFamily="$heading">
-            {order.callout_number || order.order_number}
-          </Text>
-          <Badge backgroundColor="$success" size="$2">
-            <Text color="white" fontSize="$1" fontWeight="bold">READY</Text>
-          </Badge>
-        </XStack>
-        {order.customer_name && (
-          <Text fontSize="$4" color="$colorMuted">
-            {order.customer_name}
-          </Text>
-        )}
-        <Text fontSize="$3" color="$colorMuted">
-          {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
-        </Text>
-      </YStack>
-    </Card>
   );
 }
 
@@ -92,24 +71,41 @@ function StatusColumn({
     <YStack flex={1} minWidth={280} gap="$3">
       <XStack gap="$2" alignItems="center">
         <Icon size={20} color={color} />
-        <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color={color}>
+        <Text
+          fontSize="$5"
+          fontWeight="700"
+          fontFamily="$heading"
+          color={color}
+        >
           {label}
         </Text>
         <Badge backgroundColor={color} size="$2">
-          <Text color="white" fontSize="$1" fontWeight="bold">{count}</Text>
+          <Text color="white" fontSize="$1" fontWeight="bold">
+            {count}
+          </Text>
         </Badge>
       </XStack>
       {count === 0 ? (
-        <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" justifyContent="center" minHeight={100}>
+        <Card
+          padding="$6"
+          backgroundColor="$backgroundStrong"
+          borderRadius="$4"
+          alignItems="center"
+          justifyContent="center"
+          minHeight={100}
+        >
           <CheckCircle size={36} color="$gray200" />
-          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$2">
+          <Text
+            fontSize="$4"
+            color="$colorSecondary"
+            fontFamily="$body"
+            marginTop="$2"
+          >
             None
           </Text>
         </Card>
       ) : (
-        <YStack gap="$3">
-          {children}
-        </YStack>
+        <YStack gap="$3">{children}</YStack>
       )}
     </YStack>
   );
@@ -138,7 +134,10 @@ export default function KitchenDisplay() {
   const orderList = orders ?? [];
 
   const acceptedOrders = useMemo(
-    () => orderList.filter((o) => o.status === "accepted" || o.status === "pending"),
+    () =>
+      orderList.filter(
+        (o) => o.status === "accepted" || o.status === "pending",
+      ),
     [orderList],
   );
   const preparingOrders = useMemo(
@@ -188,7 +187,12 @@ export default function KitchenDisplay() {
         borderBottomColor="$borderColor"
       >
         <YStack>
-          <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$5"
+            fontWeight="700"
+            fontFamily="$heading"
+            color="$color"
+          >
             {activeBusiness?.name || "Kitchen Display"}
           </Text>
           <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
@@ -207,18 +211,18 @@ export default function KitchenDisplay() {
             disabled={exiting}
             onPress={handleExit}
           >
-            {exiting ? <Spinner size="small" /> : <LogOut size={18} color="$colorSecondary" />}
+            {exiting ? (
+              <Spinner size="small" />
+            ) : (
+              <LogOut size={18} color="$colorSecondary" />
+            )}
           </Button>
         </XStack>
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <XStack padding="$3" gap="$3" alignItems="flex-start">
-          <StatusColumn
-            label="To Prepare"
-            color="$orange10"
-            icon={Timer}
-          >
+          <StatusColumn label="To Prepare" color="$orange10" icon={Timer}>
             {acceptedOrders.map((order) => (
               <PendingOrderCard
                 key={order.id}
@@ -232,11 +236,7 @@ export default function KitchenDisplay() {
             ))}
           </StatusColumn>
 
-          <StatusColumn
-            label="Preparing"
-            color="$blue10"
-            icon={Utensils}
-          >
+          <StatusColumn label="Preparing" color="$blue10" icon={Utensils}>
             {preparingOrders.map((order) => (
               <PreparingOrderCard
                 key={order.id}
@@ -247,13 +247,9 @@ export default function KitchenDisplay() {
             ))}
           </StatusColumn>
 
-          <StatusColumn
-            label="Ready"
-            color="$green10"
-            icon={CheckCircle}
-          >
+          <StatusColumn label="Ready" color="$green10" icon={CheckCircle}>
             {readyOrders.map((order) => (
-              <KitchenReadyCard key={order.id} order={order} />
+              <ReadyOrderCard key={order.id} order={order} />
             ))}
           </StatusColumn>
         </XStack>
