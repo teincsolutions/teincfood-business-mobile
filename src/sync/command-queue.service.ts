@@ -18,6 +18,7 @@ import {
   markCommandInFlight,
   updateCommandStatus,
   deleteCommand,
+  insertEvent,
 } from "@/db/operations";
 import { syncLogger } from "@/utils/sync-logger";
 import { generateEventId } from "@/utils/uuid";
@@ -160,6 +161,19 @@ class CommandQueueService {
       order_number: (event.payload as Record<string, unknown>).order_number ?? null,
       status: (event.payload as Record<string, unknown>).status,
     });
+
+    // Persist the optimistic order so it survives app restarts and can be
+    // rehydrated (and shown) while still offline.
+    if (preparedCommand.command_type === "order:create") {
+      try {
+        await insertEvent(db, { event, origin: "local" });
+      } catch (error) {
+        syncLogger.error("CommandQueueService", "Failed to persist optimistic event", {
+          error: String(error),
+        });
+      }
+    }
+
     return event;
   }
 

@@ -97,6 +97,14 @@ export class SyncEngine {
         syncLogger.command(command, "completed", {
           event_count: events.length,
         });
+        // Cloud just worked: it is reachable again. Mark it so future commands
+        // go cloud-first, and replay anything queued during the outage.
+        useConnectivityStore.getState().setCloudReachable("reachable");
+        this.replayQueuedCommands().catch((error) => {
+          syncLogger.error("SyncEngine", "Replay after cloud success failed", {
+            error: String(error),
+          });
+        });
         return events;
       } catch (error) {
         // Cloud is slow or unreachable: mark it and fall back to the Local
@@ -162,8 +170,14 @@ export class SyncEngine {
   private resolveStrategy(command: Command): "cloud" | "local_node" | "queue" {
     const { isCloudReachable, isOnline } = useConnectivityStore.getState();
 
-    // Cloud-first when we believe it is reachable.
-    if (isCloudReachable === "reachable" && restTransport.isAvailable()) {
+    // Cloud-first when we believe it is reachable OR we have not yet verified
+    // it (unknown). Only a confirmed "unreachable" status falls back to the
+    // Local Node / outbox. Commands issued on a healthy connection must never
+    // get stuck in the local outbox.
+    if (
+      (isCloudReachable === "reachable" || isCloudReachable === "unknown") &&
+      restTransport.isAvailable()
+    ) {
       return "cloud";
     }
 

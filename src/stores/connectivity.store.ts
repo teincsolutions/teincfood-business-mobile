@@ -84,12 +84,17 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
 
     // When the cloud is marked unreachable, schedule a reset back to "unknown"
     // so subsequent commands retry the cloud after a cooldown instead of being
-    // permanently stuck on the offline fallback.
-    clearRetryTimer();
+    // permanently stuck on the offline fallback. Arm the cooldown only once per
+    // unreachable period: a steady stream of failing commands (e.g. a local
+    // node forwarding an outbox) must not keep re-arming it, or the cloud is
+    // never probed again and everything queues forever.
     if (reachable === "unreachable") {
+      if (retryTimer) return;
       retryTimer = setTimeout(() => {
         useConnectivityStore.getState().setCloudReachable("unknown");
       }, CLOUD_RETRY_COOLDOWN_MS);
+    } else {
+      clearRetryTimer();
     }
   },
 

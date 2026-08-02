@@ -147,3 +147,32 @@ See [detailed plan](.opencode/plans/rider-delivery-engine-plan.md) for full brea
 - [x] **Fleet riders screen** — Search and status filter send real API params instead of client-side filtering
 - [x] **TypeScript clean** — `npx tsc --noEmit` 0 errors
 - [x] **Backend tests** — 581 tests, 0 failures
+
+---
+
+## Phase 8: Offline Sync & LAN Reliability ✅ COMPLETE
+
+Fixes the cloud-routing bug (orders stuck offline while cloud is "unknown"), pending-order invisibility (queued orders never visible on any terminal), and the Local Node reconnect hot-loop.
+
+**Cloud routing:**
+- [x] `engine.ts` `resolveStrategy` — cloud is used when reachable **OR unknown** (only confirmed "unreachable" falls back to Local Node/outbox)
+- [x] `service.ts` `handleNodeCommand` — treats "unknown" cloud as reachable so the node forwards to cloud instead of always queueing locally
+- [x] `engine.ts` — successful cloud command sets `isCloudReachable = "reachable"` and triggers `replayQueuedCommands()` so queued orders flush once the cloud is back
+- [x] `connectivity.store.ts` — the 15s cloud-retry cooldown arms **once per unreachable period**; a stream of failing commands no longer re-arms it forever
+
+**Reconnect manager (`local-node/service.ts`):**
+- [x] Single-flight `connectToElectedNode` (no stacked connect attempts)
+- [x] Exponential backoff (`scheduleReconnect`: 1s → 30s cap) instead of immediate hot retry
+- [x] Generation counter guards stale socket callbacks (`onConnected`/`onDisconnected`/`onError` ignored after a new attempt)
+- [x] Reconnect delay resets on successful connect; `shutdown()` clears timers/generation
+
+**Pending-order visibility (offline orders visible on every terminal):**
+- [x] `command-queue.service.ts` — optimistic `order.create_queued` events persisted to the events journal (`insertEvent`, origin `local`)
+- [x] `src/stores/pending-orders.store.ts` — zustand store of pending `SellerOrder`s keyed by order_number
+- [x] `src/sync/pending-orders.service.ts` — `hydratePendingOrders` (rehydrate on restart), `applyPendingOrderEvent` (create_queued → add/persist; order.created → remove pending + mark synced + invalidate), `registerPendingOrdersInvalidator`
+- [x] `src/hooks/pending-orders.hooks.ts` — `usePendingOrders(businessId)` subscribes + hydrates once
+- [x] `LocalNodeServer` + `handleNodeCommand` — node broadcasts command-result events to all LAN clients (covers both client-sent and self-executed commands)
+- [x] `useSyncReconciliation` — node relays engine events (esp. replayed `order.created`) to LAN clients; routes engine events into pending-orders store; registers query invalidator
+- [x] `pos.hooks.ts` / `seller.hooks.ts` — `usePOSOrdersQuery` and `useSellerOrdersQuery` merge pending orders into the result (deduped by order_number, newest-first), so POS In-Progress/Today tabs, kitchen, display, and the seller orders list all show queued orders
+
+Reconciliation key: the optimistic order's `order_number` (`TFL-…`) matches the cloud's echoed `local_order_number`; on `order.created` the pending order is removed and its persisted events (both `local` and `lan` origin) are marked synced so it never rehydrates as pending.
