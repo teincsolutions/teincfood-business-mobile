@@ -10,7 +10,11 @@ export type LocalNodeMessageType =
   | "event"
   | "ping"
   | "pong"
-  | "hello";
+  | "hello"
+  | "challenge"
+  | "auth"
+  | "auth_ok"
+  | "auth_fail";
 
 export interface LocalNodeMessage {
   type: LocalNodeMessageType;
@@ -38,7 +42,35 @@ export interface LocalNodeHelloMessage extends LocalNodeMessage {
   type: "hello";
   payload: {
     deviceId: string;
+    deviceName?: string;
     businessId?: string;
+  };
+}
+
+export interface LocalNodeChallengeMessage extends LocalNodeMessage {
+  type: "challenge";
+  payload: {
+    nonce: string;
+  };
+}
+
+export interface LocalNodeAuthMessage extends LocalNodeMessage {
+  type: "auth";
+  payload: {
+    nonce: string;
+    proof: string;
+  };
+}
+
+export interface LocalNodeAuthOkMessage extends LocalNodeMessage {
+  type: "auth_ok";
+  payload: Record<string, never>;
+}
+
+export interface LocalNodeAuthFailMessage extends LocalNodeMessage {
+  type: "auth_fail";
+  payload: {
+    reason?: string;
   };
 }
 

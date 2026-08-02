@@ -37,6 +37,10 @@ export class LocalNodeTransport implements Transport {
 
     if (localNodeService.isLocalNode()) {
       // This device is the Local Node: execute locally.
+      syncLogger.info("LocalNodeTransport", "Executing on local node (self)", {
+        command_type: command.command_type,
+        command_id: command.command_id,
+      });
       const event = await localNodeService.handleNodeCommand(command);
       syncLogger.transport(this, "completed", {
         command_type: command.command_type,
@@ -51,7 +55,17 @@ export class LocalNodeTransport implements Transport {
       throw new Error("LocalNodeTransport: no client connected to Local Node");
     }
 
-    return client.execute(command);
+    syncLogger.info("LocalNodeTransport", "Sending command to Local Node", {
+      command_type: command.command_type,
+      command_id: command.command_id,
+      node_device_id: localNodeService.getElectedNode()?.deviceId,
+    });
+    const events = await client.execute(command);
+    syncLogger.transport(this, "completed", {
+      command_type: command.command_type,
+      event_count: events.length,
+    });
+    return events;
   }
 }
 

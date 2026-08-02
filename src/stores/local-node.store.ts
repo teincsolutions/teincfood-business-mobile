@@ -21,7 +21,15 @@ export interface DiscoveredNode {
   name: string;
   host: string;
   port: number;
+  deviceName?: string;
   lastSeenAt: string;
+}
+
+export interface ConnectedClient {
+  deviceId: string;
+  deviceName?: string;
+  host?: string;
+  connectedAt: string;
 }
 
 interface LocalNodeState {
@@ -29,6 +37,7 @@ interface LocalNodeState {
   localNodePort: number;
   electedNodeDeviceId: string | null;
   discoveredNodes: DiscoveredNode[];
+  connectedClients: ConnectedClient[];
 
   setIsLocalNodeEnabled: (enabled: boolean) => void;
   setLocalNodePort: (port: number) => void;
@@ -37,6 +46,9 @@ interface LocalNodeState {
   addDiscoveredNode: (node: DiscoveredNode) => void;
   removeDiscoveredNode: (deviceId: string) => void;
   clearDiscoveredNodes: () => void;
+  addConnectedClient: (client: ConnectedClient) => void;
+  removeConnectedClient: (deviceId: string) => void;
+  clearConnectedClients: () => void;
 }
 
 const DEFAULT_LOCAL_NODE_PORT = 44621;
@@ -48,15 +60,10 @@ export const useLocalNodeStore = create<LocalNodeState>()(
       localNodePort: DEFAULT_LOCAL_NODE_PORT,
       electedNodeDeviceId: null,
       discoveredNodes: [],
+      connectedClients: [],
 
       setIsLocalNodeEnabled: (enabled) => {
         set({ isLocalNodeEnabled: enabled });
-        if (enabled) {
-          // When enabling, default to this device if no other node is elected.
-          if (!get().electedNodeDeviceId) {
-            set({ electedNodeDeviceId: getAppInstanceId() });
-          }
-        }
       },
 
       setLocalNodePort: (port) => set({ localNodePort: port }),
@@ -93,6 +100,30 @@ export const useLocalNodeStore = create<LocalNodeState>()(
         })),
 
       clearDiscoveredNodes: () => set({ discoveredNodes: [] }),
+
+      addConnectedClient: (client) =>
+        set((state) => {
+          const existing = state.connectedClients.find(
+            (c) => c.deviceId === client.deviceId,
+          );
+          if (existing) {
+            return {
+              connectedClients: state.connectedClients.map((c) =>
+                c.deviceId === client.deviceId ? { ...c, ...client } : c,
+              ),
+            };
+          }
+          return { connectedClients: [...state.connectedClients, client] };
+        }),
+
+      removeConnectedClient: (deviceId) =>
+        set((state) => ({
+          connectedClients: state.connectedClients.filter(
+            (c) => c.deviceId !== deviceId,
+          ),
+        })),
+
+      clearConnectedClients: () => set({ connectedClients: [] }),
     }),
     {
       name: STORAGE_KEYS.LOCAL_NODE_DATA ?? "Teinc Food-local-node",

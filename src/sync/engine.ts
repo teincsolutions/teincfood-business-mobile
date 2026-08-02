@@ -18,6 +18,25 @@ import { localNodeTransport } from "@/sync/transport-local-node";
 import { commandQueueService } from "@/sync/command-queue.service";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { syncLogger } from "@/utils/sync-logger";
+import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timed out after ${ms}ms`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 interface SyncEngineOptions {
   /** Ordered list of transports the engine may use. */
@@ -39,11 +58,26 @@ export class SyncEngine {
    *   - Cloud reachable and REST transport available → REST
    *   - Local Node enabled and available → LocalNodeTransport
    *   - Otherwise queue locally and return an optimistic event
+   *
+   * Cloud commands are raced against CLOUD_COMMAND_TIMEOUT_MS so a slow
+   * internet connection falls back to the Local Node (or the offline outbox)
+   * quickly instead of blocking the terminal for the full HTTP timeout.
    */
   async execute(command: Command): Promise<DomainEvent[]> {
     syncLogger.command(command, "issued");
 
-    const strategy = this.resolveStrategy(command);
+    let strategy = this.resolveStrategy(command);
+
+    const { isCloudReachable, isOnline } = useConnectivityStore.getState();
+    syncLogger.info("SyncEngine", "Command strategy resolved", {
+      command_id: command.command_id,
+      command_type: command.command_type,
+      strategy,
+      isCloudReachable,
+      isOnline,
+      cloud_available: restTransport.isAvailable(),
+      lan_available: localNodeTransport.isAvailable(),
+    });
 
     if (strategy === "queue") {
       const event = await commandQueueService.enqueue(command);
@@ -51,7 +85,49 @@ export class SyncEngine {
       return [event];
     }
 
+    if (strategy === "cloud") {
+      try {
+        const events = await withTimeout(
+          restTransport.execute(command),
+          CLOUD_COMMAND_TIMEOUT_MS,
+        );
+        for (const event of events) {
+          this.broadcast(event);
+        }
+        syncLogger.command(command, "completed", {
+          event_count: events.length,
+        });
+        return events;
+      } catch (error) {
+        // Cloud is slow or unreachable: mark it and fall back to the Local
+        // Node or the outbox so the terminal stays responsive.
+        syncLogger.warn("SyncEngine", "Cloud command timed out, falling back", {
+          command_type: command.command_type,
+          error: String(error),
+        });
+        useConnectivityStore.getState().setCloudReachable("unreachable");
+        strategy = this.resolveStrategy(command);
+        if (strategy === "queue") {
+          const event = await commandQueueService.enqueue(command);
+          this.broadcast(event);
+          return [event];
+        }
+        syncLogger.info("SyncEngine", "Cloud timed out, using LAN fallback", {
+          command_id: command.command_id,
+          command_type: command.command_type,
+          strategy,
+        });
+      }
+    }
+
     const transport = this.selectTransport(command, strategy);
+    syncLogger.info("SyncEngine", "Executing via transport", {
+      command_id: command.command_id,
+      command_type: command.command_type,
+      strategy,
+      transport: transport.name,
+    });
+
     const events = await transport.execute(command);
 
     for (const event of events) {
@@ -60,6 +136,7 @@ export class SyncEngine {
 
     syncLogger.command(command, "completed", {
       event_count: events.length,
+      transport: transport.name,
     });
 
     return events;

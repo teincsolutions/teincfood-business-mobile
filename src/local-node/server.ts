@@ -4,6 +4,17 @@
  * Listens for incoming connections from other terminals and display clients on
  * the local network, receives commands, and broadcasts events.
  *
+ * Connections are TLS-encrypted and authenticated via a challenge-response
+ * handshake using a shared per-business secret:
+ *   1. Client sends `hello` with deviceId/deviceName/businessId.
+ *   2. Server rejects the connection if the business does not match.
+ *   3. Server replies with a `challenge` containing a random nonce.
+ *   4. Client replies with `auth` carrying `proof = SHA256(nonce:secret)`.
+ *   5. Server verifies the proof and either marks the socket authenticated
+ *      (`auth_ok`) or closes it (`auth_fail`).
+ *
+ * Only authenticated sockets may send commands or receive broadcast events.
+ *
  * Uses react-native-tcp-socket.
  */
 
@@ -12,21 +23,37 @@ import { syncLogger } from "@/utils/sync-logger";
 import { generateUUID } from "@/utils/uuid";
 import type { Command, DomainEvent } from "@/sync/types";
 import type { LocalNodeMessage } from "./types";
+import { computeProof, generateNonce } from "./security";
 
-type Server = ReturnType<typeof TcpSocket.createServer>;
+const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
+
+type Server = ReturnType<typeof TcpSocket.createTLSServer>;
 type Socket = ReturnType<typeof TcpSocket.createConnection>;
+
+interface SocketMeta {
+  deviceId: string | null;
+  deviceName?: string;
+  businessId?: string;
+  authenticated: boolean;
+  nonce?: string;
+}
 
 export interface LocalNodeServerOptions {
   port: number;
   host?: string;
+  businessId: string;
+  secret: string;
   onCommand?: (command: Command, socket: Socket) => Promise<DomainEvent[]>;
-  onClientConnected?: (deviceId: string, socket: Socket) => void;
+  onClientConnected?: (
+    info: { deviceId: string; deviceName?: string; host?: string },
+    socket: Socket,
+  ) => void;
   onClientDisconnected?: (deviceId: string, socket: Socket) => void;
 }
 
 export class LocalNodeServer {
   private server: Server | null = null;
-  private sockets = new Map<Socket, { deviceId: string | null }>();
+  private sockets = new Map<Socket, SocketMeta>();
   private options: LocalNodeServerOptions;
 
   constructor(options: LocalNodeServerOptions) {
@@ -41,9 +68,12 @@ export class LocalNodeServer {
       }
 
       try {
-        this.server = TcpSocket.createServer((socket) => {
-          this.handleSocket(socket);
-        });
+        this.server = TcpSocket.createTLSServer(
+          { keystore: SERVER_KEYSTORE },
+          (socket) => {
+            this.handleSocket(socket);
+          },
+        );
 
         this.server.on("error", (error) => {
           syncLogger.error("LocalNodeServer", "Server error", {
@@ -58,6 +88,7 @@ export class LocalNodeServer {
             syncLogger.info("LocalNodeServer", "Listening", {
               port: this.options.port,
               host: this.options.host ?? "0.0.0.0",
+              tls: true,
             });
             resolve();
           },
@@ -95,15 +126,17 @@ export class LocalNodeServer {
     };
     const data = JSON.stringify(message) + "\n";
 
-    for (const [socket] of this.sockets) {
-      if (socket.readyState === "open") {
+    let sent = 0;
+    for (const [socket, meta] of this.sockets) {
+      if (meta.authenticated && socket.readyState === "open") {
         socket.write(data);
+        sent += 1;
       }
     }
 
     syncLogger.debug("LocalNodeServer", "Broadcast event", {
       event_type: event.event_type,
-      clients: this.sockets.size,
+      clients: sent,
     });
   }
 
@@ -112,7 +145,11 @@ export class LocalNodeServer {
   }
 
   getClientCount(): number {
-    return this.sockets.size;
+    let count = 0;
+    for (const meta of this.sockets.values()) {
+      if (meta.authenticated) count += 1;
+    }
+    return count;
   }
 
   private handleSocket(socket: Socket): void {
@@ -121,7 +158,10 @@ export class LocalNodeServer {
       port: socket.remotePort,
     });
 
-    this.sockets.set(socket, { deviceId: null });
+    this.sockets.set(socket, {
+      deviceId: null,
+      authenticated: false,
+    });
 
     let buffer = "";
 
@@ -162,14 +202,74 @@ export class LocalNodeServer {
       return;
     }
 
+    const meta = this.sockets.get(socket);
+
     if (message.type === "hello") {
-      const meta = this.sockets.get(socket);
-      const deviceId = (message.payload as { deviceId: string }).deviceId;
+      const payload = message.payload as {
+        deviceId: string;
+        deviceName?: string;
+        businessId?: string;
+      };
+      const deviceId = payload.deviceId;
+
+      if (payload.businessId !== this.options.businessId) {
+        syncLogger.warn("LocalNodeServer", "Rejected connection from foreign business", {
+          deviceId,
+          businessId: payload.businessId,
+        });
+        this.send(socket, {
+          type: "auth_fail",
+          id: generateUUID(),
+          payload: { reason: "business_mismatch" },
+        });
+        socket.destroy();
+        return;
+      }
+
+      const nonce = await generateNonce();
       if (meta) {
         meta.deviceId = deviceId;
+        meta.deviceName = payload.deviceName;
+        meta.businessId = payload.businessId;
+        meta.nonce = nonce;
       }
-      this.options.onClientConnected?.(deviceId, socket);
-      this.send(socket, { type: "pong", id: generateUUID(), payload: {} });
+      this.send(socket, {
+        type: "challenge",
+        id: generateUUID(),
+        payload: { nonce },
+      });
+      return;
+    }
+
+    if (message.type === "auth") {
+      if (!meta || !meta.nonce) return;
+
+      const payload = message.payload as { nonce: string; proof: string };
+      const expected = await computeProof(this.options.secret, payload.nonce);
+      if (expected === payload.proof) {
+        meta.authenticated = true;
+        meta.nonce = undefined;
+        this.options.onClientConnected?.(
+          {
+            deviceId: meta.deviceId ?? "unknown",
+            deviceName: meta.deviceName,
+            host: socket.remoteAddress,
+          },
+          socket,
+        );
+        this.send(socket, { type: "auth_ok", id: generateUUID(), payload: {} });
+        return;
+      }
+
+      syncLogger.warn("LocalNodeServer", "Rejected connection: bad proof", {
+        deviceId: meta.deviceId,
+      });
+      this.send(socket, {
+        type: "auth_fail",
+        id: generateUUID(),
+        payload: { reason: "invalid_proof" },
+      });
+      socket.destroy();
       return;
     }
 
@@ -179,12 +279,33 @@ export class LocalNodeServer {
     }
 
     if (message.type === "command") {
+      if (!meta?.authenticated) {
+        syncLogger.warn("LocalNodeServer", "Rejected command from unauthenticated socket", {
+          deviceId: meta?.deviceId,
+        });
+        this.send(socket, {
+          type: "auth_fail",
+          id: generateUUID(),
+          payload: { reason: "unauthenticated" },
+        });
+        return;
+      }
+
       const command = message.payload as Command;
+      syncLogger.info("LocalNodeServer", "Executing command from client", {
+        command_type: command.command_type,
+        command_id: command.command_id,
+        device_id: meta.deviceId,
+      });
       const events = (await this.options.onCommand?.(command, socket)) ?? [];
       this.send(socket, {
         type: "command_response",
         id: message.id,
         payload: events,
+      });
+      syncLogger.info("LocalNodeServer", "Command response sent", {
+        command_id: command.command_id,
+        event_count: events.length,
       });
     }
   }

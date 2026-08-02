@@ -146,7 +146,21 @@ class CommandQueueService {
     const preparedCommand = injectLocalOrderNumber(command);
     await insertCommand(db, { command: preparedCommand, status: "pending" });
     syncLogger.command(preparedCommand, "queued");
-    return buildOptimisticEvent(preparedCommand);
+    const pending = await getPendingCommands(db, Number.MAX_SAFE_INTEGER);
+    syncLogger.info("CommandQueueService", "Command queued offline", {
+      command_id: preparedCommand.command_id,
+      command_type: preparedCommand.command_type,
+      order_number: (preparedCommand.payload as Record<string, unknown>).order_number ?? null,
+      outbox_size: pending.length,
+    });
+    const event = buildOptimisticEvent(preparedCommand);
+    syncLogger.info("CommandQueueService", "Optimistic event built", {
+      event_type: event.event_type,
+      entity_id: event.entity_id,
+      order_number: (event.payload as Record<string, unknown>).order_number ?? null,
+      status: (event.payload as Record<string, unknown>).status,
+    });
+    return event;
   }
 
   /**
@@ -186,6 +200,11 @@ class CommandQueueService {
       const events = await this.syncEngine.execute(parsedCommand);
       await updateCommandStatus(db, command.command_id, "completed");
       syncLogger.command(parsedCommand, "completed", {
+        event_count: events.length,
+      });
+      syncLogger.info("CommandQueueService", "Queued command replayed", {
+        command_id: command.command_id,
+        command_type: command.command_type,
         event_count: events.length,
       });
     } catch (error) {

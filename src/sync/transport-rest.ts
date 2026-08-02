@@ -34,14 +34,23 @@ export class RestTransport implements Transport {
       command_id: command.command_id,
     });
 
-    const event = await this.dispatchCommand(command);
+    try {
+      const event = await this.dispatchCommand(command);
 
-    syncLogger.transport(this, "completed", {
-      command_type: command.command_type,
-      event_type: event?.event_type,
-    });
+      syncLogger.transport(this, "completed", {
+        command_type: command.command_type,
+        event_type: event?.event_type,
+      });
 
-    return event ? [event] : [];
+      return event ? [event] : [];
+    } catch (error) {
+      syncLogger.transport(this, "error", {
+        command_type: command.command_type,
+        command_id: command.command_id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 
   private async dispatchCommand(

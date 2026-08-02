@@ -52,5 +52,12 @@ export const OTP_RESEND_DELAY_SECONDS = 60;
 /** Pagination defaults */
 export const DEFAULT_PAGE_SIZE = 20;
 
+/**
+ * Max time the Sync Engine waits for a cloud command before treating the cloud
+ * as unreachable and falling back to the Local Node or the offline outbox.
+ * Keeps the terminal responsive (fast) even when the internet is slow.
+ */
+export const CLOUD_COMMAND_TIMEOUT_MS = 2_500;
+
 // Access the version safely using optional chaining
 export const appVersion = Constants.expoConfig?.version;

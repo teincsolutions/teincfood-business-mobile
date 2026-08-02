@@ -24,6 +24,9 @@ module.exports = {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         LSApplicationQueriesSchemes: ["tel"],
+        NSBonjourServices: ["_teincnode._tcp", "_expo._tcp"],
+        NSLocalNetworkUsageDescription:
+          "$(PRODUCT_NAME) uses your local network to connect POS terminals to the Local Node for offline ordering.",
         NSCameraUsageDescription:
           "$(PRODUCT_NAME) needs access to your camera to take profile pictures and upload documents.",
         NSPhotoLibraryUsageDescription:
@@ -66,6 +69,9 @@ module.exports = {
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
         "android.permission.RECEIVE_BOOT_COMPLETED",

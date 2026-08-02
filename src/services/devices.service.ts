@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { randomUUID } from 'expo-crypto';
+import * as Device from 'expo-device';
 import { mmkvStorage } from '@/utils/storage';
 import { api } from './api';
 
@@ -12,6 +13,12 @@ export function getAppInstanceId(): string {
     mmkvStorage.set(APP_INSTANCE_ID_KEY, id);
   }
   return id;
+}
+
+export function getDeviceDisplayName(): string {
+  const model = Device.modelName ?? Platform.select({ ios: 'iPhone', android: 'Android' });
+  const shortId = getAppInstanceId().slice(0, 4).toUpperCase();
+  return `${model} (${shortId})`;
 }
 
 export interface PushTokenRegistrationRequest {
