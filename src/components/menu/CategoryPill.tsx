@@ -1,23 +1,23 @@
 // @ts-nocheck
-import { Button, styled, Text, XStack } from 'tamagui';
+import { Button, styled, Text, XStack } from "tamagui";
 
 const PillButton = styled(Button, {
   height: 48,
-  borderRadius: '$5',
-  paddingHorizontal: '$4',
+  borderRadius: "$5",
+  paddingHorizontal: "$4",
   borderWidth: 0,
-  flexDirection: 'row',
-  alignItems: 'center',
+  flexDirection: "row",
+  alignItems: "center",
 
   variants: {
     active: {
       true: {
-        backgroundColor: '$primary',
+        backgroundColor: "$primary",
       },
       false: {
-        backgroundColor: '$backgroundStrong',
+        backgroundColor: "$backgroundStrong",
         pressStyle: {
-          backgroundColor: '$backgroundSoft',
+          backgroundColor: "$backgroundSoft",
         },
       },
     },
@@ -35,14 +35,19 @@ interface CategoryPillProps {
   onPress: () => Promise<void> | void;
 }
 
-export function CategoryPill({ label, isActive, icon, onPress }: CategoryPillProps) {
+export function CategoryPill({
+  label,
+  isActive,
+  icon,
+  onPress,
+}: CategoryPillProps) {
   return (
     <PillButton active={isActive} onPress={onPress}>
       <XStack gap="$2" alignItems="center">
         {icon && icon}
-        <Text 
-          fontFamily="$body" 
-          fontWeight={isActive ? "700" : "500"} 
+        <Text
+          fontFamily="$body"
+          fontWeight={isActive ? "700" : "500"}
           color={isActive ? "$white" : "$colorSecondary"}
         >
           {label}

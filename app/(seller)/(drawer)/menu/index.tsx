@@ -11,7 +11,7 @@ import { extractApiErrorMessage } from "@/utils/error";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";
-import { CategoryPill } from "@/components/home/CategoryPill";
+import { CategoryPill } from "@/components/menu/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import { useBusinessStore } from "@/stores/business.store";
 import { uploadImage } from "@/services/upload.service";
@@ -24,11 +24,7 @@ import {
   useToggleAvailabilityMutation,
 } from "@/hooks/menu.hooks";
 import type { MenuItem, MenuItemForm } from "@/services/menu.service";
-import {
-  EMPTY_FORM,
-  toGHS,
-  toMinor,
-} from "@/services/menu.service";
+import { EMPTY_FORM, toGHS, toMinor } from "@/services/menu.service";
 import { useRouter } from "expo-router";
 import Drawer from "expo-router/drawer";
 
@@ -56,9 +52,25 @@ export default function SellerMenu() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
 
   // TanStack Query hooks — filters sent to backend, no client-side filtering
-  const categoryFilter = activeCategory ? { category_ids: activeCategory } : undefined;
-  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useMenuItemsQuery(categoryFilter);
-  console.log('[Menu] businessId:', businessId, 'items:', data?.length, 'categoryFilter:', categoryFilter);
+  const categoryFilter = activeCategory
+    ? { category_ids: activeCategory }
+    : undefined;
+  const {
+    data,
+    isPending,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMenuItemsQuery(categoryFilter);
+  console.log(
+    "[Menu] businessId:",
+    businessId,
+    "items:",
+    data?.length,
+    "categoryFilter:",
+    categoryFilter,
+  );
   const { data: categoriesRes } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuItemMutation();
   const updateMutation = useUpdateMenuItemMutation();
@@ -66,7 +78,7 @@ export default function SellerMenu() {
   const toggleMutation = useToggleAvailabilityMutation();
 
   const allCategories = categoriesRes?.data ?? [];
-  const filterCategories = [{ id: '', name: 'All' } as any, ...allCategories];
+  const filterCategories = [{ id: "", name: "All" } as any, ...allCategories];
 
   // Auto-open edit sheet when navigating back from detail screen
   const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
@@ -110,8 +122,8 @@ export default function SellerMenu() {
         price_minor: e.amountMinor || 0,
       })),
       is_available: item.is_available,
-      image_url: item.image_url || '',
-      image_key: '',
+      image_url: item.image_url || "",
+      image_key: "",
     });
     setVariantLabel("");
     setVariantPrice("");
@@ -122,11 +134,10 @@ export default function SellerMenu() {
 
   // ─── Save (add or edit) ────────────────────────────────────────
   const handleSave = () => {
-    if (!form.name.trim() || !form.price.trim())
-      return;
+    if (!form.name.trim() || !form.price.trim()) return;
 
     if (!form.category) {
-      toast.error('Please select a category');
+      toast.error("Please select a category");
       return;
     }
 
@@ -148,13 +159,16 @@ export default function SellerMenu() {
         {
           onSuccess: () => setSheetOpen(false),
           onError: (err: any) => {
-            console.debug('[Menu] Update item error:', err?.response?.data || err);
+            console.debug(
+              "[Menu] Update item error:",
+              err?.response?.data || err,
+            );
             const details = err?.response?.data?.error?.details;
-            if (details && typeof details === 'object') {
+            if (details && typeof details === "object") {
               const mapped: Record<string, string> = {};
               for (const [field, msgs] of Object.entries(details)) {
                 const arr = Array.isArray(msgs) ? msgs : [msgs];
-                const key = field === 'category_id' ? 'category' : field;
+                const key = field === "category_id" ? "category" : field;
                 mapped[key] = arr[0];
               }
               setFieldErrors(mapped);
@@ -168,13 +182,16 @@ export default function SellerMenu() {
       createMutation.mutate(baseData, {
         onSuccess: () => setSheetOpen(false),
         onError: (err: any) => {
-          console.debug('[Menu] Create item error:', err?.response?.data || err);
+          console.debug(
+            "[Menu] Create item error:",
+            err?.response?.data || err,
+          );
           const details = err?.response?.data?.error?.details;
-          if (details && typeof details === 'object') {
+          if (details && typeof details === "object") {
             const mapped: Record<string, string> = {};
             for (const [field, msgs] of Object.entries(details)) {
               const arr = Array.isArray(msgs) ? msgs : [msgs];
-              const key = field === 'category_id' ? 'category' : field;
+              const key = field === "category_id" ? "category" : field;
               mapped[key] = arr[0];
             }
             setFieldErrors(mapped);
@@ -202,8 +219,7 @@ export default function SellerMenu() {
   };
 
   // ─── Form helpers ──────────────────────────────────────────────
-  const isFormValid =
-    form.name.trim() && form.price.trim();
+  const isFormValid = form.name.trim() && form.price.trim();
 
   const toggleDietaryTag = (tag: string) => {
     setForm((f) => ({
@@ -220,7 +236,14 @@ export default function SellerMenu() {
     if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      variants: [...f.variants, { id: Date.now().toString(), name: label, price_adjustment: toMinor(price) }],
+      variants: [
+        ...f.variants,
+        {
+          id: Date.now().toString(),
+          name: label,
+          price_adjustment: toMinor(price),
+        },
+      ],
     }));
     setVariantLabel("");
     setVariantPrice("");
@@ -236,7 +259,10 @@ export default function SellerMenu() {
     if (!label || !price) return;
     setForm((f) => ({
       ...f,
-      extras: [...f.extras, { id: Date.now().toString(), name: label, price_minor: toMinor(price) }],
+      extras: [
+        ...f.extras,
+        { id: Date.now().toString(), name: label, price_minor: toMinor(price) },
+      ],
     }));
     setExtraLabel("");
     setExtraPrice("");
@@ -288,7 +314,7 @@ export default function SellerMenu() {
       >
         {filterCategories.map((cat) => (
           <CategoryPill
-            key={cat.id || 'all'}
+            key={cat.id || "all"}
             label={cat.name}
             isActive={activeCategory === cat.id}
             onPress={() => setActiveCategory(cat.id)}
@@ -304,7 +330,7 @@ export default function SellerMenu() {
         extraData={data?.length}
         numColumns={menuColumns}
         renderItem={({ item }) => (
-          <YStack flex={1} padding="$1" maxWidth={isTablet ? '50%' : '100%'}>
+          <YStack flex={1} padding="$1" maxWidth={isTablet ? "50%" : "100%"}>
             <MenuItemCard
               item={item}
               onPress={(item) => router.push(`/(shared)/menu/${item.id}`)}
@@ -346,9 +372,17 @@ export default function SellerMenu() {
         windowSize={5}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingNextPage ? <Text p="$4" ta="center" color="$colorMuted">Loading more...</Text> : null}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <Text p="$4" ta="center" color="$colorMuted">
+              Loading more...
+            </Text>
+          ) : null
+        }
       />
 
       {/* ── Add / Edit Sheet ─────────────────────────────────────── */}
@@ -381,7 +415,7 @@ export default function SellerMenu() {
         onImagePick={async (uri) => {
           setIsUploadingImage(true);
           try {
-            return await uploadImage(uri, 'menus', { business_id: businessId });
+            return await uploadImage(uri, "menus", { business_id: businessId });
           } finally {
             setIsUploadingImage(false);
           }

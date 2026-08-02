@@ -8,11 +8,11 @@ import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
 import { useResponsive } from "@/utils/responsive";
 
-interface MenuItemCardProps {
+interface FoodCardProps {
   item: MenuItem;
 }
 
-export function MenuItemCard({ item }: MenuItemCardProps) {
+export function FoodCard({ item }: FoodCardProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const { isTablet, width } = useResponsive();
 

@@ -17,17 +17,23 @@ class EventsService {
 
     console.log('[EventsService] connect called', { userId, topic, refCount: this.refCount });
 
-    if (this.refCount === 1) {
+    if (this.refCount === 1 && !this.frameHandlerUnsub) {
       this.topic = topic;
 
       this.frameHandlerUnsub = phoenixSocket.onFrame(topic, ([_joinRef, _ref, _topic, event, payload]) => {
         console.log('[EventsService] received event', { event, payload });
-        this.recordSequence(payload as Record<string, unknown>);
+        const data = payload as Record<string, unknown>;
+        const sequence = data?._sequence;
+        if (typeof sequence === 'number' && sequence <= this.lastSequence) {
+          console.log('[EventsService] skipping duplicate/old event', { event, sequence, lastSequence: this.lastSequence });
+          return;
+        }
+        this.recordSequence(data);
         const typeListeners = this.listeners.get(event);
         if (typeListeners) {
-          typeListeners.forEach((cb) => cb(payload as Record<string, unknown>));
+          typeListeners.forEach((cb) => cb(data));
         }
-        this.wildcardListeners.forEach((cb) => cb(payload as Record<string, unknown>));
+        this.wildcardListeners.forEach((cb) => cb(data));
       });
 
       const joinPayload = this.lastSequence > 0 ? { last_sequence: this.lastSequence } : {};
