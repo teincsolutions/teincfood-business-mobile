@@ -74,7 +74,7 @@ import type {
   POSCartItem,
 } from "@/types/pos.types";
 import {
-  MenuItemCard,
+  FoodCard,
   CashPaymentSheet,
   PaymentProcessingModal,
 } from "@/components/pos";
@@ -400,7 +400,7 @@ function MenuBrowser() {
           }}
           renderItem={({ item }) => (
             <YStack mx="$1.5">
-              <MenuItemCard item={item} />
+              <FoodCard item={item} />
             </YStack>
           )}
           initialNumToRender={10}
