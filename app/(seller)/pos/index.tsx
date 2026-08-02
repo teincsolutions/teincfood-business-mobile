@@ -788,6 +788,20 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             : undefined,
       }));
 
+      console.debug(
+        "[POS] Checkout initiated",
+        JSON.stringify({
+          item_count: orderItems.length,
+          total_minor: total,
+          payment_method: checkoutForm.pos_payment_method,
+          order_type: checkoutForm.order_type,
+          customer_name: checkoutForm.customer_name,
+          isCloudReachable,
+          isOnline: useConnectivityStore.getState().isOnline,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+
       createOrder.mutate(
         {
           order_type: checkoutForm.order_type,
@@ -804,6 +818,19 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             clearAll();
             toast.success(`Order #${calloutNumber} placed!`);
 
+            console.debug(
+              "[POS] Checkout succeeded",
+              JSON.stringify({
+                order_id: orderId,
+                order_number: response.order_number,
+                callout_number: calloutNumber,
+                status: response.status,
+                is_paid: response.is_paid,
+                total_minor: response.total_minor,
+                timestamp: new Date().toISOString(),
+              }),
+            );
+
             if (checkoutForm.pos_payment_method === "cash") {
               if (autoPrint) {
                 printService.printOrderReceipt(orderId);
@@ -814,6 +841,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               }
               paymentFlow.startCheckout(orderId, total);
             }
+          },
+          onError: (error) => {
+            console.debug(
+              "[POS] Checkout failed",
+              JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+                payment_method: checkoutForm.pos_payment_method,
+                timestamp: new Date().toISOString(),
+              }),
+            );
           },
         },
       );

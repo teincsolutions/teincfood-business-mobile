@@ -20,6 +20,9 @@ import { syncLogger } from "@/utils/sync-logger";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
 
+/** How long to keep the cloud marked unreachable before retrying. */
+const CLOUD_RETRY_COOLDOWN_MS = 15_000;
+
 interface ConnectivityState {
   isOnline: boolean;
   isCloudReachable: CloudReachability;
@@ -36,7 +39,17 @@ function netInfoStateToOnline(state: NetInfoState): boolean {
   return state.isConnected === true && state.isInternetReachable !== false;
 }
 
-export const useConnectivityStore = create<ConnectivityState>()((set) => ({
+export const useConnectivityStore = create<ConnectivityState>()((set) => {
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const clearRetryTimer = () => {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+  };
+
+  return {
   isOnline: true,
   isCloudReachable: "unknown",
   connectionType: "unknown" as NetInfoStateType,
@@ -68,6 +81,16 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => ({
     syncLogger.debug("ConnectivityStore", "Cloud reachability changed", {
       reachable,
     });
+
+    // When the cloud is marked unreachable, schedule a reset back to "unknown"
+    // so subsequent commands retry the cloud after a cooldown instead of being
+    // permanently stuck on the offline fallback.
+    clearRetryTimer();
+    if (reachable === "unreachable") {
+      retryTimer = setTimeout(() => {
+        useConnectivityStore.getState().setCloudReachable("unknown");
+      }, CLOUD_RETRY_COOLDOWN_MS);
+    }
   },
 
   initialize: () => {
@@ -90,9 +113,11 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => ({
 
     return () => {
       subscription();
+      clearRetryTimer();
     };
   },
-}));
+  };
+});
 
 /**
  * Convenience hook that returns true when the cloud is assumed reachable.

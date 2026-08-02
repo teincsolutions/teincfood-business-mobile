@@ -32,8 +32,31 @@ export interface OrderActionInput {
 }
 
 async function executeCommand(command: Command): Promise<SellerOrder> {
+  console.debug(
+    "[OrderRepository] Dispatching command",
+    JSON.stringify({
+      command_id: command.command_id,
+      command_type: command.command_type,
+      business_id: command.business_id,
+      entity_id: command.entity_id,
+      payload_keys: Object.keys(command.payload ?? {}),
+      timestamp: new Date().toISOString(),
+    }),
+  );
   const events = await syncEngine.execute(command);
   const event = events[0];
+  console.debug(
+    "[OrderRepository] Command result",
+    JSON.stringify({
+      command_id: command.command_id,
+      command_type: command.command_type,
+      event_count: events.length,
+      event_type: event?.event_type,
+      order_number: (event?.payload as Record<string, unknown>)?.order_number ?? null,
+      status: (event?.payload as Record<string, unknown>)?.status ?? null,
+      timestamp: new Date().toISOString(),
+    }),
+  );
   if (!event) {
     throw new Error("OrderRepository: command returned no events");
   }

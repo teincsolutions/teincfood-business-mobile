@@ -6,16 +6,17 @@
 
 import Zeroconf from "react-native-zeroconf";
 import { syncLogger } from "@/utils/sync-logger";
+import { getDeviceDisplayName } from "@/services/devices.service";
 import type { DiscoveredNode } from "@/stores/local-node.store";
 
-const SERVICE_TYPE = "teincfood-local-node";
+const SERVICE_TYPE = "teincnode";
 const SERVICE_PROTOCOL = "tcp";
 const SERVICE_DOMAIN = "local.";
 
 export interface DiscoveryOptions {
   deviceId: string;
   port: number;
-  businessId?: string;
+  deviceName?: string;
   onNodeFound?: (node: DiscoveredNode) => void;
   onNodeLost?: (deviceId: string) => void;
 }
@@ -23,6 +24,7 @@ export interface DiscoveryOptions {
 export class LocalNodeDiscovery {
   private zeroconf = new Zeroconf();
   private options: DiscoveryOptions | null = null;
+  private scanning = false;
 
   startPublishing(options: DiscoveryOptions): void {
     this.options = options;
@@ -35,7 +37,7 @@ export class LocalNodeDiscovery {
       options.port,
       {
         deviceId: options.deviceId,
-        businessId: options.businessId ?? "",
+        deviceName: options.deviceName ?? getDeviceDisplayName(),
       },
     );
 
@@ -46,10 +48,15 @@ export class LocalNodeDiscovery {
   }
 
   startScanning(): void {
+    if (this.scanning) {
+      return;
+    }
+    this.scanning = true;
+
     this.zeroconf.on("resolved", (service) => {
       const txt = service.txt ?? {};
       const deviceId = txt.deviceId ?? service.name;
-      const businessId = txt.businessId;
+      const deviceName = txt.deviceName;
       const host = service.host ?? service.addresses?.[0];
       const port = service.port;
 
@@ -60,6 +67,7 @@ export class LocalNodeDiscovery {
         name: service.name,
         host,
         port,
+        deviceName,
         lastSeenAt: new Date().toISOString(),
       };
 
@@ -85,9 +93,25 @@ export class LocalNodeDiscovery {
     syncLogger.info("LocalNodeDiscovery", "Scanning for nodes");
   }
 
-  stop(): void {
+  stopScanning(): void {
+    if (!this.scanning) {
+      return;
+    }
+    this.scanning = false;
+
     try {
       this.zeroconf.stop();
+      syncLogger.info("LocalNodeDiscovery", "Stopped scanning for nodes");
+    } catch (error) {
+      syncLogger.warn("LocalNodeDiscovery", "Error stopping scan", {
+        error: String(error),
+      });
+    }
+  }
+
+  stop(): void {
+    try {
+      this.stopScanning();
       if (this.options) {
         this.zeroconf.unpublishService(
           `${this.options.deviceId}.${SERVICE_DOMAIN}`,
