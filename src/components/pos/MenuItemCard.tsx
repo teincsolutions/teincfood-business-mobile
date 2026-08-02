@@ -6,6 +6,7 @@ import { formatPriceFromMinor } from "@/utils/currency";
 import type { MenuItem } from "@/types/api/menu.api";
 import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
+import { useResponsive } from "@/utils/responsive";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -13,14 +14,13 @@ interface MenuItemCardProps {
 
 export function MenuItemCard({ item }: MenuItemCardProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const media = useMedia();
-  const isTablet = media.md;
+  const { isTablet, width } = useResponsive();
 
   return (
     <>
       <Card
         elevate
-        width="100%"
+        width={isTablet ? "100%" : (width - 48) / 2}
         marginBottom="$3"
         backgroundColor="$background"
         borderRadius="$5"

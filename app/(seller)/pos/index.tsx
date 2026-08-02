@@ -10,7 +10,6 @@ import {
   Text,
   Card,
   Input,
-  Button,
   Image,
   Separator,
   Spinner,
@@ -74,10 +73,15 @@ import type {
   POSPaymentMethod,
   POSCartItem,
 } from "@/types/pos.types";
-import { MenuItemCard, CashPaymentSheet, PaymentProcessingModal } from "@/components/pos";
+import {
+  MenuItemCard,
+  CashPaymentSheet,
+  PaymentProcessingModal,
+} from "@/components/pos";
 import { PendingOrderCard, PreparingOrderCard } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { FlatList } from "react-native-gesture-handler";
+import { Button } from "@/components/ui";
 
 export default function POSTerminal() {
   const [activeTab, setActiveTab] = useState<POSTab>("new_order");
@@ -140,6 +144,7 @@ function TabBar({
   onExit: () => void;
   exiting: boolean;
 }) {
+  const { isTablet } = useResponsive();
   const itemCount = usePOSStore((s) =>
     s.items.reduce((sum, i) => sum + i.quantity, 0),
   );
@@ -200,12 +205,12 @@ function TabBar({
 
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
-        return (
+        return isTablet ? (
           <Button
             key={tab.key}
             flex={1}
             backgroundColor={isActive ? "$primary" : "transparent"}
-            color={isActive ? "white" : "$color"}
+            color={isActive ? "$white" : "$color"}
             borderWidth={0}
             borderRadius="$3"
             margin="$2"
@@ -217,6 +222,20 @@ function TabBar({
             {tab.label}
             {tab.badge != null ? ` (${tab.badge})` : ""}
           </Button>
+        ) : (
+          <Button
+            key={tab.key}
+            flex={1}
+            backgroundColor={isActive ? "$primary" : "transparent"}
+            color={isActive ? "$white" : "$color"}
+            borderWidth={0}
+            borderRadius="$3"
+            margin="$2"
+            height={40}
+            pressStyle={{ opacity: 0.8 }}
+            onPress={() => onTabChange(tab.key)}
+            icon={<tab.icon size={16} />}
+          />
         );
       })}
     </XStack>
@@ -720,7 +739,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const createOrder = useCreatePOSOrderMutation();
   const [showCashSheet, setShowCashSheet] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState<string | null>(null);
-  const [lastCompletedOrderId, setLastCompletedOrderId] = useState<string | null>(null);
+  const [lastCompletedOrderId, setLastCompletedOrderId] = useState<
+    string | null
+  >(null);
   const paymentFlow = usePOSPaymentFlow();
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
@@ -769,97 +790,107 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
   // Switch to cash automatically when mobile money is selected offline.
   useEffect(() => {
-    if (!isCloudReachable && checkoutForm.pos_payment_method === "mobile_money") {
+    if (
+      !isCloudReachable &&
+      checkoutForm.pos_payment_method === "mobile_money"
+    ) {
       updateCheckoutForm({ pos_payment_method: "cash" });
     }
   }, [isCloudReachable, checkoutForm.pos_payment_method, updateCheckoutForm]);
 
-  const executePlaceOrder = useCallback(
-    () => {
-      const { autoPrint } = usePrinterStore.getState();
+  const executePlaceOrder = useCallback(() => {
+    const { autoPrint } = usePrinterStore.getState();
 
-      const orderItems = items.map((i) => ({
-        menu_item_id: i.menu_item.id,
-        quantity: i.quantity,
-        variant_id: i.selected_variant?.id,
-        addon_ids:
-          i.selected_addons.length > 0
-            ? i.selected_addons.map((a) => a.addon_id)
-            : undefined,
-      }));
+    const orderItems = items.map((i) => ({
+      menu_item_id: i.menu_item.id,
+      quantity: i.quantity,
+      variant_id: i.selected_variant?.id,
+      addon_ids:
+        i.selected_addons.length > 0
+          ? i.selected_addons.map((a) => a.addon_id)
+          : undefined,
+    }));
 
-      console.debug(
-        "[POS] Checkout initiated",
-        JSON.stringify({
-          item_count: orderItems.length,
-          total_minor: total,
-          payment_method: checkoutForm.pos_payment_method,
-          order_type: checkoutForm.order_type,
-          customer_name: checkoutForm.customer_name,
-          isCloudReachable,
-          isOnline: useConnectivityStore.getState().isOnline,
-          timestamp: new Date().toISOString(),
-        }),
-      );
+    console.debug(
+      "[POS] Checkout initiated",
+      JSON.stringify({
+        item_count: orderItems.length,
+        total_minor: total,
+        payment_method: checkoutForm.pos_payment_method,
+        order_type: checkoutForm.order_type,
+        customer_name: checkoutForm.customer_name,
+        isCloudReachable,
+        isOnline: useConnectivityStore.getState().isOnline,
+        timestamp: new Date().toISOString(),
+      }),
+    );
 
-      createOrder.mutate(
-        {
-          order_type: checkoutForm.order_type,
-          customer_name: checkoutForm.customer_name || undefined,
-          customer_phone: checkoutForm.customer_phone,
-          pos_payment_method: checkoutForm.pos_payment_method,
-          items: orderItems,
-        },
-        {
-          onSuccess: (response) => {
-            const orderId = response.id;
-            const calloutNumber = response.callout_number;
-            setLastOrderNumber(response.order_number);
-            clearAll();
-            toast.success(`Order #${calloutNumber} placed!`);
+    createOrder.mutate(
+      {
+        order_type: checkoutForm.order_type,
+        customer_name: checkoutForm.customer_name || undefined,
+        customer_phone: checkoutForm.customer_phone,
+        pos_payment_method: checkoutForm.pos_payment_method,
+        items: orderItems,
+      },
+      {
+        onSuccess: (response) => {
+          const orderId = response.id;
+          const calloutNumber = response.callout_number;
+          setLastOrderNumber(response.order_number);
+          clearAll();
+          toast.success(`Order #${calloutNumber} placed!`);
 
-            console.debug(
-              "[POS] Checkout succeeded",
-              JSON.stringify({
-                order_id: orderId,
-                order_number: response.order_number,
-                callout_number: calloutNumber,
-                status: response.status,
-                is_paid: response.is_paid,
-                total_minor: response.total_minor,
-                timestamp: new Date().toISOString(),
-              }),
-            );
+          console.debug(
+            "[POS] Checkout succeeded",
+            JSON.stringify({
+              order_id: orderId,
+              order_number: response.order_number,
+              callout_number: calloutNumber,
+              status: response.status,
+              is_paid: response.is_paid,
+              total_minor: response.total_minor,
+              timestamp: new Date().toISOString(),
+            }),
+          );
 
-            if (checkoutForm.pos_payment_method === "cash") {
-              if (autoPrint) {
-                printService.printOrderReceipt(orderId);
-              }
-            } else {
-              if (autoPrint) {
-                setLastCompletedOrderId(orderId);
-              }
-              paymentFlow.startCheckout(orderId, total);
+          if (checkoutForm.pos_payment_method === "cash") {
+            if (autoPrint) {
+              printService.printOrderReceipt(orderId);
             }
-          },
-          onError: (error) => {
-            console.debug(
-              "[POS] Checkout failed",
-              JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-                payment_method: checkoutForm.pos_payment_method,
-                timestamp: new Date().toISOString(),
-              }),
-            );
-          },
+          } else {
+            if (autoPrint) {
+              setLastCompletedOrderId(orderId);
+            }
+            paymentFlow.startCheckout(orderId, total);
+          }
         },
-      );
-    },
-    [items, checkoutForm, createOrder, clearAll, total, paymentFlow.startCheckout],
-  );
+        onError: (error) => {
+          console.debug(
+            "[POS] Checkout failed",
+            JSON.stringify({
+              error: error instanceof Error ? error.message : String(error),
+              payment_method: checkoutForm.pos_payment_method,
+              timestamp: new Date().toISOString(),
+            }),
+          );
+        },
+      },
+    );
+  }, [
+    items,
+    checkoutForm,
+    createOrder,
+    clearAll,
+    total,
+    paymentFlow.startCheckout,
+  ]);
 
   const handlePlaceOrder = useCallback(() => {
-    if (checkoutForm.pos_payment_method === "mobile_money" && !isCloudReachable) {
+    if (
+      checkoutForm.pos_payment_method === "mobile_money" &&
+      !isCloudReachable
+    ) {
       toast.error("Mobile money requires an internet connection");
       updateCheckoutForm({ pos_payment_method: "cash" });
       return;
@@ -870,10 +901,15 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     } else {
       executePlaceOrder();
     }
-  }, [checkoutForm.pos_payment_method, isCloudReachable, executePlaceOrder, updateCheckoutForm]);
+  }, [
+    checkoutForm.pos_payment_method,
+    isCloudReachable,
+    executePlaceOrder,
+    updateCheckoutForm,
+  ]);
 
   useEffect(() => {
-    if (paymentFlow.state === 'success') {
+    if (paymentFlow.state === "success") {
       if (lastCompletedOrderId) {
         printService.printOrderReceipt(lastCompletedOrderId);
         setLastCompletedOrderId(null);
@@ -884,7 +920,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   }, [paymentFlow.state, paymentFlow.reset, lastCompletedOrderId]);
 
   useEffect(() => {
-    if (paymentFlow.state === 'failed') {
+    if (paymentFlow.state === "failed") {
       setLastCompletedOrderId(null);
     }
   }, [paymentFlow.state]);
@@ -1057,7 +1093,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     onPress={
                       pm.disabled
                         ? undefined
-                        : () => updateCheckoutForm({ pos_payment_method: pm.key })
+                        : () =>
+                            updateCheckoutForm({ pos_payment_method: pm.key })
                     }
                   >
                     <YStack
@@ -1276,7 +1313,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       />
 
       <PaymentProcessingModal
-        open={paymentFlow.state !== 'idle'}
+        open={paymentFlow.state !== "idle"}
         state={paymentFlow.state}
         errorMsg={paymentFlow.errorMsg}
         orderNumber={lastOrderNumber}
@@ -1294,16 +1331,30 @@ const getTimeSince = (dateString: string | null | undefined): number => {
   return Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
 };
 
-function POSReadyCard({ order, onPrint }: { order: SellerOrder; onPrint?: (id: string) => void }) {
+function POSReadyCard({
+  order,
+  onPrint,
+}: {
+  order: SellerOrder;
+  onPrint?: (id: string) => void;
+}) {
   return (
-    <Card padding="$4" bordered backgroundColor="$green2" borderColor="$success" borderWidth={1}>
+    <Card
+      padding="$4"
+      bordered
+      backgroundColor="$green2"
+      borderColor="$success"
+      borderWidth={1}
+    >
       <YStack gap="$2">
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
             {order.order_number}
           </Text>
           <Badge backgroundColor="$success" size="$2">
-            <Text color="white" fontSize="$1" fontWeight="bold">READY</Text>
+            <Text color="white" fontSize="$1" fontWeight="bold">
+              READY
+            </Text>
           </Badge>
         </XStack>
         {order.customer_name && (
@@ -1316,7 +1367,11 @@ function POSReadyCard({ order, onPrint }: { order: SellerOrder; onPrint?: (id: s
         </Text>
         <XStack justifyContent="flex-end">
           {onPrint && (
-            <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
+            <Button
+              size="$2"
+              variant="outline"
+              onPress={() => onPrint(order.id)}
+            >
               <Printer size={14} />
             </Button>
           )}
@@ -1339,12 +1394,21 @@ function InProgressTab() {
   const activeOrders = useMemo(
     () =>
       (orders ?? []).filter((o) =>
-        ["pending", "awaiting_payment", "accepted", "preparing", "ready"].includes(o.status),
+        [
+          "pending",
+          "awaiting_payment",
+          "accepted",
+          "preparing",
+          "ready",
+        ].includes(o.status),
       ),
     [orders],
   );
   const pendingOrders = useMemo(
-    () => activeOrders.filter((o) => o.status === "pending" || o.status === "accepted"),
+    () =>
+      activeOrders.filter(
+        (o) => o.status === "pending" || o.status === "accepted",
+      ),
     [activeOrders],
   );
   const preparingOrders = useMemo(
@@ -1379,17 +1443,32 @@ function InProgressTab() {
           <YStack flex={1} minWidth={280} gap="$3">
             <XStack gap="$2" alignItems="center">
               <Clock size={20} color="$orange10" />
-              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
                 Pending Orders
               </Text>
               <Badge backgroundColor="$orange10" size="$2">
-                <Text color="white" fontSize="$1" fontWeight="bold">{pendingOrders.length}</Text>
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {pendingOrders.length}
+                </Text>
               </Badge>
             </XStack>
             {pendingOrders.length === 0 ? (
-              <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
                 <CheckCircle size={36} color="$gray200" />
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No pending orders</Text>
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No pending orders
+                </Text>
               </Card>
             ) : (
               pendingOrders.map((order) => (
@@ -1412,17 +1491,36 @@ function InProgressTab() {
               <YStack flex={1} minWidth={280} gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <Utensils size={20} color="$blue10" />
-                  <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Preparing
                   </Text>
                   <Badge backgroundColor="$blue10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">{preparingOrders.length}</Text>
+                    <Text color="white" fontSize="$1" fontWeight="bold">
+                      {preparingOrders.length}
+                    </Text>
                   </Badge>
                 </XStack>
                 {preparingOrders.length === 0 ? (
-                  <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+                  <Card
+                    padding="$6"
+                    backgroundColor="$backgroundStrong"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$2"
+                  >
                     <CheckCircle size={36} color="$gray200" />
-                    <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No preparing orders</Text>
+                    <Text
+                      fontSize="$4"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      No preparing orders
+                    </Text>
                   </Card>
                 ) : (
                   preparingOrders.map((order) => (
@@ -1440,21 +1538,44 @@ function InProgressTab() {
               <YStack flex={1} minWidth={280} gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <CheckCircle size={20} color="$green10" />
-                  <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Ready
                   </Text>
                   <Badge backgroundColor="$green10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">{readyOrders.length}</Text>
+                    <Text color="white" fontSize="$1" fontWeight="bold">
+                      {readyOrders.length}
+                    </Text>
                   </Badge>
                 </XStack>
                 {readyOrders.length === 0 ? (
-                  <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+                  <Card
+                    padding="$6"
+                    backgroundColor="$backgroundStrong"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$2"
+                  >
                     <CheckCircle size={36} color="$gray200" />
-                    <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No ready orders</Text>
+                    <Text
+                      fontSize="$4"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      No ready orders
+                    </Text>
                   </Card>
                 ) : (
                   readyOrders.map((order) => (
-                    <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
+                    <POSReadyCard
+                      key={order.id}
+                      order={order}
+                      onPrint={(id) => printService.printOrderReceipt(id)}
+                    />
                   ))
                 )}
               </YStack>
@@ -1464,17 +1585,36 @@ function InProgressTab() {
               <YStack gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <Utensils size={20} color="$blue10" />
-                  <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Preparing
                   </Text>
                   <Badge backgroundColor="$blue10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">{preparingOrders.length}</Text>
+                    <Text color="white" fontSize="$1" fontWeight="bold">
+                      {preparingOrders.length}
+                    </Text>
                   </Badge>
                 </XStack>
                 {preparingOrders.length === 0 ? (
-                  <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+                  <Card
+                    padding="$6"
+                    backgroundColor="$backgroundStrong"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$2"
+                  >
                     <CheckCircle size={36} color="$gray200" />
-                    <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No preparing orders</Text>
+                    <Text
+                      fontSize="$4"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      No preparing orders
+                    </Text>
                   </Card>
                 ) : (
                   preparingOrders.map((order) => (
@@ -1492,21 +1632,44 @@ function InProgressTab() {
               <YStack gap="$3">
                 <XStack gap="$2" alignItems="center">
                   <CheckCircle size={20} color="$green10" />
-                  <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Ready
                   </Text>
                   <Badge backgroundColor="$green10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">{readyOrders.length}</Text>
+                    <Text color="white" fontSize="$1" fontWeight="bold">
+                      {readyOrders.length}
+                    </Text>
                   </Badge>
                 </XStack>
                 {readyOrders.length === 0 ? (
-                  <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+                  <Card
+                    padding="$6"
+                    backgroundColor="$backgroundStrong"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$2"
+                  >
                     <CheckCircle size={36} color="$gray200" />
-                    <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No ready orders</Text>
+                    <Text
+                      fontSize="$4"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      No ready orders
+                    </Text>
                   </Card>
                 ) : (
                   readyOrders.map((order) => (
-                    <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
+                    <POSReadyCard
+                      key={order.id}
+                      order={order}
+                      onPrint={(id) => printService.printOrderReceipt(id)}
+                    />
                   ))
                 )}
               </YStack>
@@ -1518,17 +1681,32 @@ function InProgressTab() {
           <YStack gap="$3">
             <XStack gap="$2" alignItems="center">
               <Clock size={20} color="$orange10" />
-              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
                 Pending
               </Text>
               <Badge backgroundColor="$orange10" size="$2">
-                <Text color="white" fontSize="$1" fontWeight="bold">{pendingOrders.length}</Text>
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {pendingOrders.length}
+                </Text>
               </Badge>
             </XStack>
             {pendingOrders.length === 0 ? (
-              <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
                 <CheckCircle size={36} color="$gray200" />
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No pending orders</Text>
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No pending orders
+                </Text>
               </Card>
             ) : (
               pendingOrders.map((order) => (
@@ -1549,17 +1727,32 @@ function InProgressTab() {
           <YStack gap="$3">
             <XStack gap="$2" alignItems="center">
               <Utensils size={20} color="$blue10" />
-              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
                 Preparing
               </Text>
               <Badge backgroundColor="$blue10" size="$2">
-                <Text color="white" fontSize="$1" fontWeight="bold">{preparingOrders.length}</Text>
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {preparingOrders.length}
+                </Text>
               </Badge>
             </XStack>
             {preparingOrders.length === 0 ? (
-              <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
                 <CheckCircle size={36} color="$gray200" />
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No preparing orders</Text>
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No preparing orders
+                </Text>
               </Card>
             ) : (
               preparingOrders.map((order) => (
@@ -1577,21 +1770,40 @@ function InProgressTab() {
           <YStack gap="$3">
             <XStack gap="$2" alignItems="center">
               <CheckCircle size={20} color="$green10" />
-              <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
                 Ready
               </Text>
               <Badge backgroundColor="$green10" size="$2">
-                <Text color="white" fontSize="$1" fontWeight="bold">{readyOrders.length}</Text>
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {readyOrders.length}
+                </Text>
               </Badge>
             </XStack>
             {readyOrders.length === 0 ? (
-              <Card padding="$6" backgroundColor="$backgroundStrong" borderRadius="$4" alignItems="center" gap="$2">
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
                 <CheckCircle size={36} color="$gray200" />
-                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">No ready orders</Text>
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No ready orders
+                </Text>
               </Card>
             ) : (
               readyOrders.map((order) => (
-                <POSReadyCard key={order.id} order={order} onPrint={(id) => printService.printOrderReceipt(id)} />
+                <POSReadyCard
+                  key={order.id}
+                  order={order}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
+                />
               ))
             )}
           </YStack>
@@ -1620,7 +1832,13 @@ function TodayTab() {
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
 
-  const ACTIVE_STATUSES = ["pending", "awaiting_payment", "accepted", "preparing", "ready"];
+  const ACTIVE_STATUSES = [
+    "pending",
+    "awaiting_payment",
+    "accepted",
+    "preparing",
+    "ready",
+  ];
   const COMPLETED_STATUSES = ["delivered", "completed", "cancelled"];
 
   const activeOrders = useMemo(
@@ -1641,7 +1859,8 @@ function TodayTab() {
   const showCompleted = completedOrders.length > 0;
 
   const statusColor = (status: string) => {
-    if (["pending", "awaiting_payment", "accepted"].includes(status)) return "$orange9";
+    if (["pending", "awaiting_payment", "accepted"].includes(status))
+      return "$orange9";
     if (status === "preparing") return "$blue9";
     if (status === "ready") return "$green9";
     if (status === "cancelled") return "$red9";
@@ -1669,11 +1888,22 @@ function TodayTab() {
       onEndReachedThreshold={0.5}
       ListHeaderComponent={
         <YStack marginBottom="$4">
-          <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$6"
+            fontWeight="700"
+            fontFamily="$heading"
+            color="$color"
+          >
             Today's Orders
           </Text>
-          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$1">
-            {allTodayOrders.length} order{allTodayOrders.length !== 1 ? "s" : ""}
+          <Text
+            fontSize="$4"
+            color="$colorSecondary"
+            fontFamily="$body"
+            marginTop="$1"
+          >
+            {allTodayOrders.length} order
+            {allTodayOrders.length !== 1 ? "s" : ""}
             {showActive ? ` (${activeOrders.length} active)` : ""}
           </Text>
         </YStack>
@@ -1681,7 +1911,12 @@ function TodayTab() {
       ListEmptyComponent={
         <YStack padding="$8" alignItems="center" gap="$3">
           <Package size={80} color="$gray200" />
-          <Text fontSize="$5" fontWeight="600" color="$colorSecondary" textAlign="center">
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            color="$colorSecondary"
+            textAlign="center"
+          >
             No orders today yet
           </Text>
           <Button variant="outline" height={44} onPress={refetch}>
@@ -1700,14 +1935,24 @@ function TodayTab() {
         <>
           {index === 0 && showActive && (
             <YStack paddingVertical="$2" paddingHorizontal="$1">
-              <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$orange10">
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$orange10"
+              >
                 In Progress
               </Text>
             </YStack>
           )}
           {index === activeOrders.length && showCompleted && (
             <YStack paddingVertical="$2" paddingHorizontal="$1" marginTop="$2">
-              <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$gray10">
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$gray10"
+              >
                 Completed
               </Text>
             </YStack>
@@ -1721,16 +1966,29 @@ function TodayTab() {
           >
             <XStack justifyContent="space-between" alignItems="flex-start">
               <YStack flex={1} gap="$1">
-                <Text fontWeight="700" fontSize="$5" fontFamily="$heading" color="$color">
+                <Text
+                  fontWeight="700"
+                  fontSize="$5"
+                  fontFamily="$heading"
+                  color="$color"
+                >
                   {item.order_number}
                 </Text>
                 {item.customer_name && (
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     {item.customer_name}
                   </Text>
                 )}
                 {item.user && !item.customer_name && (
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     {item.user.full_name}
                   </Text>
                 )}
@@ -1742,7 +2000,12 @@ function TodayTab() {
                 </Text>
               </YStack>
               <YStack alignItems="flex-end" gap="$1">
-                <Text fontWeight="800" fontSize="$5" fontFamily="$body" color="$primary">
+                <Text
+                  fontWeight="800"
+                  fontSize="$5"
+                  fontFamily="$body"
+                  color="$primary"
+                >
                   {formatPriceFromMinor(item.total_minor)}
                 </Text>
                 <YStack
@@ -1751,7 +2014,12 @@ function TodayTab() {
                   paddingVertical="$1"
                   borderRadius="$full"
                 >
-                  <Text fontSize="$2" color="white" fontWeight="700" textTransform="capitalize">
+                  <Text
+                    fontSize="$2"
+                    color="white"
+                    fontWeight="700"
+                    textTransform="capitalize"
+                  >
                     {item.status.replace(/_/g, " ")}
                   </Text>
                 </YStack>
