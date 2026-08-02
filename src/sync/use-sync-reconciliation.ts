@@ -1,15 +1,21 @@
 /**
  * Sync reconciliation bridge.
  *
- * Subscribes to domain events produced by the Sync Engine and performs local
- * cleanup when offline-created entities are reconciled with the cloud:
- *   - Marks events synced to cloud.
+ * Subscribes to domain events produced by the Sync Engine and:
+ *   - Applies order events to the pending-orders store (queued orders stay
+ *     visible until the cloud confirms them).
+ *   - Marks reconciled optimistic events as synced to cloud.
  *   - Invalidates TanStack Query caches for affected entities.
  */
 
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { syncEngine } from "@/sync/engine";
+import {
+  applyPendingOrderEvent,
+  registerPendingOrdersInvalidator,
+} from "@/sync/pending-orders.service";
+import { localNodeService } from "@/local-node/service";
 import { getSyncDatabase } from "@/db/connection";
 import { markEventsSynced } from "@/db/operations";
 import { syncLogger } from "@/utils/sync-logger";
@@ -28,8 +34,34 @@ export function useSyncReconciliation(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    return syncEngine.subscribe(async (event) => {
+    // Pending-order reconciliation invalidates POS + seller order lists so the
+    // server-confirmed order replaces the optimistic one. Invalidate from the
+    // broadest key: POS_KEYS.orders() without a businessId would produce
+    // ['pos','orders',undefined] which does not prefix-match business-scoped
+    // keys.
+    const unregisterInvalidator = registerPendingOrdersInvalidator(() => {
+      queryClient.invalidateQueries({ queryKey: POS_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
+    });
+
+    const unsubscribe = syncEngine.subscribe(async (event) => {
       syncLogger.event(event, "received");
+
+      // The node relays engine events (e.g. order.created when a queued
+      // command is replayed) to LAN clients so they reconcile their pending
+      // orders and refresh caches.
+      if (localNodeService.isLocalNode()) {
+        localNodeService.broadcastToClients(event);
+      }
+
+      // Route both queued (optimistic) and reconciled (created) order events
+      // into the pending-orders store.
+      if (
+        event.event_type === "order.create_queued" ||
+        event.event_type === "order.created"
+      ) {
+        await applyPendingOrderEvent(event, "local");
+      }
 
       if (event.event_type === "order.created" && isLocalOrderEvent(event)) {
         try {
@@ -49,5 +81,10 @@ export function useSyncReconciliation(): void {
         }
       }
     });
+
+    return () => {
+      unsubscribe();
+      unregisterInvalidator();
+    };
   }, [queryClient]);
 }

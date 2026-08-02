@@ -2,11 +2,13 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { posRepository } from '@/repositories/pos.repository';
 import { useBusinessStore } from '@/stores/business.store';
+import { usePendingOrders } from './pending-orders.hooks';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
 import { SELLER_KEYS } from './seller.hooks';
 import type { POSOrderCreateRequest, POSOrderPreviewResponse } from '@/types/pos.types';
 import type { POSCartItem, POSOrderType, POSOrderItemRequest } from '@/types/pos.types';
+import type { SellerOrder } from '@/types/api/seller.api';
 
 export const POS_KEYS = {
   all: ['pos'] as const,
@@ -17,12 +19,35 @@ function useBusinessId() {
   return useBusinessStore((s) => s.activeBusiness?.id);
 }
 
+/**
+ * Prepend locally queued (pending) orders to the server-fetched list and sort
+ * newest-first. Dedupes by order_number so an order that is both pending and
+ * already visible from the server does not appear twice.
+ */
+function mergePendingOrders(
+  pending: SellerOrder[],
+  serverOrders: SellerOrder[] | undefined,
+): SellerOrder[] {
+  if (pending.length === 0) return serverOrders ?? [];
+  const seen = new Set<string>();
+  const merged: SellerOrder[] = [];
+  for (const order of pending) {
+    seen.add(order.order_number);
+    merged.push(order);
+  }
+  for (const order of serverOrders ?? []) {
+    if (!seen.has(order.order_number)) merged.push(order);
+  }
+  return merged.sort((a, b) => b.inserted_at.localeCompare(a.inserted_at));
+}
+
 export function usePOSOrdersQuery(
   filters?: { status?: string; order_type?: string; date_from?: string; date_to?: string },
   enabled = true,
 ) {
   const businessId = useBusinessId();
-  return useInfiniteQuery({
+  const pendingOrders = usePendingOrders(businessId);
+  const query = useInfiniteQuery({
     queryKey: [...POS_KEYS.orders(businessId), filters],
     queryFn: ({ pageParam = 1 }) => {
       const params: Record<string, string> = { page: String(pageParam) };
@@ -41,6 +66,13 @@ export function usePOSOrdersQuery(
     staleTime: 30 * 1000,
     select: (data) => data.pages.flatMap((p) => p.data),
   });
+
+  const data = useMemo(
+    () => mergePendingOrders(pendingOrders, query.data),
+    [pendingOrders, query.data],
+  );
+
+  return { ...query, data };
 }
 
 export function useCreatePOSOrderMutation() {

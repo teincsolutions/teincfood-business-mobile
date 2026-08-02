@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { SellerOrder as ApiSellerOrder } from '@/types/api/seller.api';
 import type { BusinessOrdersParams, BusinessDeliveriesParams } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
 import { orderRepository } from '@/repositories/order.repository';
 import { useBusinessStore } from '@/stores/business.store';
+import { usePendingOrders } from './pending-orders.hooks';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
 
@@ -16,13 +18,32 @@ export const SELLER_KEYS = {
   order: (id: string, businessId?: string) => [...SELLER_KEYS.all, 'order', id, businessId] as const,
 };
 
+/** Prepend locally queued pending orders, deduped by order_number. */
+function mergePendingOrders(
+  pending: ApiSellerOrder[],
+  serverOrders: ApiSellerOrder[] | undefined,
+): ApiSellerOrder[] {
+  if (pending.length === 0) return serverOrders ?? [];
+  const seen = new Set<string>();
+  const merged: ApiSellerOrder[] = [];
+  for (const order of pending) {
+    seen.add(order.order_number);
+    merged.push(order);
+  }
+  for (const order of serverOrders ?? []) {
+    if (!seen.has(order.order_number)) merged.push(order);
+  }
+  return merged.sort((a, b) => b.inserted_at.localeCompare(a.inserted_at));
+}
+
 export function useSellerOrdersQuery(
   enabled = true,
   filters?: { status?: string; q?: string },
 ) {
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const pendingOrders = usePendingOrders(activeBusinessId);
 
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: SELLER_KEYS.orders(activeBusinessId, filters),
     queryFn: async ({ pageParam = 1 }) => {
       const params: BusinessOrdersParams = { page: pageParam, page_size: 20 };
@@ -38,6 +59,13 @@ export function useSellerOrdersQuery(
     select: (data) => data.pages.flatMap((p) => p.data),
     enabled: enabled && Boolean(activeBusinessId),
   });
+
+  const data = useMemo(
+    () => mergePendingOrders(pendingOrders, query.data),
+    [pendingOrders, query.data],
+  );
+
+  return { ...query, data };
 }
 
 export function useSellerOrderQuery(orderId: string, enabled = true) {

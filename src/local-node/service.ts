@@ -22,6 +22,7 @@ import { useBusinessStore } from "@/stores/business.store";
 import { getAppInstanceId } from "@/services/devices.service";
 import { restTransport } from "@/sync/transport-rest";
 import { commandQueueService } from "@/sync/command-queue.service";
+import { applyPendingOrderEvent } from "@/sync/pending-orders.service";
 import { syncLogger } from "@/utils/sync-logger";
 import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -33,6 +34,11 @@ import type { Command, DomainEvent } from "@/sync/types";
 import type { LocalNodeInfo } from "./types";
 
 const LOCAL_NODE_KEEP_AWAKE_TAG = "TeincLocalNode";
+
+/** Initial reconnect delay after a failed connect attempt. */
+const RECONNECT_BASE_DELAY_MS = 1_000;
+/** Maximum reconnect delay (exponential backoff cap). */
+const RECONNECT_MAX_DELAY_MS = 30_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -61,6 +67,13 @@ class LocalNodeService {
   private businessId: string | null = null;
   private secret: string | null = null;
   private subscribed = false;
+
+  // Reconnect manager state.
+  private connecting = false;
+  private reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Incremented on every connect attempt so stale socket callbacks are ignored. */
+  private generation = 0;
 
   async initialize(): Promise<void> {
     const auth = useAuthStore.getState();
@@ -133,6 +146,9 @@ class LocalNodeService {
   }
 
   async shutdown(): Promise<void> {
+    this.generation += 1;
+    this.connecting = false;
+    this.clearReconnectTimer();
     this.client?.disconnect();
     this.client = null;
     await this.server?.stop();
@@ -142,8 +158,16 @@ class LocalNodeService {
     this.mode = "idle";
     this.businessId = null;
     this.secret = null;
+    this.reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
     useLocalNodeStore.getState().clearConnectedClients();
     await deactivateKeepAwake(LOCAL_NODE_KEEP_AWAKE_TAG).catch(() => undefined);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 
   isLocalNode(): boolean {
@@ -152,6 +176,15 @@ class LocalNodeService {
       store.isLocalNodeEnabled &&
       store.electedNodeDeviceId === getAppInstanceId()
     );
+  }
+
+  /**
+   * Broadcast an event to every authenticated LAN client. Only meaningful on
+   * the node; used to relay Sync Engine events (e.g. order.created from a
+   * replayed command) that do not pass through handleNodeCommand.
+   */
+  broadcastToClients(event: DomainEvent): void {
+    this.server?.broadcast(event);
   }
 
   isConnectedToNode(): boolean {
@@ -217,6 +250,9 @@ class LocalNodeService {
 
   private connectToElectedNode(): void {
     if (this.mode !== "client") return;
+    // Single-flight: never stack concurrent connect attempts. The reconnect
+    // timer, store subscriptions, and socket callbacks all funnel through here.
+    if (this.connecting) return;
     if (this.client?.isConnected()) return;
 
     const { discoveredNodes, electedNodeDeviceId } =
@@ -228,6 +264,26 @@ class LocalNodeService {
     if (target) {
       this.connectToNode(target);
     }
+  }
+
+  private scheduleReconnect(): void {
+    if (this.mode !== "client") return;
+    if (this.connecting) return;
+    if (this.client?.isConnected()) return;
+    if (this.reconnectTimer) return;
+
+    const delay = this.reconnectDelayMs;
+    this.reconnectDelayMs = Math.min(
+      this.reconnectDelayMs * 2,
+      RECONNECT_MAX_DELAY_MS,
+    );
+    syncLogger.debug("LocalNodeService", "Scheduling reconnect", {
+      delay_ms: delay,
+    });
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connectToElectedNode();
+    }, delay);
   }
 
   private async startAsNode(port: number): Promise<void> {
@@ -293,6 +349,11 @@ class LocalNodeService {
       return;
     }
 
+    // Bump generation so callbacks from any previous socket are ignored.
+    const generation = ++this.generation;
+    this.connecting = true;
+    this.clearReconnectTimer();
+
     this.electedNode = {
       deviceId: node.deviceId,
       host: node.host,
@@ -306,8 +367,19 @@ class LocalNodeService {
       secret: this.secret,
       onEvent: (event) => {
         syncLogger.event(event, "received", { origin: "lan" });
+        // Apply LAN events (pending order broadcasts, reconciled orders) to
+        // the pending-orders store and persistence layer.
+        applyPendingOrderEvent(event, "lan").catch((error) => {
+          syncLogger.error("LocalNodeService", "Failed to apply LAN event", {
+            error: String(error),
+            event_type: event.event_type,
+          });
+        });
       },
       onConnected: () => {
+        if (generation !== this.generation) return;
+        this.connecting = false;
+        this.reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
         syncLogger.info("LocalNodeService", "Connected to elected node", {
           deviceId: node.deviceId,
         });
@@ -317,21 +389,33 @@ class LocalNodeService {
         useConnectivityStore.getState().setCloudReachable("reachable");
       },
       onDisconnected: () => {
-        syncLogger.warn("LocalNodeService", "Disconnected from elected node");
+        if (generation !== this.generation) return;
+        this.connecting = false;
         this.client = null;
         this.electedNode = null;
+        syncLogger.warn("LocalNodeService", "Disconnected from elected node");
         useConnectivityStore.getState().setCloudReachable("unreachable");
         this.discovery.startScanning();
-        // Try to rejoin the LAN immediately; subsequent discovery events will
-        // also re-trigger connection attempts.
-        this.connectToElectedNode();
+        // Rejoin with backoff instead of an immediate hot retry loop. Discovery
+        // events and the reconnect timer will keep trying until the node is up.
+        this.scheduleReconnect();
+      },
+      onError: (error) => {
+        if (generation !== this.generation) return;
+        this.connecting = false;
+        syncLogger.debug("LocalNodeService", "Node connect error", {
+          error: String(error),
+        });
       },
     });
 
     this.client.connect().catch((error) => {
-      syncLogger.error("LocalNodeService", "Failed to connect to node", {
+      if (generation !== this.generation) return;
+      this.connecting = false;
+      syncLogger.debug("LocalNodeService", "Node connect failed, will retry", {
         error: String(error),
       });
+      this.scheduleReconnect();
     });
   }
 
@@ -339,7 +423,14 @@ class LocalNodeService {
     syncLogger.command(command, "executing", { via: "local_node" });
 
     const { isCloudReachable } = useConnectivityStore.getState();
-    const cloudReachable = isCloudReachable === "reachable";
+    // Treat "unknown" as reachable so the node actually attempts the cloud
+    // before falling back to the outbox. Previously only "reachable" forwarded
+    // to the cloud, so the node (whose reachability is never set to
+    // "reachable") always queued online orders locally.
+    const cloudReachable =
+      isCloudReachable === "reachable" || isCloudReachable === "unknown";
+
+    let event: DomainEvent | null = null;
 
     if (cloudReachable) {
       // Forward to cloud via REST directly to avoid a loop through the Local
@@ -350,20 +441,28 @@ class LocalNodeService {
           restTransport.execute(command),
           CLOUD_COMMAND_TIMEOUT_MS,
         );
-        return events[0] ?? null;
+        event = events[0] ?? null;
       } catch (error) {
         syncLogger.warn("LocalNodeService", "Cloud forward failed, queueing", {
           error: String(error),
         });
         useConnectivityStore.getState().setCloudReachable("unreachable");
-        const event = await commandQueueService.enqueue(command);
-        return event;
+        event = await commandQueueService.enqueue(command);
       }
+    } else {
+      // Cloud unreachable: queue on the Local Node and return optimistic event.
+      // Client terminals will display the same pending state.
+      event = await commandQueueService.enqueue(command);
     }
 
-    // Cloud unreachable: queue on the Local Node and return optimistic event.
-    // Client terminals will display the same pending state.
-    const event = await commandQueueService.enqueue(command);
+    // Broadcast the resulting event to every connected terminal so the whole
+    // LAN stays in sync (e.g. a queued order created on one device shows as
+    // pending on all of them). This covers both client-sent commands (via the
+    // server) and commands this node executes for itself.
+    if (event) {
+      this.server?.broadcast(event);
+    }
+
     return event;
   }
 }
