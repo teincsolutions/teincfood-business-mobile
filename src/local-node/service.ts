@@ -39,6 +39,8 @@ const LOCAL_NODE_KEEP_AWAKE_TAG = "TeincLocalNode";
 const RECONNECT_BASE_DELAY_MS = 1_000;
 /** Maximum reconnect delay (exponential backoff cap). */
 const RECONNECT_MAX_DELAY_MS = 30_000;
+/** Safety-net: release the single-flight connect lock if a connect never settles. */
+const CONNECT_GUARD_MS = 15_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -72,6 +74,7 @@ class LocalNodeService {
   private connecting = false;
   private reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private connectGuardTimer: ReturnType<typeof setTimeout> | null = null;
   /** Incremented on every connect attempt so stale socket callbacks are ignored. */
   private generation = 0;
 
@@ -149,6 +152,7 @@ class LocalNodeService {
     this.generation += 1;
     this.connecting = false;
     this.clearReconnectTimer();
+    this.clearConnectGuard();
     this.client?.disconnect();
     this.client = null;
     await this.server?.stop();
@@ -159,6 +163,7 @@ class LocalNodeService {
     this.businessId = null;
     this.secret = null;
     this.reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
+    syncLogger.info("LocalNodeService", "Clearing connected clients (shutdown)");
     useLocalNodeStore.getState().clearConnectedClients();
     await deactivateKeepAwake(LOCAL_NODE_KEEP_AWAKE_TAG).catch(() => undefined);
   }
@@ -167,6 +172,13 @@ class LocalNodeService {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+  }
+
+  private clearConnectGuard(): void {
+    if (this.connectGuardTimer) {
+      clearTimeout(this.connectGuardTimer);
+      this.connectGuardTimer = null;
     }
   }
 
@@ -300,22 +312,26 @@ class LocalNodeService {
         return event ? [event] : [];
       },
       onClientConnected: (info) => {
-        syncLogger.info("LocalNodeService", "Client connected", {
-          deviceId: info.deviceId,
-          deviceName: info.deviceName,
-        });
         useLocalNodeStore.getState().addConnectedClient({
           deviceId: info.deviceId,
           deviceName: info.deviceName,
           host: info.host,
           connectedAt: new Date().toISOString(),
         });
+        syncLogger.info("LocalNodeService", "Client connected", {
+          deviceId: info.deviceId,
+          deviceName: info.deviceName,
+          connected_clients:
+            useLocalNodeStore.getState().connectedClients.length,
+        });
       },
       onClientDisconnected: (deviceId) => {
+        useLocalNodeStore.getState().removeConnectedClient(deviceId);
         syncLogger.info("LocalNodeService", "Client disconnected", {
           deviceId,
+          connected_clients:
+            useLocalNodeStore.getState().connectedClients.length,
         });
-        useLocalNodeStore.getState().removeConnectedClient(deviceId);
       },
     });
 
@@ -333,9 +349,10 @@ class LocalNodeService {
   }
 
   private startDiscovery(): void {
-    this.discovery.startPublishing({
+    // Clients only scan — never publish. Publishing a service with port 0
+    // would advertise the client as a "node" and mislead other terminals.
+    this.discovery.setOptions({
       deviceId: getAppInstanceId(),
-      port: 0,
       onNodeFound: (node) => useLocalNodeStore.getState().addDiscoveredNode(node),
       onNodeLost: (deviceId) => useLocalNodeStore.getState().removeDiscoveredNode(deviceId),
     });
@@ -353,12 +370,33 @@ class LocalNodeService {
     const generation = ++this.generation;
     this.connecting = true;
     this.clearReconnectTimer();
+    this.clearConnectGuard();
+
+    // Safety net: if the connect promise never settles (e.g. the socket
+    // library swallows the error), release the single-flight lock so future
+    // reconnect attempts are not blocked forever.
+    this.connectGuardTimer = setTimeout(() => {
+      this.connectGuardTimer = null;
+      if (generation !== this.generation) return;
+      if (!this.client?.isConnected() && this.connecting) {
+        this.connecting = false;
+        syncLogger.warn("LocalNodeService", "Connect guard released", {
+          deviceId: node.deviceId,
+        });
+        this.scheduleReconnect();
+      }
+    }, CONNECT_GUARD_MS);
 
     this.electedNode = {
       deviceId: node.deviceId,
       host: node.host,
       port: node.port,
     };
+    syncLogger.info("LocalNodeService", "Connecting to node", {
+      deviceId: node.deviceId,
+      host: node.host,
+      port: node.port,
+    });
 
     this.client?.disconnect();
     this.client = new LocalNodeClient({
@@ -379,6 +417,7 @@ class LocalNodeService {
       onConnected: () => {
         if (generation !== this.generation) return;
         this.connecting = false;
+        this.clearConnectGuard();
         this.reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
         syncLogger.info("LocalNodeService", "Connected to elected node", {
           deviceId: node.deviceId,
@@ -391,6 +430,7 @@ class LocalNodeService {
       onDisconnected: () => {
         if (generation !== this.generation) return;
         this.connecting = false;
+        this.clearConnectGuard();
         this.client = null;
         this.electedNode = null;
         syncLogger.warn("LocalNodeService", "Disconnected from elected node");
@@ -403,6 +443,7 @@ class LocalNodeService {
       onError: (error) => {
         if (generation !== this.generation) return;
         this.connecting = false;
+        this.clearConnectGuard();
         syncLogger.debug("LocalNodeService", "Node connect error", {
           error: String(error),
         });
@@ -412,6 +453,7 @@ class LocalNodeService {
     this.client.connect().catch((error) => {
       if (generation !== this.generation) return;
       this.connecting = false;
+      this.clearConnectGuard();
       syncLogger.debug("LocalNodeService", "Node connect failed, will retry", {
         error: String(error),
       });

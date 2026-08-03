@@ -178,8 +178,9 @@ export default function LocalNodeSettings() {
                   ) : (
                     store.discoveredNodes.map((node) => {
                       const isConnected =
+                        localNodeService.isConnectedToNode() &&
                         localNodeService.getElectedNode()?.deviceId ===
-                        node.deviceId;
+                          node.deviceId;
                       return (
                         <XStack
                           key={node.deviceId}

@@ -20,7 +20,61 @@ import { computeProof } from "./security";
 
 const SERVER_CERT = require("../../assets/tls/server-cert.pem");
 
+/** Timeout for the TLS connect + auth handshake. */
+const CONNECT_TIMEOUT_MS = 10_000;
+
 type Socket = ReturnType<typeof TcpSocket.connectTLS>;
+
+/**
+ * Best-effort raw TCP reachability probe. Distinguishes "the node is
+ * unreachable at the TCP layer" from "TCP connects but the TLS handshake
+ * stalls". Resolves with the round-trip time in ms on success, or `null` if
+ * the port does not accept a plain connection within 3 seconds.
+ */
+function probeReachable(host: string, port: number): Promise<number | null> {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+    let probe: ReturnType<typeof TcpSocket.createConnection> | null = null;
+    const finish = (result: number | null) => {
+      if (!probe) return;
+      try {
+        probe.destroy();
+      } catch {
+        // ignore
+      }
+      probe = null;
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      syncLogger.warn("LocalNodeClient", "Raw TCP probe TIMEOUT", { host, port });
+      finish(null);
+    }, 3500);
+
+    probe = TcpSocket.createConnection(
+      { host, port, connectTimeout: 3000 },
+      () => {
+        clearTimeout(timer);
+        const ms = Date.now() - startedAt;
+        syncLogger.info("LocalNodeClient", "Raw TCP probe OK", { host, port, ms });
+        finish(ms);
+      },
+    );
+
+    probe.on("error", (error) => {
+      clearTimeout(timer);
+      syncLogger.warn("LocalNodeClient", "Raw TCP probe FAILED", {
+        host,
+        port,
+        error: String(error),
+      });
+      finish(null);
+    });
+    probe.on("close", () => {
+      clearTimeout(timer);
+      finish(null);
+    });
+  });
+}
 
 export interface LocalNodeClientOptions {
   node: LocalNodeInfo;
@@ -47,18 +101,43 @@ export class LocalNodeClient {
     this.options = options;
   }
 
-  connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.socket) {
-        resolve();
-        return;
-      }
+  async connect(): Promise<void> {
+    if (this.socket) {
+      return;
+    }
 
-      const socket = TcpSocket.connectTLS(
+    await probeReachable(this.options.node.host, this.options.node.port);
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let socket: Socket;
+      let timeout: ReturnType<typeof setTimeout>;
+      const settle = (fn: () => void) => () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        fn();
+      };
+
+      // The connect promise must always settle: if neither auth_ok nor an
+      // error arrives (e.g. the TLS handshake stalls), reject and destroy the
+      // socket so the service can release its single-flight lock and retry.
+      timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        this.socket = null;
+        socket.destroy();
+        const error = new Error("Local Node connect timeout");
+        this.options.onError?.(error);
+        reject(error);
+      }, CONNECT_TIMEOUT_MS);
+
+      socket = TcpSocket.connectTLS(
         {
           host: this.options.node.host,
           port: this.options.node.port,
           ca: SERVER_CERT,
+          connectTimeout: CONNECT_TIMEOUT_MS,
         },
         () => {
           syncLogger.info("LocalNodeClient", "Connected to Local Node", {
@@ -78,7 +157,7 @@ export class LocalNodeClient {
       );
 
       socket.on("data", (data) => {
-        this.handleData(data.toString("utf-8"), resolve, reject);
+        this.handleData(data.toString("utf-8"), settle(resolve), settle(reject));
       });
 
       socket.on("error", (error) => {
@@ -86,7 +165,7 @@ export class LocalNodeClient {
           error: String(error),
         });
         this.options.onError?.(error);
-        reject(error);
+        settle(() => reject(error))();
       });
 
       socket.on("close", () => {
@@ -94,6 +173,7 @@ export class LocalNodeClient {
         this.socket = null;
         this.authenticated = false;
         this.pendingReplies.clear();
+        settle(() => undefined)();
         this.options.onDisconnected?.();
       });
 
@@ -191,8 +271,24 @@ export class LocalNodeClient {
     if (message.type === "auth_ok") {
       this.authenticated = true;
       syncLogger.info("LocalNodeClient", "Authenticated with Local Node");
+      // Report ourselves to the node so it records us as a connected terminal.
+      this.send({
+        type: "register",
+        id: generateUUID(),
+        payload: {
+          deviceId: getAppInstanceId(),
+          deviceName: getDeviceDisplayName(),
+          businessId: this.options.businessId,
+          connectedAt: new Date().toISOString(),
+        },
+      });
       this.options.onConnected?.();
       resolve();
+      return;
+    }
+
+    if (message.type === "register_ack") {
+      syncLogger.debug("LocalNodeClient", "Registered with Local Node");
       return;
     }
 

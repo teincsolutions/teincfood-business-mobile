@@ -14,7 +14,9 @@ export type LocalNodeMessageType =
   | "challenge"
   | "auth"
   | "auth_ok"
-  | "auth_fail";
+  | "auth_fail"
+  | "register"
+  | "register_ack";
 
 export interface LocalNodeMessage {
   type: LocalNodeMessageType;
@@ -72,6 +74,25 @@ export interface LocalNodeAuthFailMessage extends LocalNodeMessage {
   payload: {
     reason?: string;
   };
+}
+
+/**
+ * Client self-report sent right after `auth_ok`. The client announces itself
+ * to the node so the node records it as a connected terminal.
+ */
+export interface LocalNodeRegisterMessage extends LocalNodeMessage {
+  type: "register";
+  payload: {
+    deviceId: string;
+    deviceName?: string;
+    businessId?: string;
+    connectedAt: string;
+  };
+}
+
+export interface LocalNodeRegisterAckMessage extends LocalNodeMessage {
+  type: "register_ack";
+  payload: Record<string, never>;
 }
 
 export type LocalNodeConnectionState =

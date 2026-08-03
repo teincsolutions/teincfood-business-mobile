@@ -24,8 +24,10 @@ import { generateUUID } from "@/utils/uuid";
 import type { Command, DomainEvent } from "@/sync/types";
 import type { LocalNodeMessage } from "./types";
 import { computeProof, generateNonce } from "./security";
+import { patchTLSServerListen } from "./tls-listen-patch";
 
 const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
+const SERVER_CERT = require("../../assets/tls/server-cert.pem");
 
 type Server = ReturnType<typeof TcpSocket.createTLSServer>;
 type Socket = ReturnType<typeof TcpSocket.createConnection>;
@@ -62,6 +64,8 @@ export class LocalNodeServer {
 
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
+      patchTLSServerListen();
+
       if (this.server?.listening) {
         resolve();
         return;
@@ -91,6 +95,7 @@ export class LocalNodeServer {
               tls: true,
             });
             resolve();
+            this.selfCheck();
           },
         );
       } catch (error) {
@@ -152,6 +157,58 @@ export class LocalNodeServer {
     return count;
   }
 
+  /**
+   * Loopback TLS self-check: connects to our own listener with the same CA
+   * cert a real client would use. Proves on-device listener + TLS integrity
+   * without a second phone. If the server's own listener cannot complete a
+   * TLS handshake with itself, no remote terminal ever will.
+   */
+  private selfCheck(): void {
+    const startedAt = Date.now();
+    let settled = false;
+    let socket: ReturnType<typeof TcpSocket.connectTLS>;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      syncLogger.warn("LocalNodeServer", "Self-check TLS TIMEOUT", {
+        port: this.options.port,
+      });
+    }, 5000);
+
+    socket = TcpSocket.connectTLS(
+      {
+        host: "127.0.0.1",
+        port: this.options.port,
+        ca: SERVER_CERT,
+        connectTimeout: 5000,
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        const ms = Date.now() - startedAt;
+        syncLogger.info("LocalNodeServer", "Self-check TLS OK", {
+          port: this.options.port,
+          ms,
+        });
+        socket.destroy();
+      },
+    );
+
+    socket.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      syncLogger.error("LocalNodeServer", "Self-check TLS FAILED", {
+        port: this.options.port,
+        error: String(error),
+      });
+      socket.destroy();
+    });
+  }
+
   private handleSocket(socket: Socket): void {
     syncLogger.debug("LocalNodeServer", "Client connected", {
       address: socket.remoteAddress,
@@ -183,7 +240,17 @@ export class LocalNodeServer {
       const meta = this.sockets.get(socket);
       this.sockets.delete(socket);
       if (meta?.deviceId) {
-        this.options.onClientDisconnected?.(meta.deviceId, socket);
+        // Ignore stale close events: a reconnecting terminal may open a new
+        // authenticated socket before its previous socket's close event is
+        // delivered. The device is still connected, so don't report it as
+        // disconnected while another authenticated socket for it is alive.
+        const stillConnected = [...this.sockets.values()].some(
+          (other) =>
+            other.deviceId === meta.deviceId && other.authenticated,
+        );
+        if (!stillConnected) {
+          this.options.onClientDisconnected?.(meta.deviceId, socket);
+        }
       }
     });
 
@@ -275,6 +342,38 @@ export class LocalNodeServer {
 
     if (message.type === "ping") {
       this.send(socket, { type: "pong", id: generateUUID(), payload: {} });
+      return;
+    }
+
+    if (message.type === "register") {
+      // Client self-report: once a client authenticates it announces itself so
+      // the node records it as a connected terminal. Re-announcing refreshes
+      // the entry (the store dedupes by deviceId).
+      if (!meta?.authenticated) return;
+      const payload = message.payload as {
+        deviceId?: string;
+        deviceName?: string;
+        connectedAt?: string;
+      };
+      meta.deviceId = payload.deviceId ?? meta.deviceId ?? null;
+      meta.deviceName = payload.deviceName ?? meta.deviceName;
+      syncLogger.info("LocalNodeServer", "Client registered", {
+        deviceId: meta.deviceId,
+        deviceName: meta.deviceName,
+      });
+      this.options.onClientConnected?.(
+        {
+          deviceId: meta.deviceId ?? "unknown",
+          deviceName: meta.deviceName,
+          host: socket.remoteAddress,
+        },
+        socket,
+      );
+      this.send(socket, {
+        type: "register_ack",
+        id: message.id,
+        payload: {},
+      });
       return;
     }
 
