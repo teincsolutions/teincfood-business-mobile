@@ -67,6 +67,7 @@ function buildOptimisticOrder(
     order_number: orderNumber,
     callout_number: generateLocalCalloutNumber(),
     order_type: (payload.order_type as string) ?? "takeout",
+    is_pos: true,
     customer_name: (payload.customer_name as string) ?? null,
     customer_phone: (payload.customer_phone as string) ?? null,
     pos_payment_method: (payload.pos_payment_method as string) ?? "cash",

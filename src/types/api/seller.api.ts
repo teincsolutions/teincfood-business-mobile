@@ -112,6 +112,7 @@ export interface SellerOrder {
   order_number: string;
   callout_number: number | null;
   order_type: string | null;
+  is_pos: boolean;
   customer_name: string | null;
   customer_phone: string | null;
   pos_payment_method: string | null;

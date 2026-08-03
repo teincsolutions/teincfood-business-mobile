@@ -42,7 +42,13 @@ function mergePendingOrders(
 }
 
 export function usePOSOrdersQuery(
-  filters?: { status?: string; order_type?: string; date_from?: string; date_to?: string },
+  filters?: {
+    status?: string;
+    order_type?: string;
+    is_pos?: string;
+    date_from?: string;
+    date_to?: string;
+  },
   enabled = true,
 ) {
   const businessId = useBusinessId();
@@ -53,6 +59,7 @@ export function usePOSOrdersQuery(
       const params: Record<string, string> = { page: String(pageParam) };
       if (filters?.status) params.status = filters.status;
       if (filters?.order_type) params.order_type = filters.order_type;
+      if (filters?.is_pos) params.is_pos = filters.is_pos;
       if (filters?.date_from) params.date_from = filters.date_from;
       if (filters?.date_to) params.date_to = filters.date_to;
       return posRepository.fetchOrders(businessId!, params);
