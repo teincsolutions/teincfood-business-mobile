@@ -15,7 +15,7 @@ const SERVICE_DOMAIN = "local.";
 
 export interface DiscoveryOptions {
   deviceId: string;
-  port: number;
+  port?: number;
   deviceName?: string;
   onNodeFound?: (node: DiscoveredNode) => void;
   onNodeLost?: (deviceId: string) => void;
@@ -25,9 +25,14 @@ export class LocalNodeDiscovery {
   private zeroconf = new Zeroconf();
   private options: DiscoveryOptions | null = null;
   private scanning = false;
+  private published = false;
 
   startPublishing(options: DiscoveryOptions): void {
+    if (!options.port) {
+      throw new Error("LocalNodeDiscovery: publishService requires a port");
+    }
     this.options = options;
+    this.published = true;
 
     this.zeroconf.publishService(
       SERVICE_TYPE,
@@ -47,6 +52,11 @@ export class LocalNodeDiscovery {
     });
   }
 
+  /** Register options for scan callbacks without publishing a service. */
+  setOptions(options: DiscoveryOptions): void {
+    this.options = options;
+  }
+
   startScanning(): void {
     if (this.scanning) {
       return;
@@ -57,21 +67,32 @@ export class LocalNodeDiscovery {
       const txt = service.txt ?? {};
       const deviceId = txt.deviceId ?? service.name;
       const deviceName = txt.deviceName;
-      const host = service.host ?? service.addresses?.[0];
       const port = service.port;
 
-      if (!host || !port) return;
+      // Prefer an IPv4 address for connecting. On iOS the mDNS hostname
+      // (e.g. "iPhone.local.") can resolve to a link-local IPv6 address that
+      // is unreachable without a scope id, which makes the TCP connect hang.
+      const addresses = service.addresses ?? [];
+      const connectHost =
+        addresses.find((a) => !a.includes(":") && !a.startsWith("fe80")) ??
+        addresses[0] ??
+        service.host;
+
+      if (!connectHost || !port) return;
 
       const node: DiscoveredNode = {
         deviceId,
         name: service.name,
-        host,
+        host: connectHost,
         port,
         deviceName,
         lastSeenAt: new Date().toISOString(),
       };
 
-      syncLogger.debug("LocalNodeDiscovery", "Node found", { node });
+      syncLogger.debug("LocalNodeDiscovery", "Node found", {
+        node,
+        addresses,
+      });
       this.options?.onNodeFound?.(node);
     });
 
@@ -112,11 +133,12 @@ export class LocalNodeDiscovery {
   stop(): void {
     try {
       this.stopScanning();
-      if (this.options) {
+      if (this.published && this.options) {
         this.zeroconf.unpublishService(
           `${this.options.deviceId}.${SERVICE_DOMAIN}`,
         );
       }
+      this.published = false;
     } catch (error) {
       syncLogger.warn("LocalNodeDiscovery", "Error stopping discovery", {
         error: String(error),
