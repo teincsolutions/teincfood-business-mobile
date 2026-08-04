@@ -51,6 +51,12 @@ export interface LocalNodeServerOptions {
     socket: Socket,
   ) => void;
   onClientDisconnected?: (deviceId: string, socket: Socket) => void;
+  /**
+   * Called when a client relays a notification event for rebroadcast. The
+   * node should apply it locally; the rebroadcast itself is handled by the
+   * server. The origin socket is excluded from the rebroadcast.
+   */
+  onRelayEvent?: (event: DomainEvent, socket: Socket) => void;
 }
 
 export class LocalNodeServer {
@@ -123,7 +129,7 @@ export class LocalNodeServer {
     });
   }
 
-  broadcast(event: DomainEvent): void {
+  broadcast(event: DomainEvent, exceptSocket?: Socket): void {
     const message: LocalNodeMessage = {
       type: "event",
       id: generateUUID(),
@@ -133,6 +139,7 @@ export class LocalNodeServer {
 
     let sent = 0;
     for (const [socket, meta] of this.sockets) {
+      if (socket === exceptSocket) continue;
       if (meta.authenticated && socket.readyState === "open") {
         socket.write(data);
         sent += 1;
@@ -374,6 +381,27 @@ export class LocalNodeServer {
         id: message.id,
         payload: {},
       });
+      return;
+    }
+
+    if (message.type === "relay_event") {
+      // Client-originated notification event (e.g. reference_data.changed):
+      // rebroadcast to every other authenticated terminal and let the node
+      // apply it locally. Exclude the origin so it does not double-process.
+      if (!meta?.authenticated) {
+        syncLogger.warn("LocalNodeServer", "Rejected relay from unauthenticated socket", {
+          deviceId: meta?.deviceId,
+        });
+        return;
+      }
+
+      const event = message.payload as DomainEvent;
+      syncLogger.info("LocalNodeServer", "Relaying event from client", {
+        event_type: event.event_type,
+        device_id: meta.deviceId,
+      });
+      this.broadcast(event, socket);
+      this.options.onRelayEvent?.(event, socket);
       return;
     }
 

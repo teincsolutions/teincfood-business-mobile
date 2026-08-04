@@ -281,21 +281,11 @@ export default function SellerMenu() {
               variant="primary"
               height="$8"
               $lg={{ height: "$8" }}
-              paddingHorizontal="$4"
-              marginBottom="$2"
+              marginRight="$2"
               onPress={openAdd}
+              icon={({ color, size }) => <Plus size={size} color={color} />}
             >
-              <XStack gap="$1" alignItems="center">
-                <Plus size={16} color="white" />
-                <Text
-                  fontFamily="$body"
-                  fontWeight="700"
-                  fontSize="$3"
-                  color="white"
-                >
-                  Add Item
-                </Text>
-              </XStack>
+              New
             </Button>
           ),
         }}

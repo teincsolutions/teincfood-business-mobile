@@ -8,6 +8,7 @@ export type LocalNodeMessageType =
   | "command"
   | "command_response"
   | "event"
+  | "relay_event"
   | "ping"
   | "pong"
   | "hello"
@@ -37,6 +38,17 @@ export interface LocalNodeCommandResponseMessage extends LocalNodeMessage {
 
 export interface LocalNodeEventMessage extends LocalNodeMessage {
   type: "event";
+  payload: DomainEvent;
+}
+
+/**
+ * Client-originated notification event (e.g. `reference_data.changed`) sent to
+ * the node so it can be rebroadcast to every connected terminal. The node
+ * treats it like a locally-published event but does not echo it back to the
+ * origin socket.
+ */
+export interface LocalNodeRelayEventMessage extends LocalNodeMessage {
+  type: "relay_event";
   payload: DomainEvent;
 }
 

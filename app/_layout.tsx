@@ -5,6 +5,7 @@ import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
 import { localNodeService } from '../src/local-node/service';
 import { syncEngine } from '../src/sync/engine';
+import { syncReferenceDataOnReconnect } from '../src/reference/events';
 import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
 
 // Global handler for unhandled errors — prevents the app from freezing
@@ -122,6 +123,12 @@ function AppShell() {
       if (becameReachable || cameOnline) {
         syncEngine.replayQueuedCommands().catch((error) => {
           console.error('[SyncEngine] Replay failed:', error);
+        });
+        // Reference data changes missed while offline (e.g. menu edits made on
+        // another device) are caught up on reconnect. This is the design-level
+        // safety net for devices that receive no LAN event.
+        syncReferenceDataOnReconnect().catch((error) => {
+          console.error('[ReferenceSync] Reconnect sync failed:', error);
         });
       }
     });

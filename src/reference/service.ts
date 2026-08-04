@@ -142,7 +142,7 @@ class ReferenceSyncService {
             localVersion,
           );
           payload = changeSet.changes;
-          version = changeSet.toVersion;
+          version = changeSet.to_version;
         } catch {
           // Fall back to full fetch if changes endpoint fails.
           const data = await fetchReferenceData(options.businessId, [key]);
@@ -163,7 +163,10 @@ class ReferenceSyncService {
 
     await setReferenceData(db, {
       key,
-      version,
+      // Defensive: never write a NULL version. If the backend ever omits the
+      // version, generate one so the row is still usable; the next version
+      // comparison will simply see a mismatch and re-sync.
+      version: version ?? generateUUID(),
       payload,
       downloadedAt: new Date().toISOString(),
     });

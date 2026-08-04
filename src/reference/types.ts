@@ -50,8 +50,8 @@ export interface ReferenceSyncResult {
 
 export interface ReferenceChangeSet<T = unknown> {
   key: ReferenceDataKey;
-  fromVersion: string;
-  toVersion: string;
+  from_version: string;
+  to_version: string;
   changes: T;
 }
 

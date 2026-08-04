@@ -28,6 +28,13 @@ import type { SellerOrder } from "@/types/api/seller.api";
 
 const PENDING_EVENT_TYPE = "order.create_queued";
 
+/** Order/delivery state-change events that should refresh every terminal. */
+const ORDER_STATE_EVENT_TYPES = new Set([
+  "order.status_changed",
+  "delivery.status_changed",
+  "delivery.assigned",
+]);
+
 let invalidator: (() => void) | null = null;
 
 /**
@@ -82,6 +89,32 @@ export async function hydratePendingOrders(): Promise<void> {
  * Idempotent: duplicate events (local broadcast + LAN broadcast + direct
  * enqueue) are safe.
  */
+/**
+ * Apply an order/delivery state-change event: refresh order caches so every
+ * terminal shows the same order states. Status changes are not stored in the
+ * pending-orders store (only queued creations are); this only fires the
+ * invalidator. Idempotent — duplicate deliveries are harmless.
+ */
+export async function applyOrderStateChangeEvent(
+  event: DomainEvent,
+  origin: "local" | "lan" = "local",
+): Promise<void> {
+  try {
+    if (!ORDER_STATE_EVENT_TYPES.has(event.event_type)) return;
+    syncLogger.debug("OrderState", "Order state changed", {
+      origin,
+      event_type: event.event_type,
+      entity_id: event.entity_id,
+    });
+    invalidator?.();
+  } catch (error) {
+    syncLogger.error("OrderState", "Failed to apply order state change", {
+      error: String(error),
+      event_type: event.event_type,
+    });
+  }
+}
+
 export async function applyPendingOrderEvent(
   event: DomainEvent,
   origin: "local" | "lan" = "local",
