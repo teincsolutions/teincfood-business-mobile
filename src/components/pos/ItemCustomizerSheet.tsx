@@ -70,6 +70,10 @@ export function ItemCustomizerSheet({
   };
 
   const handleAddToCart = () => {
+    if (!item.is_available) {
+      toast.error(`${item.name} is unavailable`);
+      return;
+    }
     addItem(item, quantity, selectedVariant, selectedAddons);
     handleClose();
     toast.success(`${item.name} added to cart`);
@@ -350,6 +354,7 @@ export function ItemCustomizerSheet({
                 <Button
                   variant="primary"
                   height={52}
+                  disabled={!item.is_available}
                   onPress={handleAddToCart}
                   icon={<ShoppingCart size={18} color="white" />}
                 >

@@ -25,8 +25,9 @@ export function FoodCard({ item }: FoodCardProps) {
         marginBottom="$3"
         backgroundColor="$background"
         borderRadius="$5"
-        pressStyle={{ scale: 0.98 }}
-        onPress={() => setShowCustomizer(true)}
+        pressStyle={item.is_available ? { scale: 0.98 } : undefined}
+        onPress={item.is_available ? () => setShowCustomizer(true) : undefined}
+        opacity={item.is_available ? 1 : 0.6}
         $md={{ borderRadius: "$6" }}
       >
         <Card.Header
@@ -142,6 +143,7 @@ export function FoodCard({ item }: FoodCardProps) {
               height="$8"
               width="$8"
               rounded="$full"
+              disabled={!item.is_available}
               onPress={() => setShowCustomizer(true)}
               $md={{ height: 48, width: 48 }}
               icon={({ color, size }) => (
