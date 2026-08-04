@@ -245,7 +245,7 @@ function TabBar({
 function NewOrderTab() {
   const { isTablet, isLandscape } = useResponsive();
   const items = usePOSStore((s) => s.items);
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [view, setView] = useState<"menu" | "cart" | "checkout">("menu");
 
   if (isTablet && isLandscape) {
     return (
@@ -254,10 +254,10 @@ function NewOrderTab() {
           <MenuBrowser />
         </YStack>
         <YStack flex={0.4} borderLeftWidth={1} borderLeftColor="$borderColor">
-          {showCheckout ? (
-            <CheckoutPanel onBack={() => setShowCheckout(false)} />
+          {view === "checkout" ? (
+            <CheckoutPanel onBack={() => setView("cart")} />
           ) : (
-            <CartPanel onCheckout={() => setShowCheckout(true)} />
+            <CartPanel onCheckout={() => setView("checkout")} />
           )}
         </YStack>
       </XStack>
@@ -266,13 +266,18 @@ function NewOrderTab() {
 
   return (
     <YStack flex={1}>
-      {showCheckout ? (
-        <CheckoutPanel onBack={() => setShowCheckout(false)} />
+      {view === "checkout" ? (
+        <CheckoutPanel onBack={() => setView("cart")} />
+      ) : view === "cart" ? (
+        <CartPanel
+          onBack={() => setView("menu")}
+          onCheckout={() => setView("checkout")}
+        />
       ) : (
         <YStack flex={1}>
           <MenuBrowser />
           {items.length > 0 && (
-            <CartBar onCheckout={() => setShowCheckout(true)} />
+            <CartBar onCheckout={() => setView("cart")} />
           )}
         </YStack>
       )}
@@ -479,7 +484,13 @@ function CartBar({ onCheckout }: { onCheckout: () => void }) {
 
 // ── Cart Panel ──────────────────────────────────────────────────────────────
 
-function CartPanel({ onCheckout }: { onCheckout: () => void }) {
+function CartPanel({
+  onCheckout,
+  onBack,
+}: {
+  onCheckout: () => void;
+  onBack?: () => void;
+}) {
   const items = usePOSStore((s) => s.items);
   const removeItem = usePOSStore((s) => s.removeItem);
   const updateQuantity = usePOSStore((s) => s.updateQuantity);
@@ -500,7 +511,21 @@ function CartPanel({ onCheckout }: { onCheckout: () => void }) {
         borderBottomColor="$borderColor"
       >
         <XStack gap="$3" alignItems="center">
-          <ArrowLeft size={20} color="$color" />
+          {onBack ? (
+            <Button
+              chromeless
+              circular
+              width={40}
+              height={40}
+              padding={0}
+              pressStyle={{ opacity: 0.7 }}
+              onPress={onBack}
+            >
+              <ArrowLeft size={20} color="$color" />
+            </Button>
+          ) : (
+            <ArrowLeft size={20} color="$color" />
+          )}
           <Text
             fontSize="$6"
             fontWeight="700"
