@@ -226,6 +226,20 @@ export class LocalNodeClient {
     }
   }
 
+  /**
+   * Send a notification event to the node for rebroadcast to every connected
+   * terminal (e.g. a reference-data change made on this device). No reply is
+   * expected; the node excludes the origin socket from the broadcast.
+   */
+  publishEvent(event: DomainEvent): void {
+    if (!this.isConnected()) return;
+    this.send({
+      type: "relay_event",
+      id: generateUUID(),
+      payload: event,
+    });
+  }
+
   private handleData(
     data: string,
     resolve: () => void,

@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { syncEngine } from "@/sync/engine";
 import {
   applyPendingOrderEvent,
+  applyOrderStateChangeEvent,
   registerPendingOrdersInvalidator,
 } from "@/sync/pending-orders.service";
 import { localNodeService } from "@/local-node/service";
@@ -21,6 +22,14 @@ import { markEventsSynced } from "@/db/operations";
 import { syncLogger } from "@/utils/sync-logger";
 import { POS_KEYS } from "@/hooks/pos.hooks";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
+import { MENU_KEYS } from "@/hooks/menu.hooks";
+import { REFERENCE_KEYS } from "@/reference/hooks";
+import {
+  applyReferenceChangeEvent,
+  registerReferenceInvalidator,
+  registerReferenceEventEngine,
+  REFERENCE_CHANGED_EVENT_TYPE,
+} from "@/reference/events";
 import type { DomainEvent } from "@/sync/types";
 
 function isLocalOrderEvent(event: DomainEvent): boolean {
@@ -34,6 +43,15 @@ export function useSyncReconciliation(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Reference changes re-sync offline data and refresh caches on this device
+    // and (via the LAN relay) on every connected terminal.
+    const unregisterReferenceInvalidator = registerReferenceInvalidator(() => {
+      queryClient.invalidateQueries({ queryKey: MENU_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: REFERENCE_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: POS_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
+    });
+
     // Pending-order reconciliation invalidates POS + seller order lists so the
     // server-confirmed order replaces the optimistic one. Invalidate from the
     // broadest key: POS_KEYS.orders() without a businessId would produce
@@ -44,6 +62,11 @@ export function useSyncReconciliation(): void {
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
     });
 
+    // Reference-change events are published through the Sync Engine but are
+    // not backed by a command, so the engine has no transport dependency on
+    // the reference module. Register the singleton once.
+    registerReferenceEventEngine(syncEngine);
+
     const unsubscribe = syncEngine.subscribe(async (event) => {
       syncLogger.event(event, "received");
 
@@ -53,6 +76,25 @@ export function useSyncReconciliation(): void {
       if (localNodeService.isLocalNode()) {
         localNodeService.broadcastToClients(event);
       }
+
+      // Reference data changed on this device but we are a LAN client (not the
+      // node): forward the event to the node so it rebroadcasts it to every
+      // other terminal (the node also applies it locally via its onRelayEvent
+      // hook). The node does not echo it back to this device.
+      if (
+        event.event_type === REFERENCE_CHANGED_EVENT_TYPE &&
+        !localNodeService.isLocalNode()
+      ) {
+        localNodeService.getClient()?.publishEvent(event);
+      }
+
+      // Reference data changed (locally or echoed from the cloud): re-sync the
+      // affected keys and refresh caches on this device.
+      await applyReferenceChangeEvent(event, "local");
+
+      // Order/delivery state changed: refresh order caches so this terminal
+      // shows the same order states as the device that made the change.
+      await applyOrderStateChangeEvent(event, "local");
 
       // Route both queued (optimistic) and reconciled (created) order events
       // into the pending-orders store.
@@ -85,6 +127,7 @@ export function useSyncReconciliation(): void {
     return () => {
       unsubscribe();
       unregisterInvalidator();
+      unregisterReferenceInvalidator();
     };
   }, [queryClient]);
 }

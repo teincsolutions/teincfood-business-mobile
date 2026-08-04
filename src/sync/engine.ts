@@ -167,6 +167,16 @@ export class SyncEngine {
     };
   }
 
+  /**
+   * Publish a notification event to local subscribers without a transport
+   * round-trip. Used for cross-device notifications (e.g. reference data
+   * changed) that are not backed by a command: the event is broadcast locally
+   * so the reconciliation bridge can relay it to LAN clients.
+   */
+  publish(event: DomainEvent): void {
+    this.broadcast(event);
+  }
+
   private resolveStrategy(command: Command): "cloud" | "local_node" | "queue" {
     const { isCloudReachable, isOnline } = useConnectivityStore.getState();
 

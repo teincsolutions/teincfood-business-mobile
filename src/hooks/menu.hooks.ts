@@ -10,6 +10,7 @@ import type { MenuItem } from "@/services/menu.service";
 import { useBusinessStore } from "@/stores/business.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useReferenceDataSync, useReferenceData } from "@/reference/hooks";
+import { emitReferenceChanged } from "@/reference/events";
 import { referenceSyncService } from "@/reference/service";
 import { openSyncDatabase } from "@/db/connection";
 import { getReferenceData } from "@/reference/operations";
@@ -150,6 +151,9 @@ export function useCreateMenuItemMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
       toast.success("Menu item created");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:items"]);
+      }
     },
   });
 }
@@ -197,6 +201,9 @@ export function useUpdateMenuItemMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
       toast.success("Menu item updated");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:items"]);
+      }
     },
   });
 }
@@ -211,6 +218,9 @@ export function useDeleteMenuItemMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
       toast.success("Menu item deleted");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:items"]);
+      }
     },
     onError: (e) => {
       toast.error(extractApiErrorMessage(e));
@@ -250,6 +260,11 @@ export function useToggleAvailabilityMutation() {
         }
       }
       toast.error(extractApiErrorMessage(e));
+    },
+    onSuccess: () => {
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:items"]);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });

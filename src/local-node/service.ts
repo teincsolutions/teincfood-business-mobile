@@ -22,7 +22,11 @@ import { useBusinessStore } from "@/stores/business.store";
 import { getAppInstanceId } from "@/services/devices.service";
 import { restTransport } from "@/sync/transport-rest";
 import { commandQueueService } from "@/sync/command-queue.service";
-import { applyPendingOrderEvent } from "@/sync/pending-orders.service";
+import {
+  applyPendingOrderEvent,
+  applyOrderStateChangeEvent,
+} from "@/sync/pending-orders.service";
+import { applyReferenceChangeEvent } from "@/reference/events";
 import { syncLogger } from "@/utils/sync-logger";
 import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -311,6 +315,18 @@ class LocalNodeService {
         const event = await this.handleNodeCommand(command);
         return event ? [event] : [];
       },
+      onRelayEvent: (event) => {
+        // A client notified the node of a change (e.g. reference_data.changed
+        // after editing the menu). Apply it locally so this node's cache and
+        // UI stay in sync; the server already rebroadcast it to the other
+        // terminals.
+        applyReferenceChangeEvent(event, "lan").catch((error) => {
+          syncLogger.error("LocalNodeService", "Failed to apply relayed reference change", {
+            error: String(error),
+            event_type: event.event_type,
+          });
+        });
+      },
       onClientConnected: (info) => {
         useLocalNodeStore.getState().addConnectedClient({
           deviceId: info.deviceId,
@@ -412,6 +428,30 @@ class LocalNodeService {
             error: String(error),
             event_type: event.event_type,
           });
+        });
+        // Reference data changed on another device: re-sync the affected keys
+        // and refresh caches so this terminal stays in sync.
+        applyReferenceChangeEvent(event, "lan").catch((error) => {
+          syncLogger.error(
+            "LocalNodeService",
+            "Failed to apply LAN reference change",
+            {
+              error: String(error),
+              event_type: event.event_type,
+            },
+          );
+        });
+        // Order/delivery state changed on another device: refresh order caches
+        // so every terminal shows the same order states.
+        applyOrderStateChangeEvent(event, "lan").catch((error) => {
+          syncLogger.error(
+            "LocalNodeService",
+            "Failed to apply LAN order state change",
+            {
+              error: String(error),
+              event_type: event.event_type,
+            },
+          );
         });
       },
       onConnected: () => {

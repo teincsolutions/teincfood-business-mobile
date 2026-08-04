@@ -10,6 +10,7 @@ import { getReferenceData } from "./operations";
 import type { ReferenceDataKey, ReferenceSyncOptions } from "./types";
 
 export const REFERENCE_KEYS = {
+  all: ["reference"] as const,
   sync: ["reference", "sync"] as const,
   data: (key: ReferenceDataKey) => ["reference", "data", key] as const,
 };
