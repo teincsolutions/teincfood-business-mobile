@@ -44,13 +44,32 @@ export async function ensureImageCacheDir(): Promise<string> {
   return dir;
 }
 
+/**
+ * Backend serves presigned S3/MinIO URLs for images (e.g. `image_url`,
+ * `logo_url`). These carry expiring `X-Amz-*` query params that change on every
+ * fetch, so the raw URL is not a stable cache key. Reduce it to the stable
+ * object path (origin + pathname, query/hash stripped) so the same underlying
+ * object always maps to the same local file, regardless of when it was signed.
+ * External CDN URLs (served as-is by the backend) keep their path; fall back to
+ * the original URL if it cannot be parsed.
+ */
+export function stableCacheUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 function cacheKeyFromUrl(url: string): string {
-  // Use a simple hash of the URL as the local filename. Collisions are
+  // Use a simple hash of the stable URL as the local filename. Collisions are
   // extremely unlikely for a small number of product images; switch to
   // SHA-256 if this becomes a concern.
   let hash = 0;
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i);
+  const stable = stableCacheUrl(url);
+  for (let i = 0; i < stable.length; i++) {
+    const char = stable.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash |= 0;
   }
@@ -91,6 +110,9 @@ export async function cacheRemoteImage(
   }
 
   await ensureImageCacheDir();
+  // Keyed by the stable (query-stripped) URL so a re-signed presigned URL
+  // still resolves to the file downloaded earlier. The full `url` is kept for
+  // the actual download, since only it contains the live credentials.
   const localPath = getCachedImagePath(url);
   const existing = await FileSystem.getInfoAsync(localPath);
 
@@ -175,9 +197,9 @@ export async function clearImageCache(): Promise<void> {
 
 /**
  * Delete cached image files that are not in `knownUrls` and are older than
- * `maxAgeDays`. Filenames are a hash of the remote URL, so orphans are any
- * file whose source URL is no longer referenced by the current payloads
- * (e.g. an edited/removed menu image). Recent files are kept to avoid
+ * `maxAgeDays`. Filenames are a hash of the stable (query-stripped) URL, so
+ * orphans are any file whose source URL is no longer referenced by the current
+ * payloads (e.g. an edited/removed menu image). Recent files are kept to avoid
  * deleting images referenced by pending/queued items or other businesses.
  */
 export async function pruneImageCache(

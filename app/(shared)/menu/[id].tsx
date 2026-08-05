@@ -5,6 +5,7 @@ import { YStack, XStack, Text, Card, Separator, useTheme } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton, Button } from '@/components/ui';
 import { useMenuItemsQuery } from '@/hooks/menu.hooks';
+import { useCachedImageUrl } from '@/hooks/useCachedImage';
 import { formatPriceFromMinor } from '@/utils/currency';
 import {
   UtensilsCrossed,
@@ -24,6 +25,7 @@ export default function MenuItemDetailScreen() {
   const { isTablet } = useResponsive();
   const { data: items } = useMenuItemsQuery();
   const item = items?.find((i) => i.id === id);
+  const imageUri = useCachedImageUrl(item?.image_url ?? null);
 
   if (!item) {
     return (
@@ -52,8 +54,8 @@ export default function MenuItemDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero image */}
         <YStack height={isTablet ? 400 : 280} backgroundColor="$backgroundSoft" overflow="hidden">
-          {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
             <YStack flex={1} alignItems="center" justifyContent="center">
               <UtensilsCrossed size={64} color="$colorMuted" />

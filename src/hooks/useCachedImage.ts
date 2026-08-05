@@ -13,6 +13,7 @@ import { useConnectivityStore } from "@/stores/connectivity.store";
 import {
   cacheRemoteImage,
   resolveImageSource,
+  stableCacheUrl,
 } from "@/reference/image-cache";
 
 const IMAGE_CACHE_KEYS = {
@@ -37,7 +38,7 @@ export function useCachedImageUrl(url: string | null | undefined): string | null
   const enabled = Boolean(url);
 
   const { data } = useQuery({
-    queryKey: IMAGE_CACHE_KEYS.url(url ?? "__none__"),
+    queryKey: IMAGE_CACHE_KEYS.url(stableCacheUrl(url ?? "__none__")),
     queryFn: async () => {
       if (!url) return null;
       const resolved = await resolveImageSource(url);
@@ -48,7 +49,7 @@ export function useCachedImageUrl(url: string | null | undefined): string | null
         cacheRemoteImage(url, { skipIfCached: true })
           .then(() => {
             queryClient.invalidateQueries({
-              queryKey: IMAGE_CACHE_KEYS.url(url),
+              queryKey: IMAGE_CACHE_KEYS.url(stableCacheUrl(url)),
             });
           })
           .catch(() => {
