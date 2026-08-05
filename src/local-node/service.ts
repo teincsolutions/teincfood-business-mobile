@@ -45,6 +45,9 @@ const RECONNECT_BASE_DELAY_MS = 1_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
 /** Safety-net: release the single-flight connect lock if a connect never settles. */
 const CONNECT_GUARD_MS = 15_000;
+/** Bounds on lifecycle ops so a stuck server/client never blocks a later
+ * initialize() (e.g. foreground resume) from reconnecting the client. */
+const LIFECYCLE_TIMEOUT_MS = 10_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -81,15 +84,54 @@ class LocalNodeService {
   private connectGuardTimer: ReturnType<typeof setTimeout> | null = null;
   /** Incremented on every connect attempt so stale socket callbacks are ignored. */
   private generation = 0;
+  /** Single-flight lifecycle lock: concurrent initialize()/shutdown() calls
+   * await the in-flight op instead of both binding the same port. */
+  private lifecyclePromise: Promise<void> | null = null;
+  /** True while startAsNode() is mid-flight, so a concurrent initialize()
+   * short-circuits instead of starting a second server on the same port. */
+  private startingNode = false;
 
-  async initialize(): Promise<void> {
+  /** Serialize lifecycle operations so callers never double-run. */
+  private async runLifecycle<T>(
+    fn: () => Promise<T>,
+    tag: string,
+  ): Promise<T> {
+    if (this.lifecyclePromise) {
+      // A lifecycle op is in flight — return the same settled promise rather
+      // than starting a second one.
+      await this.lifecyclePromise;
+    }
+    const p = (async () => {
+      try {
+        return await fn();
+      } finally {
+        this.lifecyclePromise = null;
+      }
+    })();
+    this.lifecyclePromise = p.then(() => undefined, () => undefined);
+    await p.catch((error) => {
+      syncLogger.error("LocalNodeService", `${tag} failed`, {
+        error: String(error),
+      });
+      throw error;
+    });
+    return p;
+  }
+
+  private async runInitialize(): Promise<void> {
     const auth = useAuthStore.getState();
     const business = useBusinessStore.getState().activeBusiness;
+
+    // Another call is already (re)starting the server on this port — let it
+    // finish rather than teardown the in-progress node.
+    if (this.startingNode) return;
 
     // Auth-gate: require an authenticated user with an active business.
     if (!auth.user || !auth.accessToken || !business) {
       if (this.mode !== "idle") {
-        await this.shutdown();
+        // Use the internal runner; the public shutdown() would await the very
+        // lifecycle lock this call holds and deadlock.
+        await this.runShutdown();
       }
       syncLogger.info("LocalNodeService", "Local Node idle (no active business)");
       this.setupStoreSubscriptions();
@@ -100,7 +142,7 @@ class LocalNodeService {
 
     if (!store.isLocalNodeEnabled) {
       if (this.mode !== "idle") {
-        await this.shutdown();
+        await this.runShutdown();
       }
       syncLogger.info("LocalNodeService", "Local Node disabled");
       this.setupStoreSubscriptions();
@@ -132,15 +174,23 @@ class LocalNodeService {
     // If the active business changed while running, tear down so the
     // server/client use the correct secret for the new business.
     if (this.mode !== "idle") {
-      await this.shutdown();
+      await this.runShutdown();
     }
 
     this.businessId = business.id;
     this.secret = await deriveLanSecret(business);
 
     if (isThisNode) {
-      await this.startAsNode(store.localNodePort);
+      // Set role before the async bind so a concurrent initialize() that
+      // passes the `startingNode` guard (e.g. it was set after this check)
+      // still sees mode !== "idle" / server presence and short-circuits.
+      this.startingNode = true;
       this.mode = "node";
+      try {
+        await this.startAsNode(store.localNodePort);
+      } finally {
+        this.startingNode = false;
+      }
     } else {
       this.startDiscovery();
       this.mode = "client";
@@ -152,15 +202,60 @@ class LocalNodeService {
     this.setupStoreSubscriptions();
   }
 
+  /** Public, serialized entry point. */
+  async initialize(): Promise<void> {
+    return this.runLifecycle(() => this.runInitialize(), "initialize");
+  }
+
+  /** Public, serialized entry point. */
   async shutdown(): Promise<void> {
+    return this.runLifecycle(() => this.runShutdown(), "shutdown");
+  }
+
+  /**
+   * Called on foreground resume. Forces a client socket reconnect immediately
+   * (iOS may have dropped the socket while suspended but the lib still reports
+   * it "connected"), or re-binds the node server if it stopped listening).
+   */
+  reconnectNow(): void {
+    if (this.mode === "client") {
+      this.generation += 1;
+      this.connecting = false;
+      this.clearReconnectTimer();
+      this.clearConnectGuard();
+      this.client?.disconnect();
+      this.client = null;
+      this.connectToElectedNode();
+      return;
+    }
+    if (this.mode === "node" && !this.server?.isListening()) {
+      this.initialize().catch((error) => {
+        syncLogger.error("LocalNodeService", "Foreground re-bind failed", {
+          error: String(error),
+        });
+      });
+    }
+  }
+
+  /** Bounded teardown. Runs inside the lifecycle lock. */
+  private async runShutdown(): Promise<void> {
     this.generation += 1;
     this.connecting = false;
     this.clearReconnectTimer();
     this.clearConnectGuard();
     this.client?.disconnect();
     this.client = null;
-    await this.server?.stop();
-    this.server = null;
+    // Bound the stop so a server whose close never fires cannot block a later
+    // foreground initialize() (which would prevent the client from reconnecting).
+    if (this.server) {
+      await withTimeout(this.server.stop(), LIFECYCLE_TIMEOUT_MS).catch((error) => {
+        syncLogger.warn("LocalNodeService", "Server stop timed out", {
+          error: String(error),
+        });
+      });
+      this.server = null;
+    }
+    this.startingNode = false;
     this.discovery.stop();
     this.electedNode = null;
     this.mode = "idle";

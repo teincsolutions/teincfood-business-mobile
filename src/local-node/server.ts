@@ -29,6 +29,12 @@ import { patchTLSServerListen } from "./tls-listen-patch";
 const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
 const SERVER_CERT = require("../../assets/tls/server-cert.pem");
 
+/** Listen retry budget for EADDRINUSE (stale socket after reload/restart). */
+const START_RETRY_ATTEMPTS = 3;
+const START_RETRY_DELAYS_MS = [500, 1_000, 2_000];
+/** Safety: never let server.close() hang a shutdown forever. */
+const STOP_TIMEOUT_MS = 5_000;
+
 type Server = ReturnType<typeof TcpSocket.createTLSServer>;
 type Socket = ReturnType<typeof TcpSocket.createConnection>;
 
@@ -77,36 +83,84 @@ export class LocalNodeServer {
         return;
       }
 
-      try {
-        this.server = TcpSocket.createTLSServer(
-          { keystore: SERVER_KEYSTORE },
-          (socket) => {
-            this.handleSocket(socket);
-          },
-        );
+      let settled = false;
 
-        this.server.on("error", (error) => {
+      const attemptListen = (attempt: number) => {
+        const finishOk = (server: Server) => {
+          if (settled) return;
+          settled = true;
+          this.server = server;
+          syncLogger.info("LocalNodeServer", "Listening", {
+            port: this.options.port,
+            host: this.options.host ?? "0.0.0.0",
+            tls: true,
+          });
+          resolve();
+          this.selfCheck();
+        };
+
+        const finishErr = (server: Server | null, error: unknown) => {
+          if (settled) return;
+          settled = true;
+          // Drop the broken listener so a later start/retry binds cleanly.
+          try {
+            if (server && typeof server.close === "function") server.close();
+          } catch {
+            // ignore
+          }
+          if (this.server === server) this.server = null;
+          const code = (error as { code?: string })?.code;
+          if (
+            (code === "EADDRINUSE" ||
+              String(error).includes("EADDRINUSE") ||
+              String(error).includes("Address already in use")) &&
+            attempt < START_RETRY_ATTEMPTS
+          ) {
+            const delay = START_RETRY_DELAYS_MS[attempt - 1] ?? 1_000;
+            syncLogger.warn("LocalNodeServer", "Port busy, retrying listen", {
+              port: this.options.port,
+              attempt,
+              delay_ms: delay,
+            });
+            setTimeout(() => attemptListen(attempt + 1), delay);
+            return;
+          }
+          reject(error);
+        };
+
+        let server: Server;
+        try {
+          server = TcpSocket.createTLSServer(
+            { keystore: SERVER_KEYSTORE },
+            (socket) => {
+              this.handleSocket(socket);
+            },
+          );
+        } catch (error) {
+          finishErr(null, error);
+          return;
+        }
+
+        server.on("error", (error) => {
           syncLogger.error("LocalNodeServer", "Server error", {
             error: String(error),
           });
-          reject(error);
+          finishErr(server, error);
         });
 
-        this.server.listen(
-          { port: this.options.port, host: this.options.host ?? "0.0.0.0" },
-          () => {
-            syncLogger.info("LocalNodeServer", "Listening", {
-              port: this.options.port,
-              host: this.options.host ?? "0.0.0.0",
-              tls: true,
-            });
-            resolve();
-            this.selfCheck();
+        server.listen(
+          {
+            port: this.options.port,
+            host: this.options.host ?? "0.0.0.0",
+            // Allow a TIME_WAIT-stale socket (e.g. left by a previous JS
+            // bundle after a reload) to be rebound immediately.
+            reuseAddress: true,
           },
+          () => finishOk(server),
         );
-      } catch (error) {
-        reject(error);
-      }
+      };
+
+      attemptListen(1);
     });
   }
 
@@ -116,16 +170,38 @@ export class LocalNodeServer {
         resolve();
         return;
       }
+      const server = this.server;
 
       for (const [socket] of this.sockets) {
         socket.destroy();
       }
       this.sockets.clear();
 
-      this.server.close(() => {
-        this.server = null;
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (this.server === server) this.server = null;
         resolve();
-      });
+      };
+
+      // The TLS server may not expose close() — guard against a never-firing
+      // callback so shutdown can always proceed.
+      const timer = setTimeout(finish, STOP_TIMEOUT_MS);
+      if (typeof server.close === "function") {
+        try {
+          server.close(() => {
+            clearTimeout(timer);
+            finish();
+          });
+        } catch {
+          clearTimeout(timer);
+          finish();
+        }
+      } else {
+        clearTimeout(timer);
+        finish();
+      }
     });
   }
 

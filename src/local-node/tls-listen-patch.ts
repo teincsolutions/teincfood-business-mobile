@@ -40,7 +40,9 @@ export function patchTLSServerListen(): void {
       const nativeOptions = {
         port: (options as Record<string, unknown>).port,
         host: (options as Record<string, unknown>).host || "0.0.0.0",
-        reuseAddress: (options as Record<string, unknown>).reuseAddress,
+        // Allow a stale socket from a previous JS bundle (reload/restart) in
+        // TIME_WAIT to be rebound instead of failing with EADDRINUSE.
+        reuseAddress: true,
         tls: (options as Record<string, unknown>).tls,
       };
       if (typeof cb === "function") {

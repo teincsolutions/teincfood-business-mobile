@@ -259,11 +259,11 @@ function AppShell() {
           phoenixSocket.retryConnection();
         }
         // iOS suspends the app in the background, which drops the Local Node
-        // server/client sockets. Re-initialize so the terminal reconnects to
-        // the LAN (and the node re-broadcasts) on return to the foreground.
-        localNodeService.initialize().catch((error) => {
-          console.error('[LocalNode] Failed to re-initialize on foreground:', error);
-        });
+        // server/client sockets. Reconnect/re-bind on return to the foreground:
+        // clients force a fresh connect (iOS may have dropped the socket while
+        // the lib still reports it connected) and the node re-binds if it is no
+        // longer listening.
+        localNodeService.reconnectNow();
         if (isBiometricEnabled) {
           setIsUnlocked(false);
         }
