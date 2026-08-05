@@ -7,6 +7,23 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import type { Order } from "@/models/order.model";
 import { use } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCachedImageUrl } from "@/hooks/useCachedImage";
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200";
+
+function OrderItemImage({ url }: { url?: string | null }) {
+  const uri = useCachedImageUrl(url) || FALLBACK_IMAGE;
+  return (
+    <Image
+      source={{ uri }}
+      width={60}
+      height={60}
+      borderRadius="$3"
+      objectFit="cover"
+    />
+  );
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "$gray400" },
@@ -108,17 +125,7 @@ export function OrderDetailModal({
                   gap="$3"
                 >
                   <XStack gap="$3" alignItems="center">
-                    <Image
-                      source={{
-                        uri:
-                          item.food?.imageUrl ||
-                          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200",
-                      }}
-                      width={60}
-                      height={60}
-                      borderRadius="$3"
-                      objectFit="cover"
-                    />
+                    <OrderItemImage url={item.food?.imageUrl} />
                     <YStack flex={1} gap="$1">
                       <Text
                         fontSize="$4"

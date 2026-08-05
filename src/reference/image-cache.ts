@@ -9,7 +9,10 @@ import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import { syncLogger } from "@/utils/sync-logger";
 
-const IMAGE_CACHE_DIR = `${FileSystem.cacheDirectory ?? ""}teincfood_images/`;
+// Durable cache: documentDirectory survives OS cache eviction and app restarts,
+// so images remain available offline for hours/days. Pruned by
+// pruneImageCache() during reference sync.
+const IMAGE_CACHE_DIR = `${FileSystem.documentDirectory ?? ""}teincfood_images/`;
 
 export interface ImageCacheEntry {
   remoteUrl: string;
@@ -168,6 +171,58 @@ export async function cacheImageBatch(
 
 export async function clearImageCache(): Promise<void> {
   await FileSystem.deleteAsync(IMAGE_CACHE_DIR, { idempotent: true });
+}
+
+/**
+ * Delete cached image files that are not in `knownUrls` and are older than
+ * `maxAgeDays`. Filenames are a hash of the remote URL, so orphans are any
+ * file whose source URL is no longer referenced by the current payloads
+ * (e.g. an edited/removed menu image). Recent files are kept to avoid
+ * deleting images referenced by pending/queued items or other businesses.
+ */
+export async function pruneImageCache(
+  knownUrls: Iterable<string | null | undefined>,
+  maxAgeDays = 30,
+): Promise<number> {
+  try {
+    const known = new Set<string>();
+    for (const url of knownUrls) {
+      if (url) known.add(url);
+    }
+
+    const dir = IMAGE_CACHE_DIR;
+    const info = await FileSystem.getInfoAsync(dir);
+    if (!info.exists || info.isDirectory !== true) return 0;
+
+    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+    const entries = await FileSystem.readDirectoryAsync(dir);
+
+    let pruned = 0;
+    for (const fileName of entries) {
+      if (!fileName.endsWith(".img")) continue;
+      // Reconstruct the URL the file was keyed from — only the hash is in the
+      // name, so a file is an orphan if no known URL maps to it.
+      if ([...known].some((url) => getCachedImagePath(url) === `${dir}${fileName}`)) {
+        continue;
+      }
+      const fileInfo = await FileSystem.getInfoAsync(`${dir}${fileName}`);
+      if (!fileInfo.exists) continue;
+      const modifiedAt = (fileInfo.modificationTime ?? 0) * 1000;
+      if (modifiedAt > cutoff) continue;
+      await FileSystem.deleteAsync(`${dir}${fileName}`, { idempotent: true });
+      pruned += 1;
+    }
+
+    if (pruned > 0) {
+      syncLogger.info("ImageCache", "Pruned orphan images", { pruned });
+    }
+    return pruned;
+  } catch (error) {
+    syncLogger.warn("ImageCache", "Failed to prune image cache", {
+      error: String(error),
+    });
+    return 0;
+  }
 }
 
 export async function resolveImageSource(

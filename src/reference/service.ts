@@ -14,8 +14,8 @@ import { generateUUID } from "@/utils/uuid";
 import * as menuService from "@/services/menu.service";
 import * as businessService from "@/services/business.service";
 import * as rolesService from "@/services/roles.service";
-import { cacheImageBatch } from "./image-cache";
-import type { MenuItemListResponse } from "@/types/api";
+import { cacheImageBatch, pruneImageCache } from "./image-cache";
+import type { MenuItemListResponse, BusinessResponse } from "@/types/api";
 import {
   getReferenceData,
   getReferenceVersion,
@@ -89,9 +89,6 @@ class ReferenceSyncService {
           const synced = await this.syncKey(db, key, options, versions);
           if (synced) {
             result.synced.push(key);
-            if (key === "menu:items") {
-              await this.cacheMenuImages(db, options.businessId);
-            }
           } else {
             result.skipped.push(key);
           }
@@ -102,6 +99,17 @@ class ReferenceSyncService {
             error: String(error),
           });
         }
+      }
+
+      // After a sync pass, download the images referenced by the freshly
+      // cached payloads (menu items, business logo/cover) so the device can
+      // display them while offline, then reclaim space from orphaned files.
+      if (result.synced.length > 0) {
+        await this.cacheReferenceImages(
+          db,
+          options.businessId,
+          result.synced,
+        );
       }
     } finally {
       this.isSyncing = false;
@@ -244,26 +252,56 @@ class ReferenceSyncService {
     }
   }
 
-  private async cacheMenuImages(
+  /**
+   * Download every image referenced by the given cached reference keys into
+   * durable local storage, then prune orphaned files. Covers menu item photos
+   * and the business logo/cover. Idempotent — already-cached images are
+   * skipped. Errors never propagate: a failed download must not fail the sync.
+   */
+  private async cacheReferenceImages(
     db: Awaited<ReturnType<typeof openSyncDatabase>>,
     businessId: string,
+    keys: ReferenceDataKey[],
   ): Promise<void> {
     try {
-      const cached = await getReferenceData<MenuItemListResponse>(
-        db,
-        businessId,
-        "menu:items",
-      );
-      const items = cached?.payload?.data ?? [];
-      const imageUrls = items.map((item) => item.image_url);
-      const cachedImages = await cacheImageBatch(imageUrls, {
+      const urls: (string | null | undefined)[] = [];
+
+      if (keys.includes("menu:items")) {
+        const cached = await getReferenceData<MenuItemListResponse>(
+          db,
+          businessId,
+          "menu:items",
+        );
+        const items = cached?.payload?.data ?? [];
+        urls.push(...items.map((item) => item.image_url));
+      }
+
+      if (keys.includes("business:profile")) {
+        const cached = await getReferenceData<BusinessResponse>(
+          db,
+          businessId,
+          "business:profile",
+        );
+        const business = cached?.payload?.data;
+        if (business) {
+          urls.push(business.logo_url, business.cover_image_url);
+        }
+      }
+
+      if (urls.length === 0) return;
+
+      const cachedImages = await cacheImageBatch(urls, {
         skipIfCached: true,
       });
-      syncLogger.debug("ReferenceSync", "Menu images cached", {
+      syncLogger.debug("ReferenceSync", "Reference images cached", {
+        businessId,
+        keys,
         count: cachedImages.length,
       });
+
+      await pruneImageCache(urls);
     } catch (error) {
-      syncLogger.warn("ReferenceSync", "Failed to cache menu images", {
+      syncLogger.warn("ReferenceSync", "Failed to cache reference images", {
         error: String(error),
       });
     }

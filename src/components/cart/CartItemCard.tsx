@@ -3,14 +3,18 @@ import { Card, Image, Text, XStack, YStack, Button } from 'tamagui';
 import { Minus, Plus, Trash2 } from '@tamagui/lucide-icons';
 import { useCartStore, type CartItem } from '@/stores/cart.store';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { useCachedImageUrl } from '@/hooks/useCachedImage';
 
 interface CartItemCardProps {
   item: CartItem;
 }
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop';
+
 export function CartItemCard({ item }: CartItemCardProps) {
   const { updateQuantity, removeItem } = useCartStore();
   const addonsText = item.selectedAddons?.map(a => a.name).join(', ');
+  const imageUri = useCachedImageUrl(item.food?.imageUrl) || FALLBACK_IMAGE;
 
   return (
     <Card 
@@ -24,7 +28,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
       alignItems="center"
     >
       <Image 
-        source={{ uri: item.food?.imageUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=400&auto=format&fit=crop' }}
+        source={{ uri: imageUri }}
         width={80}
         height={80}
         borderRadius="$4"
