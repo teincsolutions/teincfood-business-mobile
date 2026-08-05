@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as businessService from '@/services/business.service';
+import type { TaxRuleListResponse } from '@/types/api';
 import { useBusinessStore } from '@/stores/business.store';
+import { useReferenceData } from '@/reference/hooks';
+import { emitReferenceChanged } from '@/reference/events';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
 
@@ -11,12 +14,14 @@ export const TAX_KEYS = {
 
 export function useBusinessTaxRulesQuery(enabled = true) {
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const cached = useReferenceData<TaxRuleListResponse>("tax-rules");
 
   return useQuery({
     queryKey: TAX_KEYS.list(activeBusinessId),
     queryFn: () => businessService.fetchBusinessTaxRules(activeBusinessId!),
     enabled: enabled && Boolean(activeBusinessId),
     staleTime: 30 * 1000,
+    placeholderData: cached.data?.payload,
   });
 }
 
@@ -30,6 +35,9 @@ export function useCreateTaxRuleMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.list(activeBusinessId) });
       toast.success('Tax rule created');
+      if (activeBusinessId) {
+        emitReferenceChanged(activeBusinessId, ["tax-rules"]);
+      }
     },
     onError: (err) => {
       console.debug('[TaxHook] Create failed', err);
@@ -48,6 +56,9 @@ export function useUpdateTaxRuleMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.list(activeBusinessId) });
       toast.success('Tax rule updated');
+      if (activeBusinessId) {
+        emitReferenceChanged(activeBusinessId, ["tax-rules"]);
+      }
     },
     onError: (err) => {
       console.debug('[TaxHook] Update failed', err);
@@ -65,6 +76,9 @@ export function useDeleteTaxRuleMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.list(activeBusinessId) });
       toast.success('Tax rule removed');
+      if (activeBusinessId) {
+        emitReferenceChanged(activeBusinessId, ["tax-rules"]);
+      }
     },
     onError: (err) => {
       console.debug('[TaxHook] Delete failed', err);

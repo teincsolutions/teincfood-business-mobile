@@ -6,6 +6,7 @@ import * as sellerService from '@/services/seller.service';
 import { orderRepository } from '@/repositories/order.repository';
 import { useBusinessStore } from '@/stores/business.store';
 import { usePendingOrders } from './pending-orders.hooks';
+import { orderSnapshotsService } from '@/sync/order-snapshots.service';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
 
@@ -49,7 +50,15 @@ export function useSellerOrdersQuery(
       const params: BusinessOrdersParams = { page: pageParam, page_size: 20 };
       if (filters?.status) params.status = filters.status;
       if (filters?.q) params.q = filters.q;
-      return sellerService.fetchBusinessOrders(activeBusinessId!, params);
+      const result = await sellerService.fetchBusinessOrders(activeBusinessId!, params);
+      // Write through to the durable offline read model so the exact list seen
+      // online is available offline after a restart.
+      if (pageParam === 1 && activeBusinessId && Array.isArray(result?.data)) {
+        orderSnapshotsService
+          .persistSellerOrders(activeBusinessId, activeBusinessId, result.data)
+          .catch(() => {});
+      }
+      return result;
     },
     getNextPageParam: (lastPage) => {
       const { page, total_pages } = lastPage.pagination ?? {};

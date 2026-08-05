@@ -5,6 +5,8 @@
 import { useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { referenceSyncService } from "./service";
+import { useBusinessStore } from "@/stores/business.store";
+import { useConnectivityStore } from "@/stores/connectivity.store";
 import { openSyncDatabase } from "@/db/connection";
 import { getReferenceData } from "./operations";
 import type { ReferenceDataKey, ReferenceSyncOptions } from "./types";
@@ -63,18 +65,57 @@ export function useSyncReferenceData() {
 }
 
 /**
- * Read a reference data record from the local SQLite cache.
+ * App-level reference sync: downloads every reference-backed dataset (menus,
+ * roles, members, taxes, business profile, operating hours) into the SQLite
+ * cache so the restaurant can operate fully offline. Runs when the active
+ * business changes while online, and whenever connectivity is restored.
  *
- * This query does not hit the network. It is useful for offline-capable
- * screens that need reference data regardless of connectivity.
+ * Call once from the seller/fleet layouts. It does not return data; screens
+ * read the SQLite cache through `useReferenceData`.
+ */
+export function useBusinessReferenceDataSync() {
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const isOnline = useConnectivityStore((s) => s.isOnline);
+
+  useEffect(() => {
+    if (!businessId || !isOnline) return;
+
+    let cancelled = false;
+    referenceSyncService
+      .sync({ businessId })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.failed.length > 0) {
+          console.warn("[ReferenceSync] failed keys:", result.failed);
+        }
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[ReferenceSync] sync error:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [businessId, isOnline]);
+}
+
+/**
+ * Read a reference data record from the local SQLite cache for the active
+ * business. This query does not hit the network. It is useful for offline-
+ * capable screens that need reference data regardless of connectivity.
  */
 export function useReferenceData<T>(key: ReferenceDataKey) {
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
   return useQuery({
-    queryKey: REFERENCE_KEYS.data(key),
+    queryKey: [...REFERENCE_KEYS.data(key), businessId],
     queryFn: async () => {
+      if (!businessId) return null;
       const db = await openSyncDatabase();
-      return getReferenceData<T>(db, key);
+      return getReferenceData<T>(db, businessId, key);
     },
     staleTime: Infinity,
+    enabled: !!businessId,
   });
 }

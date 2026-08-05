@@ -247,6 +247,144 @@ export async function markEventsSynced(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Entity snapshots (local read model)
+// ─────────────────────────────────────────────────────────────
+
+export interface EntitySnapshot<T = unknown> {
+  entity_type: string;
+  entity_id: string;
+  business_id: string | null;
+  last_event_id: string;
+  last_event_timestamp: string;
+  payload: T;
+}
+
+interface EntitySnapshotRow {
+  entity_type: string;
+  entity_id: string;
+  business_id: string | null;
+  last_event_id: string;
+  last_event_timestamp: string;
+  payload: string;
+}
+
+function rowToEntitySnapshot<T>(row: EntitySnapshotRow): EntitySnapshot<T> {
+  return {
+    entity_type: row.entity_type,
+    entity_id: row.entity_id,
+    business_id: row.business_id,
+    last_event_id: row.last_event_id,
+    last_event_timestamp: row.last_event_timestamp,
+    payload: JSON.parse(row.payload) as T,
+  };
+}
+
+export interface UpsertEntitySnapshotInput<T = unknown> {
+  entityType: string;
+  entityId: string;
+  businessId?: string | null;
+  lastEventId: string;
+  lastEventTimestamp: string;
+  payload: T;
+}
+
+export async function upsertEntitySnapshot<T>(
+  db: SQLiteDatabase,
+  input: UpsertEntitySnapshotInput<T>,
+): Promise<void> {
+  const {
+    entityType,
+    entityId,
+    businessId = null,
+    lastEventId,
+    lastEventTimestamp,
+    payload,
+  } = input;
+
+  const existing = await db.getFirstAsync<EntitySnapshotRow>(
+    "SELECT last_event_timestamp FROM entity_snapshots WHERE entity_type = ? AND entity_id = ?;",
+    entityType,
+    entityId,
+  );
+
+  // Keep the newer state — events can arrive slightly out of order across the
+  // LAN, but timestamps let us converge idempotently.
+  if (existing && existing.last_event_timestamp > lastEventTimestamp) {
+    return;
+  }
+
+  await db.runAsync(
+    `
+      INSERT INTO entity_snapshots (entity_type, entity_id, business_id, last_event_id, last_event_timestamp, payload)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(entity_type, entity_id) DO UPDATE SET
+        business_id = excluded.business_id,
+        last_event_id = excluded.last_event_id,
+        last_event_timestamp = excluded.last_event_timestamp,
+        payload = excluded.payload;
+    `,
+    entityType,
+    entityId,
+    businessId,
+    lastEventId,
+    lastEventTimestamp,
+    JSON.stringify(payload),
+  );
+}
+
+export async function getEntitySnapshot<T>(
+  db: SQLiteDatabase,
+  entityType: string,
+  entityId: string,
+): Promise<EntitySnapshot<T> | null> {
+  const row = await db.getFirstAsync<EntitySnapshotRow>(
+    "SELECT * FROM entity_snapshots WHERE entity_type = ? AND entity_id = ?;",
+    entityType,
+    entityId,
+  );
+  return row ? rowToEntitySnapshot<T>(row) : null;
+}
+
+export async function getEntitySnapshotsByType<T>(
+  db: SQLiteDatabase,
+  entityType: string,
+): Promise<EntitySnapshot<T>[]> {
+  const rows = await db.getAllAsync<EntitySnapshotRow>(
+    "SELECT * FROM entity_snapshots WHERE entity_type = ? ORDER BY last_event_timestamp DESC;",
+    entityType,
+  );
+  return rows.map(rowToEntitySnapshot<T>);
+}
+
+export async function deleteEntitySnapshot(
+  db: SQLiteDatabase,
+  entityType: string,
+  entityId: string,
+): Promise<void> {
+  await db.runAsync(
+    "DELETE FROM entity_snapshots WHERE entity_type = ? AND entity_id = ?;",
+    entityType,
+    entityId,
+  );
+}
+
+/**
+ * Remove snapshots older than the given ISO cutoff, scoped to a business. Used to cap
+ * the durable order read-model to active + recent orders.
+ */
+export async function pruneEntitySnapshots(
+  db: SQLiteDatabase,
+  entityType: string,
+  cutoffIso: string,
+): Promise<void> {
+  await db.runAsync(
+    "DELETE FROM entity_snapshots WHERE entity_type = ? AND last_event_timestamp < ?;",
+    entityType,
+    cutoffIso,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Row mappers
 // ─────────────────────────────────────────────────────────────
 
