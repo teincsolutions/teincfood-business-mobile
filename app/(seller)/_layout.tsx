@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useDisplayStore } from '@/stores/display.store';
 import { useMyBusinessCapabilities } from '@/hooks/useMyBusinessCapabilities';
+import { useBusinessReferenceDataSync } from '@/reference/hooks';
+import { useOfflineOrderHydration } from '@/hooks/offline-orders.hooks';
 import { routeCapabilities } from '@/constants/route-capabilities';
 import { toast } from 'sonner-native';
 
@@ -16,6 +18,14 @@ export default function SellerLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { data: membership } = useMyBusinessCapabilities();
+
+  // Keep the offline reference cache (menus, roles, members, taxes, business
+  // profile, operating hours) in sync while the restaurant is online.
+  useBusinessReferenceDataSync();
+
+  // Seed order screens from the durable offline read model so they render
+  // current + recent orders immediately after a cold start (even offline).
+  useOfflineOrderHydration();
 
   useEffect(() => {
     const displayStore = useDisplayStore.getState();

@@ -12,12 +12,11 @@
 export type ReferenceDataKey =
   | "menu:items"
   | "menu:categories"
-  | "menu:modifiers"
-  | "menu:taxes"
-  | "business:settings"
-  | "business:printers"
-  | "business:kitchen_stations"
-  | "business:staff_roles";
+  | "roles"
+  | "members"
+  | "tax-rules"
+  | "business:profile"
+  | "operating-hours";
 
 export interface ReferenceDataRecord<T = unknown> {
   key: ReferenceDataKey;

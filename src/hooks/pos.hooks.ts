@@ -3,6 +3,7 @@ import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tansta
 import { posRepository } from '@/repositories/pos.repository';
 import { useBusinessStore } from '@/stores/business.store';
 import { usePendingOrders } from './pending-orders.hooks';
+import { orderSnapshotsService } from '@/sync/order-snapshots.service';
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from '@/utils/error';
 import { SELLER_KEYS } from './seller.hooks';
@@ -62,7 +63,15 @@ export function usePOSOrdersQuery(
       if (filters?.is_pos) params.is_pos = filters.is_pos;
       if (filters?.date_from) params.date_from = filters.date_from;
       if (filters?.date_to) params.date_to = filters.date_to;
-      return posRepository.fetchOrders(businessId!, params);
+      return posRepository.fetchOrders(businessId!, params).then((result) => {
+        // Write through to the durable offline read model.
+        if (pageParam === 1 && businessId && Array.isArray(result?.data)) {
+          orderSnapshotsService
+            .persistSellerOrders(businessId, businessId, result.data)
+            .catch(() => {});
+        }
+        return result;
+      });
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>

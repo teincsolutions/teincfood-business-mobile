@@ -176,3 +176,38 @@ Fixes the cloud-routing bug (orders stuck offline while cloud is "unknown"), pen
 - [x] `pos.hooks.ts` / `seller.hooks.ts` — `usePOSOrdersQuery` and `useSellerOrdersQuery` merge pending orders into the result (deduped by order_number, newest-first), so POS In-Progress/Today tabs, kitchen, display, and the seller orders list all show queued orders
 
 Reconciliation key: the optimistic order's `order_number` (`TFL-…`) matches the cloud's echoed `local_order_number`; on `order.created` the pending order is removed and its persisted events (both `local` and `lan` origin) are marked synced so it never rehydrates as pending.
+
+---
+
+## Phase 9: Offline Data Layer (Durable Local Read-Model) ✅ COMPLETE
+
+Operating fully offline requires menus, orders, roles/permissions, members, taxes, printers, business profile and operating-hours to be **durably available on-device, never cleared, and refreshed once a connection returns**. Backend-proper versioned reference-data approach is chosen (not yet promoted to prod — TODO).
+
+**Backend (TeincFoodBackend):**
+- [x] `reference_data.ex` — `@supported_keys` extended to `roles | members | tax-rules | business:profile | operating-hours` (plus existing `menu:items`, `menu:categories`); `fetch_key/2` added for each new key (serializing members/tax/operating-hours to match controller shapes); `bump_roles_version/1`, `bump_members_version/1`, `bump_tax_rules_version/1`, `bump_business_profile_version/1`, `bump_operating_hours_version/1`; private `serialize_membership/1`, `serialize_tax_rule/1`, `format_time/1`
+- [x] `reference_data_controller.ex` — `@supported_keys` mirrored
+- [x] Bump sites wired: `business_controller.ex` (`add/update/remove/invite/accept` member → `bump_members_version`; `update`+`toggle_open` → `bump_business_profile_version`; `upsert_operating_hours` → `bump_operating_hours_version`); `business_tax_rule_controller.ex` (`create/update/delete` → `bump_tax_rules_version`)
+- [x] `boot:` `role_capabilities()` static map returned under `%{data: ...}`; members list = `Businesses.list_business_memberships/1` (active only, preloads `:user`); tax rules = `Businesses.list_tax_rules/1`; operating hours = `Businesses.list_operating_hours/1` (controller serializes `open_time`/`close_time` via `format_time/1` → HH:MM:SS); business profile = `MenuSerializer.serialize_business/1`
+- [x] Tests — reference-data controller suite: versions asserts all 7 keys; fetch asserts members/profile/operating-hours/roles shapes. Full suite: `613 tests, 0 failures`. `mix compile --warnings-as-errors` clean
+- [x] `docker-compose.test.yml` — added `735432` and `63796379` host ports (postgres + redis) so the local test suite reaches the test DB/Redis
+
+**Frontend (business app):**
+- [x] Migration v2 (`src/db/migrations.ts`) — rebuild `reference_data` with composite PK `(business_id, key)` (legacy rows → business_id `''`), `ALTER entity_snapshots ADD COLUMN business_id` + index on `(business_id, entity_type)`
+- [x] `src/db/operations.ts` — reference ops business-scoped (`getReferenceData`, `getReferenceVersion`, `setReferenceData`, `deleteReferenceData`, `deleteReferenceDataForBusiness`, `getAllReferenceDataKeys` take `businessId`); new entity-snapshot ops `upsertEntitySnapshot` (time-ordered via `last_event_timestamp`), `getEntitySnapshot`, `getEntitySnapshotsByType`, `deleteEntitySnapshot`, `pruneEntitySnapshots`
+- [x] `src/reference/service.ts` — `DEFAULT_SYNC_KEYS` = all 5 new keys; `syncKey` falls back to full fetch + local `hashPayload` when key not in backend versions; fallback fetchers for `roles`/`members`/`tax-rules`/`business:profile`/`operating-hours`; all ops business-scoped; `cacheMenuImages(db, businessId)`
+- [x] `src/reference/hooks.ts` — `useReferenceData(key)` reads SQLite for the active business (`staleTime: Infinity`); `useBusinessReferenceDataSync()` syncs all keys when business+online
+- [x] `src/stores/printer.store.ts` — wrapped in zustand `persist` (MMKV, `STORAGE_KEYS.PRINTER_SETTINGS`)
+- [x] Query hooks local-first: `useBusinessRolesQuery`, `useBusinessMembersQuery`, `useBusinessTaxRulesQuery` use `useReferenceData(...).data?.payload` as `placeholderData`
+- [x] Cross-device emits: `emitReferenceChanged(businessId, ["members"])`, `["tax-rules"]` after mutations
+- [x] `app/(seller)/_layout.tsx` + `app/(fleet)/_layout.tsx` call `useBusinessReferenceDataSync()`
+- **Order read-model (Part D):** `src/sync/order-snapshots.service.ts` `persistOrderEvent` (journal + patch read-model status), `persistSellerOrders` write-through on page-1 fetch, `getSellerList`, `pruneOld()` (30-day retention); snapshot payload `{ data: SellerOrder[], savedAt }`, entity_type `seller_orders`; `src/hooks/offline-orders.hooks.ts` `useOfflineOrderHydration` seeds query cache from SQLite (`SELLER_KEYS.orders` + `POS_KEYS.orders` shapes); `pending-orders.service.ts` `applyOrderStateChangeEvent` + cloud ack persist via `persistOrderEvent`; `useOrderRealtimeUpdates` builds `DomainEvent` from WS payload and persists via `persistOrderEvent`, so seller + POS order lists reflect the latest state offline
+- [x] Offline-orders locks persisted, cache survives logout (clearAuth clears queryClient but not SQLite reference/order tables)
+- [x] Frontend verified: `npx tsc --noEmit` 0 errors
+
+**Invariants for future work:**
+- Every new cached reference key must get a backend version (bump on each mutation), a `fetch_key/2` fallback, a place in `DEFAULT_SYNC_KEYS`, and business-scoped SQLite ops.
+- Cloud WS `order.created`/`order.status_changed` payloads are summary-only (no full body) — durable read-model writes happen through fetched lists (`persistSellerOrders`), event persistence updates the status read-model only.
+- SQLite cache must never be cleared on logout — devices must work offline for hours and re-sync on reconnect.
+- Printers are local device config only (no backend endpoint) — `printer.store` persists to MMKV.
+
+**Next (unfinished):** connectivity hardening already investigated but **not implemented** — strict `isCloudReachable === "reachable"` cloud gate in `SyncEngine`/`handleNodeCommand`, `/api/v1/health` probe, decouple LAN connect/disconnect from `setCloudReachable`, bounded cold-start pre-flight. Pending user sign-off.

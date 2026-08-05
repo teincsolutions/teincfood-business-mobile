@@ -12,6 +12,8 @@ import { openSyncDatabase } from "@/db/connection";
 import { syncLogger } from "@/utils/sync-logger";
 import { generateUUID } from "@/utils/uuid";
 import * as menuService from "@/services/menu.service";
+import * as businessService from "@/services/business.service";
+import * as rolesService from "@/services/roles.service";
 import { cacheImageBatch } from "./image-cache";
 import type { MenuItemListResponse } from "@/types/api";
 import {
@@ -34,6 +36,11 @@ import type {
 const DEFAULT_SYNC_KEYS: ReferenceDataKey[] = [
   "menu:items",
   "menu:categories",
+  "roles",
+  "members",
+  "tax-rules",
+  "business:profile",
+  "operating-hours",
 ];
 
 class ReferenceSyncService {
@@ -83,7 +90,7 @@ class ReferenceSyncService {
           if (synced) {
             result.synced.push(key);
             if (key === "menu:items") {
-              await this.cacheMenuImages(db);
+              await this.cacheMenuImages(db, options.businessId);
             }
           } else {
             result.skipped.push(key);
@@ -115,12 +122,16 @@ class ReferenceSyncService {
     options: ReferenceSyncOptions,
     versions: { key: ReferenceDataKey; version: string }[] | null,
   ): Promise<boolean> {
-    const localVersion = await getReferenceVersion(db, key);
+    const { businessId } = options;
+    const localVersion = await getReferenceVersion(db, businessId, key);
+
+    // A key the backend does not version (e.g. during a gradual rollout) is
+    // fetched with a full fetch + local hash so it is still cached offline.
+    const serverVersion = versions?.find((v) => v.key === key)?.version;
 
     if (!options.force && localVersion && !options.incremental) {
       // In non-incremental mode without force, we still re-sync if version
       // info says there is a newer version on the server.
-      const serverVersion = versions?.find((v) => v.key === key)?.version;
       if (serverVersion && serverVersion === localVersion) {
         syncLogger.debug("ReferenceSync", `Up to date: ${key}`, {
           version: localVersion,
@@ -132,12 +143,11 @@ class ReferenceSyncService {
     let payload: unknown;
     let version: string;
 
-    if (versions) {
-      const serverVersion = versions.find((v) => v.key === key)?.version;
-      if (serverVersion && localVersion && serverVersion !== localVersion) {
+    if (versions && serverVersion) {
+      if (localVersion && serverVersion !== localVersion) {
         try {
           const changeSet = await fetchReferenceChanges(
-            options.businessId,
+            businessId,
             key,
             localVersion,
           );
@@ -145,23 +155,24 @@ class ReferenceSyncService {
           version = changeSet.to_version;
         } catch {
           // Fall back to full fetch if changes endpoint fails.
-          const data = await fetchReferenceData(options.businessId, [key]);
+          const data = await fetchReferenceData(businessId, [key]);
           payload = data[key];
           version = serverVersion;
         }
       } else {
-        const data = await fetchReferenceData(options.businessId, [key]);
+        const data = await fetchReferenceData(businessId, [key]);
         payload = data[key];
-        version = serverVersion ?? generateUUID();
+        version = serverVersion;
       }
     } else {
-      // Backend does not support reference sync endpoints yet.
-      const fallback = await this.fetchFallback(key, options.businessId);
+      // Backend does not support versioning for this key (or at all):
+      // full fetch + local hash so the data is still cached offline.
+      const fallback = await this.fetchFallback(key, businessId);
       payload = fallback.payload;
       version = fallback.version;
     }
 
-    await setReferenceData(db, {
+    await setReferenceData(db, businessId, {
       key,
       // Defensive: never write a NULL version. If the backend ever omits the
       // version, generate one so the row is still usable; the next version
@@ -193,6 +204,41 @@ class ReferenceSyncService {
           version: this.hashPayload(response),
         };
       }
+      case "roles": {
+        const response = await rolesService.fetchBusinessRoles();
+        return {
+          payload: response,
+          version: this.hashPayload(response),
+        };
+      }
+      case "members": {
+        const response = await businessService.fetchBusinessMembers(businessId);
+        return {
+          payload: response,
+          version: this.hashPayload(response),
+        };
+      }
+      case "tax-rules": {
+        const response = await businessService.fetchBusinessTaxRules(businessId);
+        return {
+          payload: response,
+          version: this.hashPayload(response),
+        };
+      }
+      case "business:profile": {
+        const response = await businessService.fetchBusinessById(businessId);
+        return {
+          payload: response,
+          version: this.hashPayload(response),
+        };
+      }
+      case "operating-hours": {
+        const response = await businessService.fetchOperatingHours(businessId);
+        return {
+          payload: response,
+          version: this.hashPayload(response),
+        };
+      }
       default:
         throw new Error(`No fallback fetch available for ${key}`);
     }
@@ -200,10 +246,12 @@ class ReferenceSyncService {
 
   private async cacheMenuImages(
     db: Awaited<ReturnType<typeof openSyncDatabase>>,
+    businessId: string,
   ): Promise<void> {
     try {
       const cached = await getReferenceData<MenuItemListResponse>(
         db,
+        businessId,
         "menu:items",
       );
       const items = cached?.payload?.data ?? [];
@@ -234,9 +282,12 @@ class ReferenceSyncService {
     return `local-${Math.abs(hash).toString(16)}`;
   }
 
-  async getCached<T>(key: ReferenceDataKey): Promise<ReferenceDataRecord<T> | null> {
+  async getCached<T>(
+    businessId: string,
+    key: ReferenceDataKey,
+  ): Promise<ReferenceDataRecord<T> | null> {
     const db = await openSyncDatabase();
-    return getReferenceData<T>(db, key);
+    return getReferenceData<T>(db, businessId, key);
   }
 }
 

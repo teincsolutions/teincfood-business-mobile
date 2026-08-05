@@ -22,6 +22,7 @@ import {
   markEventsSynced,
 } from "@/db/operations";
 import { usePendingOrdersStore } from "@/stores/pending-orders.store";
+import { orderSnapshotsService } from "@/sync/order-snapshots.service";
 import { syncLogger } from "@/utils/sync-logger";
 import type { DomainEvent } from "@/sync/types";
 import type { SellerOrder } from "@/types/api/seller.api";
@@ -106,6 +107,9 @@ export async function applyOrderStateChangeEvent(
       event_type: event.event_type,
       entity_id: event.entity_id,
     });
+    // Persist the event into the durable journal and patch the offline read
+    // model so every terminal keeps the same order states after a restart.
+    await orderSnapshotsService.persistOrderEvent(event, origin);
     invalidator?.();
   } catch (error) {
     syncLogger.error("OrderState", "Failed to apply order state change", {
@@ -137,6 +141,9 @@ export async function applyPendingOrderEvent(
       if (typeof localOrderNumber !== "string") return;
 
       usePendingOrdersStore.getState().removeByOrderNumber(localOrderNumber);
+
+      // Persist the cloud acknowledgment into the durable journal + read model.
+      await orderSnapshotsService.persistOrderEvent(event, "cloud");
 
       const db = await openSyncDatabase();
       // Mark every persisted optimistic event for this local order number as

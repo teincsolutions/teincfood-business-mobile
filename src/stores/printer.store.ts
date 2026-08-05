@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { zustandStorage } from '@/utils/storage';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 export interface PrinterConfig {
   id: string;
@@ -19,29 +22,37 @@ interface PrinterStore {
   setAutoPrint: (enabled: boolean) => void;
 }
 
-export const usePrinterStore = create<PrinterStore>()((set) => ({
-  defaultPrinterId: null,
-  printers: [],
-  autoPrint: false,
+export const usePrinterStore = create<PrinterStore>()(
+  persist(
+    (set) => ({
+      defaultPrinterId: null,
+      printers: [],
+      autoPrint: false,
 
-  setDefaultPrinter: (id) => set({ defaultPrinterId: id }),
+      setDefaultPrinter: (id) => set({ defaultPrinterId: id }),
 
-  addPrinter: (printer) =>
-    set((state) => ({ printers: [...state.printers, printer] })),
+      addPrinter: (printer) =>
+        set((state) => ({ printers: [...state.printers, printer] })),
 
-  updatePrinter: (id, updates) =>
-    set((state) => ({
-      printers: state.printers.map((p) =>
-        p.id === id ? { ...p, ...updates } : p,
-      ),
-    })),
+      updatePrinter: (id, updates) =>
+        set((state) => ({
+          printers: state.printers.map((p) =>
+            p.id === id ? { ...p, ...updates } : p,
+          ),
+        })),
 
-  removePrinter: (id) =>
-    set((state) => ({
-      printers: state.printers.filter((p) => p.id !== id),
-      defaultPrinterId:
-        state.defaultPrinterId === id ? null : state.defaultPrinterId,
-    })),
+      removePrinter: (id) =>
+        set((state) => ({
+          printers: state.printers.filter((p) => p.id !== id),
+          defaultPrinterId:
+            state.defaultPrinterId === id ? null : state.defaultPrinterId,
+        })),
 
-  setAutoPrint: (enabled) => set({ autoPrint: enabled }),
-}));
+      setAutoPrint: (enabled) => set({ autoPrint: enabled }),
+    }),
+    {
+      name: STORAGE_KEYS.PRINTER_SETTINGS,
+      storage: createJSONStorage(() => zustandStorage),
+    },
+  ),
+);

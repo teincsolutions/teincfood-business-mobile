@@ -27,6 +27,16 @@ export async function openSyncDatabase(): Promise<SQLiteDatabase> {
     return db;
   })();
 
+  // If open/migrate fails, reset the cached promise so a later attempt can
+  // recover instead of rethrowing the same error forever.
+  initPromise = initPromise.catch((error) => {
+    initPromise = null;
+    syncLogger.error("SQLite", "Failed to open sync database", {
+      error: String(error),
+    });
+    throw error;
+  });
+
   return initPromise;
 }
 

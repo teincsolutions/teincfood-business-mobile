@@ -11,7 +11,7 @@
 
 import type { Command, DomainEvent, PersistedCommand } from "@/sync/types";
 import type { SellerOrder } from "@/types/api/seller.api";
-import { getSyncDatabase } from "@/db/connection";
+import { getSyncDatabase, openSyncDatabase } from "@/db/connection";
 import {
   insertCommand,
   getPendingCommands,
@@ -242,7 +242,10 @@ class CommandQueueService {
 
     this.replaying = true;
     try {
-      const db = getSyncDatabase();
+      // Await open (not getSyncDatabase) so a cold-start replay triggered by a
+      // connectivity event that fires before the DB open completes does not
+      // throw "Sync database not initialized".
+      const db = await openSyncDatabase();
       const pending = await getPendingCommands(db);
       if (pending.length === 0) return;
 

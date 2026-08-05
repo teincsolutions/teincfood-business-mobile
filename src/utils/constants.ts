@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   BUSINESS_DATA: "business_data",
   FLEET_DATA: "fleet_data",
   LOCAL_NODE_DATA: "local_node_data",
+  PRINTER_SETTINGS: "printer_settings",
 } as const;
 
 /** Chat storage keys */
