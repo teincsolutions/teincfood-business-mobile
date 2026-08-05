@@ -33,6 +33,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { setStringAsync } from "expo-clipboard";
 import { BackButton } from "@/components/ui";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { useAuthStore } from "@/stores/auth.store";
 import { useChat } from "@/hooks/useChat";
 import { getChatClient } from "@/utils/chat-service";
@@ -401,7 +402,7 @@ export function ContactChatScreen({
           <BackButton />
           <XStack flex={1} gap="$3" alignItems="center">
             <Avatar circular>
-              <Avatar.Image src={displayAvatar ?? undefined} />
+              <CachedAvatarImage src={displayAvatar ?? undefined} />
               <Avatar.Fallback
                 justify="center"
                 alignItems="center"

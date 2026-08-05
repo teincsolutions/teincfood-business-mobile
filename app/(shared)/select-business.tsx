@@ -18,6 +18,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 
 export default function SelectBusinessScreen() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function SelectBusinessScreen() {
     >
       <XStack gap="$3" alignItems="center">
         <Avatar circular size="$5">
-          <Avatar.Image src={business.logo_url} />
+          <CachedAvatarImage src={business.logo_url} />
           <Avatar.Fallback backgroundColor="$gray800">
             <Text color="white" fontWeight="bold">
               {business.name?.charAt(0) || "B"}

@@ -13,6 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { BackButton } from "@/components/ui";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { useQuery } from "@tanstack/react-query";
 import * as businessService from "@/services/business.service";
 import type { Business } from "@/types/api";
@@ -92,7 +93,7 @@ export default function SellerBusinessesScreen() {
             <XStack gap="$2" alignItems="center">
               {business.logo_url ? (
                 <Avatar circular>
-                  <Avatar.Image src={business.logo_url} />
+                  <CachedAvatarImage src={business.logo_url} />
                 </Avatar>
               ) : (
                 <XStack width={28} height={28} borderRadius={14} backgroundColor="$gray3" alignItems="center" justifyContent="center">
@@ -218,7 +219,7 @@ export default function SellerBusinessesScreen() {
                   <XStack gap="$2" alignItems="center" flexWrap="wrap">
                     {selectedBusiness.logo_url ? (
                       <Avatar circular>
-                        <Avatar.Image src={selectedBusiness.logo_url} />
+                        <CachedAvatarImage src={selectedBusiness.logo_url} />
                       </Avatar>
                     ) : (
                       <XStack width={28} height={28} borderRadius={14} backgroundColor="$gray3" alignItems="center" justifyContent="center">

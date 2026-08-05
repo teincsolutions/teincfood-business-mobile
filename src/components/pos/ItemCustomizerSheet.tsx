@@ -20,6 +20,7 @@ import { formatPriceFromMinor } from "@/utils/currency";
 import { usePOSStore } from "@/stores/pos.store";
 import type { MenuItem } from "@/types/api/menu.api";
 import { Button } from "../ui";
+import { useCachedImageUrl } from "@/hooks/useCachedImage";
 
 interface ItemCustomizerSheetProps {
   item: MenuItem;
@@ -33,6 +34,7 @@ export function ItemCustomizerSheet({
   onOpenChange,
 }: ItemCustomizerSheetProps) {
   const addItem = usePOSStore((s) => s.addItem);
+  const imageUrl = useCachedImageUrl(item.image_url);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
@@ -128,9 +130,9 @@ export function ItemCustomizerSheet({
 
           {/* Hero image */}
           <YStack height={200} width="100%" backgroundColor="$gray200">
-            {item.image_url ? (
+            {imageUrl ? (
               <Image
-                source={{ uri: item.image_url }}
+                source={{ uri: imageUrl }}
                 width="100%"
                 height={200}
                 objectFit="cover"

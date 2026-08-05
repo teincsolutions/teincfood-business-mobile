@@ -24,6 +24,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { BackButton, Button } from "@/components/ui";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { MessageButton } from "@/components/chat/MessageButton";
 import { useRiderProfileQuery } from "@/hooks/useRider";
 import { useLeaveBusinessMutation } from "@/hooks/useInvitations";
@@ -126,7 +127,7 @@ export default function RiderBusinessesScreen() {
             <XStack gap="$2" alignItems="center">
               {business.logo_url ? (
                 <Avatar circular>
-                  <Avatar.Image src={business.logo_url} />
+                  <CachedAvatarImage src={business.logo_url} />
                 </Avatar>
               ) : (
                 <XStack
@@ -301,7 +302,7 @@ export default function RiderBusinessesScreen() {
                   <XStack gap="$2" alignItems="center" flexWrap="wrap">
                     {selectedBusiness.logo_url ? (
                       <Avatar circular>
-                        <Avatar.Image src={selectedBusiness.logo_url} />
+                        <CachedAvatarImage src={selectedBusiness.logo_url} />
                       </Avatar>
                     ) : (
                       <XStack

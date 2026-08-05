@@ -11,6 +11,7 @@ import {
 import type { MenuItem } from "@/types/api/menu.api";
 import { formatPriceFromMinor } from "@/utils/currency";
 import { useResponsive } from "@/utils/responsive";
+import { useCachedImageUrl } from "@/hooks/useCachedImage";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -29,6 +30,7 @@ export function MenuItemCard({
 }: MenuItemCardProps) {
   const theme = useTheme();
   const { width, isTablet } = useResponsive();
+  const imageUrl = useCachedImageUrl(item.image_url);
 
   const s = isTablet
     ? {
@@ -69,9 +71,9 @@ export function MenuItemCard({
             flexShrink={0}
             overflow="hidden"
           >
-            {item.image_url ? (
+            {imageUrl ? (
               <Image
-                source={{ uri: item.image_url }}
+                source={{ uri: imageUrl }}
                 style={{
                   width: s.thumbnail,
                   height: s.thumbnail,

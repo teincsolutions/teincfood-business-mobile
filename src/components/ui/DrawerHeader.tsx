@@ -24,6 +24,7 @@ import { useProfileQuery } from "@/hooks/useProfile";
 import { useResponsive } from "@/utils/responsive";
 import { copyToClipboard } from "@/utils/copyToClipBoard";
 import { toast } from "sonner-native";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 
 interface DrawerHeaderProps {
   fallbackName?: string;
@@ -63,7 +64,7 @@ export function DrawerHeader({
       >
         <XStack gap="$3" alignItems="center">
           <Avatar circular size={avatarSize}>
-            <Avatar.Image src={profile?.avatar_url || user?.avatar_url} />
+            <CachedAvatarImage src={profile?.avatar_url || user?.avatar_url} />
             <Avatar.Fallback
               justify="center"
               alignItems="center"

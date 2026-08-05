@@ -10,6 +10,7 @@ import { RatingModal } from './RatingModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { useCartStore } from '@/stores/cart.store';
 import { useRemoveOrderMutation } from '@/services/orders.service';
+import { useCachedImageUrl } from '@/hooks/useCachedImage';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: '$gray400' },
@@ -33,6 +34,9 @@ export function OrderHistoryCard({ order }: OrderHistoryCardProps) {
   const isActive = !['delivered', 'cancelled'].includes(order.status);
   const statusInfo = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const firstItem = order.items[0];
+  const firstImageUri =
+    useCachedImageUrl(firstItem?.food?.imageUrl) ||
+    'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200';
 
   return (
     <>
@@ -78,7 +82,7 @@ export function OrderHistoryCard({ order }: OrderHistoryCardProps) {
         {/* Item Preview */}
         <XStack gap="$3" alignItems="center" marginBottom="$3">
           <Image 
-            source={{ uri: firstItem?.food?.imageUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200' }}
+            source={{ uri: firstImageUri }}
             width={56}
             height={56}
             borderRadius="$3"

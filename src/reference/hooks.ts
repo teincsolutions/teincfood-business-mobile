@@ -3,12 +3,13 @@
  */
 
 import { useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { referenceSyncService } from "./service";
 import { useBusinessStore } from "@/stores/business.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { openSyncDatabase } from "@/db/connection";
 import { getReferenceData } from "./operations";
+import { invalidateCachedImages } from "@/hooks/useCachedImage";
 import type { ReferenceDataKey, ReferenceSyncOptions } from "./types";
 
 export const REFERENCE_KEYS = {
@@ -76,6 +77,7 @@ export function useSyncReferenceData() {
 export function useBusinessReferenceDataSync() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const isOnline = useConnectivityStore((s) => s.isOnline);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!businessId || !isOnline) return;
@@ -85,6 +87,9 @@ export function useBusinessReferenceDataSync() {
       .sync({ businessId })
       .then((result) => {
         if (cancelled) return;
+        // New images were downloaded into durable storage — re-resolve cached
+        // image queries so screens swap to the local files.
+        invalidateCachedImages(queryClient);
         if (result.failed.length > 0) {
           console.warn("[ReferenceSync] failed keys:", result.failed);
         }
@@ -97,7 +102,7 @@ export function useBusinessReferenceDataSync() {
     return () => {
       cancelled = true;
     };
-  }, [businessId, isOnline]);
+  }, [businessId, isOnline, queryClient]);
 }
 
 /**

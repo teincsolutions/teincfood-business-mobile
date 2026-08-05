@@ -7,6 +7,7 @@ import type { MenuItem } from "@/types/api/menu.api";
 import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
 import { useResponsive } from "@/utils/responsive";
+import { useCachedImageUrl } from "@/hooks/useCachedImage";
 
 interface FoodCardProps {
   item: MenuItem;
@@ -15,6 +16,7 @@ interface FoodCardProps {
 export function FoodCard({ item }: FoodCardProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const { isTablet, width } = useResponsive();
+  const imageUrl = useCachedImageUrl(item.image_url);
 
   return (
     <>
@@ -51,9 +53,9 @@ export function FoodCard({ item }: FoodCardProps) {
               borderTopRightRadius: "$6",
             }}
           >
-            {item.image_url ? (
+            {imageUrl ? (
               <Image
-                source={{ uri: item.image_url }}
+                source={{ uri: imageUrl }}
                 width="100%"
                 height={120}
                 objectFit="cover"
