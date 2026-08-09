@@ -718,7 +718,7 @@ export function ContactChatScreen({
                   flex: 1,
                   color: theme.color?.val as string,
                   fontSize: 15,
-                  fontFamily: "Sen_400Regular",
+                  fontFamily: "Manrope_400Regular",
                   minHeight: 24,
                   paddingTop: 8,
                   paddingBottom: 8,

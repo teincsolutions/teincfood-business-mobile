@@ -26,12 +26,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { YStack } from 'tamagui';
 import {
   useFonts,
-  Sen_400Regular,
-  Sen_500Medium,
-  Sen_600SemiBold,
-  Sen_700Bold,
-  Sen_800ExtraBold,
-} from '@expo-google-fonts/sen';
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
 import { setupNotifications } from '@teincfood/rn-notifications';
 import type { PushNotificationData, NotificationAction } from '@teincfood/rn-notifications';
 
@@ -63,11 +63,11 @@ SplashScreen.preventAutoHideAsync();
 
 function AppShell() {
   const [fontsLoaded, fontError] = useFonts({
-    Sen_400Regular,
-    Sen_500Medium,
-    Sen_600SemiBold,
-    Sen_700Bold,
-    Sen_800ExtraBold,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
   });
 
   const { isBiometricEnabled } = useSecurityStore();
