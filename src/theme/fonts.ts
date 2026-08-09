@@ -1,12 +1,7 @@
 import { createFont } from "tamagui";
 
-/**
- * Typography system derived from the Teinc Food Business mockups.
- * Using @expo-google-fonts/sen.
- */
-
 export const headingFont = createFont({
-  family: "Sen",
+  family: "Manrope",
   size: {
     1: 11,
     2: 12,
@@ -56,16 +51,16 @@ export const headingFont = createFont({
     true: -0.4,
   },
   face: {
-    400: { normal: "Sen_400Regular" },
-    500: { normal: "Sen_500Medium" },
-    600: { normal: "Sen_600SemiBold" },
-    700: { normal: "Sen_700Bold" },
-    800: { normal: "Sen_800ExtraBold" },
+    400: { normal: "Manrope_400Regular" },
+    500: { normal: "Manrope_500Medium" },
+    600: { normal: "Manrope_600SemiBold" },
+    700: { normal: "Manrope_700Bold" },
+    800: { normal: "Manrope_800ExtraBold" },
   },
 });
 
 export const bodyFont = createFont({
-  family: "Sen",
+  family: "Manrope",
   size: {
     1: 11,
     2: 12,
@@ -107,9 +102,9 @@ export const bodyFont = createFont({
     true: 0,
   },
   face: {
-    400: { normal: "Sen_400Regular" },
-    500: { normal: "Sen_500Medium" },
-    600: { normal: "Sen_600SemiBold" },
-    700: { normal: "Sen_700Bold" },
+    400: { normal: "Manrope_400Regular" },
+    500: { normal: "Manrope_500Medium" },
+    600: { normal: "Manrope_600SemiBold" },
+    700: { normal: "Manrope_700Bold" },
   },
 });

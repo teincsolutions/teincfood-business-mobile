@@ -299,7 +299,7 @@ export default function RiderDrawerLayout() {
           ),
           headerTintColor: theme.color.val,
           headerTitleStyle: {
-            fontFamily: "Sen_600SemiBold",
+            fontFamily: "Manrope_600SemiBold",
           },
           drawerStyle: {
             backgroundColor: theme.background.val,
