@@ -133,6 +133,17 @@ export default function TaxSettings() {
 
       <ScrollView>
         <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 24}>
+          {!activeBusinessId ? (
+            <Card padding="$6" bordered alignItems="center" gap="$3">
+              <YStack alignItems="center" gap="$2">
+                <Percent size={40} color="$colorMuted" />
+                <Text color="$colorMuted" textAlign="center">
+                  Select a business to manage tax rules
+                </Text>
+              </YStack>
+            </Card>
+          ) : (
+            <>
           {/* Add button */}
           <Button variant="primary" width="100%" icon={<Plus size={18} />} onPress={openCreate}>
             Add Tax Rule
@@ -185,19 +196,21 @@ export default function TaxSettings() {
               </Card>
             ))
           )}
+            </>
+          )}
         </YStack>
       </ScrollView>
 
       {/* Add/Edit Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen} snapPoints={[70]} dismissOnSnapToBottom modal>
         <Sheet.Overlay />
-        <Sheet.Frame padding="$4" paddingBottom={insets.bottom + 16} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
+        <Sheet.Frame paddingBottom={insets.bottom + 16} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle />
-          <Text fontSize="$5" fontWeight="bold" marginBottom="$4">
+          <Text fontSize="$5" fontWeight="bold" paddingHorizontal="$4" paddingTop="$2" paddingBottom="$2">
             {editingRule ? 'Edit Tax Rule' : 'Add Tax Rule'}
           </Text>
           <ScrollView>
-            <YStack gap="$3">
+            <YStack paddingHorizontal="$4" paddingBottom="$4" gap="$3">
               <FormInput
                 label="Tax Name"
                 placeholder="e.g. VAT"

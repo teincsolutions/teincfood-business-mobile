@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert } from 'react-native';
+import { TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert, Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   YStack,
@@ -190,7 +190,7 @@ export function MenuFormSheet({
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Sheet.ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <YStack paddingHorizontal="$5" paddingTop="$2" paddingBottom="$8" gap="$5">
                 {/* Sheet header */}
                 <XStack justifyContent="space-between" alignItems="center">
@@ -243,7 +243,10 @@ export function MenuFormSheet({
                     Category
                   </Text>
                   <TouchableOpacity
-                    onPress={() => onCategorySheetOpenChange(true)}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      onCategorySheetOpenChange(true);
+                    }}
                     style={{
                       height: 60,
                       paddingHorizontal: 16,
@@ -516,7 +519,7 @@ export function MenuFormSheet({
                   {editingItem ? 'SAVE CHANGES' : 'ADD ITEM'}
                 </Button>
               </YStack>
-            </ScrollView>
+            </Sheet.ScrollView>
           </KeyboardAvoidingView>
         </Sheet.Frame>
       </Sheet>
@@ -543,7 +546,7 @@ export function MenuFormSheet({
               Select Category
             </Text>
           </YStack>
-          <ScrollView>
+          <Sheet.ScrollView>
             <YStack px="$5" pb="$6" gap="$1">
               {categories.map((cat, i, arr) => (
                 <YStack key={cat.name}>
@@ -578,7 +581,7 @@ export function MenuFormSheet({
                 </YStack>
               ))}
             </YStack>
-          </ScrollView>
+          </Sheet.ScrollView>
         </Sheet.Frame>
       </Sheet>
 

@@ -14,6 +14,7 @@ import {
   Avatar,
   ScrollView,
   Spinner,
+  Image,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -74,6 +75,7 @@ export default function BusinessDetailScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [logoUri, setLogoUri] = useState<string | undefined>(business?.logo_url);
+  const [coverUri, setCoverUri] = useState<string | undefined>(business?.cover_image_url);
   const [editForm, setEditForm] = useState({
     name: business?.name ?? "",
     description: business?.description ?? "",
@@ -132,6 +134,24 @@ export default function BusinessDetailScreen() {
     }
   };
 
+  const uploadCover = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      toast.error("Photo library access is required to change the cover image.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    try {
+      const { download_url } = await uploadImage(result.assets[0].uri, "businesses", { business_id: id });
+      setCoverUri(download_url);
+    } catch (e: any) {
+      toast.error(extractApiErrorMessage(e));
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: () => businessService.updateBusiness(id, {
       business: {
@@ -140,6 +160,7 @@ export default function BusinessDetailScreen() {
         phone: editForm.phone.trim() || undefined,
         email: editForm.email.trim() || undefined,
         logo_url: logoUri !== business?.logo_url ? logoUri || undefined : undefined,
+        cover_image_url: coverUri !== business?.cover_image_url ? coverUri || undefined : undefined,
         latitude: selectedPlace?.latitude || business?.latitude,
         longitude: selectedPlace?.longitude || business?.longitude,
         address_street: editForm.address.trim() || undefined,
@@ -154,6 +175,7 @@ export default function BusinessDetailScreen() {
         phone: editForm.phone.trim(),
         email: editForm.email.trim() || undefined,
         logo_url: logoUri || undefined,
+        cover_image_url: coverUri || undefined,
         address: { street: editForm.address.trim(), city: editForm.city.trim() },
       });
       setSaveStatus("success");
@@ -183,6 +205,7 @@ export default function BusinessDetailScreen() {
       email: business.email ?? "",
     });
     setLogoUri(business.logo_url);
+    setCoverUri(business.cover_image_url);
     setPlaceQuery(""); setSuggestions([]); setSelectedPlace(null);
     setEditErrors({}); setIsEditing(false);
   };
@@ -313,6 +336,39 @@ export default function BusinessDetailScreen() {
               </Text>
             </XStack>
           )}
+
+          {/* Cover banner */}
+          {coverUri ? (
+            <YStack gap="$2">
+              <YStack height={160} borderRadius="$3" overflow="hidden" backgroundColor="$backgroundSoft">
+                <Image
+                  source={{ uri: coverUri }}
+                  width="100%"
+                  height={160}
+                  objectFit="cover"
+                />
+              </YStack>
+              {isEditing && (
+                <Button
+                  size="$3"
+                  variant="outline"
+                  icon={<Camera size={14} />}
+                  onPress={uploadCover}
+                >
+                  Change Cover Image
+                </Button>
+              )}
+            </YStack>
+          ) : isEditing ? (
+            <Button
+              size="$3"
+              variant="outline"
+              icon={<Camera size={14} />}
+              onPress={uploadCover}
+            >
+              Add Cover Image
+            </Button>
+          ) : null}
 
           {/* Logo + name + status */}
           <XStack gap="$4" alignItems="center">

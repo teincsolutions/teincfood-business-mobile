@@ -50,7 +50,6 @@ export default function SellerSettings() {
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
   const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
-  const [togglingStore, setTogglingStore] = useState(false);
 
   const { data: prefsRes } = useNotificationPreferencesQuery();
   const updatePrefs = useUpdateNotificationPreferencesMutation();
@@ -81,28 +80,26 @@ export default function SellerSettings() {
 
   const handleToggleStore = async (open: boolean) => {
     if (!activeBusiness?.id) return;
-    setTogglingStore(true);
+    const previous = isOpen;
+    setIsOpen(open);
     try {
       await businessService.toggleBusinessOpen(activeBusiness.id);
-      setIsOpen(open);
     } catch (e) {
+      setIsOpen(previous);
       toast.error(extractApiErrorMessage(e));
-    } finally {
-      setTogglingStore(false);
     }
   };
 
   const handleCloseStore = async () => {
     if (!activeBusiness?.id) return;
-    setTogglingStore(true);
+    const previous = isOpen;
+    setIsOpen(false);
+    setShowCloseDialog(false);
     try {
       await businessService.toggleBusinessOpen(activeBusiness.id);
-      setIsOpen(false);
-      setShowCloseDialog(false);
     } catch (e) {
+      setIsOpen(previous);
       toast.error(extractApiErrorMessage(e));
-    } finally {
-      setTogglingStore(false);
     }
   };
 
@@ -155,12 +152,16 @@ export default function SellerSettings() {
       description: "Configure POS thermal printer",
       route: "/(seller)/settings/printer",
     },
-    {
-      icon: Percent,
-      label: "Tax Settings",
-      description: "Configure tax rules for orders",
-      route: "/(seller)/settings/tax-settings",
-    },
+    ...(activeBusiness
+      ? [
+          {
+            icon: Percent,
+            label: "Tax Settings",
+            description: "Configure tax rules for orders",
+            route: "/(seller)/settings/tax-settings",
+          },
+        ]
+      : []),
     {
       icon: CreditCard,
       label: "Payment Settings",
@@ -211,13 +212,11 @@ export default function SellerSettings() {
               <Switch
                 size="$5"
                 checked={isOpen}
-                disabled={togglingStore}
                 onCheckedChange={handleToggleStore}
                 backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
               >
                 <Switch.Thumb animation="quick" backgroundColor="$white" />
               </Switch>
-              {togglingStore && <Spinner size="small" />}
             </XStack>
           </Card>
 

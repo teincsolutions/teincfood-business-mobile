@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
-import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
+import { UtensilsCrossed, Plus, Tags } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResponsive } from "@/utils/responsive";
 import { useLocalSearchParams } from "expo-router";
@@ -277,16 +277,26 @@ export default function SellerMenu() {
       <Drawer.Screen
         options={{
           headerRight: () => (
-            <Button
-              variant="primary"
-              height="$8"
-              $lg={{ height: "$8" }}
-              marginRight="$2"
-              onPress={openAdd}
-              icon={({ color, size }) => <Plus size={size} color={color} />}
-            >
-              New
-            </Button>
+            <XStack gap="$2" marginRight="$2">
+              <Button
+                variant="outline"
+                height="$8"
+                $lg={{ height: "$8" }}
+                onPress={() => router.push("/(seller)/(drawer)/menu/categories")}
+                icon={({ color, size }) => <Tags size={size} color={color} />}
+              >
+                Categories
+              </Button>
+              <Button
+                variant="primary"
+                height="$8"
+                $lg={{ height: "$8" }}
+                onPress={openAdd}
+                icon={({ color, size }) => <Plus size={size} color={color} />}
+              >
+                New
+              </Button>
+            </XStack>
           ),
         }}
       />
