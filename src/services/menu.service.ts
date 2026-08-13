@@ -81,6 +81,21 @@ export async function createBusinessCategory(businessId: string, data: Record<st
   return api.post(`/businesses/${businessId}/menu/categories`, data);
 }
 
+export async function updateBusinessCategory(
+  businessId: string,
+  categoryId: string,
+  data: Record<string, unknown>,
+): Promise<{ data: MenuCategory }> {
+  return api.put(`/businesses/${businessId}/menu/categories/${categoryId}`, data);
+}
+
+export async function deleteBusinessCategory(
+  businessId: string,
+  categoryId: string,
+): Promise<{ data: { success: boolean } }> {
+  return api.delete(`/businesses/${businessId}/menu/categories/${categoryId}`);
+}
+
 export async function createBusinessMenuItem(businessId: string, data: CatalogItemRequest): Promise<MenuItemResponse> {
   return api.post<MenuItemResponse>(`/businesses/${businessId}/menu/items`, data);
 }

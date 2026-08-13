@@ -24,6 +24,7 @@ import {
   Truck,
   DollarSign,
   CreditCard,
+  Tags,
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
@@ -52,6 +53,7 @@ const iconMap = {
   Truck,
   DollarSign,
   CreditCard,
+  Tags,
 };
 
 function mapIcon(name: string) {
@@ -316,6 +318,15 @@ export default function SellerDrawerLayout() {
           name="members/index"
           options={{
             headerShown: false,
+          }}
+        />
+
+        {/* Categories — custom screen header, drawer menu rendered via CustomDrawerContent */}
+        <Drawer.Screen
+          name="menu/categories/index"
+          options={{
+            headerShown: false,
+            title: "Categories",
           }}
         />
 

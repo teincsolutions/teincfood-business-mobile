@@ -10,7 +10,6 @@ import {
   Sheet,
   Separator,
   Input,
-  ScrollView,
   useMedia,
 } from "tamagui";
 import {
@@ -231,7 +230,7 @@ export default function MembersScreen() {
           {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
-          <ScrollView>
+          <Sheet.ScrollView>
             <YStack padding="$6" gap="$4">
               <Text fontSize="$6" fontWeight="bold">
                 Invite Member
@@ -406,7 +405,7 @@ export default function MembersScreen() {
                 Cancel
               </Button>
             </YStack>
-          </ScrollView>
+          </Sheet.ScrollView>
         </Sheet.Frame>
       </Sheet>
 

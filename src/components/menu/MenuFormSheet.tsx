@@ -55,6 +55,8 @@ interface MenuFormSheetProps {
   onSave: () => void;
   categorySheetOpen: boolean;
   onCategorySheetOpenChange: (open: boolean) => void;
+  onAddCategory: (name: string) => void;
+  isAddingCategory?: boolean;
 }
 
 export function MenuFormSheet({
@@ -85,9 +87,13 @@ export function MenuFormSheet({
   categorySheetOpen,
   onCategorySheetOpenChange,
   categories,
+  onAddCategory,
+  isAddingCategory,
 }: MenuFormSheetProps) {
   const theme = useTheme();
   const media = useMedia();
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [addCategoryName, setAddCategoryName] = useState('');
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
@@ -163,6 +169,18 @@ export function MenuFormSheet({
         style: "cancel",
       },
     ]);
+  };
+
+  const closeAddCategory = () => {
+    setAddCategoryOpen(false);
+    setAddCategoryName("");
+  };
+
+  const handleAddCategory = () => {
+    const name = addCategoryName.trim();
+    if (!name) return;
+    onAddCategory(name);
+    closeAddCategory();
   };
 
   return (
@@ -242,26 +260,82 @@ export function MenuFormSheet({
                   >
                     Category
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      onCategorySheetOpenChange(true);
-                    }}
-                    style={{
-                      height: 60,
-                      paddingHorizontal: 16,
-                      borderRadius: 8,
-                      backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <Text fontFamily="$body" fontSize="$4" color="$color">
-                      {categories.find((c) => c.id === form.category)?.name || 'Select a category'}
-                    </Text>
-                    <ChevronDown size={18} color={theme.colorSecondary?.val} />
-                  </TouchableOpacity>
+                  <XStack gap="$2">
+                    <TouchableOpacity
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        onCategorySheetOpenChange(true);
+                      }}
+                      style={{
+                        flex: 1,
+                        height: 60,
+                        paddingHorizontal: 16,
+                        borderRadius: 8,
+                        backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text fontFamily="$body" fontSize="$4" color="$color">
+                        {categories.find((c) => c.id === form.category)?.name || 'Select a category'}
+                      </Text>
+                      <ChevronDown size={18} color={theme.colorSecondary?.val} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setAddCategoryOpen((v) => !v);
+                      }}
+                      style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 8,
+                        backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {addCategoryOpen ? (
+                        <X size={20} color="#ef4444" />
+                      ) : (
+                        <Plus size={22} color={theme.primary?.val || '#F97316'} />
+                      )}
+                    </TouchableOpacity>
+                  </XStack>
+
+                  {addCategoryOpen && (
+                    <YStack gap="$2">
+                      <FormInput
+                        label=""
+                        placeholder="New category name"
+                        value={addCategoryName}
+                        onChangeText={setAddCategoryName}
+                        autoFocus
+                        returnKeyType="done"
+                        onSubmitEditing={handleAddCategory}
+                      />
+                      <XStack gap="$2" justifyContent="flex-end">
+                        <Button
+                          variant="outline"
+                          height={44}
+                          disabled={isAddingCategory}
+                          onPress={closeAddCategory}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="primary"
+                          height={44}
+                          loading={isAddingCategory}
+                          disabled={!addCategoryName.trim()}
+                          onPress={handleAddCategory}
+                        >
+                          Add Category
+                        </Button>
+                      </XStack>
+                    </YStack>
+                  )}
                 </YStack>
 
                 {/* Availability toggle */}
