@@ -160,6 +160,25 @@ export function useCreateMenuItemMutation() {
 
 // ─── Update Menu Item Mutation ───────────────────────────────────────────────
 
+export function useCreateMenuCategoryMutation() {
+  const businessId = useBusinessId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; description?: string; sort_order?: number }) =>
+      menuService.createBusinessCategory(businessId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
+      toast.success("Category created");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:categories"]);
+      }
+    },
+    onError: (e) => {
+      toast.error(extractApiErrorMessage(e));
+    },
+  });
+}
+
 export function useUpdateMenuItemMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();

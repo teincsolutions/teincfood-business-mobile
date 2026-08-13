@@ -247,6 +247,8 @@ export default function AddBusinessScreen() {
                     value={placeQuery}
                     onChangeText={handleSearch}
                     paddingStart="$10"
+                    backgroundColor="$backgroundSoft"
+                    borderWidth={1}
                     borderColor={errors.address ? "$error" : "$borderColor"}
                   />
                   <YStack position="absolute" left="$3" top="$3.5">
@@ -287,7 +289,7 @@ export default function AddBusinessScreen() {
                         onPress={() => handleSelectPlace(item)}
                         style={{ paddingHorizontal: 12, paddingVertical: 10 }}
                       >
-                        <XStack gap="$2" alignItems="center">
+                          <XStack gap="$2" alignItems="center">
                           <MapPin size={16} color="$colorMuted" />
                           <YStack flex={1}>
                             <Text fontSize="$3" fontWeight="500" fontFamily="$body" color="$color">
@@ -299,16 +301,7 @@ export default function AddBusinessScreen() {
                               </Text>
                             )}
                           </YStack>
-              </XStack>
-              <Button
-                variant="outline"
-                icon={<MapPin size={16} />}
-                onPress={handleUseCurrentLocation}
-                disabled={isLocating}
-                opacity={isLocating ? 0.7 : 1}
-              >
-                {isLocating ? "Getting location..." : "Use Current Location"}
-              </Button>
+                        </XStack>
                       </TouchableOpacity>
                     )}
                   />

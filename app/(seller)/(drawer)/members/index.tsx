@@ -228,7 +228,6 @@ export default function MembersScreen() {
           backgroundColor="$background"
           borderTopLeftRadius="$6"
           borderTopRightRadius="$6"
-          padding="$5"
           {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />

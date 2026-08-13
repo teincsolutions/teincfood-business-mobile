@@ -157,8 +157,11 @@ export function DrawerHeader({
               <Select.Viewport bg="$background">
                 <Select.Group>
                   {businesses.map((b, i) => (
-                    <Select.Item key={b.id} index={i} value={b.id}>
+                    <Select.Item key={b.id} index={i} value={b.id} textValue={b.name}>
                       <Select.ItemText>{b.name}</Select.ItemText>
+                      <Select.ItemIndicator marginLeft="auto">
+                        <Check size={18} color="$primary" />
+                      </Select.ItemIndicator>
                     </Select.Item>
                   ))}
                 </Select.Group>
