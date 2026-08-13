@@ -179,6 +179,48 @@ export function useCreateMenuCategoryMutation() {
   });
 }
 
+export function useUpdateMenuCategoryMutation() {
+  const businessId = useBusinessId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { categoryId: string; name: string; description?: string; sort_order?: number }) =>
+      menuService.updateBusinessCategory(businessId!, data.categoryId, {
+        name: data.name,
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
+      toast.success("Category updated");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:categories"]);
+      }
+    },
+    onError: (e) => {
+      toast.error(extractApiErrorMessage(e));
+    },
+  });
+}
+
+export function useDeleteMenuCategoryMutation() {
+  const businessId = useBusinessId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (categoryId: string) =>
+      menuService.deleteBusinessCategory(businessId!, categoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
+      toast.success("Category deleted");
+      if (businessId) {
+        emitReferenceChanged(businessId, ["menu:categories"]);
+      }
+    },
+    onError: (e) => {
+      toast.error(extractApiErrorMessage(e));
+    },
+  });
+}
+
 export function useUpdateMenuItemMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();

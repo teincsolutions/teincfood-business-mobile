@@ -28403,7 +28403,7 @@
   "tamaguiConfig": {
     "fonts": {
       "body": {
-        "family": "Sen",
+        "family": "Manrope",
         "size": {
           "1": 11,
           "2": 12,
@@ -28466,36 +28466,36 @@
         },
         "face": {
           "100": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "200": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "300": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "400": {
-            "normal": "Sen_400Regular"
+            "normal": "Manrope_400Regular"
           },
           "500": {
-            "normal": "Sen_500Medium"
+            "normal": "Manrope_500Medium"
           },
           "600": {
-            "normal": "Sen_600SemiBold"
+            "normal": "Manrope_600SemiBold"
           },
           "700": {
-            "normal": "Sen_700Bold"
+            "normal": "Manrope_700Bold"
           },
           "800": {
-            "normal": "Sen_700Bold"
+            "normal": "Manrope_700Bold"
           },
           "900": {
-            "normal": "Sen_700Bold"
+            "normal": "Manrope_700Bold"
           }
         }
       },
       "heading": {
-        "family": "Sen",
+        "family": "Manrope",
         "size": {
           "1": 11,
           "2": 12,
@@ -28558,31 +28558,31 @@
         },
         "face": {
           "100": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "200": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "300": {
-            "normal": "Sen"
+            "normal": "Manrope"
           },
           "400": {
-            "normal": "Sen_400Regular"
+            "normal": "Manrope_400Regular"
           },
           "500": {
-            "normal": "Sen_500Medium"
+            "normal": "Manrope_500Medium"
           },
           "600": {
-            "normal": "Sen_600SemiBold"
+            "normal": "Manrope_600SemiBold"
           },
           "700": {
-            "normal": "Sen_700Bold"
+            "normal": "Manrope_700Bold"
           },
           "800": {
-            "normal": "Sen_800ExtraBold"
+            "normal": "Manrope_800ExtraBold"
           },
           "900": {
-            "normal": "Sen_800ExtraBold"
+            "normal": "Manrope_800ExtraBold"
           }
         }
       }

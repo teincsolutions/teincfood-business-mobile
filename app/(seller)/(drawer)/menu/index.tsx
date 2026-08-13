@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, useTheme } from "tamagui";
-import { UtensilsCrossed, Plus, Tags } from "@tamagui/lucide-icons";
+import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResponsive } from "@/utils/responsive";
 import { useLocalSearchParams } from "expo-router";
@@ -22,6 +22,7 @@ import {
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
   useToggleAvailabilityMutation,
+  useCreateMenuCategoryMutation,
 } from "@/hooks/menu.hooks";
 import type { MenuItem, MenuItemForm } from "@/services/menu.service";
 import { EMPTY_FORM, toGHS, toMinor } from "@/services/menu.service";
@@ -76,6 +77,26 @@ export default function SellerMenu() {
   const updateMutation = useUpdateMenuItemMutation();
   const deleteMutation = useDeleteMenuItemMutation();
   const toggleMutation = useToggleAvailabilityMutation();
+  const createCategoryMutation = useCreateMenuCategoryMutation();
+
+  const onAddCategory = useCallback(
+    (name: string) => {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      createCategoryMutation.mutate(
+        { name: trimmed },
+        {
+          onSuccess: (res) => {
+            const newCategoryId = (res as any)?.data?.id;
+            if (newCategoryId) {
+              setForm((f) => ({ ...f, category: newCategoryId }));
+            }
+          },
+        },
+      );
+    },
+    [createCategoryMutation],
+  );
 
   const allCategories = categoriesRes?.data ?? [];
   const filterCategories = [{ id: "", name: "All" } as any, ...allCategories];
@@ -279,15 +300,6 @@ export default function SellerMenu() {
           headerRight: () => (
             <XStack gap="$2" marginRight="$2">
               <Button
-                variant="outline"
-                height="$8"
-                $lg={{ height: "$8" }}
-                onPress={() => router.push("/(seller)/(drawer)/menu/categories")}
-                icon={({ color, size }) => <Tags size={size} color={color} />}
-              >
-                Categories
-              </Button>
-              <Button
                 variant="primary"
                 height="$8"
                 $lg={{ height: "$8" }}
@@ -424,6 +436,8 @@ export default function SellerMenu() {
         categorySheetOpen={categorySheetOpen}
         onCategorySheetOpenChange={setCategorySheetOpen}
         categories={allCategories}
+        onAddCategory={onAddCategory}
+        isAddingCategory={createCategoryMutation.isPending}
       />
 
       {/* ── Delete confirmation ──────────────────────────────────── */}

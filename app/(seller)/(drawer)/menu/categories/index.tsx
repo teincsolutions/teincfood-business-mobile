@@ -1,31 +1,56 @@
 // @ts-nocheck
 import { useState } from "react";
-import { Sheet, XStack, YStack, Text, Card, ScrollView, Spinner } from "tamagui";
+import { Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Sheet, XStack, YStack, Text, Card, ScrollView, Spinner, useMedia } from "tamagui";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button } from "@/components/ui";
 import { FormInput } from "@/components/ui/FormInput";
-import { Tags, Plus, Globe, CheckCircle2 } from "@tamagui/lucide-icons";
-import { useMenuCategoriesQuery, useCreateMenuCategoryMutation } from "@/hooks/menu.hooks";
+import { Tags, Plus, Globe, Pencil, Trash2 } from "@tamagui/lucide-icons";
+import {
+  useMenuCategoriesQuery,
+  useCreateMenuCategoryMutation,
+  useUpdateMenuCategoryMutation,
+  useDeleteMenuCategoryMutation,
+} from "@/hooks/menu.hooks";
 
 export default function ManageCategories() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const media = useMedia();
   const { data, isLoading } = useMenuCategoriesQuery();
   const createMutation = useCreateMenuCategoryMutation();
+  const updateMutation = useUpdateMenuCategoryMutation();
+  const deleteMutation = useDeleteMenuCategoryMutation();
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState("");
 
   const categories = data?.data ?? [];
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const openAdd = () => {
+    setEditingCat(null);
     setName("");
     setDescription("");
     setNameError("");
     setSheetOpen(true);
+  };
+
+  const openEdit = (cat) => {
+    setEditingCat(cat);
+    setName(cat.name ?? "");
+    setDescription(cat.description ?? "");
+    setNameError("");
+    setSheetOpen(true);
+  };
+
+  const closeSheet = (open) => {
+    setSheetOpen(open);
+    if (!open) setEditingCat(null);
   };
 
   const handleSave = () => {
@@ -33,13 +58,26 @@ export default function ManageCategories() {
       setNameError("Category name is required");
       return;
     }
-    createMutation.mutate(
-      { name: name.trim(), description: description.trim() || undefined },
-      {
-        onSuccess: () => setSheetOpen(false),
-      },
-    );
+    const payload = { name: name.trim(), description: description.trim() || undefined };
+    if (editingCat) {
+      updateMutation.mutate({ categoryId: editingCat.id, ...payload }, { onSuccess: () => closeSheet(false) });
+    } else {
+      createMutation.mutate(payload, { onSuccess: () => closeSheet(false) });
+    }
   };
+
+  const handleDelete = (cat) => {
+    Alert.alert("Delete category", `Delete "${cat.name}"? Categories with menu items can't be deleted.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteMutation.mutate(cat.id),
+      },
+    ]);
+  };
+
+  const isCustom = (cat) => !cat.is_global && !cat.is_system;
 
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
@@ -86,13 +124,7 @@ export default function ManageCategories() {
                             <Text fontSize="$2" color="$colorMuted">Global</Text>
                           </XStack>
                         )}
-                        {cat.is_system && (
-                          <XStack gap="$1" alignItems="center" backgroundColor="$backgroundSoft" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2">
-                            <CheckCircle2 size={12} color="$colorMuted" />
-                            <Text fontSize="$2" color="$colorMuted">System</Text>
-                          </XStack>
-                        )}
-                        {!cat.is_global && !cat.is_system && (
+                        {isCustom(cat) && (
                           <XStack gap="$1" alignItems="center" backgroundColor="$backgroundSoft" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2">
                             <Plus size={12} color="$colorMuted" />
                             <Text fontSize="$2" color="$colorMuted">Custom</Text>
@@ -100,7 +132,27 @@ export default function ManageCategories() {
                         )}
                       </XStack>
                     </YStack>
-                    <Text fontSize="$3" color="$colorMuted">#{cat.sort_order ?? ""}</Text>
+                    <XStack gap="$2" alignItems="center">
+                      <Text fontSize="$3" color="$colorMuted">#{cat.sort_order ?? ""}</Text>
+                      {isCustom(cat) && (
+                        <>
+                          <Button
+                            size="$2"
+                            variant="outline"
+                            icon={<Pencil size={14} />}
+                            disabled={isSaving || deleteMutation.isPending}
+                            onPress={() => openEdit(cat)}
+                          />
+                          <Button
+                            size="$2"
+                            variant="outline"
+                            icon={<Trash2 size={14} color="$red10" />}
+                            disabled={isSaving || deleteMutation.isPending}
+                            onPress={() => handleDelete(cat)}
+                          />
+                        </>
+                      )}
+                    </XStack>
                   </XStack>
                 </YStack>
               </Card>
@@ -109,12 +161,12 @@ export default function ManageCategories() {
         </YStack>
       </ScrollView>
 
-      {/* Add Category Sheet */}
+      {/* Add/Edit Category Sheet */}
       <Sheet
         modal
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        snapPoints={[55]}
+        onOpenChange={closeSheet}
+        snapPoints={[90]}
         dismissOnSnapToBottom
         zIndex={200_000}
       >
@@ -124,31 +176,43 @@ export default function ManageCategories() {
           exitStyle={{ opacity: 0 }}
           backgroundColor="rgba(0,0,0,0.5)"
         />
-        <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" marginTop="$6">
+        <Sheet.Frame
+            backgroundColor="$background"
+            borderTopLeftRadius="$6"
+            borderTopRightRadius="$6"
+            {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
+          >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
-          <YStack paddingHorizontal="$4" paddingBottom={Math.max(insets.bottom + 16, 32)} gap="$4">
-            <Text fontSize="$5" fontWeight="bold">Add Category</Text>
-            <FormInput
-              label="Category Name"
-              placeholder="e.g. Grills"
-              value={name}
-              onChangeText={(v) => { setName(v); setNameError(""); }}
-              error={nameError}
-              required
-            />
-            <FormInput
-              label="Description (optional)"
-              placeholder="Short description"
-              value={description}
-              onChangeText={setDescription}
-            />
-            <Button variant="primary" onPress={handleSave} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Saving..." : "Save Category"}
-            </Button>
-            <Button variant="outline" onPress={() => setSheetOpen(false)}>
-              Cancel
-            </Button>
-          </YStack>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <Sheet.ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <YStack paddingHorizontal="$4" paddingTop="$2" paddingBottom={Math.max(insets.bottom + 16, 32)} gap="$4">
+                <Text fontSize="$5" fontWeight="bold">{editingCat ? "Edit Category" : "Add Category"}</Text>
+                <FormInput
+                  label="Category Name"
+                  placeholder="e.g. Grills"
+                  value={name}
+                  onChangeText={(v) => { setName(v); setNameError(""); }}
+                  error={nameError}
+                  required
+                />
+                <FormInput
+                  label="Description (optional)"
+                  placeholder="Short description"
+                  value={description}
+                  onChangeText={setDescription}
+                />
+                <Button variant="primary" onPress={handleSave} disabled={isSaving}>
+                  {isSaving ? "Saving..." : editingCat ? "Save Changes" : "Save Category"}
+                </Button>
+                <Button variant="outline" onPress={() => closeSheet(false)}>
+                  Cancel
+                </Button>
+              </YStack>
+            </Sheet.ScrollView>
+          </KeyboardAvoidingView>
         </Sheet.Frame>
       </Sheet>
     </YStack>
