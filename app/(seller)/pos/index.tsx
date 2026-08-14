@@ -276,9 +276,7 @@ function NewOrderTab() {
       ) : (
         <YStack flex={1}>
           <MenuBrowser />
-          {items.length > 0 && (
-            <CartBar onCheckout={() => setView("cart")} />
-          )}
+          {items.length > 0 && <CartBar onCheckout={() => setView("cart")} />}
         </YStack>
       )}
     </YStack>
@@ -401,7 +399,6 @@ function MenuBrowser() {
             paddingVertical: 20,
             paddingBottom: 40,
             gap: 16,
-            flex: 1,
           }}
           renderItem={({ item }) => (
             <YStack mx="$1.5">
