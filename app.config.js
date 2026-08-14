@@ -9,10 +9,19 @@ module.exports = {
     slug: "teinc-food-business",
     owner: "teincsolutions",
     version: "1.0.0",
+    runtimeVersion: {
+      policy: "appVersion",
+    },
     orientation: "default",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
     scheme: "teincfood.business",
+    updates: {
+      url: "https://u.expo.dev/afa9b762-7069-493e-9a0d-de02c757e3bc",
+      enabled: true,
+      checkAutomatically: "ON_LOAD",
+      fallbackToCacheTimeout: 0,
+    },
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
@@ -90,6 +99,7 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-font",
+      "expo-updates",
       "expo-sharing",
       ["@teincfood/rn-notifications", {}],
       [

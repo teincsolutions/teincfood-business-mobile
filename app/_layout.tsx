@@ -54,6 +54,9 @@ import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
 import * as sellerService from '../src/services/seller.service';
 import * as fleetService from '../src/services/fleet.service';
 import { api } from '../src/services/api';
+import { AlertProvider } from '../src/contexts/AlertContext';
+import { AlertContainer } from '../src/contexts/AlertContainer';
+import { useOTAUpdate } from '../src/hooks/useOTAUpdate';
 
 // Subscribe to auth changes to disconnect WebSocket on logout
 subscribeAuthCleanup();
@@ -90,6 +93,9 @@ function AppShell() {
 
   // Bridge sync-engine reconciliation events to TanStack Query
   useSyncReconciliation();
+
+  // OTA update check (production builds only) — prompts user when a new version is available
+  useOTAUpdate();
 
   // Initialize offline-first SQLite database
   useEffect(() => {
@@ -330,6 +336,7 @@ function AppShell() {
             {showLock && (
               <BiometricLockOverlay onUnlock={() => setIsUnlocked(true)} />
             )}
+            <AlertContainer />
           </YStack>
         </LocationGuard>
     </SafeAreaProvider>
@@ -348,7 +355,9 @@ export default function RootLayout() {
       <QueryProvider>
         <ThemeProvider>
           <BottomSheetModalProvider>
-            <AppShell />
+            <AlertProvider>
+              <AppShell />
+            </AlertProvider>
           </BottomSheetModalProvider>
         </ThemeProvider>
       </QueryProvider>
