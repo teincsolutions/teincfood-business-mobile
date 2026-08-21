@@ -114,6 +114,16 @@ export const orderRepository = {
     return executeCommand(command);
   },
 
+  async completePickup(input: OrderActionInput): Promise<SellerOrder> {
+    const command = buildCommand<Record<string, never>>({
+      commandType: "order:complete_pickup",
+      businessId: input.businessId,
+      entityId: input.orderId,
+      payload: {},
+    });
+    return executeCommand(command);
+  },
+
   async cancelOrder(input: OrderActionInput): Promise<SellerOrder> {
     const command = buildCommand<Record<string, never>>({
       commandType: "order:cancel",

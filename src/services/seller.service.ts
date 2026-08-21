@@ -41,6 +41,10 @@ export async function markOrderReady(orderId: string): Promise<{ data: SellerOrd
   return api.post(`/orders/${orderId}/ready-for-delivery`);
 }
 
+export async function completeOrderPickup(orderId: string): Promise<{ data: SellerOrder }> {
+  return api.post(`/orders/${orderId}/complete-pickup`);
+}
+
 export async function cancelOrder(orderId: string): Promise<{ data: SellerOrder }> {
   return api.post(`/orders/${orderId}/cancel`);
 }

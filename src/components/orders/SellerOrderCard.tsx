@@ -37,6 +37,7 @@ interface SellerOrderCardProps {
   onReject?: (id: string) => void;
   onPrepare?: (id: string) => void;
   onMarkReady?: (id: string) => void;
+  onCompletePickup?: (id: string) => void;
   showDialog?: (title: string, description: string, onConfirm: () => void, isDestructive?: boolean) => void;
 }
 
@@ -61,6 +62,7 @@ export function SellerOrderCard({
   onReject,
   onPrepare,
   onMarkReady,
+  onCompletePickup,
   showDialog,
 }: SellerOrderCardProps) {
   const router = useRouter();
@@ -222,6 +224,20 @@ export function SellerOrderCard({
                 }
               >
                 Ready
+              </Button>
+            )}
+            {item.status === "ready" && item.order_type === "takeout" && (
+              <Button
+                variant="success"
+                onPress={() =>
+                  showDialog?.(
+                    "Complete Pickup",
+                    `Hand ${item.order_number} to the customer?`,
+                    () => onCompletePickup?.(item.id),
+                  )
+                }
+              >
+                Handed Over
               </Button>
             )}
           </XStack>

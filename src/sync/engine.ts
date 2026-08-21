@@ -17,6 +17,7 @@ import { restTransport } from "@/sync/transport-rest";
 import { localNodeTransport } from "@/sync/transport-local-node";
 import { commandQueueService } from "@/sync/command-queue.service";
 import { useConnectivityStore } from "@/stores/connectivity.store";
+import { ApiError } from "@/services/api";
 import { syncLogger } from "@/utils/sync-logger";
 import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
 
@@ -107,6 +108,20 @@ export class SyncEngine {
         });
         return events;
       } catch (error) {
+        // Definitive server rejection (4xx): the backend answered with a real
+        // decision (e.g. PAYMENT_REQUIRED, FORBIDDEN). Surface it to the
+        // caller instead of masking it as a connectivity problem and silently
+        // queueing a command that can never succeed.
+        if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+          syncLogger.warn("SyncEngine", "Cloud command rejected by server", {
+            command_type: command.command_type,
+            command_id: command.command_id,
+            status: error.status,
+            message: error.message,
+          });
+          throw error;
+        }
+
         // Cloud is slow or unreachable: mark it and fall back to the Local
         // Node or the outbox so the terminal stays responsive.
         syncLogger.warn("SyncEngine", "Cloud command timed out, falling back", {
