@@ -38,6 +38,7 @@ import {
   useRejectOrderMutation,
   useStartPreparingOrderMutation,
   useMarkOrderReadyMutation,
+  useCompletePickupMutation,
   useConfirmHandoverMutation,
 } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
@@ -92,6 +93,7 @@ export default function OrderDetails() {
   const rejectMutation = useRejectOrderMutation();
   const startPreparingMutation = useStartPreparingOrderMutation();
   const markReadyMutation = useMarkOrderReadyMutation();
+  const completePickupMutation = useCompletePickupMutation();
   const confirmHandoverMutation = useConfirmHandoverMutation();
   const assignRider = useAssignRiderMutation();
   const { data: riders } = useAvailableRidersQuery();
@@ -649,8 +651,24 @@ export default function OrderDetails() {
                   )}
                 </>
               )}
+            {order.status === "ready" && order.order_type === "takeout" && (
+              <Button
+                variant="primary"
+                width="100%"
+                onPress={() =>
+                  showDialog(
+                    "Complete Pickup",
+                    `Hand ${order.order_number} to the customer?`,
+                    () => completePickupMutation.mutate(order.id),
+                  )
+                }
+              >
+                Handed to Customer
+              </Button>
+            )}
             {(order.status === "ready" || order.status === "waiting_pickup") &&
-              !order.delivery_person && (
+              !order.delivery_person &&
+              order.order_type !== "takeout" && (
                 <Button
                   variant="primary"
                   width="100%"

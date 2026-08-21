@@ -93,6 +93,11 @@ export class RestTransport implements Transport {
         return this.wrapResponse("order.status_changed", response.data as unknown as Record<string, unknown>, entity_id, timestamp, command);
       }
 
+      case "order:complete_pickup": {
+        const response = await sellerService.completeOrderPickup(entity_id!);
+        return this.wrapResponse("order.status_changed", response.data as unknown as Record<string, unknown>, entity_id, timestamp, command);
+      }
+
       case "order:cancel": {
         const response = await sellerService.cancelOrder(entity_id!);
         return this.wrapResponse("order.status_changed", response.data as unknown as Record<string, unknown>, entity_id, timestamp, command);

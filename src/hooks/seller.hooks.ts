@@ -240,6 +240,44 @@ export function useMarkOrderReadyMutation() {
   });
 }
 
+export function useCompletePickupMutation() {
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => {
+      if (!activeBusinessId) throw new Error('No active business');
+      return orderRepository.completePickup({ orderId, businessId: activeBusinessId });
+    },
+
+    onMutate: async (orderId) => {
+      await queryClient.cancelQueries({ queryKey: SELLER_KEYS.order(orderId) });
+      const previous = queryClient.getQueryData<any>(SELLER_KEYS.order(orderId));
+      if (previous) {
+        queryClient.setQueryData<any>(SELLER_KEYS.order(orderId), {
+          order: { ...previous.order, status: 'delivered' },
+        });
+      }
+      return { previous };
+    },
+
+    onSuccess: () => {
+      toast.success("Order handed to customer");
+    },
+
+    onError: (error, orderId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+      }
+      toast.error(extractApiErrorMessage(error));
+    },
+
+    onSettled: (_data, _error, orderId) => {
+      invalidateOrderQueries(queryClient, orderId);
+    },
+  });
+}
+
 export function useAcceptOrderMutation() {
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const queryClient = useQueryClient();
