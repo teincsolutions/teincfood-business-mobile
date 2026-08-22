@@ -41,6 +41,7 @@ const DEFAULT_SYNC_KEYS: ReferenceDataKey[] = [
   "tax-rules",
   "business:profile",
   "operating-hours",
+  "subscription:entitlements",
 ];
 
 class ReferenceSyncService {
