@@ -4,7 +4,6 @@ import { YStack, XStack, Text, Card, Spinner, Separator, useMedia } from "tamagu
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
-  DollarSign,
   TrendingUp,
   Building,
   Bike,
@@ -13,6 +12,8 @@ import { BackButton, Button } from "@/components/ui";
 import { useAllBalancesQuery, useBusinessWalletBalanceQuery } from "@/hooks/useWallet";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { useReferenceData } from "@/reference/hooks";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
@@ -35,6 +36,10 @@ export default function WalletScreen() {
   const riderBalance = balances.find((b) => b.type === "rider");
 
   const isSellerOrFleet = role === "seller" || role === "fleet_manager";
+  const ent = useEntitlements();
+  const entData = ent.data as Record<string, unknown> | undefined;
+  const isTrial = entData?.subscription_status === "trialing";
+  const periodEnd = entData?.current_period_end as string | undefined;
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -112,16 +117,37 @@ export default function WalletScreen() {
               </YStack>
             </Card>
 
-            {/* Billing / subscription info placeholder */}
+            {/* Billing / subscription */}
             <Card padding="$4" bordered>
               <YStack gap="$2">
                 <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
                   Billing & Subscription
                 </Text>
                 <Separator />
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Subscription and commission information will appear here once available.
-                </Text>
+                {entData ? (
+                  <YStack gap="$1">
+                    <Text fontSize="$3" color="$color" fontFamily="$body">
+                      Commission: {String(entData.commission_rate_percent ?? 0)}% • Status: {String(entData.subscription_status ?? "none")}
+                    </Text>
+                    {isTrial && periodEnd ? (
+                      <Text fontSize="$3" color="$warning" fontFamily="$body">
+                        Trial ends {new Date(periodEnd).toLocaleDateString()}
+                      </Text>
+                    ) : null}
+                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                      Menus: {String(entData["limits.menu_items"] ?? "—")} • Members: {String(entData["limits.members"] ?? "—")} • Terminals: {String(entData["limits.terminals_linked"] ?? "—")}
+                    </Text>
+                    {role === "seller" || role === "fleet_manager" ? (
+                      <Button variant="outline" onPress={() => router.push("/(shared)/wallet/plans" as never)}>
+                        Manage plan
+                      </Button>
+                    ) : null}
+                  </YStack>
+                ) : (
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    Loading entitlements…
+                  </Text>
+                )}
               </YStack>
             </Card>
           </ScrollView>

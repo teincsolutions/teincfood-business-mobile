@@ -16,7 +16,8 @@ export type ReferenceDataKey =
   | "members"
   | "tax-rules"
   | "business:profile"
-  | "operating-hours";
+  | "operating-hours"
+  | "subscription:entitlements";
 
 export interface ReferenceDataRecord<T = unknown> {
   key: ReferenceDataKey;
