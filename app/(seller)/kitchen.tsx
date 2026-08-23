@@ -68,7 +68,7 @@ function StatusColumn({
   }, [children]);
 
   return (
-    <YStack flex={1} minWidth={280} gap="$3">
+    <YStack gap="$3" width="100%" $gtSm={{ flex: 1, minWidth: 280 }}>
       <XStack gap="$2" alignItems="center">
         <Icon size={20} color={color} />
         <Text
@@ -186,12 +186,14 @@ export default function KitchenDisplay() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <YStack>
+        <YStack flex={1} minWidth={0} marginRight="$3">
           <Text
             fontSize="$5"
             fontWeight="700"
             fontFamily="$heading"
             color="$color"
+            numberOfLines={1}
+            flexShrink={1}
           >
             {activeBusiness?.name || "Kitchen Display"}
           </Text>
@@ -199,7 +201,7 @@ export default function KitchenDisplay() {
             {orderList.length} total
           </Text>
         </YStack>
-        <XStack gap="$3" alignItems="center">
+        <XStack gap="$3" alignItems="center" flexShrink={0}>
           <LiveClock />
           <Button
             chromeless
@@ -221,7 +223,7 @@ export default function KitchenDisplay() {
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <XStack padding="$3" gap="$3" alignItems="flex-start">
+        <XStack padding="$3" gap="$3" alignItems="flex-start" flexDirection="column" $gtSm={{ flexDirection: "row" }}>
           <StatusColumn label="To Prepare" color="$orange10" icon={Timer}>
             {acceptedOrders.map((order) => (
               <PendingOrderCard
