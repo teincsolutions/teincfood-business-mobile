@@ -51,7 +51,7 @@ function StatusColumn({
   orders: any[];
 }) {
   return (
-    <YStack flex={1} minWidth={200} gap="$1.5">
+    <YStack gap="$1.5" width="100%" $gtSm={{ flex: 1, minWidth: 200 }}>
       <XStack gap="$1" alignItems="center" justifyContent="center">
         <Icon size={18} color={color} />
         <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color={color}>
@@ -147,12 +147,12 @@ export default function CalloutDisplay() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <YStack>
-          <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+        <YStack flex={1} minWidth={0} marginRight="$3">
+          <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color" numberOfLines={1} flexShrink={1}>
             {activeBusiness?.name || "Order Display"}
           </Text>
         </YStack>
-        <XStack gap="$3" alignItems="center">
+        <XStack gap="$3" alignItems="center" flexShrink={0}>
           <LiveClock />
           <Button
             chromeless
@@ -170,7 +170,7 @@ export default function CalloutDisplay() {
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <XStack padding="$3" gap="$3" alignItems="flex-start">
+        <XStack padding="$3" gap="$3" alignItems="flex-start" flexDirection="column" $gtSm={{ flexDirection: "row" }}>
           <StatusColumn
             label="Pending"
             color="$orange10"
