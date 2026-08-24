@@ -1,7 +1,6 @@
 # Node modules
 node_modules/
 yarn-error.log
-yarn.lock
 
 # Expo environment variables
 .env

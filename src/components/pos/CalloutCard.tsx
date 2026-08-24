@@ -17,7 +17,7 @@ export function CalloutCard({ order }: CalloutCardProps) {
   const style = STATUS_STYLES[order.status] ?? STATUS_STYLES.pending;
   const displayNumber =
     order.callout_number != null && order.callout_number !== 0
-      ? String(order.callout_number).padStart(2, "0")
+      ? String(order.callout_number)
       : order.order_number
         ? order.order_number.slice(-4)
         : "--";
