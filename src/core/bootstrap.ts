@@ -220,49 +220,53 @@ function syncConnectivityBridge(): void {
 
 export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
   if (bootstrapped) return null;
+  try {
+    const sqliteDriver = buildSqliteDriver();
+    const kvDriver = buildKVDriver();
+    const httpClient = buildHttpClient();
 
-  const sqliteDriver = buildSqliteDriver();
-  const kvDriver = buildKVDriver();
-  const httpClient = buildHttpClient();
+    const initialConnectivity = (() => {
+      try {
+        const s = useConnectivityStore.getState();
+        return {
+          isOnline: s.isOnline,
+          isCloudReachable: s.isCloudReachable,
+        };
+      } catch {
+        return undefined;
+      }
+    })();
 
-  const initialConnectivity = (() => {
+    wireServiceAdapters();
+
+    // Seed core device id from Business storage
     try {
-      const s = useConnectivityStore.getState();
-      return {
-        isOnline: s.isOnline,
-        isCloudReachable: s.isCloudReachable,
-      };
+      const deviceId = getBusinessAppInstanceId();
+      setAppInstanceId(deviceId);
     } catch {
-      return undefined;
+      // ignore
     }
-  })();
 
-  wireServiceAdapters();
+    const result = createTeincCore({
+      sqliteDriver,
+      kvDriver,
+      httpClient,
+      initialConnectivity,
+    });
 
-  // Seed core device id from Business storage
-  try {
-    const deviceId = getBusinessAppInstanceId();
-    setAppInstanceId(deviceId);
-  } catch {
-    // ignore
+    // Bridge future connectivity changes into core
+    try {
+      syncConnectivityBridge();
+    } catch {
+      // ignore
+    }
+
+    bootstrapped = true;
+    return result;
+  } catch (e) {
+    console.error("[bootstrapCore] failed", e);
+    return null;
   }
-
-  const result = createTeincCore({
-    sqliteDriver,
-    kvDriver,
-    httpClient,
-    initialConnectivity,
-  });
-
-  // Bridge future connectivity changes into core
-  try {
-    syncConnectivityBridge();
-  } catch {
-    // ignore
-  }
-
-  bootstrapped = true;
-  return result;
 }
 
 export function isCoreBootstrapped(): boolean {

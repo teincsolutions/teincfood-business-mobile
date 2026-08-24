@@ -10,7 +10,11 @@ import { syncReferenceDataOnReconnect } from '../src/reference/events';
 import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
 
 // Bootstrap TeincFood core adapters before any offline-first usage. Idempotent.
-bootstrapCore();
+try {
+  bootstrapCore();
+} catch (e) {
+  console.error("[bootstrapCore] failed, degraded offline support", e);
+}
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
