@@ -26,7 +26,10 @@ import {
   useAcceptKioskOrderMutation,
   useStartPreparingKioskOrderMutation,
   useMarkKioskOrderReadyMutation,
+  useAssignRiderMutation,
+  useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
+import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { useDisplayStore } from "@/stores/display.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
@@ -34,7 +37,10 @@ import {
   PendingOrderCard,
   PreparingOrderCard,
   ReadyOrderCard,
+  RiderSelectionSheet,
+  OrderDetailsSheet,
 } from "@/components/kiosk";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { Badge } from "@/components/ui/Badge";
 import type { SellerOrder } from "@/types/api";
 
@@ -122,6 +128,17 @@ export default function KitchenDisplay() {
   const { activeBusiness } = useActiveBusiness();
   const securityStore = useSecurityStore();
   const [exiting, setExiting] = useState(false);
+  const [showRiderSheet, setShowRiderSheet] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
+  const [dialog, setDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   useKeepAwake();
   useOrderRealtimeUpdates(POS_KEYS.all);
@@ -130,6 +147,9 @@ export default function KitchenDisplay() {
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
+  const assignRider = useAssignRiderMutation();
+  const confirmHandover = useConfirmHandoverMutation();
+  const { data: riders } = useAvailableRidersQuery(showRiderSheet);
 
   const orderList = orders ?? [];
 
@@ -145,8 +165,59 @@ export default function KitchenDisplay() {
     [orderList],
   );
   const readyOrders = useMemo(
-    () => orderList.filter((o) => o.status === "ready"),
+    () =>
+      orderList.filter(
+        (o) => o.status === "ready" || (o.status === "waiting_pickup" && !o.merchant_handover_confirmed_at),
+      ),
     [orderList],
+  );
+
+  const handleOpenRiderSheet = useCallback((orderId: string) => {
+    setSelectedOrderId(orderId);
+    setShowRiderSheet(true);
+  }, []);
+
+  const handleHandover = useCallback(
+    (deliveryId: string) => {
+      setDialog({
+        open: true,
+        title: "Confirm Handover",
+        description: "Hand over this order to the rider?",
+        confirmText: "Handover",
+        onConfirm: () => {
+          confirmHandover.mutate(deliveryId);
+          setDialog(null);
+        },
+      });
+    },
+    [confirmHandover],
+  );
+
+  const handleViewDetails = useCallback((order: SellerOrder) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
+  }, []);
+
+  const handleAssignRider = useCallback(
+    (riderId: string) => {
+      if (!selectedOrderId) return;
+      const rider = (riders as any[])?.find((r: any) => r.id === riderId);
+      setShowRiderSheet(false);
+      setTimeout(() => {
+        setDialog({
+          open: true,
+          title: "Assign Rider",
+          description: `Assign this order to ${rider?.name ?? "rider"}?`,
+          confirmText: "Assign",
+          onConfirm: () => {
+            assignRider.mutate({ orderId: selectedOrderId, riderId });
+            setSelectedOrderId(null);
+            setDialog(null);
+          },
+        });
+      }, 100);
+    },
+    [selectedOrderId, riders, assignRider],
   );
 
   const handleExit = useCallback(async () => {
@@ -233,7 +304,7 @@ export default function KitchenDisplay() {
                 onAccept={() => acceptOrder.mutate(order.id)}
                 onReject={() => {}}
                 onStartPreparing={() => startPreparing.mutate(order.id)}
-                onViewDetails={() => {}}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </StatusColumn>
@@ -244,18 +315,48 @@ export default function KitchenDisplay() {
                 key={order.id}
                 order={order}
                 onMarkReady={() => markReady.mutate(order.id)}
-                onViewDetails={() => {}}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </StatusColumn>
 
           <StatusColumn label="Ready" color="$green10" icon={CheckCircle}>
             {readyOrders.map((order) => (
-              <ReadyOrderCard key={order.id} order={order} />
+              <ReadyOrderCard
+                key={order.id}
+                order={order}
+                onAssignRider={handleOpenRiderSheet}
+                onHandover={handleHandover}
+                onViewDetails={handleViewDetails}
+              />
             ))}
           </StatusColumn>
         </XStack>
       </ScrollView>
+
+      <RiderSelectionSheet
+        visible={showRiderSheet}
+        onClose={() => setShowRiderSheet(false)}
+        riders={(riders as any) ?? []}
+        onSelectRider={handleAssignRider}
+      />
+
+      <OrderDetailsSheet
+        visible={showOrderDetails}
+        onClose={() => setShowOrderDetails(false)}
+        order={selectedOrder}
+        getTimeSince={getTimeSince}
+      />
+
+      <AppAlertDialog
+        open={!!dialog?.open}
+        onOpenChange={(open: boolean) => { if (!open) setDialog(null); }}
+        title={dialog?.title ?? ""}
+        description={dialog?.description ?? ""}
+        confirmText={dialog?.confirmText ?? "Confirm"}
+        cancelText="Cancel"
+        onConfirm={() => dialog?.onConfirm?.()}
+      />
     </YStack>
   );
 }

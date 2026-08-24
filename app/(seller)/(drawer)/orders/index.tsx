@@ -40,30 +40,33 @@ import type { SellerOrder } from "@/types/api";
 import { formatPriceFromMinor } from "@/utils/currency";
 
 const FILTER_CHIPS = [
-  { key: "pending", label: "Pending", color: "$yellow9" },
-  { key: "awaiting_payment", label: "Awaiting Payment", color: "$orange9" },
-  { key: "accepted", label: "Accepted", color: "$orange9" },
-  { key: "preparing", label: "Preparing", color: "$blue9" },
-  { key: "ready", label: "Ready", color: "$green9" },
-  { key: "waiting_pickup", label: "Waiting Pickup", color: "$blue9" },
-  { key: "on_the_way", label: "In Transit", color: "$blue9" },
-  { key: "arrived", label: "Arrived", color: "$green9" },
-  { key: "delivered", label: "Delivered", color: "$gray9" },
-  { key: "cancelled", label: "Cancelled", color: "$red9" },
+  { key: "pending", label: "Pending", color: "$warning" },
+  { key: "awaiting_payment", label: "Awaiting Payment", color: "$primary" },
+  { key: "accepted", label: "Accepted", color: "$primary" },
+  { key: "preparing", label: "Preparing", color: "$info" },
+  { key: "ready", label: "Ready", color: "$success" },
+  { key: "waiting_pickup", label: "Waiting Pickup", color: "$info" },
+  { key: "on_the_way", label: "In Transit", color: "$info" },
+  { key: "arrived", label: "Arrived", color: "$success" },
+  { key: "delivered", label: "Delivered", color: "$colorMuted" },
+  { key: "cancelled", label: "Cancelled", color: "$error" },
 ];
 
-const CHIP_COLORS = {
-  pending: "$yellow9",
-  awaiting_payment: "$orange9",
-  accepted: "$orange9",
-  preparing: "$blue9",
-  ready: "$green9",
-  waiting_pickup: "$blue9",
-  on_the_way: "$blue9",
-  arrived: "$green9",
-  delivered: "$gray9",
-  cancelled: "$red9",
+const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
+  pending: { bg: "$warning", color: "$color" },
+  awaiting_payment: { bg: "$primary", color: "white" },
+  accepted: { bg: "$primary", color: "white" },
+  preparing: { bg: "$info", color: "white" },
+  ready: { bg: "$success", color: "white" },
+  waiting_pickup: { bg: "$info", color: "white" },
+  on_the_way: { bg: "$info", color: "white" },
+  arrived: { bg: "$success", color: "white" },
+  delivered: { bg: "$colorMuted", color: "white" },
+  cancelled: { bg: "$error", color: "white" },
 };
+const CHIP_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_BADGE).map(([k, v]) => [k, v.bg]),
+) as Record<string, string>;
 
 const DEFAULT_CHIPS = [
   "pending",
@@ -221,7 +224,9 @@ export default function SellerOrders() {
   }, []);
 
   // ── Phone: compact card ──
-  const renderPhoneCard = ({ item }: { item: SellerOrder }) => (
+  const renderPhoneCard = ({ item }: { item: SellerOrder }) => {
+    const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
+    return (
     <Card
       padding="$4"
       bordered
@@ -229,17 +234,19 @@ export default function SellerOrders() {
       pressStyle={{ scale: 0.98, opacity: 0.9 }}
     >
       <YStack gap="$2">
-        <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold">
+        <XStack justifyContent="space-between" alignItems="center" gap="$2">
+          <Text fontSize="$5" fontWeight="bold" flex={1} numberOfLines={1}>
             {item.order_number}
           </Text>
           <YStack
-            px="$2"
+            px="$2.5"
             py="$1"
-            borderRadius="$3"
-            backgroundColor={CHIP_COLORS[item.status] || "$gray9"}
+            borderRadius="$full"
+            backgroundColor={badge.bg}
+            flexShrink={0}
+            maxWidth="55%"
           >
-            <Text fontSize="$2" color="white" fontWeight="600">
+            <Text fontSize="$2" color={badge.color} fontWeight="700" numberOfLines={1} textTransform="uppercase" letterSpacing={0.3}>
               {formatStatus(item.status)}
             </Text>
           </YStack>
@@ -281,10 +288,13 @@ export default function SellerOrders() {
         </XStack>
       </YStack>
     </Card>
-  );
+    );
+  };
 
   // ── Tablet: table row ──
-  const renderTabletRow = ({ item }: { item: SellerOrder }) => (
+  const renderTabletRow = ({ item }: { item: SellerOrder }) => {
+    const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
+    return (
     <XStack
       borderBottomWidth={1}
       borderBottomColor="$borderColor"
@@ -314,13 +324,13 @@ export default function SellerOrders() {
       </YStack>
       <YStack
         px="$3"
-        py="$2"
-        borderRadius="$3"
-        backgroundColor={CHIP_COLORS[item.status] || "$gray9"}
+        py="$1.5"
+        borderRadius="$full"
+        backgroundColor={badge.bg}
         width={colWidths.status}
         alignItems="center"
       >
-        <Text fontSize="$3" color="$color" fontWeight="600" textAlign="center">
+        <Text fontSize="$3" color={badge.color} fontWeight="700" textAlign="center" numberOfLines={1}>
           {formatStatus(item.status)}
         </Text>
       </YStack>
@@ -383,7 +393,8 @@ export default function SellerOrders() {
         )}
       </XStack>
     </XStack>
-  );
+    );
+  };
 
   const tableHeader = (
     <XStack
@@ -525,7 +536,7 @@ export default function SellerOrders() {
                     <Text
                       fontSize="$3"
                       fontWeight="600"
-                      color={active ? "$color" : "$color"}
+                      color={active ? (STATUS_BADGE[chip.key]?.color ?? "white") : "$color"}
                     >
                       {chip.label}
                     </Text>
@@ -693,7 +704,7 @@ export default function SellerOrders() {
                       justifyContent="space-between"
                       backgroundColor={active ? chip.color : "$background"}
                     >
-                      <Text fontWeight="500" color={"$color"}>
+                      <Text fontWeight="500" color={active ? (STATUS_BADGE[chip.key]?.color ?? "white") : "$color"}>
                         {chip.label}
                       </Text>
                     </XStack>

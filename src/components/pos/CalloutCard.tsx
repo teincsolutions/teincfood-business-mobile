@@ -7,14 +7,20 @@ interface CalloutCardProps {
 }
 
 const STATUS_STYLES: Record<string, { border: string; bg: string; badgeBg: string; label: string }> = {
-  pending: { border: "$orange8", bg: "$orange2", badgeBg: "$orange10", label: "Pending" },
-  accepted: { border: "$orange8", bg: "$orange2", badgeBg: "$orange10", label: "Pending" },
-  preparing: { border: "$blue8", bg: "$blue2", badgeBg: "$blue10", label: "Preparing" },
-  ready: { border: "$green8", bg: "$green2", badgeBg: "$green10", label: "Ready" },
+  pending: { border: "$primary", bg: "$backgroundOrange", badgeBg: "$primary", label: "Pending" },
+  accepted: { border: "$primary", bg: "$backgroundOrange", badgeBg: "$primary", label: "Pending" },
+  preparing: { border: "$info", bg: "$infoMuted", badgeBg: "$info", label: "Preparing" },
+  ready: { border: "$success", bg: "$successMuted", badgeBg: "$success", label: "Ready" },
 };
 
 export function CalloutCard({ order }: CalloutCardProps) {
   const style = STATUS_STYLES[order.status] ?? STATUS_STYLES.pending;
+  const displayNumber =
+    order.callout_number != null && order.callout_number !== 0
+      ? String(order.callout_number).padStart(2, "0")
+      : order.order_number
+        ? order.order_number.slice(-4)
+        : "--";
 
   return (
     <Card
@@ -23,10 +29,11 @@ export function CalloutCard({ order }: CalloutCardProps) {
       borderLeftWidth={4}
       borderLeftColor={style.border}
       borderRadius="$3"
+      bordered
     >
       <YStack gap="$1" alignItems="center">
         <Text fontSize="$10" fontWeight="800" fontFamily="$heading" color="$color" letterSpacing={2}>
-          #{order.callout_number}
+          {`#${displayNumber}`}
         </Text>
         <XStack
           backgroundColor={style.badgeBg}
