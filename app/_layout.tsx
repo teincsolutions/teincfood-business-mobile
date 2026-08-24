@@ -1,12 +1,16 @@
 // @ts-nocheck
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+import { bootstrapCore } from '../src/core/bootstrap';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
 import { localNodeService } from '../src/local-node/service';
 import { syncEngine } from '../src/sync/engine';
 import { syncReferenceDataOnReconnect } from '../src/reference/events';
 import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
+
+// Bootstrap TeincFood core adapters before any offline-first usage. Idempotent.
+bootstrapCore();
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.

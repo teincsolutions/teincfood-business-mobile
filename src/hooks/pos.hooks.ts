@@ -96,7 +96,7 @@ export function useCreatePOSOrderMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: POSOrderCreateRequest) =>
-      posRepository.createOrder(businessId!, data),
+      posRepository.createOrder(businessId!, data as unknown as import("@teincfood/core/dist/types/pos.types").POSOrderCreateRequest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: POS_KEYS.orders(businessId) });
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
