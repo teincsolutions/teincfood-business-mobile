@@ -3778,6 +3778,9 @@
   resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.1.1.tgz#f0241927def7d7c19c737c0078380e12f468e188"
   integrity sha512-pxlDa5j5m43dDSLqercH+aKj92Gjrv0qisfNoBGyg79GBeA/AohiYKOKBa/31geIwxhrErWV5XeP2RpD1prYEA==
 
+"@teincfood/core@file:../teincfood-core":
+  version "0.1.2"
+
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@teincfood/rn-notifications/-/rn-notifications-0.2.0.tgz#f0658d2fe4b7b2013f77f8c8d7e86f55e250ca32"

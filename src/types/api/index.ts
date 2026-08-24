@@ -1,1 +1,1 @@
-export * from "@teincfood/core/dist/types/api";
+export * from "@teincfood/core";

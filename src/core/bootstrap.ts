@@ -169,14 +169,14 @@ function wireServiceAdapters(): void {
 
   // Image cache — wire Business implementation so reference sync caches images.
   try {
+    const patch: Record<string, unknown> = {};
     if ((businessImageCache as unknown as { cacheImageBatch?: unknown }).cacheImageBatch) {
-      (coreImageCache as unknown as Record<string, unknown>).cacheImageBatch =
-        (businessImageCache as unknown as { cacheImageBatch: unknown }).cacheImageBatch;
+      patch.cacheImageBatch = (businessImageCache as unknown as { cacheImageBatch: unknown }).cacheImageBatch;
     }
     if ((businessImageCache as unknown as { pruneImageCache?: unknown }).pruneImageCache) {
-      (coreImageCache as unknown as Record<string, unknown>).pruneImageCache =
-        (businessImageCache as unknown as { pruneImageCache: unknown }).pruneImageCache;
+      patch.pruneImageCache = (businessImageCache as unknown as { pruneImageCache: unknown }).pruneImageCache;
     }
+    if (Object.keys(patch).length) Object.assign(coreImageCache as Record<string, unknown>, patch);
   } catch {
     // optional — stub remains
   }
