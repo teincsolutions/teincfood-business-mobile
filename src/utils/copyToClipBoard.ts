@@ -1,5 +1,1 @@
-import * as Clipboard from "expo-clipboard";
-
-export const copyToClipboard = async (text: string) => {
-  await Clipboard.setStringAsync(text);
-};
+export * from "@teincfood/core/dist/utils/copyToClipBoard";
