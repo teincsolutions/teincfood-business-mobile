@@ -8,11 +8,11 @@
 import { openDatabaseAsync, type SQLiteDatabase } from "expo-sqlite";
 import { MMKV } from "react-native-mmkv";
 import { createTeincCore } from "@teincfood/core";
-import type { SqliteDriver } from "@teincfood/core/dist/adapters/sqlite";
-import type { KVDriver } from "@teincfood/core/dist/adapters/kv";
-import type { HttpClient } from "@teincfood/core/dist/adapters/http";
-import { setConnectivityState } from "@teincfood/core/dist/adapters/connectivity";
-import { setAppInstanceId } from "@teincfood/core/dist/adapters/devices";
+import type { SqliteDriver } from "@teincfood/core";
+import type { KVDriver } from "@teincfood/core";
+import type { HttpClient } from "@teincfood/core";
+import { setConnectivityState } from "@teincfood/core";
+import { setAppInstanceId } from "@teincfood/core";
 
 // Services to wire into core stubs
 import * as posSrv from "@/services/pos.service";
@@ -32,8 +32,8 @@ import {
   menuService as coreMenuService,
   businessService as coreBusinessService,
   rolesService as coreRolesService,
-} from "@teincfood/core/dist/adapters/services";
-import * as coreImageCache from "@teincfood/core/dist/adapters/image-cache";
+} from "@teincfood/core/dist/adapters/services.js";
+import * as coreImageCache from "@teincfood/core/dist/adapters/image-cache.js";
 
 let bootstrapped = false;
 
