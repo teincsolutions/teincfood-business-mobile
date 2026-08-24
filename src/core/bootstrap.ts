@@ -33,7 +33,7 @@ import {
   businessService as coreBusinessService,
   rolesService as coreRolesService,
 } from "@teincfood/core/dist/adapters/services.js";
-import * as coreImageCache from "@teincfood/core/dist/adapters/image-cache.js";
+import { imageCacheService as coreImageCache } from "@teincfood/core/dist/adapters/image-cache.js";
 
 let bootstrapped = false;
 
