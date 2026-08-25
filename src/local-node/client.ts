@@ -16,6 +16,12 @@ import { generateUUID } from "@/utils/uuid";
 import { getAppInstanceId, getDeviceDisplayName } from "@/services/devices.service";
 import type { Command, DomainEvent } from "@/sync/types";
 import type { LocalNodeInfo, LocalNodeMessage } from "./types";
+import type { ReferenceDataKey, ReferenceDataRecord } from "@/reference/types";
+
+/** Result of requesting cached reference data from the Local Node. */
+export interface ReferenceFetchResult {
+  data: Partial<Record<ReferenceDataKey, ReferenceDataRecord | null>>;
+}
 import { computeProof } from "./security";
 
 const SERVER_CERT = require("../../assets/tls/server-cert.pem");
@@ -92,6 +98,10 @@ export class LocalNodeClient {
   private pendingReplies = new Map<
     string,
     { resolve: (events: DomainEvent[]) => void; reject: (error: Error) => void }
+  >();
+  private pendingReferenceReplies = new Map<
+    string,
+    { resolve: (result: ReferenceFetchResult) => void; reject: (error: Error) => void }
   >();
   private eventBuffer: DomainEvent[] = [];
   private eventHandler: ((event: DomainEvent) => void) | null = null;
@@ -173,6 +183,7 @@ export class LocalNodeClient {
         this.socket = null;
         this.authenticated = false;
         this.pendingReplies.clear();
+        this.pendingReferenceReplies.clear();
         settle(() => undefined)();
         this.options.onDisconnected?.();
       });
@@ -186,6 +197,7 @@ export class LocalNodeClient {
     this.socket = null;
     this.authenticated = false;
     this.pendingReplies.clear();
+    this.pendingReferenceReplies.clear();
   }
 
   isConnected(): boolean {
@@ -213,6 +225,36 @@ export class LocalNodeClient {
         if (this.pendingReplies.has(messageId)) {
           this.pendingReplies.delete(messageId);
           reject(new Error("Local Node command timeout"));
+        }
+      }, 10_000);
+    });
+  }
+
+  /**
+   * Request cached reference data from the Local Node. Used by an
+   * internet-less terminal after a `reference_data.changed` event so its
+   * cached menus/tax-rules converge even when the cloud is unreachable.
+   */
+  requestReferenceData(businessId: string, keys: ReferenceDataKey[]): Promise<ReferenceFetchResult> {
+    return new Promise((resolve, reject) => {
+      if (!this.isConnected()) {
+        reject(new Error("Local Node client not authenticated"));
+        return;
+      }
+
+      const messageId = generateUUID();
+      this.pendingReferenceReplies.set(messageId, { resolve, reject });
+
+      this.send({
+        type: "reference_fetch",
+        id: messageId,
+        payload: { businessId, keys },
+      });
+
+      setTimeout(() => {
+        if (this.pendingReferenceReplies.has(messageId)) {
+          this.pendingReferenceReplies.delete(messageId);
+          reject(new Error("Local Node reference fetch timeout"));
         }
       }, 10_000);
     });
@@ -328,6 +370,18 @@ export class LocalNodeClient {
         syncLogger.info("LocalNodeClient", "Command response received", {
           message_id: message.id,
           event_count: (message.payload as DomainEvent[]).length,
+        });
+      }
+      return;
+    }
+
+    if (message.type === "reference_response") {
+      const pending = this.pendingReferenceReplies.get(message.id);
+      if (pending) {
+        this.pendingReferenceReplies.delete(message.id);
+        pending.resolve(message.payload as ReferenceFetchResult);
+        syncLogger.info("LocalNodeClient", "Reference data received from node", {
+          message_id: message.id,
         });
       }
       return;
