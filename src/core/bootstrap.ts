@@ -139,6 +139,10 @@ function wireServiceAdapters(): void {
     Object.assign(coreMenuService as Record<string, unknown>, {
       fetchBusinessMenuItems: menuSrv.fetchBusinessMenuItems,
       fetchBusinessCategories: menuSrv.fetchBusinessCategories,
+      createMenuItem: menuSrv.createBusinessMenuItem,
+      updateMenuItem: menuSrv.updateMenuItem,
+      deleteMenuItem: menuSrv.deleteMenuItem,
+      createCategory: menuSrv.createBusinessCategory,
     });
     Object.assign(coreBusinessService as Record<string, unknown>, {
       fetchBusinessMembers: businessSrv.fetchBusinessMembers,
