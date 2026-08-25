@@ -1235,7 +1235,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 </Text>
               </XStack>
             ))}
-            {previewOrder.isFetching && (
+            {previewOrder.isFetching && isCloudReachable && (
               <XStack justifyContent="center" alignItems="center" gap="$2">
                 <Spinner size="small" color="$colorSecondary" />
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
