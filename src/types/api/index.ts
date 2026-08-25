@@ -1,11 +1,2 @@
-export * from './pagination';
-export * from './auth.api';
-export * from './rider.api';
-export * from './seller.api';
-export * from './fleet.api';
-export * from './kiosk.api';
-export * from './menu.api';
-export * from './business.api';
-export * from './wallet.api';
-export * from './conversation.api';
-export * from './error.api';
+/** API types barrel shim → @teincfood/core. */
+export * from "@teincfood/core";
