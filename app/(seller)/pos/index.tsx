@@ -43,6 +43,8 @@ import { toast } from "sonner-native";
 import { formatPriceFromMinor } from "@/utils/currency";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
+import { useBusinessTaxRulesQuery } from "@/hooks/tax.hooks";
+import { calculatePricing } from "@teincfood/core";
 import {
   useCreatePOSOrderMutation,
   usePOSOrdersQuery,
@@ -773,15 +775,29 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     checkoutForm.order_type,
     checkoutForm.customer_name,
   );
+  const { data: taxRules } = useBusinessTaxRulesQuery(true);
 
-  const localTotal = items.reduce(
-    (sum, item) => sum + item.unit_price_minor * item.quantity,
-    0,
-  );
+  // Server-parity local pricing (offline/no-preview fallback):
+  // mirrors backend calculate_pos_pricing so inclusive taxes stay embedded in
+  // item prices and only exclusive taxes are added to the total.
+  const localPricing = useMemo(() => {
+    if (items.length === 0) return null;
+    try {
+      return calculatePricing({
+        items,
+        taxRules: taxRules?.data ?? [],
+        currency_code: activeBusiness?.currency_code ?? "GHS",
+      });
+    } catch {
+      return null;
+    }
+  }, [items, taxRules, activeBusiness?.currency_code]);
 
   const serverPricing = previewOrder.data?.data;
-  const total = serverPricing?.total_minor ?? localTotal;
-  const taxLines = serverPricing?.tax_lines ?? [];
+  // Prefer the authoritative cloud preview; fall back to the local engine.
+  const total = serverPricing?.total_minor ?? localPricing?.total_minor ?? 0;
+  const taxLines = serverPricing?.tax_lines ?? localPricing?.tax_lines ?? [];
+  const showLocalPricing = !serverPricing && !!localPricing;
 
   const orderTypes: { key: POSOrderType; label: string }[] = [
     { key: "takeout", label: "Takeout" },
@@ -1228,48 +1244,58 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               </XStack>
             )}
             <Separator marginVertical="$2" borderColor="$borderColor" />
-            {serverPricing && (
+            {(serverPricing || showLocalPricing) && (
               <>
                 {taxLines.map((tl) => (
                   <XStack
                     key={tl.id ?? tl.name}
                     justifyContent="space-between"
                     alignItems="center"
+                    gap="$2"
                   >
                     <Text
                       fontSize="$4"
                       fontFamily="$body"
                       color="$colorSecondary"
+                      flexShrink={1}
                     >
-                      {tl.name}
+                      {showLocalPricing && tl.is_inclusive
+                        ? `${tl.name} (included)`
+                        : tl.name}
                     </Text>
                     <Text
                       fontSize="$4"
                       fontFamily="$body"
-                      color="$colorSecondary"
+                      color={tl.is_inclusive ? "$colorMuted" : "$colorSecondary"}
                     >
                       {formatPriceFromMinor(tl.tax_amount_minor ?? 0)}
                     </Text>
                   </XStack>
                 ))}
-                {taxLines.length === 0 && serverPricing.tax_minor > 0 && (
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text
-                      fontSize="$4"
-                      fontFamily="$body"
-                      color="$colorSecondary"
-                    >
-                      Taxes
-                    </Text>
-                    <Text
-                      fontSize="$4"
-                      fontFamily="$body"
-                      color="$colorSecondary"
-                    >
-                      {formatPriceFromMinor(serverPricing.tax_minor)}
-                    </Text>
-                  </XStack>
-                )}
+                {taxLines.length === 0 &&
+                  (serverPricing?.tax_minor ?? localPricing?.tax_minor ?? 0) >
+                    0 && (
+                    <XStack justifyContent="space-between" alignItems="center">
+                      <Text
+                        fontSize="$4"
+                        fontFamily="$body"
+                        color="$colorSecondary"
+                      >
+                        Taxes
+                      </Text>
+                      <Text
+                        fontSize="$4"
+                        fontFamily="$body"
+                        color="$colorSecondary"
+                      >
+                        {formatPriceFromMinor(
+                          serverPricing?.tax_minor ??
+                            localPricing?.tax_minor ??
+                            0,
+                        )}
+                      </Text>
+                    </XStack>
+                  )}
               </>
             )}
             <Separator marginVertical="$2" borderColor="$borderColor" />
@@ -1861,7 +1887,7 @@ function TodayTab() {
     "preparing",
     "ready",
   ];
-  const COMPLETED_STATUSES = ["delivered", "completed", "cancelled"];
+  const COMPLETED_STATUSES = ["delivered", "cancelled"];
 
   const activeOrders = useMemo(
     () => allTodayOrders.filter((o) => ACTIVE_STATUSES.includes(o.status)),
