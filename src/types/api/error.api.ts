@@ -1,9 +1,2 @@
-export interface ApiErrorContent {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-}
-
-export interface ApiErrorResponse {
-  error: ApiErrorContent | string;
-}
+/** API types shim → @teincfood/core (src/types/api/error.api.ts). */
+export * from "@teincfood/core";
