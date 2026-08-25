@@ -14,6 +14,7 @@ import { emitReferenceChanged } from "@/reference/events";
 import { referenceSyncService } from "@/reference/service";
 import { openSyncDatabase } from "@/db/connection";
 import { getReferenceData } from "@/reference/operations";
+import { runOfflineCapableMutation } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
 import type { MenuItemListResponse, MenuCategoryListResponse } from "@/types/api";
@@ -135,7 +136,7 @@ export function useCreateMenuItemMutation() {
   return useMutation({
     mutationFn: async (input: CreateInput) => {
       const imageUrl = await uploadImageForItem(input.imageUrl, businessId);
-      return menuService.createBusinessMenuItem(businessId!, {
+      const payload = {
         name: input.name,
         description: input.description,
         price_minor: input.priceMinor,
@@ -146,6 +147,14 @@ export function useCreateMenuItemMutation() {
         extras: input.extras.map(({ id, ...e }) => e),
         available: input.available,
         ...(imageUrl !== '__UNCHANGED__' ? { image_url: imageUrl } : {}),
+      };
+      // Online: direct REST (same result shape). Offline: route through the
+      // Sync Engine (Local Node → outbox) so the edit is not lost.
+      return runOfflineCapableMutation({
+        run: () => menuService.createBusinessMenuItem(businessId!, payload),
+        commandType: "menu:create_item",
+        businessId: businessId!,
+        payload,
       });
     },
     onSuccess: () => {
@@ -165,7 +174,12 @@ export function useCreateMenuCategoryMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { name: string; description?: string; sort_order?: number }) =>
-      menuService.createBusinessCategory(businessId!, data),
+      runOfflineCapableMutation({
+        run: () => menuService.createBusinessCategory(businessId!, data),
+        commandType: "menu:create_category",
+        businessId: businessId!,
+        payload: data,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
       toast.success("Category created");
@@ -257,7 +271,13 @@ export function useUpdateMenuItemMutation() {
       if (updates.extras !== undefined) {
         payload.extras = updates.extras.map(({ id, ...e }) => e);
       }
-      return menuService.updateMenuItem(id, payload);
+      return runOfflineCapableMutation({
+        run: () => menuService.updateMenuItem(id, payload),
+        commandType: "menu:update_item",
+        businessId: businessId!,
+        entityId: id,
+        payload,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
@@ -275,7 +295,14 @@ export function useDeleteMenuItemMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => menuService.deleteMenuItem(id),
+    mutationFn: (id: string) =>
+      runOfflineCapableMutation({
+        run: () => menuService.deleteMenuItem(id),
+        commandType: "menu:delete_item",
+        businessId: businessId!,
+        entityId: id,
+        payload: { id },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
       toast.success("Menu item deleted");
