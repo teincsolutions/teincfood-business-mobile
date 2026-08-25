@@ -150,7 +150,9 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Only clear auth for actual token/session errors
+    // Only clear auth for actual token/session errors. A 401 WITHOUT a body
+    // (e.g. a proxy/gateway or an HTML error page) must NOT log the user out
+    // mid-shift — the app keeps working offline / over the Local Node.
     const AUTH_INVALIDATING_CODES = [
       "UNAUTHORIZED",
       "TOKEN_INVALID",
@@ -159,7 +161,7 @@ axiosInstance.interceptors.response.use(
     ];
     if (status === 401 && errorCode !== "TOKEN_EXPIRED") {
       const isAuthError =
-        !errorCode || AUTH_INVALIDATING_CODES.includes(errorCode);
+        !!errorCode && AUTH_INVALIDATING_CODES.includes(errorCode);
       if (isAuthError) {
         useAuthStore.getState().clearAuth();
       }
