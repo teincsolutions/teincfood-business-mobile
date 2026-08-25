@@ -17,6 +17,9 @@ import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
 import { setConnectivityState } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
+import { setReferenceLocalNodeFetcher } from "@teincfood/core";
+import { localNodeService } from "@/local-node/service";
+import type { ReferenceLocalNodeFetcher } from "@teincfood/core";
 import {
   posService as corePosService,
   sellerService as coreSellerService,
@@ -193,6 +196,18 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     try {
       const deviceId = getAppInstanceId();
       if (deviceId) setAppInstanceId(deviceId);
+    } catch {}
+    // When this terminal is a LAN client of a Local Node and the cloud is
+    // unreachable, serve cached reference data from the node so menus/tax-rules
+    // stay in sync on a fully dark LAN.
+    try {
+      const fetcher: ReferenceLocalNodeFetcher = async ({ businessId, keys }) => {
+        const client = localNodeService.getClient();
+        if (!client) return {};
+        const result = await client.requestReferenceData(businessId, keys);
+        return result.data;
+      };
+      setReferenceLocalNodeFetcher(fetcher);
     } catch {}
     const result = createTeincCore({
       sqliteDriver,

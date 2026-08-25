@@ -3,6 +3,10 @@
  */
 
 import type { Command, DomainEvent } from "@/sync/types";
+import type {
+  ReferenceDataKey,
+  ReferenceDataRecord,
+} from "@/reference/types";
 
 export type LocalNodeMessageType =
   | "command"
@@ -17,7 +21,9 @@ export type LocalNodeMessageType =
   | "auth_ok"
   | "auth_fail"
   | "register"
-  | "register_ack";
+  | "register_ack"
+  | "reference_fetch"
+  | "reference_response";
 
 export interface LocalNodeMessage {
   type: LocalNodeMessageType;
@@ -105,6 +111,29 @@ export interface LocalNodeRegisterMessage extends LocalNodeMessage {
 export interface LocalNodeRegisterAckMessage extends LocalNodeMessage {
   type: "register_ack";
   payload: Record<string, never>;
+}
+
+/**
+ * Client → node: request cached reference data (menus, tax rules, members,
+ * etc.) so an internet-less terminal can still converge on fresh reference
+ * data after a `reference_data.changed` event. The node serves from its own
+ * durable SQLite cache (local origin) — not the cloud — so this works with no
+ * internet on either side of the LAN.
+ */
+export interface LocalNodeReferenceFetchMessage extends LocalNodeMessage {
+  type: "reference_fetch";
+  payload: {
+    businessId: string;
+    keys: ReferenceDataKey[];
+  };
+}
+
+/** Node → client: cached reference data for the requested keys. */
+export interface LocalNodeReferenceResponseMessage extends LocalNodeMessage {
+  type: "reference_response";
+  payload: {
+    data: Partial<Record<ReferenceDataKey, ReferenceDataRecord | null>>;
+  };
 }
 
 export type LocalNodeConnectionState =

@@ -21,8 +21,11 @@
 import TcpSocket from "react-native-tcp-socket";
 import { syncLogger } from "@/utils/sync-logger";
 import { generateUUID } from "@/utils/uuid";
+import { openSyncDatabase } from "@/db/connection";
+import { getReferenceData } from "@/reference/operations";
 import type { Command, DomainEvent } from "@/sync/types";
 import type { LocalNodeMessage } from "./types";
+import type { ReferenceDataKey, ReferenceDataRecord } from "@/reference/types";
 import { computeProof, generateNonce } from "./security";
 import { patchTLSServerListen } from "./tls-listen-patch";
 
@@ -478,6 +481,48 @@ export class LocalNodeServer {
       });
       this.broadcast(event, socket);
       this.options.onRelayEvent?.(event, socket);
+      return;
+    }
+
+    if (message.type === "reference_fetch") {
+      // Client asks for cached reference data so a no-internet terminal can
+      // converge after a reference_data.changed event. Serve from the node's
+      // durable SQLite cache (NOT the cloud) so this works on a fully dark LAN.
+      if (!meta?.authenticated) {
+        syncLogger.warn("LocalNodeServer", "Rejected reference fetch from unauthenticated socket", {
+          deviceId: meta?.deviceId,
+        });
+        return;
+      }
+
+      const payload = message.payload as {
+        businessId: string;
+        keys?: ReferenceDataKey[];
+      };
+      const keys = payload.keys ?? [];
+      syncLogger.info("LocalNodeServer", "Serving cached reference data", {
+        keys,
+        business_id: payload.businessId,
+        device_id: meta.deviceId,
+      });
+
+      const data: Partial<Record<ReferenceDataKey, ReferenceDataRecord | null>> = {};
+      try {
+        const db = await openSyncDatabase();
+        for (const key of keys) {
+          data[key] = await getReferenceData<never>(db, payload.businessId, key);
+        }
+      } catch (error) {
+        syncLogger.error("LocalNodeServer", "Failed to read reference cache", {
+          error: String(error),
+        });
+      }
+
+      this.send(socket, {
+        type: "reference_response",
+        id: message.id,
+        payload: { data },
+      });
       return;
     }
 
