@@ -1,30 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import * as businessService from '@/services/business.service';
+/**
+ * Re-export from @teincfood/core — single source of truth for capabilities.
+ * Ensures mobile parity with desktop.
+ */
+import { useBusinessCapabilities as useCoreCapabilities } from "@teincfood/core";
 import { useActiveBusiness } from './useActiveBusiness';
-
-const MEMBERSHIP_KEYS = {
-  all: ['my-membership'] as const,
-  byBusiness: (id: string) => [...MEMBERSHIP_KEYS.all, id] as const,
-};
 
 export function useMyBusinessCapabilities() {
   const { activeBusinessId } = useActiveBusiness();
-
-  return useQuery({
-    queryKey: MEMBERSHIP_KEYS.byBusiness(activeBusinessId ?? ''),
-    queryFn: () => businessService.fetchMyBusinessMembership(activeBusinessId!),
-    enabled: !!activeBusinessId,
-    staleTime: Infinity,
-    select: (data) => ({
-      role: data.data.role,
-      source: data.data.source,
-      capabilities: data.data.capabilities,
-      status: data.data.status,
-    }),
-  });
+  return useCoreCapabilities(activeBusinessId ?? null);
 }
 
 export function useHasCapability(capability: string) {
   const { data: membership } = useMyBusinessCapabilities();
   return membership?.capabilities.includes(capability) ?? false;
 }
+
+export { useBusinessCapabilities } from "@teincfood/core";

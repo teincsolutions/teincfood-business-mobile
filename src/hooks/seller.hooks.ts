@@ -1,14 +1,28 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import type { SellerOrder as ApiSellerOrder } from '@/types/api/seller.api';
+import type { SellerOrder as ApiSellerOrder } from "@teincfood/core";
 import type { BusinessOrdersParams, BusinessDeliveriesParams } from '@/services/seller.service';
 import * as sellerService from '@/services/seller.service';
-import { orderRepository } from '@/repositories/order.repository';
+import { orderRepository } from "@teincfood/core";
 import { useBusinessStore } from '@/stores/business.store';
 import { usePendingOrders } from './pending-orders.hooks';
-import { orderSnapshotsService } from '@/sync/order-snapshots.service';
+import { orderSnapshotsService } from "@teincfood/core";
 import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage } from "@teincfood/core";
+import { useConnectivityStore } from '@/stores/connectivity.store';
+
+function isQueuedTransition(result: unknown): boolean {
+  const r = result as { status?: string; command_id?: string; id?: string } | undefined;
+  return r?.status === "pending" && typeof r?.command_id === "string" && !r?.id;
+}
+
+const sellerPreSnap = new Map<string, { isOnline: boolean; isCloudReachable: string; navOnline: boolean | null; at: string }>();
+function captureSellerPre(orderId: string) {
+  const s = useConnectivityStore.getState();
+  const snap = { isOnline: s.isOnline, isCloudReachable: s.isCloudReachable, navOnline: typeof navigator !== "undefined" ? navigator.onLine : null, at: new Date().toISOString() };
+  sellerPreSnap.set(orderId, snap);
+  return snap;
+}
 
 export const SELLER_KEYS = {
   all: ['seller'] as const,
@@ -37,6 +51,25 @@ function mergePendingOrders(
   return merged.sort((a, b) => b.inserted_at.localeCompare(a.inserted_at));
 }
 
+function filterSellerOrdersOffline(orders: ApiSellerOrder[], filters?: { status?: string; q?: string }): ApiSellerOrder[] {
+  let filtered = orders;
+  if (filters?.status) {
+    const set = new Set(filters.status.split(",").map((s) => s.trim()));
+    filtered = filtered.filter((o) => set.has(o.status));
+  }
+  if (filters?.q) {
+    const q = filters.q.toLowerCase();
+    filtered = filtered.filter((o) => o.order_number.toLowerCase().includes(q) || (o.customer_name ?? "").toLowerCase().includes(q));
+  }
+  return filtered;
+}
+function paginateSellerOffline(orders: ApiSellerOrder[], page: number, pageSize = 20) {
+  const start = (page - 1) * pageSize;
+  const slice = orders.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(orders.length / pageSize));
+  return { data: slice, pagination: { page, page_size: pageSize, total_pages: totalPages, total_count: orders.length } } as unknown as { data: ApiSellerOrder[]; pagination: { page: number; total_pages: number } };
+}
+
 export function useSellerOrdersQuery(
   enabled = true,
   filters?: { status?: string; q?: string },
@@ -50,15 +83,24 @@ export function useSellerOrdersQuery(
       const params: BusinessOrdersParams = { page: pageParam, page_size: 20 };
       if (filters?.status) params.status = filters.status;
       if (filters?.q) params.q = filters.q;
-      const result = await sellerService.fetchBusinessOrders(activeBusinessId!, params);
-      // Write through to the durable offline read model so the exact list seen
-      // online is available offline after a restart.
-      if (pageParam === 1 && activeBusinessId && Array.isArray(result?.data)) {
-        orderSnapshotsService
-          .persistSellerOrders(activeBusinessId, activeBusinessId, result.data)
-          .catch(() => {});
+      try {
+        const result = await sellerService.fetchBusinessOrders(activeBusinessId!, params);
+        // Write through to the durable offline read model so the exact list seen
+        // online is available offline after a restart.
+        if (pageParam === 1 && activeBusinessId && Array.isArray(result?.data)) {
+          orderSnapshotsService
+            .persistSellerOrders(activeBusinessId, activeBusinessId, result.data)
+            .catch(() => {});
+        }
+        return result;
+      } catch (e) {
+        const offline = activeBusinessId ? await orderSnapshotsService.getSellerList(activeBusinessId, activeBusinessId) : null;
+        if (offline) {
+          const filtered = filterSellerOrdersOffline(offline, filters);
+          return paginateSellerOffline(filtered, pageParam as number);
+        }
+        throw e;
       }
-      return result;
     },
     getNextPageParam: (lastPage) => {
       const { page, total_pages } = lastPage.pagination ?? {};
@@ -124,6 +166,8 @@ export function useUpdateOrderStatusMutation() {
 
   return useMutation({
     mutationFn: async ({ orderId, status, businessId }: { orderId: string; status: string; businessId: string }) => {
+      captureSellerPre(orderId);
+      console.debug('[seller] updateOrderStatus → sync engine', { orderId, status, businessId, isCloudReachable: useConnectivityStore.getState().isCloudReachable });
       switch (status) {
         case 'preparing':
           return orderRepository.startPreparingOrder({ orderId, businessId });
@@ -151,10 +195,20 @@ export function useUpdateOrderStatusMutation() {
       return { previous };
     },
 
+    onSuccess: (data, { orderId }, context) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] updateOrderStatus QUEUED offline — will sync when online', { orderId, pre: sellerPreSnap.get(orderId), now: useConnectivityStore.getState(), hint: "See [SyncEngine]/[http]/[api] lines below" });
+        if (context?.previous) queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
+    },
+
     onError: (error, { orderId }, context) => {
       if (context?.previous) {
         queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
       }
+      console.error('[seller] updateOrderStatus failed', { orderId, error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -171,6 +225,8 @@ export function useStartPreparingOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] startPreparing → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.startPreparingOrder({ orderId, businessId: activeBusinessId });
     },
 
@@ -185,7 +241,13 @@ export function useStartPreparingOrderMutation() {
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, orderId, context) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] startPreparing QUEUED offline — will sync when online', { orderId });
+        if (context?.previous) queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Started preparing order");
     },
 
@@ -193,6 +255,7 @@ export function useStartPreparingOrderMutation() {
       if (context?.previous) {
         queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
       }
+      console.error('[seller] startPreparing failed', { orderId, error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -209,6 +272,8 @@ export function useMarkOrderReadyMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] markReady → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.markOrderReady({ orderId, businessId: activeBusinessId });
     },
 
@@ -223,7 +288,13 @@ export function useMarkOrderReadyMutation() {
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, orderId, context) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] markReady QUEUED offline — will sync when online', { orderId });
+        if (context?.previous) queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Order marked as ready");
     },
 
@@ -231,6 +302,7 @@ export function useMarkOrderReadyMutation() {
       if (context?.previous) {
         queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
       }
+      console.error('[seller] markReady failed', { orderId, error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -247,6 +319,8 @@ export function useCompletePickupMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] completePickup → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.completePickup({ orderId, businessId: activeBusinessId });
     },
 
@@ -261,7 +335,13 @@ export function useCompletePickupMutation() {
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, orderId, context) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] completePickup QUEUED offline — will sync when online', { orderId });
+        if (context?.previous) queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Order handed to customer");
     },
 
@@ -269,6 +349,7 @@ export function useCompletePickupMutation() {
       if (context?.previous) {
         queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
       }
+      console.error('[seller] completePickup failed', { orderId, error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -285,6 +366,8 @@ export function useAcceptOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] accept → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.acceptOrder({ orderId, businessId: activeBusinessId });
     },
 
@@ -299,7 +382,13 @@ export function useAcceptOrderMutation() {
       return { previous };
     },
 
-    onSuccess: () => {
+    onSuccess: (data, orderId, context) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] accept QUEUED offline — will sync when online', { orderId });
+        if (context?.previous) queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Order accepted");
     },
 
@@ -307,6 +396,7 @@ export function useAcceptOrderMutation() {
       if (context?.previous) {
         queryClient.setQueryData(SELLER_KEYS.order(orderId), context.previous);
       }
+      console.error('[seller] accept failed', { orderId, error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -323,14 +413,22 @@ export function useRejectOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] reject → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.rejectOrder({ orderId, businessId: activeBusinessId });
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] reject QUEUED offline — will sync when online');
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Order rejected");
     },
 
     onError: (error) => {
+      console.error('[seller] reject failed', { error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -347,14 +445,22 @@ export function useConfirmHandoverMutation() {
   return useMutation({
     mutationFn: (deliveryId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(deliveryId);
+      console.debug('[seller] confirmHandover → sync engine', { deliveryId, businessId: activeBusinessId });
       return orderRepository.confirmHandover({ deliveryId, businessId: activeBusinessId });
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] confirmHandover QUEUED offline — will sync when online');
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Handover confirmed! Waiting for rider pickup confirmation.");
     },
 
     onError: (error) => {
+      console.error('[seller] confirmHandover failed', { error });
       toast.error(extractApiErrorMessage(error));
     },
 
@@ -370,13 +476,21 @@ export function useCancelOrderMutation() {
   return useMutation({
     mutationFn: (orderId: string) => {
       if (!activeBusinessId) throw new Error('No active business');
+      captureSellerPre(orderId);
+      console.debug('[seller] cancel → sync engine', { orderId, businessId: activeBusinessId });
       return orderRepository.cancelOrder({ orderId, businessId: activeBusinessId });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (isQueuedTransition(data)) {
+        console.warn('[seller] cancel QUEUED offline — will sync when online');
+        toast.warning('Queued offline — will sync when online');
+        return;
+      }
       toast.success("Order cancelled");
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
     },
     onError: (error) => {
+      console.error('[seller] cancel failed', { error });
       toast.error(extractApiErrorMessage(error));
     },
   });
