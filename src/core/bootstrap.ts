@@ -149,6 +149,7 @@ function wireServiceAdapters(): void {
       fetchBusinessTaxRules: businessSrv.fetchBusinessTaxRules,
       fetchBusinessById: businessSrv.fetchBusinessById,
       fetchOperatingHours: businessSrv.fetchOperatingHours,
+      fetchMyBusinessMembership: businessSrv.fetchMyBusinessMembership,
     });
     Object.assign(coreRolesService as Record<string, unknown>, {
       fetchBusinessRoles: rolesSrv.fetchBusinessRoles,

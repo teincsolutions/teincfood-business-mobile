@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { posRepository } from '@/repositories/pos.repository';
+import { posRepository } from "@teincfood/core";
 import { useBusinessStore } from '@/stores/business.store';
 import { usePendingOrders } from './pending-orders.hooks';
-import { orderSnapshotsService } from '@/sync/order-snapshots.service';
+import { orderSnapshotsService } from "@teincfood/core";
 import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage, isLocalOrderNumber } from "@teincfood/core";
+import { useConnectivityStore } from '@/stores/connectivity.store';
 import { SELLER_KEYS } from './seller.hooks';
-import type { POSOrderCreateRequest, POSOrderPreviewResponse } from '@/types/pos.types';
-import type { POSCartItem, POSOrderType, POSOrderItemRequest } from '@/types/pos.types';
-import type { SellerOrder } from '@/types/api/seller.api';
+import type { POSOrderCreateRequest, POSOrderPreviewResponse } from "@teincfood/core";
+import type { POSCartItem, POSOrderType, POSOrderItemRequest } from "@teincfood/core";
+import type { SellerOrder } from "@teincfood/core";
 
 export const POS_KEYS = {
   all: ['pos'] as const,
@@ -42,6 +43,27 @@ function mergePendingOrders(
   return merged.sort((a, b) => b.inserted_at.localeCompare(a.inserted_at));
 }
 
+function filterOrdersOffline(orders: SellerOrder[], filters?: { status?: string; order_type?: string; is_pos?: string; q?: string; search?: string }): SellerOrder[] {
+  let filtered = orders;
+  const statusSet = filters?.status ? new Set(filters.status.split(",").map((s) => s.trim())) : null;
+  if (statusSet) filtered = filtered.filter((o) => statusSet.has(o.status));
+  if (filters?.order_type) filtered = filtered.filter((o) => (o.order_type ?? "pos") === filters.order_type);
+  if (filters?.is_pos !== undefined) {
+    const wantPos = filters.is_pos === "true" || filters.is_pos === "1";
+    filtered = filtered.filter((o) => !!o.is_pos === wantPos);
+  }
+  const q = (filters?.q ?? filters?.search ?? "").toLowerCase();
+  if (q) filtered = filtered.filter((o) => o.order_number.toLowerCase().includes(q) || (o.customer_name ?? "").toLowerCase().includes(q));
+  return filtered;
+}
+
+function paginateOffline(orders: SellerOrder[], page: number, pageSize = 20) {
+  const start = (page - 1) * pageSize;
+  const slice = orders.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(orders.length / pageSize));
+  return { data: slice, pagination: { page, page_size: pageSize, total_pages: totalPages, total_count: orders.length } };
+}
+
 export function usePOSOrdersQuery(
   filters?: {
     status?: string;
@@ -56,14 +78,15 @@ export function usePOSOrdersQuery(
   const pendingOrders = usePendingOrders(businessId);
   const query = useInfiniteQuery({
     queryKey: [...POS_KEYS.orders(businessId), filters],
-    queryFn: ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 1 }) => {
       const params: Record<string, string> = { page: String(pageParam) };
       if (filters?.status) params.status = filters.status;
       if (filters?.order_type) params.order_type = filters.order_type;
       if (filters?.is_pos) params.is_pos = filters.is_pos;
       if (filters?.date_from) params.date_from = filters.date_from;
       if (filters?.date_to) params.date_to = filters.date_to;
-      return posRepository.fetchOrders(businessId!, params).then((result) => {
+      try {
+        const result = await posRepository.fetchOrders(businessId!, params);
         // Write through to the durable offline read model.
         if (pageParam === 1 && businessId && Array.isArray(result?.data)) {
           orderSnapshotsService
@@ -71,7 +94,16 @@ export function usePOSOrdersQuery(
             .catch(() => {});
         }
         return result;
-      });
+      } catch (e) {
+        // Offline fallback: serve filtered snapshot from SQLite.
+        const offline = businessId ? await orderSnapshotsService.getSellerList(businessId, businessId) : null;
+        if (offline) {
+          const filtered = filterOrdersOffline(offline, filters as unknown as { status?: string; order_type?: string; is_pos?: string });
+          // also respect date_from/to if present
+          return paginateOffline(filtered, pageParam as number);
+        }
+        throw e;
+      }
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -95,15 +127,45 @@ export function useCreatePOSOrderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: POSOrderCreateRequest) =>
-      posRepository.createOrder(businessId!, data),
-    onSuccess: () => {
+    mutationFn: (data: POSOrderCreateRequest) => {
+      const cloudState = useConnectivityStore.getState().isCloudReachable;
+      const isOnline = useConnectivityStore.getState().isOnline;
+      console.debug('[POS] createOrder → sync engine', {
+        businessId,
+        isOnline,
+        isCloudReachable: cloudState,
+        order_type: data.order_type,
+        items: data.items?.length,
+        payload: data,
+      });
+      if (!businessId) {
+        console.error('[POS] createOrder missing businessId — activeBusiness is null');
+      }
+      return posRepository.createOrder(businessId!, data);
+    },
+    onSuccess: (result: unknown) => {
+      const r = result as { order_number?: string; id?: string; status?: string } | undefined;
+      const orderNumber = r?.order_number ?? '';
+      const queued = orderNumber ? isLocalOrderNumber(orderNumber) && r?.status === 'pending' : false;
+      // The core returns the optimistic payload directly when queued; real orders
+      // come back with backend-assigned id/status and are not flagged as local pending.
+      console.debug('[POS] createOrder onSuccess', { businessId, orderNumber, status: r?.status, queued, result });
       queryClient.invalidateQueries({ queryKey: POS_KEYS.orders(businessId) });
       queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
-      toast.success('Order created successfully');
+      if (queued) {
+        console.warn('[POS] order was QUEUED offline (isCloudReachable=unreachable or timeout) — will sync when online', { businessId, orderNumber, cloudState: useConnectivityStore.getState().isCloudReachable });
+        toast.warning(`Order ${orderNumber} queued offline — will sync when online`);
+      } else {
+        toast.success(orderNumber ? `Order ${orderNumber} created` : 'Order created successfully');
+      }
     },
     onError: (error) => {
-      console.debug('[POS] Create order error:', error);
+      console.error('[POS] Create order failed', {
+        businessId,
+        isOnline: useConnectivityStore.getState().isOnline,
+        isCloudReachable: useConnectivityStore.getState().isCloudReachable,
+        error,
+      });
       toast.error(extractApiErrorMessage(error));
     },
   });
@@ -133,7 +195,7 @@ export function usePOSOrderPreviewQuery(
 
   return useQuery({
     queryKey: [...POS_KEYS.all, 'preview', businessId, hash, orderType, customerName],
-    queryFn: () => {
+    queryFn: async () => {
       const orderItems: POSOrderItemRequest[] = items.map((i) => ({
         menu_item_id: i.menu_item.id,
         quantity: i.quantity,
@@ -143,12 +205,45 @@ export function usePOSOrderPreviewQuery(
             ? i.selected_addons.map((a) => a.addon_id)
             : undefined,
       }));
-      return posRepository.fetchPreview({
-        businessId: businessId!,
-        items: orderItems,
-        orderType,
-        customerName: customerName || undefined,
-      });
+      try {
+        return await posRepository.fetchPreview({
+          businessId: businessId!,
+          items: orderItems,
+          orderType,
+          customerName: customerName || undefined,
+        });
+      } catch (e) {
+        // Offline fallback: local pricing via tax-rules + cart unit_price_minor.
+        const state = useConnectivityStore.getState();
+        const isOffline = !state.isOnline || state.isCloudReachable === "unreachable";
+        if (!isOffline) throw e;
+        try {
+          const { openSyncDatabase, getReferenceData, calculatePricing } = await import("@teincfood/core");
+          const db = await openSyncDatabase();
+          const taxRec = await getReferenceData<{ data: unknown[] }>(db, businessId!, "tax-rules");
+          const taxRules = (taxRec?.payload as { data?: unknown[] })?.data as unknown[] ?? [];
+          // Convert POSCartItem to PricingInput shape (unit_price_minor already includes variant/addons)
+          const pricing = calculatePricing({
+            items: items as unknown as Parameters<typeof calculatePricing>[0]["items"],
+            taxRules: taxRules as unknown as Parameters<typeof calculatePricing>[0]["taxRules"],
+          });
+          // Match POSOrderPreviewResponse shape minimally for UI.
+          return {
+            data: {
+              subtotal_minor: pricing.subtotal_minor,
+              discount_minor: pricing.discount_minor,
+              delivery_fee_minor: pricing.delivery_fee_minor,
+              tax_minor: pricing.tax_minor,
+              tip_minor: pricing.tip_minor,
+              total_minor: pricing.total_minor,
+              tax_lines: pricing.tax_lines,
+              currency: pricing.currency_code,
+            },
+          } as unknown as POSOrderPreviewResponse;
+        } catch {
+          throw e;
+        }
+      }
     },
     enabled: !!businessId && items.length > 0,
     staleTime: 1000 * 30,
