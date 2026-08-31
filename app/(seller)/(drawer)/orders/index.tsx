@@ -38,6 +38,7 @@ import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@/types/api";
 import { formatPriceFromMinor } from "@/utils/currency";
+import { getCustomerDisplay } from "@teincfood/core";
 
 const FILTER_CHIPS = [
   { key: "pending", label: "Pending", color: "$warning" },
@@ -252,7 +253,7 @@ export default function SellerOrders() {
           </YStack>
         </XStack>
         <XStack justifyContent="space-between">
-          <Text fontSize="$4">{item.customer_name || item.user?.full_name || "Customer"}</Text>
+          <Text fontSize="$4">{getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]).name}</Text>
           <Text fontSize="$5" fontWeight="bold" color="$primary">
             {formatPriceFromMinor(item.total_minor, item.currency)}
           </Text>
@@ -310,18 +311,28 @@ export default function SellerOrders() {
       >
         {item.order_number}
       </Text>
-      <YStack width={colWidths.customer}>
-        <Tooltip label={item.customer_name || item.user?.full_name || "—"}>
-          <Tooltip.Trigger>
-            <Text fontSize="$4" numberOfLines={1} ellipsis>
-              {item.customer_name || item.user?.full_name || "—"}
+      {(() => {
+        const c = getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]);
+        return (
+          <YStack width={colWidths.customer}>
+            <Tooltip label={c.name}>
+              <Tooltip.Trigger>
+                <Text fontSize="$4" numberOfLines={1} ellipsis>
+                  {c.name}
+                </Text>
+              </Tooltip.Trigger>
+            </Tooltip>
+            <Text fontSize="$3" color="$colorMuted">
+              {c.phone || ""}
             </Text>
-          </Tooltip.Trigger>
-        </Tooltip>
-        <Text fontSize="$3" color="$colorMuted">
-          {item.customer_phone || item.user?.phone || ""}
-        </Text>
-      </YStack>
+            {c.isWalkIn && c.tellerName ? (
+              <Text fontSize="$2" color="$colorMuted">
+                Teller: {c.tellerName}
+              </Text>
+            ) : null}
+          </YStack>
+        );
+      })()}
       <YStack
         px="$3"
         py="$1.5"
