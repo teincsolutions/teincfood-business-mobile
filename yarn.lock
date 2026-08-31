@@ -3648,8 +3648,8 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@^0.1.5":
-  version "0.1.5"
+"@teincfood/core@^0.1.6":
+  version "0.1.6"
 
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"
