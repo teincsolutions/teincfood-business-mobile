@@ -18,6 +18,7 @@ import type { HttpClient } from "@teincfood/core";
 import { setConnectivityState } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
+import { useBusinessStore } from "@/stores/business.store";
 import { localNodeService } from "@/local-node/service";
 import type { ReferenceLocalNodeFetcher } from "@teincfood/core";
 import {
@@ -231,18 +232,14 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
         if (!bid) return;
         import("@teincfood/core").then((m) => (m as any).ensureDeviceLease?.(bid).catch(() => {})).catch(() => {});
       };
+      const currentId: string | null = useBusinessStore.getState().activeBusiness?.id ?? null;
+      if (currentId) ensureLeaseForBusiness(currentId);
       try {
-        const { useBusinessStore } = require("@/stores/business.store");
-        const currentId: string | null = useBusinessStore.getState().activeBusiness?.id ?? null;
-        if (currentId) ensureLeaseForBusiness(currentId);
-        // subscribe to activeBusiness changes (covers setActiveBusiness + setBusinesses auto-select)
-        try {
-          useBusinessStore.subscribe((s: any, prev: any) => {
-            const id: string | undefined = s?.activeBusiness?.id;
-            const prevId: string | undefined = prev?.activeBusiness?.id;
-            if (id && id !== prevId) ensureLeaseForBusiness(id);
-          });
-        } catch {}
+        useBusinessStore.subscribe((s: any, prev: any) => {
+          const id: string | undefined = s?.activeBusiness?.id;
+          const prevId: string | undefined = prev?.activeBusiness?.id;
+          if (id && id !== prevId) ensureLeaseForBusiness(id);
+        });
       } catch {}
     } catch {}
     bootstrapped = true;
