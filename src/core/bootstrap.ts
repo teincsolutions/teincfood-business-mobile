@@ -126,6 +126,9 @@ function wireServiceAdapters(): void {
       fetchBusinessOrders: posSrv.fetchBusinessOrders,
     });
     Object.assign(coreSellerService as Record<string, unknown>, {
+      fetchBusinessOrders: (sellerSrv as unknown as { fetchBusinessOrders?: unknown }).fetchBusinessOrders ?? sellerSrv.fetchBusinessOrders,
+      fetchSellerOrder: (sellerSrv as unknown as { fetchSellerOrder?: unknown }).fetchSellerOrder,
+      fetchBusinessDeliveries: (sellerSrv as unknown as { fetchBusinessDeliveries?: unknown }).fetchBusinessDeliveries,
       acceptOrder: sellerSrv.acceptOrder,
       rejectOrder: sellerSrv.rejectOrder,
       startPreparingOrder: sellerSrv.startPreparingOrder,
@@ -183,6 +186,23 @@ function syncConnectivityBridge(): void {
   } catch {}
 }
 
+function syncBusinessBridge(): void {
+  try {
+    const { setActiveBusiness } = require("@teincfood/core") as { setActiveBusiness: (b: { id: string } | null) => void };
+    const sync = () => {
+      const b = useBusinessStore.getState().activeBusiness;
+      setActiveBusiness(b ? { id: b.id } : null);
+    };
+    sync();
+    const subscribe = (useBusinessStore as unknown as { subscribe: (fn: (s: { activeBusiness: { id: string } | null }, prev: { activeBusiness: { id: string } | null }) => void) => () => void }).subscribe;
+    if (typeof subscribe === "function") {
+      subscribe((s, prev) => {
+        if (s?.activeBusiness?.id !== prev?.activeBusiness?.id) sync();
+      });
+    }
+  } catch {}
+}
+
 export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
   if (bootstrapped) return null;
   try {
@@ -225,6 +245,9 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     });
     try {
       syncConnectivityBridge();
+    } catch {}
+    try {
+      syncBusinessBridge();
     } catch {}
     // 0.7.0: auto-lease device number per business (DD 01-99) for offline DD-RRR-CCC
     try {
