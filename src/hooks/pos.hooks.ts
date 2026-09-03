@@ -127,7 +127,7 @@ export function useCreatePOSOrderMutation() {
   const businessId = useBusinessId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: POSOrderCreateRequest) => {
+    mutationFn: async (data: POSOrderCreateRequest) => {
       const cloudState = useConnectivityStore.getState().isCloudReachable;
       const isOnline = useConnectivityStore.getState().isOnline;
       console.debug('[POS] createOrder → sync engine', {
@@ -139,9 +139,23 @@ export function useCreatePOSOrderMutation() {
         payload: data,
       });
       if (!businessId) {
-        console.error('[POS] createOrder missing businessId — activeBusiness is null');
+        throw new Error('Missing business — select a business before creating orders');
       }
-      return posRepository.createOrder(businessId!, data);
+      // 0.7.0: ensure device lease before offline queuing (DD-RRR-CCC requires lease)
+      try {
+        const core = await import("@teincfood/core");
+        const dn = (core as any).getDeviceNumber?.(businessId) ?? null;
+        if (!dn) {
+          const leased = await (core as any).ensureDeviceLease?.(businessId);
+          if (!leased && (!isOnline || cloudState === "unreachable")) {
+            throw new Error('No device number leased (99 devices max) — cannot create offline orders');
+          }
+        }
+      } catch (e) {
+        // rethrow device lease errors, otherwise ignore
+        if ((e as Error)?.message?.includes('device number') || (e as Error)?.message?.includes('No device lease')) throw e;
+      }
+      return posRepository.createOrder(businessId, data);
     },
     onSuccess: (result: unknown) => {
       const r = result as { order_number?: string; id?: string; status?: string } | undefined;
