@@ -3773,10 +3773,10 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@^0.7.7":
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.7.7.tgz#644b2366f55da18060ed3df4ab15fd81f51e56c2"
-  integrity sha512-KHwau7xrrWhCtUoXmdzqHtWLjGlQqVkAA1PUmPhRM+e5uIUjK0/R/XPzFQD0ErA+S7+TQCrsrWin9zR7PVGHxw==
+"@teincfood/core@^0.7.8":
+  version "0.7.8"
+  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.7.8.tgz#0723a5d8af08977eb2e8e2c6210dd7aeef806f9d"
+  integrity sha512-vrP402kJ0Qvb89xcTvoADw9A6RMlSqVJ4FWAh7P9ghwlrP/96B0UNMzTsdIaX4tjahLLLA0Lxk6ACXQFG64L+Q==
 
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"
