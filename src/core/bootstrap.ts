@@ -225,6 +225,26 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     try {
       syncConnectivityBridge();
     } catch {}
+    // 0.7.0: auto-lease device number per business (DD 01-99) for offline DD-RRR-CCC
+    try {
+      const ensureLeaseForBusiness = (bid: string | null | undefined) => {
+        if (!bid) return;
+        import("@teincfood/core").then((m) => (m as any).ensureDeviceLease?.(bid).catch(() => {})).catch(() => {});
+      };
+      try {
+        const { useBusinessStore } = require("@/stores/business.store");
+        const currentId: string | null = useBusinessStore.getState().activeBusiness?.id ?? null;
+        if (currentId) ensureLeaseForBusiness(currentId);
+        // subscribe to activeBusiness changes (covers setActiveBusiness + setBusinesses auto-select)
+        try {
+          useBusinessStore.subscribe((s: any, prev: any) => {
+            const id: string | undefined = s?.activeBusiness?.id;
+            const prevId: string | undefined = prev?.activeBusiness?.id;
+            if (id && id !== prevId) ensureLeaseForBusiness(id);
+          });
+        } catch {}
+      } catch {}
+    } catch {}
     bootstrapped = true;
     console.debug("[bootstrapCore] core created (live injection)", {
       apiBaseUrl: API_BASE_URL,
