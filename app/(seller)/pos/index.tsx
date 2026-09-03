@@ -58,6 +58,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
+import { useCachedImageUrl } from "@/hooks/useCachedImage";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
@@ -277,8 +278,12 @@ function NewOrderTab() {
         />
       ) : (
         <YStack flex={1}>
-          <MenuBrowser />
-          {items.length > 0 && <CartBar onCheckout={() => setView("cart")} />}
+          <YStack flex={1}>
+            <MenuBrowser />
+          </YStack>
+          {items.length > 0 && (
+            <CartBar onCheckout={() => setView("cart")} />
+          )}
         </YStack>
       )}
     </YStack>
@@ -289,7 +294,7 @@ function NewOrderTab() {
 
 function MenuBrowser() {
   const { isTablet } = useResponsive();
-  const foodColumns = isTablet ? 3 : 2;
+  const foodColumns = isTablet ? 3 : 1;
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -395,13 +400,18 @@ function MenuBrowser() {
           data={itemsList}
           keyExtractor={(item) => item.id}
           numColumns={foodColumns}
+          style={{ flex: 1 }}
+          columnWrapperStyle={foodColumns > 1 ? { gap: 16 } : undefined}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingVertical: 20,
             paddingBottom: 40,
-            gap: 16,
           }}
-          renderItem={({ item }) => <FoodCard item={item} />}
+          renderItem={({ item }) => (
+            <YStack flex={1}>
+              <FoodCard item={item} />
+            </YStack>
+          )}
           initialNumToRender={10}
           windowSize={5}
         />
@@ -476,6 +486,151 @@ function CartBar({ onCheckout }: { onCheckout: () => void }) {
   );
 }
 
+// ── Cart Item Row ─────────────────────────────────────────────────────────
+
+function CartItemRow({
+  item,
+  onRemove,
+  onUpdateQuantity,
+}: {
+  item: POSCartItem;
+  onRemove: (id: string) => void;
+  onUpdateQuantity: (id: string, qty: number) => void;
+}) {
+  const imageUrl = useCachedImageUrl(item.menu_item.image_url);
+
+  return (
+    <Card
+      flexDirection="row"
+      padding="$3"
+      backgroundColor="$backgroundStrong"
+      borderRadius="$4"
+      alignItems="center"
+    >
+      <YStack
+        width={72}
+        height={72}
+        borderRadius="$4"
+        backgroundColor="$backgroundSoft"
+        alignItems="center"
+        justifyContent="center"
+        overflow="hidden"
+      >
+        {imageUrl ? (
+          <Image
+            source={{ uri: imageUrl }}
+            width="100%"
+            height="100%"
+          />
+        ) : (
+          <Utensils size={20} color="$colorSecondary" />
+        )}
+      </YStack>
+
+      <YStack
+        flex={1}
+        marginLeft="$3"
+        justifyContent="space-between"
+        minHeight={72}
+      >
+        <YStack gap="$1">
+          <Text
+            fontSize="$4"
+            fontWeight="700"
+            fontFamily="$heading"
+            color="$color"
+            numberOfLines={1}
+          >
+            {item.menu_item.name}
+          </Text>
+          {item.selected_variant && (
+            <Text
+              fontSize="$3"
+              color="$colorSecondary"
+              fontFamily="$body"
+              numberOfLines={1}
+            >
+              {item.selected_variant.name}
+            </Text>
+          )}
+          {item.selected_addons.length > 0 && (
+            <Text
+              fontSize="$2"
+              color="$colorSecondary"
+              fontFamily="$body"
+              numberOfLines={1}
+            >
+              + {item.selected_addons.map((a) => a.name).join(", ")}
+            </Text>
+          )}
+        </YStack>
+
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          marginTop="$2"
+        >
+          <XStack
+            backgroundColor="$backgroundSoft"
+            borderRadius="$full"
+            alignItems="center"
+          >
+            <Button
+              chromeless
+              circular
+              width={32}
+              height={32}
+              padding={0}
+              pressStyle={{ opacity: 0.7 }}
+              onPress={() =>
+                item.quantity <= 1
+                  ? onRemove(item.id)
+                  : onUpdateQuantity(item.id, item.quantity - 1)
+              }
+            >
+              {item.quantity <= 1 ? (
+                <Trash2 size={14} color="$error" />
+              ) : (
+                <Minus size={14} color="$color" />
+              )}
+            </Button>
+            <Text
+              fontSize="$4"
+              fontWeight="700"
+              fontFamily="$body"
+              minWidth={24}
+              textAlign="center"
+            >
+              {item.quantity}
+            </Text>
+            <Button
+              chromeless
+              circular
+              width={32}
+              height={32}
+              padding={0}
+              pressStyle={{ opacity: 0.7 }}
+              onPress={() => onUpdateQuantity(item.id, item.quantity + 1)}
+            >
+              <Plus size={14} color="$color" />
+            </Button>
+          </XStack>
+          <Text
+            fontSize="$5"
+            fontWeight="800"
+            fontFamily="$body"
+            color="$primary"
+          >
+            {formatPriceFromMinor(
+              item.unit_price_minor * item.quantity,
+            )}
+          </Text>
+        </XStack>
+      </YStack>
+    </Card>
+  );
+}
+
 // ── Cart Panel ──────────────────────────────────────────────────────────────
 
 function CartPanel({
@@ -489,6 +644,7 @@ function CartPanel({
   const removeItem = usePOSStore((s) => s.removeItem);
   const updateQuantity = usePOSStore((s) => s.updateQuantity);
   const clearCart = usePOSStore((s) => s.clearCart);
+  const insets = useSafeAreaInsets();
 
   const total = items.reduce(
     (sum, item) => sum + item.unit_price_minor * item.quantity,
@@ -545,135 +701,12 @@ function CartPanel({
       <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
         <YStack padding="$5" gap="$3">
           {items.map((item) => (
-            <Card
+            <CartItemRow
               key={item.id}
-              flexDirection="row"
-              padding="$3"
-              backgroundColor="$backgroundStrong"
-              borderRadius="$4"
-              alignItems="center"
-            >
-              <YStack
-                width={72}
-                height={72}
-                borderRadius="$4"
-                backgroundColor="$backgroundSoft"
-                alignItems="center"
-                justifyContent="center"
-                overflow="hidden"
-              >
-                {item.menu_item.image_url ? (
-                  <Image
-                    source={{ uri: item.menu_item.image_url }}
-                    width="100%"
-                    height="100%"
-                  />
-                ) : (
-                  <Utensils size={20} color="$colorSecondary" />
-                )}
-              </YStack>
-
-              <YStack
-                flex={1}
-                marginLeft="$3"
-                justifyContent="space-between"
-                minHeight={72}
-              >
-                <YStack gap="$1">
-                  <Text
-                    fontSize="$4"
-                    fontWeight="700"
-                    fontFamily="$heading"
-                    color="$color"
-                    numberOfLines={1}
-                  >
-                    {item.menu_item.name}
-                  </Text>
-                  {item.selected_variant && (
-                    <Text
-                      fontSize="$3"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                      numberOfLines={1}
-                    >
-                      {item.selected_variant.name}
-                    </Text>
-                  )}
-                  {item.selected_addons.length > 0 && (
-                    <Text
-                      fontSize="$2"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                      numberOfLines={1}
-                    >
-                      + {item.selected_addons.map((a) => a.name).join(", ")}
-                    </Text>
-                  )}
-                </YStack>
-
-                <XStack
-                  justifyContent="space-between"
-                  alignItems="center"
-                  marginTop="$2"
-                >
-                  <XStack
-                    backgroundColor="$backgroundSoft"
-                    borderRadius="$full"
-                    alignItems="center"
-                  >
-                    <Button
-                      chromeless
-                      circular
-                      width={32}
-                      height={32}
-                      padding={0}
-                      pressStyle={{ opacity: 0.7 }}
-                      onPress={() =>
-                        item.quantity <= 1
-                          ? removeItem(item.id)
-                          : updateQuantity(item.id, item.quantity - 1)
-                      }
-                    >
-                      {item.quantity <= 1 ? (
-                        <Trash2 size={14} color="$error" />
-                      ) : (
-                        <Minus size={14} color="$color" />
-                      )}
-                    </Button>
-                    <Text
-                      fontSize="$4"
-                      fontWeight="700"
-                      fontFamily="$body"
-                      minWidth={24}
-                      textAlign="center"
-                    >
-                      {item.quantity}
-                    </Text>
-                    <Button
-                      chromeless
-                      circular
-                      width={32}
-                      height={32}
-                      padding={0}
-                      pressStyle={{ opacity: 0.7 }}
-                      onPress={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      <Plus size={14} color="$color" />
-                    </Button>
-                  </XStack>
-                  <Text
-                    fontSize="$5"
-                    fontWeight="800"
-                    fontFamily="$body"
-                    color="$primary"
-                  >
-                    {formatPriceFromMinor(
-                      item.unit_price_minor * item.quantity,
-                    )}
-                  </Text>
-                </XStack>
-              </YStack>
-            </Card>
+              item={item}
+              onRemove={removeItem}
+              onUpdateQuantity={updateQuantity}
+            />
           ))}
         </YStack>
       </ScrollView>
@@ -685,6 +718,7 @@ function CartPanel({
           left={0}
           right={0}
           padding="$5"
+          paddingBottom={insets.bottom + 16}
           backgroundColor="$background"
           borderTopWidth={1}
           borderTopColor="$borderColor"
@@ -765,6 +799,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
   );
+  const insets = useSafeAreaInsets();
   const previewOrder = usePOSOrderPreviewQuery(
     items,
     checkoutForm.order_type,
@@ -1324,6 +1359,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         left={0}
         right={0}
         padding="$5"
+        paddingBottom={insets.bottom + 16}
         backgroundColor="$background"
         borderTopWidth={1}
         borderTopColor="$borderColor"
