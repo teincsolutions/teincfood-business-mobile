@@ -1465,7 +1465,7 @@ function POSReadyCard({
 }
 
 function InProgressTab() {
-  const { data: orders, isFetching, refetch } = usePOSOrdersQuery();
+  const { data: orders, isPending, isFetching, refetch } = usePOSOrdersQuery() as any;
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
@@ -1503,15 +1503,9 @@ function InProgressTab() {
     [activeOrders],
   );
 
-  if (isFetching) {
-    return (
-      <YStack flex={1} alignItems="center" justifyContent="center">
-        <Spinner size="large" color="$primary" />
-      </YStack>
-    );
-  }
-
-  if (isFetching) {
+  // Offline-first: pending overlay is immediate via the device outbox.
+  // Only show a full-screen loader on the initial cold load with no cached data.
+  if (isPending && !orders?.length) {
     return (
       <YStack flex={1} alignItems="center" justifyContent="center">
         <Spinner size="large" color="$primary" />
@@ -1902,6 +1896,7 @@ function TodayTab() {
   const today = new Date().toISOString().split("T")[0];
   const {
     data: orders,
+    isPending,
     isFetching,
     refetch,
     fetchNextPage,
@@ -1910,7 +1905,7 @@ function TodayTab() {
   } = usePOSOrdersQuery({
     date_from: today,
     date_to: today,
-  });
+  }) as any;
   const insets = useSafeAreaInsets();
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
@@ -1992,20 +1987,26 @@ function TodayTab() {
         </YStack>
       }
       ListEmptyComponent={
-        <YStack padding="$8" alignItems="center" gap="$3">
-          <Package size={80} color="$gray200" />
-          <Text
-            fontSize="$5"
-            fontWeight="600"
-            color="$colorSecondary"
-            textAlign="center"
-          >
-            No orders today yet
-          </Text>
-          <Button variant="outline" height={44} onPress={refetch}>
-            Refresh
-          </Button>
-        </YStack>
+        isPending ? (
+          <YStack padding="$8" alignItems="center" gap="$3">
+            <Spinner size="large" color="$primary" />
+          </YStack>
+        ) : (
+          <YStack padding="$8" alignItems="center" gap="$3">
+            <Package size={80} color="$gray200" />
+            <Text
+              fontSize="$5"
+              fontWeight="600"
+              color="$colorSecondary"
+              textAlign="center"
+            >
+              No orders today yet
+            </Text>
+            <Button variant="outline" height={44} onPress={refetch}>
+              Refresh
+            </Button>
+          </YStack>
+        )
       }
       ListFooterComponent={
         isFetchingNextPage ? (
