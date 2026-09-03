@@ -19,7 +19,7 @@ export function CalloutCard({ order }: CalloutCardProps) {
     order.callout_number != null && order.callout_number !== 0
       ? String(order.callout_number)
       : order.order_number
-        ? order.order_number.slice(-4)
+        ? order.order_number.slice(-3)
         : "--";
 
   return (

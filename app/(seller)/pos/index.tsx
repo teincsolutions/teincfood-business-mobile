@@ -288,8 +288,7 @@ function NewOrderTab() {
 // ── Menu Browser ────────────────────────────────────────────────────────────
 
 function MenuBrowser() {
-  const media = useMedia();
-  const isTablet = media.md;
+  const { isTablet } = useResponsive();
   const foodColumns = isTablet ? 3 : 2;
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -402,11 +401,7 @@ function MenuBrowser() {
             paddingBottom: 40,
             gap: 16,
           }}
-          renderItem={({ item }) => (
-            <YStack mx="$1.5">
-              <FoodCard item={item} />
-            </YStack>
-          )}
+          renderItem={({ item }) => <FoodCard item={item} />}
           initialNumToRender={10}
           windowSize={5}
         />
@@ -1266,7 +1261,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     <Text
                       fontSize="$4"
                       fontFamily="$body"
-                      color={tl.is_inclusive ? "$colorMuted" : "$colorSecondary"}
+                      color={
+                        tl.is_inclusive ? "$colorMuted" : "$colorSecondary"
+                      }
                     >
                       {formatPriceFromMinor(tl.tax_amount_minor ?? 0)}
                     </Text>

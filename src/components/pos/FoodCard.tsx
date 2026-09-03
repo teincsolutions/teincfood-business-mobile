@@ -23,7 +23,6 @@ export function FoodCard({ item }: FoodCardProps) {
       <Card
         elevate
         width={isTablet ? "100%" : (width - 48) / 2}
-        minW={isTablet ? 250 : 0}
         marginBottom="$3"
         backgroundColor="$background"
         borderRadius="$5"
