@@ -305,7 +305,7 @@ function MenuBrowser() {
     if (searchQuery) f.search = searchQuery;
     return f;
   }, [activeCategoryId, searchQuery]);
-  const { data: menuItems, isFetching } = useMenuItemsQuery(filters);
+  const { data: menuItems, isPending } = useMenuItemsQuery(filters) as any;
 
   const categoryList = useMemo(() => categories?.data ?? [], [categories]);
   const itemsList = useMemo(() => menuItems ?? [], [menuItems]);
@@ -373,7 +373,7 @@ function MenuBrowser() {
           </XStack>
         </ScrollView>
       </YStack>
-      {isFetching ? (
+      {isPending ? (
         <YStack flex={1} alignItems="center" justifyContent="center">
           <Spinner size="large" color="$primary" />
         </YStack>

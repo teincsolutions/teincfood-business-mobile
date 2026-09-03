@@ -4,6 +4,7 @@ import {
   useInfiniteQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useMemo } from "react";
 import * as menuService from "@/services/menu.service";
 import { uploadImage } from "@/services/upload.service";
 import type { MenuItem } from "@/services/menu.service";
@@ -34,12 +35,15 @@ function useBusinessId() {
   return useBusinessStore((s) => s.activeBusiness?.id);
 }
 
-// ─── Menu Items Query Hooks ──────────────────────────────────────────────────
+// ─── Menu Items Query Hooks — offline-first via @teincfood/core ──────────────
+// Source of truth is the SQLite reference cache (reference_data). Network is
+// only a background refresh when online — the UI never blocks on it.
 
 export function useMenuItemsQuery(filters?: { search?: string; category_ids?: string; sort?: string }, enabled = true) {
   const businessId = useBusinessId();
   const isOnline = useConnectivityStore((s) => s.isOnline);
 
+  // Background sync when online — keeps SQLite fresh, never blocks UI.
   useReferenceDataSync(businessId, {
     keys: ["menu:items", "menu:categories"],
     enabled: enabled && !!businessId && isOnline,
@@ -47,14 +51,31 @@ export function useMenuItemsQuery(filters?: { search?: string; category_ids?: st
 
   const cachedQuery = useReferenceData<MenuItemListResponse>("menu:items");
 
-  const cachedPlaceholder = cachedQuery.data?.payload
-    ? {
-        pages: [cachedQuery.data.payload],
-        pageParams: [1],
+  // Client-side filter so search/category pills work offline (mirrors server).
+  const filtered = useMemo(() => {
+    const all = (cachedQuery.data?.payload as any)?.data ?? [];
+    if (!enabled) return [] as any[];
+    let out: any[] = all;
+    if (filters?.category_ids) {
+      const ids = new Set(filters.category_ids.split(",").map((s) => s.trim()).filter(Boolean));
+      if (ids.size > 0) out = out.filter((i: any) => ids.has(i.category_id ?? i.categoryId));
+    }
+    if (filters?.search) {
+      const q = filters.search.trim().toLowerCase();
+      if (q) {
+        out = out.filter(
+          (i: any) =>
+            (i.name ?? "").toLowerCase().includes(q) ||
+            (i.description ?? "").toLowerCase().includes(q),
+        );
       }
-    : undefined;
+    }
+    return out;
+  }, [cachedQuery.data, filters?.category_ids, filters?.search, enabled]);
 
-  return useInfiniteQuery({
+  // When online, also run a network query in the background for freshness /
+  // pagination. It never drives the loading spinner — cache is shown immediately.
+  const networkQuery = useInfiniteQuery({
     queryKey: [...MENU_KEYS.items(businessId), filters],
     queryFn: ({ pageParam = 1 }) =>
       menuService.fetchBusinessMenuItems(businessId!, pageParam, filters),
@@ -63,14 +84,39 @@ export function useMenuItemsQuery(filters?: { search?: string; category_ids?: st
       lastPage.pagination.page < lastPage.pagination.total_pages
         ? lastPage.pagination.page + 1
         : undefined,
-    enabled: enabled && !!businessId,
+    enabled: enabled && !!businessId && isOnline,
     staleTime: 1000 * 30,
-    placeholderData: cachedPlaceholder,
-    select: (data) => data.pages.flatMap((p) => p.data),
+    retry: false,
+    networkMode: "offlineFirst" as const,
   });
+
+  // Data precedence: network pages when online & available, otherwise filtered cache.
+  const networkData: any[] | undefined = (networkQuery.data as any)?.pages
+    ? (networkQuery.data as any).pages.flatMap((p: any) => p.data)
+    : undefined;
+
+  const data = isOnline && networkData !== undefined ? networkData : enabled ? filtered : undefined;
+
+  return {
+    data,
+    isPending: cachedQuery.isPending && !networkData,
+    isFetching: networkQuery.isFetching,
+    isError: cachedQuery.isError || networkQuery.isError,
+    error: (cachedQuery.error ?? networkQuery.error) as any,
+    refetch: async () => {
+      if (!businessId) return;
+      if (isOnline) {
+        await referenceSyncService.sync({ businessId, keys: ["menu:items", "menu:categories"] });
+      }
+      return networkQuery.refetch();
+    },
+    fetchNextPage: networkQuery.fetchNextPage,
+    hasNextPage: networkQuery.hasNextPage,
+    isFetchingNextPage: networkQuery.isFetchingNextPage,
+  } as unknown as ReturnType<typeof useInfiniteQuery> & { data: any[] | undefined };
 }
 
-// ─── Menu Categories Query Hook ──────────────────────────────────────────────
+// ─── Menu Categories Query Hook — offline-first via @teincfood/core ─────────
 
 export function useMenuCategoriesQuery() {
   const businessId = useBusinessId();
@@ -83,12 +129,22 @@ export function useMenuCategoriesQuery() {
 
   const cachedQuery = useReferenceData<MenuCategoryListResponse>("menu:categories");
 
-  return useQuery({
+  const networkQuery = useQuery({
     queryKey: MENU_KEYS.categories(businessId),
     queryFn: () => menuService.fetchBusinessCategories(businessId!),
-    enabled: !!businessId,
-    initialData: cachedQuery.data?.payload,
+    enabled: !!businessId && isOnline,
+    staleTime: 1000 * 30,
+    retry: false,
+    networkMode: "offlineFirst" as const,
   });
+
+  const data = (isOnline && (networkQuery.data as any) ? networkQuery.data : cachedQuery.data?.payload) as any;
+
+  return {
+    ...networkQuery,
+    data,
+    isPending: cachedQuery.isPending && !networkQuery.data,
+  } as unknown as ReturnType<typeof useQuery>;
 }
 
 type CreateInput = {
