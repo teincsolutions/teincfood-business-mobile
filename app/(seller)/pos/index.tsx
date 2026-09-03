@@ -902,7 +902,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         customer_phone: checkoutForm.customer_phone,
         pos_payment_method: checkoutForm.pos_payment_method,
         items: orderItems,
-      },
+        // Device-owned outbox: include the already-computed local pricing so the
+        // optimistic order (buildOptimisticOrder) shows the correct total while
+        // offline — the cloud will still recompute authoritatively on replay.
+        total_minor: total,
+        subtotal_minor: localPricing?.subtotal_minor ?? total,
+        tax_minor: localPricing?.tax_minor ?? 0,
+        exclusive_tax_minor: (localPricing as unknown as { exclusive_tax_minor?: number })?.exclusive_tax_minor ?? 0,
+        tax_lines: taxLines,
+        currency_code: activeBusiness?.currency_code ?? "GHS",
+      } as unknown as Parameters<typeof createOrder.mutate>[0],
       {
         onSuccess: (response) => {
           const orderId = response.id;
