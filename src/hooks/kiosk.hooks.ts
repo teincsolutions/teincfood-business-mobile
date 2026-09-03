@@ -45,61 +45,14 @@ export function useAvailableRidersQuery(enabled = true) {
   });
 }
 
-export function useAcceptKioskOrderMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (orderId: string) => {
-      if (!businessId) throw new Error('No active business');
-      return orderRepository.acceptOrder({ orderId, businessId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
-    },
-  });
-}
-
-export function useRejectKioskOrderMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (orderId: string) => {
-      if (!businessId) throw new Error('No active business');
-      return orderRepository.rejectOrder({ orderId, businessId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
-    },
-  });
-}
-
-export function useStartPreparingKioskOrderMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (orderId: string) => {
-      if (!businessId) throw new Error('No active business');
-      return orderRepository.startPreparingOrder({ orderId, businessId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
-    },
-  });
-}
-
-export function useMarkKioskOrderReadyMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (orderId: string) => {
-      if (!businessId) throw new Error('No active business');
-      return orderRepository.markOrderReady({ orderId, businessId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: KIOSK_KEYS.orders(businessId) });
-    },
-  });
-}
+// Offline-first transitions — delegate to core's device-owned outbox so they queue
+// when offline and patch the snapshot (visible in InProgress/Today immediately).
+export {
+  useAcceptOrderMutation as useAcceptKioskOrderMutation,
+  useRejectOrderMutation as useRejectKioskOrderMutation,
+  useStartPreparingOrderMutation as useStartPreparingKioskOrderMutation,
+  useMarkOrderReadyMutation as useMarkKioskOrderReadyMutation,
+} from "@teincfood/core";
 
 export function useAssignRiderMutation() {
   const businessId = useBusinessId();
