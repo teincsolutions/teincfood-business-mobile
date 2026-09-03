@@ -10,7 +10,7 @@
  * openSyncDatabase() call sites run against an already-bootstrapped core).
  */
 import { openDatabaseAsync } from "expo-sqlite";
-import { MMKV } from "react-native-mmkv";
+import { mmkvStorage } from "@/utils/storage";
 import { createTeincCore } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
@@ -30,6 +30,10 @@ import {
   rolesService as coreRolesService,
   imageCacheService as coreImageCache,
 } from "@teincfood/core";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+import { Platform } from "react-native";
 import { API_BASE_URL, WS_BASE_URL } from "@/utils/constants";
 import { api } from "@/services/api";
 import { getAppInstanceId } from "@/services/devices.service";
@@ -81,16 +85,72 @@ function buildSqliteDriver(): SqliteDriver {
 }
 
 function buildKVDriver(): KVDriver {
-  const mmkv = new MMKV();
   return {
-    getItem: (key: string) => mmkv.getString(key) ?? null,
-    setItem: (key: string, value: string) => {
-      mmkv.set(key, value);
-    },
-    removeItem: (key: string) => {
-      mmkv.delete(key);
+    getItem: (key: string) => mmkvStorage.getString(key) ?? null,
+    setItem: (key: string, value: string) => { mmkvStorage.set(key, value); },
+    removeItem: (key: string) => { mmkvStorage.delete(key); },
+  };
+}
+
+function buildPrintAdapters() {
+  const tcp = {
+    sendToTcpPrinter: async (ip: string, port: number, text: string): Promise<void> => {
+      const TcpSocket = require("react-native-tcp-socket");
+      return new Promise((resolve, reject) => {
+        const client = TcpSocket.createConnection({ host: ip, port, timeout: 5000 }, () => {
+          client.write(text);
+          client.destroy();
+          resolve();
+        });
+        client.on("error", (err: Error) => { client.destroy(); reject(err); });
+        client.on("timeout", () => { client.destroy(); reject(new Error("Connection timeout")); });
+      });
     },
   };
+  const printFile = {
+    printToFileAsync: async (html: string) => Print.printToFileAsync({ html }),
+    isSharingAvailable: async () => Sharing.isAvailableAsync(),
+    shareAsync: async (uri: string, options?: { dialogTitle?: string; mimeType?: string }) => { await Sharing.shareAsync(uri, options as unknown as Parameters<typeof Sharing.shareAsync>[1]); },
+  };
+  const mdns = {
+    discoverPrinters: async (timeoutMs = 8000): Promise<{ name: string; ip: string; port: number }[]> => {
+      try {
+        const Zeroconf = require("react-native-zeroconf").default ?? require("react-native-zeroconf");
+        const zeroconf = new Zeroconf();
+        return await new Promise((resolve) => {
+          const found = new Map<string, { name: string; ip: string; port: number }>();
+          const timer = setTimeout(() => { try { zeroconf.stop(); } catch {} ; resolve([...found.values()]); }, timeoutMs);
+          zeroconf.on("resolved", (svc: { name: string; host: string; port: number; addresses?: string[] }) => {
+            const ip = svc.addresses?.[0] ?? svc.host;
+            if (ip && svc.port) found.set(ip, { name: svc.name, ip, port: svc.port });
+          });
+          try { zeroconf.scan("_printer._tcp", "tcp", "local."); zeroconf.scan("_ipp._tcp", "tcp", "local."); } catch {}
+        });
+      } catch { return []; }
+    },
+  };
+  return { tcp, printFile, mdns };
+}
+
+function buildFileSystemAdapter() {
+  // Web: no-op — core image-cache falls back to remote URL
+  if (Platform.OS === "web") return null as unknown as import("@teincfood/core").FileSystemAdapter;
+  const docDir = (FileSystem as unknown as { documentDirectory?: string | null }).documentDirectory ?? "";
+  return {
+    getInfoAsync: async (path: string) => {
+      const info = await FileSystem.getInfoAsync(path);
+      return { exists: info.exists, isDirectory: (info as { isDirectory?: boolean }).isDirectory };
+    },
+    makeDirectoryAsync: async (path: string, opts?: { intermediates?: boolean }) => { await FileSystem.makeDirectoryAsync(path, opts); },
+    downloadAsync: async (url: string, fileUri: string) => {
+      const dl = FileSystem.createDownloadResumable(url, fileUri, { cache: false });
+      const res = await dl.downloadAsync();
+      return { uri: res?.uri ?? fileUri };
+    },
+    deleteAsync: async (path: string, opts?: { idempotent?: boolean }) => { await FileSystem.deleteAsync(path, opts); },
+    readDirectoryAsync: async (path: string) => FileSystem.readDirectoryAsync(path),
+    getDocumentDirectory: () => docDir,
+  } as import("@teincfood/core").FileSystemAdapter;
 }
 
 function buildHttpClient(): HttpClient {
@@ -235,6 +295,8 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       };
       setReferenceLocalNodeFetcher(fetcher);
     } catch {}
+    const { tcp, printFile, mdns } = buildPrintAdapters();
+    const fileSystemAdapter = buildFileSystemAdapter();
     const result = createTeincCore({
       sqliteDriver,
       kvDriver,
@@ -242,6 +304,8 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       apiBaseUrl: API_BASE_URL,
       wsBaseUrl: WS_BASE_URL,
       initialConnectivity,
+      printAdapters: { tcp, printFile, mdns },
+      fileSystemAdapter: fileSystemAdapter as unknown as import("@teincfood/core").FileSystemAdapter,
     });
     try {
       syncConnectivityBridge();
