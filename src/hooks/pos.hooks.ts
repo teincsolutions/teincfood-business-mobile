@@ -43,7 +43,7 @@ function mergePendingOrders(
   return merged.sort((a, b) => b.inserted_at.localeCompare(a.inserted_at));
 }
 
-function filterOrdersOffline(orders: SellerOrder[], filters?: { status?: string; order_type?: string; is_pos?: string; q?: string; search?: string }): SellerOrder[] {
+function filterOrdersOffline(orders: SellerOrder[], filters?: { status?: string; order_type?: string; is_pos?: string; q?: string; search?: string; date_from?: string; date_to?: string }): SellerOrder[] {
   let filtered = orders;
   const statusSet = filters?.status ? new Set(filters.status.split(",").map((s) => s.trim())) : null;
   if (statusSet) filtered = filtered.filter((o) => statusSet.has(o.status));
@@ -54,6 +54,14 @@ function filterOrdersOffline(orders: SellerOrder[], filters?: { status?: string;
   }
   const q = (filters?.q ?? filters?.search ?? "").toLowerCase();
   if (q) filtered = filtered.filter((o) => o.order_number.toLowerCase().includes(q) || (o.customer_name ?? "").toLowerCase().includes(q));
+  if (filters?.date_from) {
+    const from = filters.date_from.slice(0, 10);
+    filtered = filtered.filter((o) => (o.inserted_at ?? "").slice(0, 10) >= from);
+  }
+  if (filters?.date_to) {
+    const to = filters.date_to.slice(0, 10);
+    filtered = filtered.filter((o) => (o.inserted_at ?? "").slice(0, 10) <= to);
+  }
   return filtered;
 }
 
@@ -76,6 +84,12 @@ export function usePOSOrdersQuery(
 ) {
   const businessId = useBusinessId();
   const pendingOrders = usePendingOrders(businessId);
+  // Snapshot hydration is done by useOfflineOrderHydration (seller _layout), so
+  // query cache is warm after first sync; pending overlay is always immediate.
+  const isOnline = useConnectivityStore((s) => s.isOnline);
+  const isCloudReachable = useConnectivityStore((s) => s.isCloudReachable);
+  const isOffline = !isOnline || isCloudReachable === "unreachable";
+
   const query = useInfiniteQuery({
     queryKey: [...POS_KEYS.orders(businessId), filters],
     queryFn: async ({ pageParam = 1 }) => {
@@ -85,6 +99,17 @@ export function usePOSOrdersQuery(
       if (filters?.is_pos) params.is_pos = filters.is_pos;
       if (filters?.date_from) params.date_from = filters.date_from;
       if (filters?.date_to) params.date_to = filters.date_to;
+
+      // Device-owned outbox: when offline, never wait for cloud timeout — serve
+      // the durable snapshot + pending overlay immediately; the SyncEngine
+      // replays queued commands when back online.
+      if (isOffline) {
+        const offline = businessId ? await orderSnapshotsService.getSellerList(businessId, businessId) : null;
+        const base = offline ?? [];
+        const filtered = filterOrdersOffline(base, filters as any);
+        return paginateOffline(filtered, pageParam as number);
+      }
+
       try {
         const result = await posRepository.fetchOrders(businessId!, params);
         // Write through to the durable offline read model.
@@ -95,11 +120,10 @@ export function usePOSOrdersQuery(
         }
         return result;
       } catch (e) {
-        // Offline fallback: serve filtered snapshot from SQLite.
+        // Network error while nominally online — still serve snapshot.
         const offline = businessId ? await orderSnapshotsService.getSellerList(businessId, businessId) : null;
         if (offline) {
-          const filtered = filterOrdersOffline(offline, filters as unknown as { status?: string; order_type?: string; is_pos?: string });
-          // also respect date_from/to if present
+          const filtered = filterOrdersOffline(offline, filters as any);
           return paginateOffline(filtered, pageParam as number);
         }
         throw e;
@@ -112,6 +136,8 @@ export function usePOSOrdersQuery(
         : undefined,
     enabled: enabled && !!businessId,
     staleTime: 30 * 1000,
+    retry: false,
+    networkMode: "offlineFirst" as const,
     select: (data) => data.pages.flatMap((p) => p.data),
   });
 
