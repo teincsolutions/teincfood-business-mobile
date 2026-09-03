@@ -1894,6 +1894,7 @@ function InProgressTab() {
 
 function TodayTab() {
   const today = new Date().toISOString().split("T")[0];
+  const filters = useMemo(() => ({ date_from: today, date_to: today }), [today]);
   const {
     data: orders,
     isPending,
@@ -1902,10 +1903,7 @@ function TodayTab() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = usePOSOrdersQuery({
-    date_from: today,
-    date_to: today,
-  }) as any;
+  } = usePOSOrdersQuery(filters) as any;
   const insets = useSafeAreaInsets();
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
