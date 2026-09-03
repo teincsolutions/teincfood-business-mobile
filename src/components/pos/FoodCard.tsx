@@ -6,7 +6,6 @@ import { formatPriceFromMinor } from "@/utils/currency";
 import type { MenuItem } from "@/types/api/menu.api";
 import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
-import { useResponsive } from "@/utils/responsive";
 import { useCachedImageUrl } from "@/hooks/useCachedImage";
 
 interface FoodCardProps {
@@ -15,14 +14,14 @@ interface FoodCardProps {
 
 export function FoodCard({ item }: FoodCardProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const { isTablet, width } = useResponsive();
+  const media = useMedia();
   const imageUrl = useCachedImageUrl(item.image_url);
 
   return (
     <>
       <Card
         elevate
-        width={isTablet ? "100%" : (width - 48) / 2}
+        width="100%"
         marginBottom="$3"
         backgroundColor="$background"
         borderRadius="$5"
@@ -148,7 +147,7 @@ export function FoodCard({ item }: FoodCardProps) {
               onPress={() => setShowCustomizer(true)}
               $md={{ height: 48, width: 48 }}
               icon={({ color, size }) => (
-                <Plus size={isTablet ? 22 : 18} color={color} />
+                <Plus size={media.md ? 22 : 18} color={color} />
               )}
             />
           </XStack>
