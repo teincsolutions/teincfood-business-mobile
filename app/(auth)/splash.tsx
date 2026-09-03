@@ -207,16 +207,25 @@ export default function SplashScreen() {
         }
       }
 
-      // Prefetch businesses — splash stays visible until data is ready
+      // Prefetch businesses — non-blocking offline: never hang splash 30s
       setStatusMessage("Loading your businesses...");
-      await queryClient.prefetchQuery({
-        queryKey: BUSINESSES_QUERY_KEY,
-        queryFn: async () => {
-          const res = await businessService.fetchMyBusinesses();
-          return res.data || [];
-        },
-        staleTime: 1000 * 60 * 5,
-      });
+      try {
+        await Promise.race([
+          queryClient.prefetchQuery({
+            queryKey: BUSINESSES_QUERY_KEY,
+            queryFn: async () => {
+              const res = await businessService.fetchMyBusinesses();
+              return res.data || [];
+            },
+            staleTime: 1000 * 60 * 5,
+            // @ts-ignore TanStack allows retry per query
+            retry: false,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("splash prefetch timeout")), 3000)),
+        ]);
+      } catch {
+        // Offline / low internet: navigate from persisted store; background refetch will happen in (seller) layout
+      }
 
       // Navigate to role's home
       register();
