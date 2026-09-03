@@ -39,12 +39,12 @@ export function useReferenceDataSync(
       .then((result) => {
         if (cancelled) return;
         if (result.failed.length > 0) {
-          console.warn("[ReferenceSync] failed keys:", result.failed);
+          console.debug("[ReferenceSync] failed keys (non-fatal):", result.failed);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (cancelled) return;
-        console.error("[ReferenceSync] sync error:", error);
+        // Silent — will retry when online
       });
 
     return () => {
@@ -76,33 +76,34 @@ export function useSyncReferenceData() {
  */
 export function useBusinessReferenceDataSync() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const isCloudReachable = useConnectivityStore((s) => s.isCloudReachable);
   const isOnline = useConnectivityStore((s) => s.isOnline);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!businessId || !isOnline) return;
+    // Strict reachable gate: `unknown` (cold start before NetInfo) must not fire sync,
+    // otherwise airplane launch hangs 30s on fetchReferenceVersions.
+    if (!businessId || !isOnline || isCloudReachable !== "reachable") return;
 
     let cancelled = false;
     referenceSyncService
       .sync({ businessId })
       .then((result) => {
         if (cancelled) return;
-        // New images were downloaded into durable storage — re-resolve cached
-        // image queries so screens swap to the local files.
         invalidateCachedImages(queryClient);
         if (result.failed.length > 0) {
-          console.warn("[ReferenceSync] failed keys:", result.failed);
+          console.debug("[ReferenceSync] failed keys (non-fatal):", result.failed);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (cancelled) return;
-        console.error("[ReferenceSync] sync error:", error);
+        // Offline / low internet: sync will retry when connectivity restores; silence error spam
       });
 
     return () => {
       cancelled = true;
     };
-  }, [businessId, isOnline, queryClient]);
+  }, [businessId, isOnline, isCloudReachable, queryClient]);
 }
 
 /**
