@@ -1,417 +1,56 @@
-import {
-  useMutation,
-  useQuery,
-  useInfiniteQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useMemo } from "react";
-import * as menuService from "@/services/menu.service";
-import { uploadImage } from "@/services/upload.service";
-import type { MenuItem } from "@/services/menu.service";
+export { useMenuItemsQuery, useMenuCategoriesQuery, useCreateMenuItemMutation, useUpdateMenuItemMutation, useDeleteMenuItemMutation, CATALOG_KEYS as MENU_KEYS } from "@teincfood/core";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBusinessStore } from "@/stores/business.store";
-import { useConnectivityStore } from "@/stores/connectivity.store";
-import { useReferenceDataSync, useReferenceData } from "@/reference/hooks";
-import { emitReferenceChanged } from "@/reference/events";
-import { referenceSyncService } from "@/reference/service";
-import { openSyncDatabase } from "@/db/connection";
-import { getReferenceData } from "@/reference/operations";
-import { runOfflineCapableMutation } from "@teincfood/core";
+import * as menuService from "@/services/menu.service";
+import { emitReferenceChanged } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@/utils/error";
-import type { MenuItemListResponse, MenuCategoryListResponse } from "@/types/api";
-
-// ─── Query Keys ──────────────────────────────────────────────────────────────
-
-export const MENU_KEYS = {
-  all: ["menu"] as const,
-  items: (businessId?: string) =>
-    [...MENU_KEYS.all, "items", businessId] as const,
-  categories: (businessId?: string) =>
-    [...MENU_KEYS.all, "categories", businessId] as const,
-  item: (id: string) => [...MENU_KEYS.all, "item", id] as const,
-};
-
-function useBusinessId() {
-  return useBusinessStore((s) => s.activeBusiness?.id);
-}
-
-// ─── Menu Items Query Hooks — offline-first via @teincfood/core ──────────────
-// Source of truth is the SQLite reference cache (reference_data). Network is
-// only a background refresh when online — the UI never blocks on it.
-
-export function useMenuItemsQuery(filters?: { search?: string; category_ids?: string; sort?: string }, enabled = true) {
-  const businessId = useBusinessId();
-  const isOnline = useConnectivityStore((s) => s.isOnline);
-
-  // Background sync when online — keeps SQLite fresh, never blocks UI.
-  useReferenceDataSync(businessId, {
-    keys: ["menu:items", "menu:categories"],
-    enabled: enabled && !!businessId && isOnline,
-  });
-
-  const cachedQuery = useReferenceData<MenuItemListResponse>("menu:items");
-
-  // Client-side filter so search/category pills work offline (mirrors server).
-  const filtered = useMemo(() => {
-    const all = (cachedQuery.data?.payload as any)?.data ?? [];
-    if (!enabled) return [] as any[];
-    let out: any[] = all;
-    if (filters?.category_ids) {
-      const ids = new Set(filters.category_ids.split(",").map((s) => s.trim()).filter(Boolean));
-      if (ids.size > 0) out = out.filter((i: any) => ids.has(i.category_id ?? i.categoryId));
-    }
-    if (filters?.search) {
-      const q = filters.search.trim().toLowerCase();
-      if (q) {
-        out = out.filter(
-          (i: any) =>
-            (i.name ?? "").toLowerCase().includes(q) ||
-            (i.description ?? "").toLowerCase().includes(q),
-        );
-      }
-    }
-    return out;
-  }, [cachedQuery.data, filters?.category_ids, filters?.search, enabled]);
-
-  // When online, also run a network query in the background for freshness /
-  // pagination. It never drives the loading spinner — cache is shown immediately.
-  const networkQuery = useInfiniteQuery({
-    queryKey: [...MENU_KEYS.items(businessId), filters],
-    queryFn: ({ pageParam = 1 }) =>
-      menuService.fetchBusinessMenuItems(businessId!, pageParam, filters),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.total_pages
-        ? lastPage.pagination.page + 1
-        : undefined,
-    enabled: enabled && !!businessId && isOnline,
-    staleTime: 1000 * 30,
-    retry: false,
-    networkMode: "offlineFirst" as const,
-  });
-
-  // Data precedence: network pages when online & available, otherwise filtered cache.
-  const networkData: any[] | undefined = (networkQuery.data as any)?.pages
-    ? (networkQuery.data as any).pages.flatMap((p: any) => p.data)
-    : undefined;
-
-  const data = isOnline && networkData !== undefined ? networkData : enabled ? filtered : undefined;
-
-  return {
-    data,
-    isPending: cachedQuery.isPending && !networkData,
-    isFetching: networkQuery.isFetching,
-    isError: cachedQuery.isError || networkQuery.isError,
-    error: (cachedQuery.error ?? networkQuery.error) as any,
-    refetch: async () => {
-      if (!businessId) return;
-      if (isOnline) {
-        await referenceSyncService.sync({ businessId, keys: ["menu:items", "menu:categories"] });
-      }
-      return networkQuery.refetch();
-    },
-    fetchNextPage: networkQuery.fetchNextPage,
-    hasNextPage: networkQuery.hasNextPage,
-    isFetchingNextPage: networkQuery.isFetchingNextPage,
-  } as unknown as ReturnType<typeof useInfiniteQuery> & { data: any[] | undefined };
-}
-
-// ─── Menu Categories Query Hook — offline-first via @teincfood/core ─────────
-
-export function useMenuCategoriesQuery() {
-  const businessId = useBusinessId();
-  const isOnline = useConnectivityStore((s) => s.isOnline);
-
-  useReferenceDataSync(businessId, {
-    keys: ["menu:categories"],
-    enabled: !!businessId && isOnline,
-  });
-
-  const cachedQuery = useReferenceData<MenuCategoryListResponse>("menu:categories");
-
-  const networkQuery = useQuery({
-    queryKey: MENU_KEYS.categories(businessId),
-    queryFn: () => menuService.fetchBusinessCategories(businessId!),
-    enabled: !!businessId && isOnline,
-    staleTime: 1000 * 30,
-    retry: false,
-    networkMode: "offlineFirst" as const,
-  });
-
-  const data = (isOnline && (networkQuery.data as any) ? networkQuery.data : cachedQuery.data?.payload) as any;
-
-  return {
-    ...networkQuery,
-    data,
-    isPending: cachedQuery.isPending && !networkQuery.data,
-  } as unknown as ReturnType<typeof useQuery>;
-}
-
-type CreateInput = {
-  name: string;
-  description: string;
-  priceMinor: number;
-  categoryId: string;
-  dietaryTags: string[];
-  variants: any[];
-  extras: any[];
-  available: boolean;
-  imageUrl: string | null;
-};
-
-type UpdateInput = CreateInput & { id: string };
-
-async function uploadImageForItem(
-  imageUrl: string | null,
-  businessId?: string,
-): Promise<string | null> {
-  if (!imageUrl) return null;
-  // Local file from picker — upload to S3, return the key
-  if (imageUrl.startsWith('file://') || imageUrl.startsWith('ph://') || imageUrl.startsWith('content://')) {
-    try {
-      const result = await uploadImage(imageUrl, 'menus', { business_id: businessId });
-      return result.key;
-    } catch (e) {
-      toast.error(extractApiErrorMessage(e));
-      return null;
-    }
-  }
-  // Presigned URL (http/https) from backend — unchanged, omit from payload
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return '__UNCHANGED__';
-  }
-  // S3 key (e.g. "menus/biz-id/...") — already uploaded, use as-is
-  return imageUrl;
-}
-
-// ─── Create Menu Item Mutation ───────────────────────────────────────────────
-
-export function useCreateMenuItemMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: CreateInput) => {
-      const imageUrl = await uploadImageForItem(input.imageUrl, businessId);
-      const payload = {
-        name: input.name,
-        description: input.description,
-        price_minor: input.priceMinor,
-        category_id: input.categoryId,
-        currency_code: 'GHS',
-        dietary_tags: input.dietaryTags,
-        variants: input.variants.map(({ id, ...v }) => v),
-        extras: input.extras.map(({ id, ...e }) => e),
-        available: input.available,
-        ...(imageUrl !== '__UNCHANGED__' ? { image_url: imageUrl } : {}),
-      };
-      // Online: direct REST (same result shape). Offline: route through the
-      // Sync Engine (Local Node → outbox) so the edit is not lost.
-      return runOfflineCapableMutation({
-        run: () => menuService.createBusinessMenuItem(businessId!, payload),
-        commandType: "menu:create_item",
-        businessId: businessId!,
-        payload,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success("Menu item created");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:items"]);
-      }
-    },
-  });
-}
-
-// ─── Update Menu Item Mutation ───────────────────────────────────────────────
+import { CATALOG_KEYS } from "@teincfood/core";
 
 export function useCreateMenuCategoryMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
+  const bid = useBusinessStore((s) => s.activeBusiness?.id);
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; description?: string; sort_order?: number }) =>
-      runOfflineCapableMutation({
-        run: () => menuService.createBusinessCategory(businessId!, data),
-        commandType: "menu:create_category",
-        businessId: businessId!,
-        payload: data,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
-      toast.success("Category created");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:categories"]);
-      }
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
-    },
+    mutationFn: (data: { name: string; description?: string; sort_order?: number }) => menuService.createBusinessCategory(bid!, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category created"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+    onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
-
 export function useUpdateMenuCategoryMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
+  const bid = useBusinessStore((s) => s.activeBusiness?.id);
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { categoryId: string; name: string; description?: string; sort_order?: number }) =>
-      menuService.updateBusinessCategory(businessId!, data.categoryId, {
-        name: data.name,
-        ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
-      toast.success("Category updated");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:categories"]);
-      }
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
-    },
+    mutationFn: (data: { categoryId: string; name: string; description?: string; sort_order?: number }) => menuService.updateBusinessCategory(bid!, data.categoryId, { name: data.name, ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category updated"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+    onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
-
 export function useDeleteMenuCategoryMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
+  const bid = useBusinessStore((s) => s.activeBusiness?.id);
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (categoryId: string) =>
-      menuService.deleteBusinessCategory(businessId!, categoryId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.categories(businessId) });
-      toast.success("Category deleted");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:categories"]);
-      }
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
-    },
+    mutationFn: (id: string) => menuService.deleteBusinessCategory(bid!, id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category deleted"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+    onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
-
-export function useUpdateMenuItemMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      updates,
-    }: {
-      id: string;
-      updates: Partial<CreateInput>;
-    }) => {
-      const payload: Record<string, any> = {};
-      if (updates.name !== undefined) payload.name = updates.name;
-      if (updates.description !== undefined)
-        payload.description = updates.description;
-      if (updates.priceMinor !== undefined)
-        payload.price_minor = updates.priceMinor;
-      if (updates.categoryId !== undefined)
-        payload.category_id = updates.categoryId;
-      payload.currency_code = "GHS";
-      if (updates.available !== undefined)
-        payload.available = updates.available;
-      if (updates.dietaryTags !== undefined)
-        payload.dietary_tags = updates.dietaryTags;
-      if (updates.imageUrl !== undefined) {
-        const imageUrl = await uploadImageForItem(updates.imageUrl, businessId);
-        if (imageUrl !== '__UNCHANGED__') {
-          payload.image_url = imageUrl;
-        }
-      }
-      if (updates.variants !== undefined) {
-        payload.variants = updates.variants.map(({ id, ...v }) => v);
-      }
-      if (updates.extras !== undefined) {
-        payload.extras = updates.extras.map(({ id, ...e }) => e);
-      }
-      return runOfflineCapableMutation({
-        run: () => menuService.updateMenuItem(id, payload),
-        commandType: "menu:update_item",
-        businessId: businessId!,
-        entityId: id,
-        payload,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success("Menu item updated");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:items"]);
-      }
-    },
-  });
-}
-
-// ─── Delete Menu Item Mutation ───────────────────────────────────────────────
-
-export function useDeleteMenuItemMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      runOfflineCapableMutation({
-        run: () => menuService.deleteMenuItem(id),
-        commandType: "menu:delete_item",
-        businessId: businessId!,
-        entityId: id,
-        payload: { id },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-      toast.success("Menu item deleted");
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:items"]);
-      }
-    },
-    onError: (e) => {
-      toast.error(extractApiErrorMessage(e));
-    },
-  });
-}
-
-// ─── Toggle Availability Mutation ────────────────────────────────────────────
-
 export function useToggleAvailabilityMutation() {
-  const businessId = useBusinessId();
-  const queryClient = useQueryClient();
+  const bid = useBusinessStore((s) => s.activeBusiness?.id);
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, available }: { id: string; available: boolean }) =>
-      menuService.toggleItemAvailability(id, available),
-    onMutate: async ({ id, available }) => {
-      await queryClient.cancelQueries({ queryKey: MENU_KEYS.items(businessId) });
-      const previous = queryClient.getQueriesData({ queryKey: MENU_KEYS.items(businessId) });
-      queryClient.setQueriesData({ queryKey: MENU_KEYS.items(businessId) }, (old: any) => {
-        if (!old?.pages) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            data: page.data?.map((item: any) =>
-              item.id === id ? { ...item, is_available: available } : item
-            ),
-          })),
-        };
+    mutationFn: ({ id, available }: { id: string; available: boolean }) => menuService.toggleItemAvailability(id, available),
+    onMutate: async ({ id, available }: { id: string; available: boolean }) => {
+      await qc.cancelQueries({ queryKey: CATALOG_KEYS.items(bid) });
+      const prev = qc.getQueriesData({ queryKey: CATALOG_KEYS.items(bid) });
+      qc.setQueriesData({ queryKey: CATALOG_KEYS.items(bid) }, (old: unknown) => {
+        const o = old as { pages?: { data: { id: string; is_available: boolean }[] }[] } | undefined;
+        if (!o?.pages) return old;
+        return { ...o, pages: o.pages.map((p) => ({ ...p, data: p.data?.map((item) => item.id === id ? { ...item, is_available: available } : item) })) };
       });
-      return { previous };
+      return { prev };
     },
-    onError: (e, _vars, ctx) => {
-      if (ctx?.previous) {
-        for (const [key, data] of ctx.previous) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      toast.error(extractApiErrorMessage(e));
-    },
-    onSuccess: () => {
-      if (businessId) {
-        emitReferenceChanged(businessId, ["menu:items"]);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: MENU_KEYS.items(businessId) });
-    },
+    onError: (e, _v, ctx) => { const c = ctx as { prev?: [unknown, unknown][] } | undefined; if (c?.prev) for (const [k, d] of c.prev) qc.setQueryData(k as unknown[], d); toast.error(extractApiErrorMessage(e)); },
+    onSuccess: () => { if (bid) emitReferenceChanged(bid, ["menu:items"]); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.items(bid) }); },
   });
 }
