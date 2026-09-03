@@ -3773,14 +3773,10 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@^0.7.2":
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.7.2.tgz#624410a0708a8f8c2632756a88e416e69b8444af"
-  integrity sha512-qQGHaEaqVWTP5kzLgm29PsyXFwcMIIp4CvCfhZ/EhrRocOHU5njfuIAiyxcL2YBiiEzDxtJ1Z51rTGqsddRdPw==
-
-"@teincfood/core@file:/Users/ericmensah/Projects/teincfood-core/teincfood-core-0.7.3.tgz":
-  version "0.7.3"
-  resolved "file:/Users/ericmensah/Projects/teincfood-core/teincfood-core-0.7.3.tgz#4887ee00ab05653ebbd1b2e6236587c5b83809bb"
+"@teincfood/core@^0.7.4":
+  version "0.7.4"
+  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.7.4.tgz#00fa93b7289cbcab01b1886baaa955398670e2ad"
+  integrity sha512-Db1ECl620pdiPZUAoKO42VOupClYT/o7hmULFNPba9wIzklLqa/arhqUJL3VywnHg4ZxXfCqhXQ+Wz0SYBUKZg==
 
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"
