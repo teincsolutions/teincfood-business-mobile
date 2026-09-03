@@ -58,6 +58,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { useCachedImageUrl } from "@/hooks/useCachedImage";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
@@ -799,6 +800,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
   );
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
   const insets = useSafeAreaInsets();
   const previewOrder = usePOSOrderPreviewQuery(
     items,
