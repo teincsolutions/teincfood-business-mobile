@@ -10,6 +10,7 @@ import { orderSnapshotsService } from "@teincfood/core";
 import { toast } from 'sonner-native';
 import { extractApiErrorMessage } from "@teincfood/core";
 import { useConnectivityStore } from '@/stores/connectivity.store';
+import { useSellerOrdersQuery as useCoreSellerOrdersQuery } from "@teincfood/core";
 
 function isQueuedTransition(result: unknown): boolean {
   const r = result as { status?: string; command_id?: string; id?: string } | undefined;
@@ -74,49 +75,8 @@ export function useSellerOrdersQuery(
   enabled = true,
   filters?: { status?: string; q?: string },
 ) {
-  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const pendingOrders = usePendingOrders(activeBusinessId);
-
-  const query = useInfiniteQuery({
-    queryKey: SELLER_KEYS.orders(activeBusinessId, filters),
-    queryFn: async ({ pageParam = 1 }) => {
-      const params: BusinessOrdersParams = { page: pageParam, page_size: 20 };
-      if (filters?.status) params.status = filters.status;
-      if (filters?.q) params.q = filters.q;
-      try {
-        const result = await sellerService.fetchBusinessOrders(activeBusinessId!, params);
-        // Write through to the durable offline read model so the exact list seen
-        // online is available offline after a restart.
-        if (pageParam === 1 && activeBusinessId && Array.isArray(result?.data)) {
-          orderSnapshotsService
-            .persistSellerOrders(activeBusinessId, activeBusinessId, result.data)
-            .catch(() => {});
-        }
-        return result;
-      } catch (e) {
-        const offline = activeBusinessId ? await orderSnapshotsService.getSellerList(activeBusinessId, activeBusinessId) : null;
-        if (offline) {
-          const filtered = filterSellerOrdersOffline(offline, filters);
-          return paginateSellerOffline(filtered, pageParam as number);
-        }
-        throw e;
-      }
-    },
-    getNextPageParam: (lastPage) => {
-      const { page, total_pages } = lastPage.pagination ?? {};
-      return page < total_pages ? page + 1 : undefined;
-    },
-    initialPageParam: 1,
-    select: (data) => data.pages.flatMap((p) => p.data),
-    enabled: enabled && Boolean(activeBusinessId),
-  });
-
-  const data = useMemo(
-    () => mergePendingOrders(pendingOrders, query.data),
-    [pendingOrders, query.data],
-  );
-
-  return { ...query, data };
+  // Delegates to @teincfood/core (offline-first, device-owned outbox, snapshot + pending overlay)
+  return useCoreSellerOrdersQuery(enabled, filters as unknown as { status?: string; q?: string; search?: string; date_from?: string; date_to?: string });
 }
 
 export function useSellerOrderQuery(orderId: string, enabled = true) {
