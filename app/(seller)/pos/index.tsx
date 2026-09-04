@@ -60,6 +60,7 @@ import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
@@ -780,6 +781,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     checkoutForm.customer_name,
   );
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
 
   // Server-parity local pricing (offline/no-preview fallback):
   // mirrors backend calculate_pos_pricing so inclusive taxes stay embedded in
@@ -787,15 +789,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const localPricing = useMemo(() => {
     if (items.length === 0) return null;
     try {
+      const currency = (activeBusiness as unknown as { currency?: string; currency_code?: string })?.currency ?? (activeBusiness as unknown as { currency_code?: string })?.currency_code ?? "GHS";
       return calculatePricing({
         items,
         taxRules: taxRules?.data ?? [],
-        currency_code: activeBusiness?.currency_code ?? "GHS",
+        currency_code: currency,
       });
     } catch {
       return null;
     }
-  }, [items, taxRules, activeBusiness?.currency_code]);
+  }, [items, taxRules, (activeBusiness as unknown as { currency?: string })?.currency, (activeBusiness as unknown as { currency_code?: string })?.currency_code]);
 
   const serverPricing = previewOrder.data?.data;
   // Prefer the authoritative cloud preview; fall back to the local engine.
