@@ -8,11 +8,14 @@ import {
   FileText,
   User,
   Printer,
+  Banknote,
+  Smartphone,
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatPriceFromMinor } from "@/utils/currency";
 import type { SellerOrder } from "@/types/api";
+import { isUnpaid, isCancellable, cancelLabelFor } from "@teincfood/core";
 
 interface PendingOrderCardProps {
   order: SellerOrder;
@@ -21,6 +24,11 @@ interface PendingOrderCardProps {
   onStartPreparing: (orderId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
   onPrint?: (orderId: string) => void;
+  onCollectCash?: (order: SellerOrder) => void;
+  onPay?: (order: SellerOrder) => void;
+  onCancel?: (order: SellerOrder) => void;
+  collectingOrderId?: string | null;
+  payingOrderId?: string | null;
   getTimeSince: (dateString: string | null | undefined) => number;
 }
 
@@ -31,9 +39,17 @@ export function PendingOrderCard({
   onStartPreparing,
   onViewDetails,
   onPrint,
+  onCollectCash,
+  onPay,
+  onCancel,
+  collectingOrderId,
+  payingOrderId,
   getTimeSince,
 }: PendingOrderCardProps) {
   const isAccepted = order.status === "accepted";
+  const showCollectCash = onCollectCash && isUnpaid(order as unknown as Parameters<typeof isUnpaid>[0]) && order.status !== "cancelled";
+  const showPay = onPay && order.status === "awaiting_payment";
+  const showCancel = onCancel && isCancellable(order.status);
 
   return (
     <Card
@@ -113,44 +129,65 @@ export function PendingOrderCard({
               </Button>
             )}
           </XStack>
-          {isAccepted ? (
-            <Button
-              height="$12"
-              $lg={{ height: "$12" }}
-              backgroundColor="$warning"
-              onPress={() => onStartPreparing(order.id)}
-              icon={<ChefHat size={18} color="white" />}
-            >
-              <Text color="white" fontWeight="bold">START PREPARING</Text>
-            </Button>
-          ) : (
-            <XStack gap="$2">
+          <XStack gap="$2" flexWrap="wrap" justifyContent="flex-end">
+            {showPay && (
               <Button
-                size="$1.5"
-                height="$8"
-                $lg={{ height: "$12" }}
-                backgroundColor="$error"
-                onPress={() => onReject(order.id)}
-                icon={<XCircle size={18} color="white" />}
+                size="$2"
+                backgroundColor="$primary"
+                disabled={!!payingOrderId}
+                onPress={() => onPay!(order)}
+                icon={<Smartphone size={14} color="white" />}
               >
-                <Text color="white" fontWeight="bold">
-                  REJECT
-                </Text>
+                <Text color="white" fontWeight="bold">{payingOrderId === order.id ? "Paying…" : "Pay now"}</Text>
               </Button>
+            )}
+            {showCollectCash && (
               <Button
-                size="$1.5"
-                height="$8"
-                $lg={{ height: "$12" }}
-                backgroundColor="$success"
-                onPress={() => onAccept(order.id)}
-                icon={<CheckCircle size={18} color="white" />}
+                size="$2"
+                backgroundColor="$primary"
+                disabled={!!collectingOrderId}
+                onPress={() => onCollectCash!(order)}
+                icon={<Banknote size={14} color="white" />}
               >
-                <Text color="white" fontWeight="bold">
-                  ACCEPT
-                </Text>
+                <Text color="white" fontWeight="bold">{collectingOrderId === order.id ? "Recording…" : "Collect cash"}</Text>
               </Button>
-            </XStack>
-          )}
+            )}
+            {isAccepted ? (
+              <Button
+                height="$8"
+                $lg={{ height: "$10" }}
+                backgroundColor="$warning"
+                onPress={() => onStartPreparing(order.id)}
+                icon={<ChefHat size={16} color="white" />}
+              >
+                <Text color="white" fontWeight="bold">START PREPARING</Text>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="$2"
+                  backgroundColor="$error"
+                  onPress={() => onReject(order.id)}
+                  icon={<XCircle size={16} color="white" />}
+                >
+                  <Text color="white" fontWeight="bold">REJECT</Text>
+                </Button>
+                <Button
+                  size="$2"
+                  backgroundColor="$success"
+                  onPress={() => onAccept(order.id)}
+                  icon={<CheckCircle size={16} color="white" />}
+                >
+                  <Text color="white" fontWeight="bold">ACCEPT</Text>
+                </Button>
+              </>
+            )}
+            {showCancel && (
+              <Button size="$2" variant="outline" onPress={() => onCancel!(order)}>
+                <Text fontWeight="bold" color="$error">{cancelLabelFor(order.status)}</Text>
+              </Button>
+            )}
+          </XStack>
         </XStack>
       </YStack>
     </Card>
