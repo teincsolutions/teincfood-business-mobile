@@ -58,8 +58,6 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
-import { useBusinessStore } from "@/stores/business.store";
-import { useCachedImageUrl } from "@/hooks/useCachedImage";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
@@ -282,9 +280,7 @@ function NewOrderTab() {
           <YStack flex={1}>
             <MenuBrowser />
           </YStack>
-          {items.length > 0 && (
-            <CartBar onCheckout={() => setView("cart")} />
-          )}
+          {items.length > 0 && <CartBar onCheckout={() => setView("cart")} />}
         </YStack>
       )}
     </YStack>
@@ -294,8 +290,8 @@ function NewOrderTab() {
 // ── Menu Browser ────────────────────────────────────────────────────────────
 
 function MenuBrowser() {
-  const { isTablet } = useResponsive();
-  const foodColumns = isTablet ? 3 : 1;
+  const { isTablet, isLandscape, width } = useResponsive();
+  const foodColumns = isTablet ? 3 : 2;
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -306,7 +302,7 @@ function MenuBrowser() {
     if (searchQuery) f.search = searchQuery;
     return f;
   }, [activeCategoryId, searchQuery]);
-  const { data: menuItems, isPending } = useMenuItemsQuery(filters) as any;
+  const { data: menuItems, isFetching } = useMenuItemsQuery(filters);
 
   const categoryList = useMemo(() => categories?.data ?? [], [categories]);
   const itemsList = useMemo(() => menuItems ?? [], [menuItems]);
@@ -374,7 +370,7 @@ function MenuBrowser() {
           </XStack>
         </ScrollView>
       </YStack>
-      {isPending ? (
+      {isFetching ? (
         <YStack flex={1} alignItems="center" justifyContent="center">
           <Spinner size="large" color="$primary" />
         </YStack>
@@ -401,15 +397,14 @@ function MenuBrowser() {
           data={itemsList}
           keyExtractor={(item) => item.id}
           numColumns={foodColumns}
-          style={{ flex: 1 }}
-          columnWrapperStyle={foodColumns > 1 ? { gap: 16 } : undefined}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingVertical: 20,
             paddingBottom: 40,
+            gap: 16,
           }}
           renderItem={({ item }) => (
-            <YStack flex={1}>
+            <YStack width={(width - 48) / foodColumns}>
               <FoodCard item={item} />
             </YStack>
           )}
@@ -457,9 +452,12 @@ function CartBar({ onCheckout }: { onCheckout: () => void }) {
     0,
   );
 
+  const insets = useSafeAreaInsets();
   return (
     <XStack
+      width="100%"
       padding="$4"
+      paddingBottom={insets.bottom ? insets.bottom + 12 : 16}
       backgroundColor="$primary"
       justifyContent="space-between"
       alignItems="center"
@@ -487,151 +485,6 @@ function CartBar({ onCheckout }: { onCheckout: () => void }) {
   );
 }
 
-// ── Cart Item Row ─────────────────────────────────────────────────────────
-
-function CartItemRow({
-  item,
-  onRemove,
-  onUpdateQuantity,
-}: {
-  item: POSCartItem;
-  onRemove: (id: string) => void;
-  onUpdateQuantity: (id: string, qty: number) => void;
-}) {
-  const imageUrl = useCachedImageUrl(item.menu_item.image_url);
-
-  return (
-    <Card
-      flexDirection="row"
-      padding="$3"
-      backgroundColor="$backgroundStrong"
-      borderRadius="$4"
-      alignItems="center"
-    >
-      <YStack
-        width={72}
-        height={72}
-        borderRadius="$4"
-        backgroundColor="$backgroundSoft"
-        alignItems="center"
-        justifyContent="center"
-        overflow="hidden"
-      >
-        {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            width="100%"
-            height="100%"
-          />
-        ) : (
-          <Utensils size={20} color="$colorSecondary" />
-        )}
-      </YStack>
-
-      <YStack
-        flex={1}
-        marginLeft="$3"
-        justifyContent="space-between"
-        minHeight={72}
-      >
-        <YStack gap="$1">
-          <Text
-            fontSize="$4"
-            fontWeight="700"
-            fontFamily="$heading"
-            color="$color"
-            numberOfLines={1}
-          >
-            {item.menu_item.name}
-          </Text>
-          {item.selected_variant && (
-            <Text
-              fontSize="$3"
-              color="$colorSecondary"
-              fontFamily="$body"
-              numberOfLines={1}
-            >
-              {item.selected_variant.name}
-            </Text>
-          )}
-          {item.selected_addons.length > 0 && (
-            <Text
-              fontSize="$2"
-              color="$colorSecondary"
-              fontFamily="$body"
-              numberOfLines={1}
-            >
-              + {item.selected_addons.map((a) => a.name).join(", ")}
-            </Text>
-          )}
-        </YStack>
-
-        <XStack
-          justifyContent="space-between"
-          alignItems="center"
-          marginTop="$2"
-        >
-          <XStack
-            backgroundColor="$backgroundSoft"
-            borderRadius="$full"
-            alignItems="center"
-          >
-            <Button
-              chromeless
-              circular
-              width={32}
-              height={32}
-              padding={0}
-              pressStyle={{ opacity: 0.7 }}
-              onPress={() =>
-                item.quantity <= 1
-                  ? onRemove(item.id)
-                  : onUpdateQuantity(item.id, item.quantity - 1)
-              }
-            >
-              {item.quantity <= 1 ? (
-                <Trash2 size={14} color="$error" />
-              ) : (
-                <Minus size={14} color="$color" />
-              )}
-            </Button>
-            <Text
-              fontSize="$4"
-              fontWeight="700"
-              fontFamily="$body"
-              minWidth={24}
-              textAlign="center"
-            >
-              {item.quantity}
-            </Text>
-            <Button
-              chromeless
-              circular
-              width={32}
-              height={32}
-              padding={0}
-              pressStyle={{ opacity: 0.7 }}
-              onPress={() => onUpdateQuantity(item.id, item.quantity + 1)}
-            >
-              <Plus size={14} color="$color" />
-            </Button>
-          </XStack>
-          <Text
-            fontSize="$5"
-            fontWeight="800"
-            fontFamily="$body"
-            color="$primary"
-          >
-            {formatPriceFromMinor(
-              item.unit_price_minor * item.quantity,
-            )}
-          </Text>
-        </XStack>
-      </YStack>
-    </Card>
-  );
-}
-
 // ── Cart Panel ──────────────────────────────────────────────────────────────
 
 function CartPanel({
@@ -645,7 +498,6 @@ function CartPanel({
   const removeItem = usePOSStore((s) => s.removeItem);
   const updateQuantity = usePOSStore((s) => s.updateQuantity);
   const clearCart = usePOSStore((s) => s.clearCart);
-  const insets = useSafeAreaInsets();
 
   const total = items.reduce(
     (sum, item) => sum + item.unit_price_minor * item.quantity,
@@ -702,12 +554,135 @@ function CartPanel({
       <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
         <YStack padding="$5" gap="$3">
           {items.map((item) => (
-            <CartItemRow
+            <Card
               key={item.id}
-              item={item}
-              onRemove={removeItem}
-              onUpdateQuantity={updateQuantity}
-            />
+              flexDirection="row"
+              padding="$3"
+              backgroundColor="$backgroundStrong"
+              borderRadius="$4"
+              alignItems="center"
+            >
+              <YStack
+                width={72}
+                height={72}
+                borderRadius="$4"
+                backgroundColor="$backgroundSoft"
+                alignItems="center"
+                justifyContent="center"
+                overflow="hidden"
+              >
+                {item.menu_item.image_url ? (
+                  <Image
+                    source={{ uri: item.menu_item.image_url }}
+                    width="100%"
+                    height="100%"
+                  />
+                ) : (
+                  <Utensils size={20} color="$colorSecondary" />
+                )}
+              </YStack>
+
+              <YStack
+                flex={1}
+                marginLeft="$3"
+                justifyContent="space-between"
+                minHeight={72}
+              >
+                <YStack gap="$1">
+                  <Text
+                    fontSize="$4"
+                    fontWeight="700"
+                    fontFamily="$heading"
+                    color="$color"
+                    numberOfLines={1}
+                  >
+                    {item.menu_item.name}
+                  </Text>
+                  {item.selected_variant && (
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                      numberOfLines={1}
+                    >
+                      {item.selected_variant.name}
+                    </Text>
+                  )}
+                  {item.selected_addons.length > 0 && (
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                      numberOfLines={1}
+                    >
+                      + {item.selected_addons.map((a) => a.name).join(", ")}
+                    </Text>
+                  )}
+                </YStack>
+
+                <XStack
+                  justifyContent="space-between"
+                  alignItems="center"
+                  marginTop="$2"
+                >
+                  <XStack
+                    backgroundColor="$backgroundSoft"
+                    borderRadius="$full"
+                    alignItems="center"
+                  >
+                    <Button
+                      chromeless
+                      circular
+                      width={32}
+                      height={32}
+                      padding={0}
+                      pressStyle={{ opacity: 0.7 }}
+                      onPress={() =>
+                        item.quantity <= 1
+                          ? removeItem(item.id)
+                          : updateQuantity(item.id, item.quantity - 1)
+                      }
+                    >
+                      {item.quantity <= 1 ? (
+                        <Trash2 size={14} color="$error" />
+                      ) : (
+                        <Minus size={14} color="$color" />
+                      )}
+                    </Button>
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$body"
+                      minWidth={24}
+                      textAlign="center"
+                    >
+                      {item.quantity}
+                    </Text>
+                    <Button
+                      chromeless
+                      circular
+                      width={32}
+                      height={32}
+                      padding={0}
+                      pressStyle={{ opacity: 0.7 }}
+                      onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                    >
+                      <Plus size={14} color="$color" />
+                    </Button>
+                  </XStack>
+                  <Text
+                    fontSize="$5"
+                    fontWeight="800"
+                    fontFamily="$body"
+                    color="$primary"
+                  >
+                    {formatPriceFromMinor(
+                      item.unit_price_minor * item.quantity,
+                    )}
+                  </Text>
+                </XStack>
+              </YStack>
+            </Card>
           ))}
         </YStack>
       </ScrollView>
@@ -719,7 +694,6 @@ function CartPanel({
           left={0}
           right={0}
           padding="$5"
-          paddingBottom={insets.bottom + 16}
           backgroundColor="$background"
           borderTopWidth={1}
           borderTopColor="$borderColor"
@@ -800,8 +774,6 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
   );
-  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
-  const insets = useSafeAreaInsets();
   const previewOrder = usePOSOrderPreviewQuery(
     items,
     checkoutForm.order_type,
@@ -902,16 +874,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         customer_phone: checkoutForm.customer_phone,
         pos_payment_method: checkoutForm.pos_payment_method,
         items: orderItems,
-        // Device-owned outbox: include the already-computed local pricing so the
-        // optimistic order (buildOptimisticOrder) shows the correct total while
-        // offline — the cloud will still recompute authoritatively on replay.
-        total_minor: total,
-        subtotal_minor: localPricing?.subtotal_minor ?? total,
-        tax_minor: localPricing?.tax_minor ?? 0,
-        exclusive_tax_minor: (localPricing as unknown as { exclusive_tax_minor?: number })?.exclusive_tax_minor ?? 0,
-        tax_lines: taxLines,
-        currency_code: activeBusiness?.currency_code ?? "GHS",
-      } as unknown as Parameters<typeof createOrder.mutate>[0],
+      },
       {
         onSuccess: (response) => {
           const orderId = response.id;
@@ -1370,7 +1333,6 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         left={0}
         right={0}
         padding="$5"
-        paddingBottom={insets.bottom + 16}
         backgroundColor="$background"
         borderTopWidth={1}
         borderTopColor="$borderColor"
@@ -1474,7 +1436,7 @@ function POSReadyCard({
 }
 
 function InProgressTab() {
-  const { data: orders, isPending, isFetching, refetch } = usePOSOrdersQuery() as any;
+  const { data: orders, isFetching, refetch } = usePOSOrdersQuery();
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
@@ -1512,9 +1474,15 @@ function InProgressTab() {
     [activeOrders],
   );
 
-  // Offline-first: pending overlay is immediate via the device outbox.
-  // Only show a full-screen loader on the initial cold load with no cached data.
-  if (isPending && !orders?.length) {
+  if (isFetching) {
+    return (
+      <YStack flex={1} alignItems="center" justifyContent="center">
+        <Spinner size="large" color="$primary" />
+      </YStack>
+    );
+  }
+
+  if (isFetching) {
     return (
       <YStack flex={1} alignItems="center" justifyContent="center">
         <Spinner size="large" color="$primary" />
@@ -1903,16 +1871,17 @@ function InProgressTab() {
 
 function TodayTab() {
   const today = new Date().toISOString().split("T")[0];
-  const filters = useMemo(() => ({ date_from: today, date_to: today }), [today]);
   const {
     data: orders,
-    isPending,
     isFetching,
     refetch,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = usePOSOrdersQuery(filters) as any;
+  } = usePOSOrdersQuery({
+    date_from: today,
+    date_to: today,
+  });
   const insets = useSafeAreaInsets();
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
@@ -1994,26 +1963,20 @@ function TodayTab() {
         </YStack>
       }
       ListEmptyComponent={
-        isPending ? (
-          <YStack padding="$8" alignItems="center" gap="$3">
-            <Spinner size="large" color="$primary" />
-          </YStack>
-        ) : (
-          <YStack padding="$8" alignItems="center" gap="$3">
-            <Package size={80} color="$gray200" />
-            <Text
-              fontSize="$5"
-              fontWeight="600"
-              color="$colorSecondary"
-              textAlign="center"
-            >
-              No orders today yet
-            </Text>
-            <Button variant="outline" height={44} onPress={refetch}>
-              Refresh
-            </Button>
-          </YStack>
-        )
+        <YStack padding="$8" alignItems="center" gap="$3">
+          <Package size={80} color="$gray200" />
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            color="$colorSecondary"
+            textAlign="center"
+          >
+            No orders today yet
+          </Text>
+          <Button variant="outline" height={44} onPress={refetch}>
+            Refresh
+          </Button>
+        </YStack>
       }
       ListFooterComponent={
         isFetchingNextPage ? (
