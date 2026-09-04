@@ -855,6 +855,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           ? i.selected_addons.map((a) => a.addon_id)
           : undefined,
     }));
+    const itemSnapshots = items.map((i) => ({
+      menu_item_id: i.menu_item.id,
+      name: i.menu_item.name,
+      quantity: i.quantity,
+      unit_price_minor: i.unit_price_minor,
+      variant_name: i.selected_variant?.name,
+      addons: i.selected_addons.map((a) => ({ name: a.name, price_minor: a.price_minor })),
+    }));
 
     console.debug(
       "[POS] Checkout initiated",
@@ -877,7 +885,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         customer_phone: checkoutForm.customer_phone,
         pos_payment_method: checkoutForm.pos_payment_method,
         items: orderItems,
-      },
+        item_snapshots: itemSnapshots,
+      } as unknown as Parameters<typeof createOrder.mutate>[0],
       {
         onSuccess: (response) => {
           const orderId = response.id;

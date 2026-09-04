@@ -15,9 +15,10 @@ import { createTeincCore } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
-import { setConnectivityState } from "@teincfood/core";
+import { setConnectivityState, setAuthProvider } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
+import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { localNodeService } from "@/local-node/service";
 import type { ReferenceLocalNodeFetcher } from "@teincfood/core";
@@ -279,6 +280,7 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       }
     })();
     wireServiceAdapters();
+    try { setAuthProvider(() => useAuthStore.getState().accessToken ?? null); } catch {}
     try {
       const deviceId = getAppInstanceId();
       if (deviceId) setAppInstanceId(deviceId);
