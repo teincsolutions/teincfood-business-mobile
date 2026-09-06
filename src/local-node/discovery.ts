@@ -34,22 +34,35 @@ export class LocalNodeDiscovery {
     this.options = options;
     this.published = true;
 
-    this.zeroconf.publishService(
-      SERVICE_TYPE,
-      SERVICE_PROTOCOL,
-      SERVICE_DOMAIN,
-      `${options.deviceId}.${SERVICE_DOMAIN}`,
-      options.port,
-      {
-        deviceId: options.deviceId,
-        deviceName: options.deviceName ?? getDeviceDisplayName(),
-      },
-    );
+    try {
+      this.zeroconf.publishService(
+        SERVICE_TYPE,
+        SERVICE_PROTOCOL,
+        SERVICE_DOMAIN,
+        `${options.deviceId}.${SERVICE_DOMAIN}`,
+        options.port,
+        {
+          deviceId: options.deviceId,
+          deviceName: options.deviceName ?? getDeviceDisplayName(),
+        },
+      );
 
-    syncLogger.info("LocalNodeDiscovery", "Publishing service", {
-      type: SERVICE_TYPE,
-      port: options.port,
-    });
+      syncLogger.info("LocalNodeDiscovery", "Publishing service", {
+        type: SERVICE_TYPE,
+        port: options.port,
+      });
+    } catch (error) {
+      const errStr = String(error);
+      // Suppress known iOS simulator Bonjour error (-72000 = NSNetServicesErrorDomain bad argument)
+      if (errStr.includes("-72000") || errStr.includes("NSNetServicesErrorDomain")) {
+        syncLogger.warn("LocalNodeDiscovery", "Publish skipped (simulator/mDNS unavailable)", { error: errStr });
+        this.published = false;
+      } else {
+        syncLogger.error("LocalNodeDiscovery", "Publish failed", { error: errStr });
+        this.published = false;
+        throw error;
+      }
+    }
   }
 
   /** Register options for scan callbacks without publishing a service. */
@@ -104,8 +117,13 @@ export class LocalNodeDiscovery {
     });
 
     this.zeroconf.on("error", (error) => {
+      const errStr = String(error);
+      // Suppress known iOS simulator Bonjour error
+      if (errStr.includes("-72000") || errStr.includes("NSNetServicesErrorDomain")) {
+        return;
+      }
       syncLogger.error("LocalNodeDiscovery", "Discovery error", {
-        error: String(error),
+        error: errStr,
       });
     });
 
