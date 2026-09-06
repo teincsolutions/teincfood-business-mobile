@@ -8,11 +8,10 @@ import {
   Text,
   Card,
   Button,
-  Badge,
   Spinner,
   Separator,
 } from "tamagui";
-import { useRouter } from "expo-router";
+import { Badge } from "@/components/ui/Badge";
 import {
   getSyncJobsPendingCount,
   debugDumpSyncJobs,
@@ -30,11 +29,11 @@ import { useBusinessStore } from "@/stores/business.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { API_BASE_URL } from "@/utils/constants";
 import { toast } from "sonner-native";
+import { router } from "expo-router";
 
 const REFRESH_MS = 5_000;
 
 export default function DiagnosticsScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id ?? null);
   const isOnline = useConnectivityStore((s) => s.isOnline);
@@ -78,7 +77,9 @@ export default function DiagnosticsScreen() {
       setOrdersCount(countRow?.c ?? 0);
       setDeviceNumber(getDeviceNumber(businessId));
     } catch (error) {
-      syncLogger.error("Diagnostics", "refresh failed", { error: String(error) });
+      syncLogger.error("Diagnostics", "refresh failed", {
+        error: String(error),
+      });
     } finally {
       setRefreshing(false);
     }
@@ -186,7 +187,9 @@ export default function DiagnosticsScreen() {
                 router.replace("/(auth)/login");
               }, 800);
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Wipe failed");
+              toast.error(
+                error instanceof Error ? error.message : "Wipe failed",
+              );
             }
           },
         },
@@ -325,14 +328,14 @@ export default function DiagnosticsScreen() {
               jobs.map((j) => (
                 <YStack key={j.id} gap="$1">
                   <XStack justifyContent="space-between">
-                    <Text
-                      fontSize="$2"
-                      fontFamily="monospace"
-                      color="$color"
-                    >
+                    <Text fontSize="$2" fontFamily="monospace" color="$color">
                       {j.command_type}@{j.status.slice(0, 4)}
                     </Text>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="monospace">
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="monospace"
+                    >
                       {j.id.slice(0, 8)} · x{j.attempts}
                     </Text>
                   </XStack>
@@ -359,7 +362,9 @@ export default function DiagnosticsScreen() {
             disabled={draining || !accessToken || !isOnline}
             onPress={handleSyncNow}
           >
-            {draining ? "Syncing…" : `Sync now${pending ? ` (${pending})` : ""}`}
+            {draining
+              ? "Syncing…"
+              : `Sync now${pending ? ` (${pending})` : ""}`}
           </Button>
           <Button
             variant="outline"
