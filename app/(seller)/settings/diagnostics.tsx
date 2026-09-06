@@ -39,16 +39,6 @@ function pushLog(level: string, context: string, message: string, meta?: Record<
   if (logBuffer.length > 200) logBuffer.pop();
 }
 
-// Wire core syncLogger to our buffer (debug builds only)
-useEffect(() => {
-  const orig = { debug: syncLogger.debug, info: syncLogger.info, warn: syncLogger.warn, error: syncLogger.error };
-  syncLogger.debug = (ctx, msg, meta) => { pushLog("debug", ctx, msg, meta); orig.debug(ctx, msg, meta); };
-  syncLogger.info = (ctx, msg, meta) => { pushLog("info", ctx, msg, meta); orig.info(ctx, msg, meta); };
-  syncLogger.warn = (ctx, msg, meta) => { pushLog("warn", ctx, msg, meta); orig.warn(ctx, msg, meta); };
-  syncLogger.error = (ctx, msg, meta) => { pushLog("error", ctx, msg, meta); orig.error(ctx, msg, meta); };
-  return () => { Object.assign(syncLogger, orig); };
-}, []);
-
 export default function DiagnosticsScreen() {
   const insets = useSafeAreaInsets();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id ?? null);
@@ -76,11 +66,57 @@ export default function DiagnosticsScreen() {
   const [phxState, setPhxState] = useState<string>("unknown");
   const [logs, setLogs] = useState<string[]>([]);
 
+  // Wire core syncLogger to our buffer (debug builds only)
+  useEffect(() => {
+    const orig = { debug: syncLogger.debug, info: syncLogger.info, warn: syncLogger.warn, error: syncLogger.error };
+    syncLogger.debug = (ctx, msg, meta) => { pushLog("debug", ctx, msg, meta); orig.debug(ctx, msg, meta); };
+    syncLogger.info = (ctx, msg, meta) => { pushLog("info", ctx, msg, meta); orig.info(ctx, msg, meta); };
+    syncLogger.warn = (ctx, msg, meta) => { pushLog("warn", ctx, msg, meta); orig.warn(ctx, msg, meta); };
+    syncLogger.error = (ctx, msg, meta) => { pushLog("error", ctx, msg, meta); orig.error(ctx, msg, meta); };
+    return () => { Object.assign(syncLogger, orig); };
+  }, []);
+
   // Keep logs in sync with buffer
   useEffect(() => {
     const id = setInterval(() => setLogs([...logBuffer]), 1_000);
     return () => clearInterval(id);
   }, []);
+
+  // Update phoenix socket state periodically without full refresh
+  const phxTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    const update = () => setPhxState(phoenixSocket.getConnectionState?.() ?? "unknown");
+    update();
+    phxTimerRef.current = setInterval(update, 5_000);
+    return () => phxTimerRef.current && clearInterval(phxTimerRef.current);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!businessId) return;
+    try {
+      const [p, dump, db] = await Promise.all([
+        getSyncJobsPendingCount(businessId),
+        debugDumpSyncJobs(businessId),
+        openSyncDatabase(),
+      ]);
+      setPending(p);
+      setJobs(dump.slice(-5).reverse());
+      const countRow = await db.getFirstAsync<{ c: number }>(
+        "SELECT COUNT(*) as c FROM orders WHERE business_id = ?",
+        [businessId],
+      );
+      setOrdersCount(countRow?.c ?? 0);
+      setDeviceNumber(getDeviceNumber(businessId));
+      setLastProbe(`refreshed ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      syncLogger.error("Diagnostics", "refresh failed", { error: String(error) });
+    }
+  }, [businessId]);
+
+  // Initial load only
+  useEffect(() => {
+    void refresh();
+  }, [refresh, businessId]);
 
   const handleSyncNow = useCallback(async () => {
     if (!businessId) return;
@@ -205,7 +241,15 @@ export default function DiagnosticsScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <XStack padding="$5" alignItems="center" gap="$4" borderBottomWidth={1} borderBottomColor="$borderColor">
+      <XStack
+        paddingTop={insets.top + 12}
+        paddingHorizontal="$5"
+        paddingBottom="$4"
+        alignItems="center"
+        gap="$4"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+      >
         <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">Diagnostics</Text>
         <Switch
           checked={showLogs}
@@ -303,7 +347,7 @@ export default function DiagnosticsScreen() {
             <YStack gap="$2">
               <XStack justifyContent="space-between" alignItems="center">
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">LOGS (latest 200)</Text>
-                <Button size="$2" variant="outline" onPress={() => { logRef.current = []; setLogs([]); }}>Clear</Button>
+                <Button size="$2" variant="outline" onPress={() => { logBuffer.length = 0; setLogs([]); }}>Clear</Button>
               </XStack>
               {logs.length === 0 ? (
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">(no logs yet — trigger some sync activity)</Text>
