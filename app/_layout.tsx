@@ -4,7 +4,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
 import { openSyncDatabase } from '../src/db/connection';
 import { localNodeService } from '../src/local-node/service';
-import { syncEngine } from '../src/sync/engine';
+import { drainPending } from '@teincfood/core';
 import { syncReferenceDataOnReconnect } from '../src/reference/events';
 import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
 
@@ -117,7 +117,8 @@ function AppShell() {
     });
   }, []);
 
-  // Replay queued commands when cloud connectivity returns
+  // Drain pending sync jobs when cloud connectivity returns (single source:
+  // SQLite orders + sync_jobs FIFO). Legacy command-queue replay is retired.
   useEffect(() => {
     const unsubscribe = useConnectivityStore.subscribe((state, prevState) => {
       const becameReachable =
@@ -127,9 +128,17 @@ function AppShell() {
         state.isOnline && !prevState.isOnline;
 
       if (becameReachable || cameOnline) {
-        syncEngine.replayQueuedCommands().catch((error) => {
-          console.error('[SyncEngine] Replay failed:', error);
-        });
+        try {
+          const { useBusinessStore } = require('../src/stores/business.store') as typeof import('../src/stores/business.store');
+          const bid = useBusinessStore.getState().activeBusiness?.id;
+          if (bid) {
+            drainPending(bid).catch((error) => {
+              console.error('[SyncJobs] Drain failed:', error);
+            });
+          }
+        } catch (error) {
+          console.error('[SyncJobs] Drain failed:', error);
+        }
         // Reference data changes missed while offline (e.g. menu edits made on
         // another device) are caught up on reconnect. This is the design-level
         // safety net for devices that receive no LAN event.
