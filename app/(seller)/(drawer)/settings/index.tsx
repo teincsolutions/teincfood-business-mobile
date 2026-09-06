@@ -38,7 +38,7 @@ import {
 } from "@/hooks/useNotificationPreferences";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 
 /**
  * Seller Settings Screen

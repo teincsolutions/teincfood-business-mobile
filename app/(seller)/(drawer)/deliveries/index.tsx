@@ -41,7 +41,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 const DELIVERY_FILTERS = [
   { key: "all", label: "All", color: "$gray9" },

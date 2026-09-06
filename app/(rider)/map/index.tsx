@@ -31,7 +31,7 @@ import {
   getDirectionsPolyline,
   estimateDurationSeconds,
 } from "@/services/directions.service";
-import { phoenixSocket } from "@/services/phoenix-socket.service";
+import { phoenixSocket } from "@teincfood/core";
 
 const DEFAULT_DELTA = 0.02;
 const ACTIVE_STATUSES = ["assigned", "picked_up", "en_route", "arrived"];

@@ -19,7 +19,7 @@ import { useRouter } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { useAddVehicleMutation, useFleetRidersQuery } from "@/hooks/useFleet";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import {
   Car,
   Hash,

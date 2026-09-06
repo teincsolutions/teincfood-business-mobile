@@ -4,7 +4,7 @@ import { useBusinessStore } from "@/stores/business.store";
 import * as menuService from "@/services/menu.service";
 import { emitReferenceChanged } from "@teincfood/core";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { CATALOG_KEYS } from "@teincfood/core";
 
 export function useCreateMenuCategoryMutation() {

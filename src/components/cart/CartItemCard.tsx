@@ -2,7 +2,7 @@
 import { Card, Image, Text, XStack, YStack, Button } from 'tamagui';
 import { Minus, Plus, Trash2 } from '@tamagui/lucide-icons';
 import { useCartStore, type CartItem } from '@/stores/cart.store';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency } from '@teincfood/core';
 import { useCachedImageUrl } from '@/hooks/useCachedImage';
 
 interface CartItemCardProps {

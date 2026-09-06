@@ -14,8 +14,8 @@ import {
   clearAll as coreClearAll,
   hydrateCartStore,
 } from "@teincfood/core";
-import type { MenuItem, MenuItemVariantResponse, MenuItemAddonResponse } from "@/types/api/menu.api";
-import type { POSCheckoutForm } from "@/types/pos.types";
+import type { MenuItem, MenuItemVariantResponse, MenuItemAddonResponse } from "@teincfood/core";
+import type { POSCheckoutForm } from "@teincfood/core";
 
 let hydrated = false;
 function ensureHydrated() {

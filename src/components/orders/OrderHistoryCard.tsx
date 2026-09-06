@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Card, Image, Text, XStack, YStack } from 'tamagui';
 import { Clock, Package, Star, Trash2, FileText } from '@tamagui/lucide-icons';
 import { Button } from '@/components/ui';
-import { formatCurrency } from '@/utils/formatCurrency';
+import { formatCurrency } from '@teincfood/core';
 import type { Order } from '@/types/order.model';
 import { RatingModal } from './RatingModal';
 import { OrderDetailModal } from './OrderDetailModal';

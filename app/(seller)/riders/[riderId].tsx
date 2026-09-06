@@ -30,7 +30,7 @@ import {
 } from "@/hooks/useFleet";
 import { RiderKycSheet } from "@/components/rider/RiderKycSheet";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 
 export default function SellerRiderDetailScreen() {
   const { riderId } = useLocalSearchParams<{ riderId: string }>();

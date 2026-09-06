@@ -36,7 +36,7 @@ import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
-import { copyToClipboard } from "@/utils/copyToClipBoard";
+import { copyToClipboard } from "@teincfood/core";
 import { toast } from "sonner-native";
 
 /**

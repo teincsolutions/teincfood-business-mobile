@@ -35,7 +35,7 @@ import {
 } from "@/hooks/useFleet";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 
 type Tab = "riders" | "requests";
 

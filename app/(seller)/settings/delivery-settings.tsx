@@ -27,7 +27,7 @@ import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { api } from "@/services/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 
 type FormErrors = {
   deliveryFee?: string;

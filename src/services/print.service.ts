@@ -4,7 +4,7 @@
  * but fully offline: queued DD-RRR-CCC orders generate receipt locally without network.
  */
 import { printerService as corePrint } from "@teincfood/core";
-import type { SellerOrder } from "@/types/api/seller.api";
+import type { SellerOrder } from "@teincfood/core";
 import { orderSnapshotsService } from "@teincfood/core";
 import { getActiveBusiness } from "@teincfood/core";
 import { API_BASE_URL } from "@/utils/constants";

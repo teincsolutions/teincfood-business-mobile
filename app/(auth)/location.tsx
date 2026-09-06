@@ -10,7 +10,7 @@ import {
   PHONE_COUNTRIES,
   getCountryOption,
   getDialCodeFromCountry,
-} from "@/utils/phone";
+} from "@teincfood/core";
 import { useLocationStore, AppLocation } from "@/stores/location.store";
 import { useAuthStore } from "@/stores/auth.store";
 

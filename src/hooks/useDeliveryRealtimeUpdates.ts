@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { orderEventsService } from '@/services/order-events.service';
+import { orderEventsService } from '@teincfood/core';
 
 /**
  * Subscribe to real-time delivery events and invalidate queries

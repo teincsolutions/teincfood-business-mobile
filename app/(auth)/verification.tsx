@@ -13,7 +13,7 @@ import {
 } from "@/hooks/useAuthVerification";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { KeyboardAvoidingView } from "react-native";
 
 const OTP_LENGTH = 4;

@@ -19,7 +19,7 @@ import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner, Button } from "@/components/ui";
 import { useRouter } from "expo-router";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 export default function FleetDashboardScreen() {
   const router = useRouter();

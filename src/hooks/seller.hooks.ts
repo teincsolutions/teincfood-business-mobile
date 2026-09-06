@@ -23,7 +23,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useBusinessStore } from "@/stores/business.store";
 import * as sellerService from "@/services/seller.service";
 import type { BusinessDeliveriesParams } from "@/services/seller.service";
-import type { BusinessDelivery, BusinessDeliveriesResponse } from "@/types/api";
+import type { BusinessDelivery, BusinessDeliveriesResponse } from "@teincfood/core";
 import { SELLER_KEYS as Keys } from "@teincfood/core";
 
 export function useBusinessDeliveriesQuery(enabled = true, filters?: { status?: string; search?: string }) {

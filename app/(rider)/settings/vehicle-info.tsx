@@ -11,8 +11,8 @@ import {
   useVehicleInfoQuery,
   useCreateVehicleMutation,
 } from "@/hooks/useRider";
-import type { RiderVehicleRequest } from "@/types/api/rider.api";
-import { extractApiErrorMessage } from "@/utils/error";
+import type { RiderVehicleRequest } from "@teincfood/core";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { toast } from "sonner-native";
 
 const VEHICLE_TYPES: { value: string; label: string }[] = [

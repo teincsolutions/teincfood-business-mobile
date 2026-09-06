@@ -40,7 +40,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
 import { useBusinessTaxRulesQuery } from "@/hooks/tax.hooks";
@@ -68,14 +68,14 @@ import type {
   MenuItem,
   MenuItemVariantResponse,
   MenuItemAddonResponse,
-} from "@/types/api/menu.api";
-import type { SellerOrder } from "@/types/api/seller.api";
+} from "@teincfood/core";
+import type { SellerOrder } from "@teincfood/core";
 import type {
   POSTab,
   POSOrderType,
   POSPaymentMethod,
   POSCartItem,
-} from "@/types/pos.types";
+} from "@teincfood/core";
 import {
   FoodCard,
   CashPaymentSheet,

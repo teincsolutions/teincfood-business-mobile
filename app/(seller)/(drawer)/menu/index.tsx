@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResponsive } from "@/utils/responsive";
 import { useLocalSearchParams } from "expo-router";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";

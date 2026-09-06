@@ -8,7 +8,7 @@ import type {
   MenuItemVariant as ApiMenuItemVariant,
   MenuItemAddon as ApiMenuItemAddon,
   CatalogItemRequest,
-} from '@/types/api';
+} from '@teincfood/core';
 import type { MenuItemForm } from '@/types/menu.types';
 
 // ─── Re-export API types for consumers ───

@@ -16,13 +16,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronDown, Check, Apple, Facebook } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validateEmail, validatePassword } from "@/utils/validation";
+import { validateEmail, validatePassword } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
   getDialCodeFromCountry,
   getCountryOption,
   normalizePhoneForCountry,
-} from "@/utils/phone";
+} from "@teincfood/core";
 import { authService, useSignupMutation } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";

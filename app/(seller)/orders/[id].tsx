@@ -31,7 +31,7 @@ import {
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import {
   useSellerOrderQuery,
   useAcceptOrderMutation,

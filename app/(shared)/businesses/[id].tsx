@@ -23,7 +23,7 @@ import { useBusinessStore } from "@/stores/business.store";
 import * as businessService from "@/services/business.service";
 import { uploadImage } from "@/services/upload.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { placesService, type PlaceSuggestion } from "@/services/places.service";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import {

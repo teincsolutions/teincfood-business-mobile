@@ -4,7 +4,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation } from '@tanstack/react-query';
 import { api } from './api';
 import { useAuthStore } from '@/stores/auth.store';
-import type { AuthUser } from '@/types/api/auth.api';
+import type { AuthUser } from '@teincfood/core';
 
 WebBrowser.maybeCompleteAuthSession();
 

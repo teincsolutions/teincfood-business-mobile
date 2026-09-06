@@ -4,13 +4,11 @@
 
 import { useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { referenceSyncService } from "./service";
+import { referenceSyncService, openSyncDatabase, getReferenceData } from "@teincfood/core";
+import type { ReferenceDataKey, ReferenceSyncOptions, ReferenceSyncResult } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
-import { openSyncDatabase } from "@/db/connection";
-import { getReferenceData } from "./operations";
 import { invalidateCachedImages } from "@/hooks/useCachedImage";
-import type { ReferenceDataKey, ReferenceSyncOptions } from "./types";
 
 export const REFERENCE_KEYS = {
   all: ["reference"] as const,
@@ -36,7 +34,7 @@ export function useReferenceDataSync(
     let cancelled = false;
     referenceSyncService
       .sync({ businessId, ...syncOptions })
-      .then((result) => {
+      .then((result: ReferenceSyncResult) => {
         if (cancelled) return;
         if (result.failed.length > 0) {
           console.debug("[ReferenceSync] failed keys (non-fatal):", result.failed);
@@ -88,7 +86,7 @@ export function useBusinessReferenceDataSync() {
     let cancelled = false;
     referenceSyncService
       .sync({ businessId })
-      .then((result) => {
+      .then((result: ReferenceSyncResult) => {
         if (cancelled) return;
         invalidateCachedImages(queryClient);
         if (result.failed.length > 0) {

@@ -23,14 +23,14 @@ import {
   Check,
 } from "@tamagui/lucide-icons";
 import { Button, FormInput, BackButton } from "@/components/ui";
-import { validateEmail, validatePassword } from "@/utils/validation";
+import { validateEmail, validatePassword } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
   getCountryOption,
   getDialCodeFromCountry,
   isLikelyE164,
   normalizePhoneForCountry,
-} from "@/utils/phone";
+} from "@teincfood/core";
 import {
   authService,
   useEmailPasswordLoginMutation,

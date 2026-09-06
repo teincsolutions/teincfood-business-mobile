@@ -7,7 +7,7 @@ import axios, {
 } from "axios";
 import { API_BASE_URL } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth.store";
-import { extractFromResponseBody } from "@/utils/error";
+import { extractFromResponseBody } from "@teincfood/core";
 
 let isRefreshing = false;
 let failedQueue: Array<{

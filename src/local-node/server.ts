@@ -19,13 +19,13 @@
  */
 
 import TcpSocket from "react-native-tcp-socket";
-import { syncLogger } from "@/utils/sync-logger";
-import { generateUUID } from "@/utils/uuid";
-import { openSyncDatabase } from "@/db/connection";
-import { getReferenceData } from "@/reference/operations";
-import type { Command, DomainEvent } from "@/sync/types";
+import { syncLogger } from "@teincfood/core";
+import { generateUUID } from "@teincfood/core";
+import { openSyncDatabase } from "@teincfood/core";
+import { getReferenceData } from "@teincfood/core";
+import type { Command, DomainEvent } from "@teincfood/core";
 import type { LocalNodeMessage } from "./types";
-import type { ReferenceDataKey, ReferenceDataRecord } from "@/reference/types";
+import type { ReferenceDataKey, ReferenceDataRecord } from "@teincfood/core";
 import { computeProof, generateNonce } from "./security";
 import { patchTLSServerListen } from "./tls-listen-patch";
 

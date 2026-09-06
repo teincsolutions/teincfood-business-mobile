@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { BackButton, Button } from "@/components/ui";
 import { useDeliveryDetailQuery } from "@/hooks/useDeliveryDetail";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import { DeliveryTimeline, getDeliveryStepIndex } from "@/components/tracking/DeliveryTimeline";
 
 const DELIVERY_STATUS_COLORS = {

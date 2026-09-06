@@ -4,7 +4,7 @@ import type {
   SellerOrdersResponse,
   SellerOrderDetailResponse,
   BusinessDeliveriesResponse,
-} from '@/types/api';
+} from '@teincfood/core';
 
 // ─── Orders ───
 

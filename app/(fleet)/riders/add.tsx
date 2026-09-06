@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validation } from "@/utils/validation";
+import { validation } from "@teincfood/core";
 import { useFleetStore } from "@/stores/fleet.store";
 import { Mail, Phone, User, Car } from "@tamagui/lucide-icons";
 

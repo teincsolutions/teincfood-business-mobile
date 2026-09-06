@@ -8,8 +8,8 @@ import {
   Eye,
   EyeOff,
 } from "@tamagui/lucide-icons";
-import type { MenuItem } from "@/types/api/menu.api";
-import { formatPriceFromMinor } from "@/utils/currency";
+import type { MenuItem } from "@teincfood/core";
+import { formatPriceFromMinor } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useCachedImageUrl } from "@/hooks/useCachedImage";
 

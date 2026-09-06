@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as businessService from '@/services/business.service';
-import type { TaxRuleListResponse } from '@/types/api';
+import type { TaxRuleListResponse } from '@teincfood/core';
 import { useBusinessStore } from '@/stores/business.store';
 import { useReferenceData } from '@/reference/hooks';
-import { emitReferenceChanged } from '@/reference/events';
+import { emitReferenceChanged } from '@teincfood/core';
 import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage } from '@teincfood/core';
 
 export const TAX_KEYS = {
   all: ['tax-rules'] as const,

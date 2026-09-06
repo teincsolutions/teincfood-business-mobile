@@ -9,7 +9,7 @@ import {
   X,
 } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui";
-import type { FleetKycDocument } from "@/types/api/fleet.api";
+import type { FleetKycDocument } from "@teincfood/core";
 
 interface RiderKycSheetProps {
   open: boolean;

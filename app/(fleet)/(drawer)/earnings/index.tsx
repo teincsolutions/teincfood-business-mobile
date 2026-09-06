@@ -15,7 +15,7 @@ import {
   useFleetDashboardQuery,
   useFleetRidersQuery,
 } from "@/hooks/useFleet";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 export default function FleetEarningsScreen() {
   const router = useRouter();

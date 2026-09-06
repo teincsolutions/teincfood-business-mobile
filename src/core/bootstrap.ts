@@ -45,7 +45,7 @@ import * as kioskSrv from "@/services/kiosk.service";
 import * as menuSrv from "@/services/menu.service";
 import * as businessSrv from "@/services/business.service";
 import * as rolesSrv from "@/services/roles.service";
-import * as desktopImageCache from "@/reference/image-cache";
+import * as desktopImageCache from "@teincfood/core";
 import type { SQLiteDatabase } from "expo-sqlite";
 
 let bootstrapped = false;

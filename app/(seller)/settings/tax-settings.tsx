@@ -31,7 +31,7 @@ import {
   useUpdateTaxRuleMutation,
   useDeleteTaxRuleMutation,
 } from "@/hooks/tax.hooks";
-import type { TaxRule } from "@/types/api";
+import type { TaxRule } from "@teincfood/core";
 import { taxRuleToForm, defaultTaxRuleForm } from "@/types/tax.types";
 import type { TaxRuleForm } from "@/types/tax.types";
 

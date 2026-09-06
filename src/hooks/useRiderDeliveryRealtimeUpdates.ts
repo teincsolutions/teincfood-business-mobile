@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { orderEventsService } from '@/services/order-events.service';
+import { orderEventsService } from '@teincfood/core';
 
 const RIDER_EVENTS = [
   'delivery.assigned',
