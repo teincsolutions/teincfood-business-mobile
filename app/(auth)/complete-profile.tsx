@@ -5,7 +5,7 @@ import { KeyboardAvoidingView, Platform } from "react-native";
 import { YStack, Text, ScrollView } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validateEmail } from "@/utils/validation";
+import { validateEmail } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useUpdateProfileMutation } from "@/hooks/useProfile";

@@ -16,9 +16,9 @@ import {
 } from "tamagui";
 import { ShoppingCart, Plus, Minus, X, Check } from "@tamagui/lucide-icons";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import { usePOSStore } from "@/stores/pos.store";
-import type { MenuItem } from "@/types/api/menu.api";
+import type { MenuItem } from "@teincfood/core";
 import { Button } from "../ui";
 import { useCachedImageUrl } from "@/hooks/useCachedImage";
 

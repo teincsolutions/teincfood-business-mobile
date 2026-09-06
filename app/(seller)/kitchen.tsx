@@ -42,7 +42,7 @@ import {
 } from "@/components/kiosk";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { Badge } from "@/components/ui/Badge";
-import type { SellerOrder } from "@/types/api";
+import type { SellerOrder } from "@teincfood/core";
 
 function LiveClock() {
   const [time, setTime] = useState(new Date());

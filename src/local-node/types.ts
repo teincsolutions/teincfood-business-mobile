@@ -2,11 +2,11 @@
  * Types for the Local Node / multi-terminal LAN layer.
  */
 
-import type { Command, DomainEvent } from "@/sync/types";
+import type { Command, DomainEvent } from "@teincfood/core";
 import type {
   ReferenceDataKey,
   ReferenceDataRecord,
-} from "@/reference/types";
+} from "@teincfood/core";
 
 export type LocalNodeMessageType =
   | "command"

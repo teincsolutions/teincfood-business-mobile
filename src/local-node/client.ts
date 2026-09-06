@@ -11,12 +11,12 @@
  */
 
 import TcpSocket from "react-native-tcp-socket";
-import { syncLogger } from "@/utils/sync-logger";
-import { generateUUID } from "@/utils/uuid";
+import { syncLogger } from "@teincfood/core";
+import { generateUUID } from "@teincfood/core";
 import { getAppInstanceId, getDeviceDisplayName } from "@/services/devices.service";
-import type { Command, DomainEvent } from "@/sync/types";
+import type { Command, DomainEvent } from "@teincfood/core";
 import type { LocalNodeInfo, LocalNodeMessage } from "./types";
-import type { ReferenceDataKey, ReferenceDataRecord } from "@/reference/types";
+import type { ReferenceDataKey, ReferenceDataRecord } from "@teincfood/core";
 
 /** Result of requesting cached reference data from the Local Node. */
 export interface ReferenceFetchResult {

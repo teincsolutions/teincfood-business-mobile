@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as WebBrowser from 'expo-web-browser';
-import { eventsService } from '@/services/events.service';
+import { eventsService } from '@teincfood/core';
 import { paymentService } from '@/services/payment.service';
 
 export type POSPaymentState = 'idle' | 'initiating' | 'awaiting_confirmation' | 'success' | 'failed';

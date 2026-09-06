@@ -3,8 +3,8 @@ import { Card, Text, XStack, YStack, Separator } from 'tamagui';
 import { Clock, CheckCircle, FileText, User, Printer } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatPriceFromMinor } from '@/utils/currency';
-import type { SellerOrder } from '@/types/api';
+import { formatPriceFromMinor } from '@teincfood/core';
+import type { SellerOrder } from '@teincfood/core';
 
 interface PreparingOrderCardProps {
   order: SellerOrder;

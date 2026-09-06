@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Card, YStack, XStack, Text, Image, useMedia } from "tamagui";
 import { Plus } from "@tamagui/lucide-icons";
-import { formatPriceFromMinor } from "@/utils/currency";
-import type { MenuItem } from "@/types/api/menu.api";
+import { formatPriceFromMinor } from "@teincfood/core";
+import type { MenuItem } from "@teincfood/core";
 import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
 import { useCachedImageUrl } from "@/hooks/useCachedImage";

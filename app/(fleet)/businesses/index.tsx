@@ -16,7 +16,7 @@ import { BackButton } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { useQuery } from "@tanstack/react-query";
 import * as businessService from "@/services/business.service";
-import type { Business } from "@/types/api";
+import type { Business } from "@teincfood/core";
 
 export default function FleetBusinessesScreen() {
   const router = useRouter();

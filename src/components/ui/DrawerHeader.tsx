@@ -22,7 +22,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useProfileQuery } from "@/hooks/useProfile";
 import { useResponsive } from "@/utils/responsive";
-import { copyToClipboard } from "@/utils/copyToClipBoard";
+import { copyToClipboard } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 

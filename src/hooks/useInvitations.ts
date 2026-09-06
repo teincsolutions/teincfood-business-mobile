@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as fleetService from '@/services/fleet.service';
 import * as businessService from '@/services/business.service';
 import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage } from '@teincfood/core';
 
 const INVITATION_KEYS = {
   all: ['invitations'] as const,

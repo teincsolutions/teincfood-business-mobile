@@ -16,16 +16,16 @@ import {
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { toast } from 'sonner-native';
 import { Button, FormInput } from '@/components/ui';
-import type { MenuItem } from '@/types/api/menu.api';
+import type { MenuItem } from '@teincfood/core';
 import type { MenuItemForm } from '@/types/menu.types';
 import type { UploadResult } from '@/services/upload.service';
-import type { MenuCategory } from '@/types/api';
+import type { MenuCategory } from '@teincfood/core';
 import {
   DIETARY_TAGS,
   EMPTY_FORM,
   toMinor,
 } from '@/services/menu.service';
-import { formatPrice } from '@/utils/currency';
+import { formatPrice } from '@teincfood/core';
 
 interface MenuFormSheetProps {
   open: boolean;

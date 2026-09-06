@@ -3,7 +3,7 @@ import { Modal } from "react-native";
 import { ActivityIndicator } from "react-native";
 import { YStack, XStack, Text, Button } from "tamagui";
 import { CheckCircle, XCircle } from "@tamagui/lucide-icons";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import type { POSPaymentState } from "@/hooks/usePOSPaymentFlow";
 
 interface PaymentProcessingModalProps {

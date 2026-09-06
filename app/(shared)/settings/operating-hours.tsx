@@ -17,8 +17,8 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { fetchOperatingHours, upsertOperatingHours } from "@/services/business.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
-import type { OperatingHoursEntry } from "@/types/api";
+import { extractApiErrorMessage } from "@teincfood/core";
+import type { OperatingHoursEntry } from "@teincfood/core";
 
 interface DaySchedule {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
-import { phoenixSocket } from '@/services/phoenix-socket.service';
+import { phoenixSocket } from '@teincfood/core';
 import * as riderService from '@/services/rider.service';
 
 interface UseRiderLocationTrackingOptions {

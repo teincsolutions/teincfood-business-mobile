@@ -13,7 +13,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import type { SellerOrder } from "@teincfood/core";
 import { isUnpaid, isCancellable, cancelLabelFor } from "@teincfood/core";
 

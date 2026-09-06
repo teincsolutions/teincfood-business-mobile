@@ -10,10 +10,10 @@
 import { useEffect } from "react";
 import { queryClient } from "@/providers/QueryProvider";
 import { useBusinessStore } from "@/stores/business.store";
-import { orderSnapshotsService } from "@/sync/order-snapshots.service";
+import { orderSnapshotsService } from "@teincfood/core";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
 import { POS_KEYS } from "@/hooks/pos.hooks";
-import type { SellerOrder } from "@/types/api/seller.api";
+import type { SellerOrder } from "@teincfood/core";
 
 export function useOfflineOrderHydration() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);

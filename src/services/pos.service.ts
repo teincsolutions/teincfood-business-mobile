@@ -1,6 +1,6 @@
 import { api } from './api';
-import type { POSOrderPreviewRequest, POSOrderPreviewResponse } from '@/types/pos.types';
-import type { SellerOrdersResponse } from '@/types/api/seller.api';
+import type { POSOrderPreviewRequest, POSOrderPreviewResponse } from '@teincfood/core';
+import type { SellerOrdersResponse } from '@teincfood/core';
 
 // NOTE: no createPOSOrder — order creation has exactly one path:
 // createLocalOrder in @teincfood/core (SQLite + sync_jobs + hours gate).

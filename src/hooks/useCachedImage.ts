@@ -14,7 +14,7 @@ import {
   cacheRemoteImage,
   resolveImageSource,
   stableCacheUrl,
-} from "@/reference/image-cache";
+} from "@teincfood/core";
 
 const IMAGE_CACHE_KEYS = {
   all: ["cachedImage"] as const,

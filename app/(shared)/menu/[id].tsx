@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton, Button } from '@/components/ui';
 import { useMenuItemsQuery } from '@/hooks/menu.hooks';
 import { useCachedImageUrl } from '@/hooks/useCachedImage';
-import { formatPriceFromMinor } from '@/utils/currency';
+import { formatPriceFromMinor } from '@teincfood/core';
 import {
   UtensilsCrossed,
   Eye,

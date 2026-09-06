@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNotificationsMutations } from "@teincfood/rn-notifications";
-import { eventsService } from "@/services/events.service";
+import { eventsService } from "@teincfood/core";
 
 const DEBOUNCE_MS = 400;
 

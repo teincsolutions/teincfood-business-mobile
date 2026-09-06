@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { ScrollView, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { formatPrice, formatPriceFromMinor } from "@/utils/currency";
+import { formatPrice, formatPriceFromMinor } from "@teincfood/core";
 import { YStack, XStack, Text, Card, Separator, Switch, Avatar } from "tamagui";
 import {
   ShoppingBag,
@@ -25,7 +25,7 @@ import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 
 /**
  * Seller Dashboard Screen

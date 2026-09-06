@@ -6,7 +6,7 @@ import { YStack, XStack, Text, Card, Progress, Separator } from "tamagui";
 import { toast } from "sonner-native";
 import { Button } from "@/components/ui";
 import { uploadImage } from "@/services/upload.service";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { KycCard, type KycDocConfig, type DocStatus } from "./KycCard";
 
 export interface KycDocumentState {

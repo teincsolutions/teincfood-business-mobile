@@ -47,7 +47,7 @@ import { useSecurityStore } from "@/stores/security.store";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
-import type { SellerOrder } from "@/types/api";
+import type { SellerOrder } from "@teincfood/core";
 import type { AvailableRider } from "@/services/kiosk.service";
 import {
   useKioskOrdersQuery,
@@ -61,7 +61,7 @@ import {
 import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { useResponsive } from "@/utils/responsive";
 import { Button } from "@/components/ui";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 interface DialogState {
   open: boolean;

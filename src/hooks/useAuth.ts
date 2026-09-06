@@ -6,9 +6,9 @@ import { useLocationStore } from '@/stores/location.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
 import type { AuthApiResponse } from '@/services/auth.service';
-import type { AuthUser } from '@/types/api/auth.api';
+import type { AuthUser } from '@teincfood/core';
 import type { User } from '@/types/user.model';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage } from '@teincfood/core';
 import { register, cleanup, unregister } from '@/hooks/usePushTokenRegistration';
 
 export interface AuthError {

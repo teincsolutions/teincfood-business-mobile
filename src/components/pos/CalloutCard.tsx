@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Card, Text, XStack, YStack } from "tamagui";
-import type { SellerOrder } from "@/types/api/seller.api";
+import type { SellerOrder } from "@teincfood/core";
 
 interface CalloutCardProps {
   order: SellerOrder;

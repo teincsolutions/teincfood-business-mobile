@@ -11,10 +11,10 @@ import type {
   NavigationSettings,
   NavigationApp,
 } from '@/types/rider.model';
-import type { RiderDashboard, RiderVehicleRequest } from '@/types/api/rider.api';
+import type { RiderDashboard, RiderVehicleRequest } from '@teincfood/core';
 import * as riderService from '@/services/rider.service';
 import { toast } from 'sonner-native';
-import { extractApiErrorMessage } from '@/utils/error';
+import { extractApiErrorMessage } from '@teincfood/core';
 
 // Query keys
 const RIDER_KEYS = {

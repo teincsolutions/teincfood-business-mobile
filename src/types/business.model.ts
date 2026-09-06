@@ -92,7 +92,7 @@ export interface UpdateBusinessRequest {
   status?: BusinessStatus;
 }
 
-import type { Business as ApiBusiness } from '@/types/api';
+import type { Business as ApiBusiness } from '@teincfood/core';
 
 export interface BusinessSummary extends ApiBusiness {
   isDefault?: boolean;

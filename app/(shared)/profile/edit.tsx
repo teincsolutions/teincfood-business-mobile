@@ -19,7 +19,7 @@ import {
 import { toast } from "sonner-native";
 import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/useProfile";
 import { uploadImage } from "@/services/upload.service";
-import { extractApiErrorMessage } from "@/utils/error";
+import { extractApiErrorMessage } from "@teincfood/core";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function EditProfile() {

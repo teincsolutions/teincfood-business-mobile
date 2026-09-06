@@ -20,13 +20,13 @@ import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { getAppInstanceId } from "@/services/devices.service";
-import { restTransport } from "@/sync/transport-rest";
-import { commandQueueService } from "@/sync/command-queue.service";
+import { restTransport } from "@teincfood/core";
+import { commandQueueService } from "@teincfood/core";
 import {
   applyPendingOrderEvent,
   applyOrderStateChangeEvent,
-} from "@/sync/pending-orders.service";
-import { applyReferenceChangeEvent } from "@/reference/events";
+} from "@teincfood/core";
+import { applyReferenceChangeEvent } from "@teincfood/core";
 import {
   openSyncDatabase,
   insertOrder,
@@ -34,14 +34,14 @@ import {
   transitionLocalOrder,
   type SellerOrder,
 } from "@teincfood/core";
-import { syncLogger } from "@/utils/sync-logger";
+import { syncLogger } from "@teincfood/core";
 import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import { LocalNodeServer } from "./server";
 import { LocalNodeClient } from "./client";
 import { localNodeDiscovery } from "./discovery";
 import { deriveLanSecret } from "./security";
-import type { Command, DomainEvent } from "@/sync/types";
+import type { Command, DomainEvent } from "@teincfood/core";
 import type { LocalNodeInfo } from "./types";
 
 const LOCAL_NODE_KEEP_AWAKE_TAG = "TeincLocalNode";

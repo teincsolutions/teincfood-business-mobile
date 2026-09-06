@@ -16,7 +16,7 @@ import type {
   TaxRuleListResponse,
   TaxRuleResponse,
   BusinessMembershipResponse,
-} from '@/types/api';
+} from '@teincfood/core';
 
 // ─── My Businesses ───
 

@@ -3,7 +3,7 @@ import type { AuthTokens } from '@teincfood/chat-client';
 import { mmkvStorage } from './storage';
 import { API_BASE_URL, WS_BASE_URL } from './constants';
 import { useAuthStore } from '@/stores/auth.store';
-import { eventsService } from '@/services/events.service';
+import { eventsService } from '@teincfood/core';
 
 let _client: ChatClient | null = null;
 

@@ -11,7 +11,7 @@ import type {
   AvailableOrdersResponse,
   RiderDashboardResponse,
   PaginationMeta,
-} from '@/types/api';
+} from '@teincfood/core';
 
 // ─── Rider Profile ───
 

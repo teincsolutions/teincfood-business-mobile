@@ -5,7 +5,7 @@
  */
 
 import Zeroconf from "react-native-zeroconf";
-import { syncLogger } from "@/utils/sync-logger";
+import { syncLogger } from "@teincfood/core";
 import { getDeviceDisplayName } from "@/services/devices.service";
 import type { DiscoveredNode } from "@/stores/local-node.store";
 

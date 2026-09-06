@@ -13,7 +13,7 @@ import {
   CalendarDays,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 import {
   useRevenueSummaryQuery,
   useSellerAnalyticsQuery,

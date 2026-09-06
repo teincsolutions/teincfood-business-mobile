@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { YStack, XStack, Text, Button, Separator, Sheet, useMedia } from "tamagui";
 import { NumericKeypad } from "./NumericKeypad";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 interface CashPaymentSheetProps {
   open: boolean;

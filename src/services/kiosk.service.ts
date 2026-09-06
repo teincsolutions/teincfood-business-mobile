@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { SellerOrder, SellerOrdersResponse, BusinessDelivery, DeliveryRider } from '@/types/api';
+import type { SellerOrder, SellerOrdersResponse, BusinessDelivery, DeliveryRider } from '@teincfood/core';
 
 export async function fetchKioskOrders(businessId?: string): Promise<SellerOrdersResponse> {
   if (businessId) {

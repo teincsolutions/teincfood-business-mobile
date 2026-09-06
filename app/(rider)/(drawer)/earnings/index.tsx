@@ -16,7 +16,7 @@ import {
   useRiderEarningsSummaryQuery,
   useWalletHistoryQuery,
 } from "@/hooks/useRider";
-import { formatPriceFromMinor } from "@/utils/currency";
+import { formatPriceFromMinor } from "@teincfood/core";
 
 const PERIODS = [
   { key: "today" as const, label: "Today" },

@@ -16,7 +16,7 @@ import NetInfo, {
   type NetInfoStateType,
   type NetInfoSubscription,
 } from "@react-native-community/netinfo";
-import { syncLogger } from "@/utils/sync-logger";
+import { syncLogger } from "@teincfood/core";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
 

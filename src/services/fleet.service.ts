@@ -8,7 +8,7 @@ import type {
   FleetVehiclesResponse,
   FleetDashboardResponse,
   JoinRequest,
-} from '@/types/api';
+} from '@teincfood/core';
 
 // ─── Riders ───
 

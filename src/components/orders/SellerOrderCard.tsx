@@ -9,8 +9,8 @@ import {
 import { Button } from "@/components/ui";
 import { Clock, MapPin, Phone, User, ChefHat } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
-import { formatPriceFromMinor } from "@/utils/currency";
-import type { SellerOrder } from "@/types/api";
+import { formatPriceFromMinor } from "@teincfood/core";
+import type { SellerOrder } from "@teincfood/core";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   pending:    { label: "New",        color: "$yellow11", bg: "$yellow3" },

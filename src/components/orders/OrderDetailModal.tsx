@@ -3,7 +3,7 @@ import { ScrollView } from "react-native";
 import { Sheet, YStack, XStack, Text, Separator, Image } from "tamagui";
 import { Clock, MapPin, CreditCard, Smartphone } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { formatCurrency } from "@teincfood/core";
 import type { Order } from "@/models/order.model";
 import { use } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

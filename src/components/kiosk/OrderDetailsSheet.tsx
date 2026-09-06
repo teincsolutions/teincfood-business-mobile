@@ -15,8 +15,8 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useResponsive } from "@/utils/responsive";
-import { formatPriceFromMinor } from "@/utils/currency";
-import type { SellerOrder } from "@/types/api";
+import { formatPriceFromMinor } from "@teincfood/core";
+import type { SellerOrder } from "@teincfood/core";
 
 interface OrderDetailsSheetProps {
   visible: boolean;

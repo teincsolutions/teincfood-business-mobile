@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/stores/auth.store';
-import { phoenixSocket } from './phoenix-socket.service';
+import { phoenixSocket } from '@teincfood/core';
 
 let subscribed = false;
 

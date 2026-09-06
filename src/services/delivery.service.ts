@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { BusinessDeliveriesResponse, RiderDeliveryDetailResponse } from '@/types/api';
+import type { BusinessDeliveriesResponse, RiderDeliveryDetailResponse } from '@teincfood/core';
 
 export interface BusinessDeliveriesParams {
   page?: number;

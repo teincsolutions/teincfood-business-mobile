@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { WalletBalanceResponse, WalletHistoryResponse } from '@/types/api';
+import type { WalletBalanceResponse, WalletHistoryResponse } from '@teincfood/core';
 
 export async function fetchAllBalances(): Promise<WalletBalanceResponse> {
   return api.get<WalletBalanceResponse>('/wallet/balance');
