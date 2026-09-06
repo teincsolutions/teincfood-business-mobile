@@ -10,6 +10,7 @@ import {
   Button,
   Separator,
   Switch,
+  ChevronLeft,
 } from "tamagui";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -239,6 +240,13 @@ export default function DiagnosticsScreen() {
     []
   );
 
+  const onlineColor = isOnline ? "success" : "error";
+  const cloudColor =
+    isCloudReachable === "reachable" ? "success"
+    : isCloudReachable === "unreachable" ? "error"
+    : "colorMuted";
+  const pendingColor = pending ? "warning" : "success";
+
   return (
     <YStack flex={1} backgroundColor="$background">
       <XStack
@@ -250,11 +258,22 @@ export default function DiagnosticsScreen() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
+        <Button
+          chromeless
+          circular
+          width={40}
+          height={40}
+          padding={0}
+          pressStyle={{ opacity: 0.7 }}
+          onPress={() => router.back()}
+        >
+          <ChevronLeft size={20} color="$color" />
+        </Button>
         <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">Diagnostics</Text>
         <Switch
           checked={showLogs}
           onCheckedChange={setShowLogs}
-          backgroundColor={showLogs ? "$green9" : "$gray8"}
+          backgroundColor={showLogs ? "success" : "colorMuted"}
           size="$4"
         >
           <Switch.Thumb animation="quick" backgroundColor="$white" />
@@ -275,16 +294,14 @@ export default function DiagnosticsScreen() {
         <Card padding="$4" bordered marginBottom="$3">
           <YStack gap="$2">
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">CONNECTION</Text>
-            <StatusRow label="Online" value={isOnline ? "yes" : "no"} badge color={isOnline ? "$green9" : "$red9"} />
+            <StatusRow label="Online" value={isOnline ? "yes" : "no"} badge color={onlineColor} />
             <StatusRow
               label="Cloud"
               value={isCloudReachable}
               badge
-              color={
-                isCloudReachable === "reachable" ? "$green9" : isCloudReachable === "unreachable" ? "$red9" : "$gray8"
-              }
+              color={cloudColor}
             />
-            <StatusRow label="WebSocket" value={phxState} badge color="$gray8" />
+            <StatusRow label="WebSocket" value={phxState} badge color="colorMuted" />
             <StatusRow label="DD" value={deviceNumber ?? "—"} />
             <StatusRow label="Orders cached" value={ordersCount ?? "—"} />
           </YStack>
@@ -295,7 +312,7 @@ export default function DiagnosticsScreen() {
           <YStack gap="$2">
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">SYNC JOBS</Text>
-              <Badge backgroundColor={pending ? "$orange9" : "$green9"}>
+              <Badge backgroundColor={pendingColor}>
                 <Text color="white" fontSize="$2" fontWeight="700">{pending ?? "—"}</Text>
               </Badge>
             </XStack>
@@ -314,7 +331,7 @@ export default function DiagnosticsScreen() {
                     </Text>
                   </XStack>
                   {j.last_error ? (
-                    <Text fontSize="$1" color="$red10" fontFamily="monospace" numberOfLines={2}>
+                    <Text fontSize="$1" color="error" fontFamily="monospace" numberOfLines={2}>
                       {j.last_error.slice(0, 120)}
                     </Text>
                   ) : null}
