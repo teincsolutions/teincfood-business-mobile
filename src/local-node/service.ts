@@ -27,6 +27,13 @@ import {
   applyOrderStateChangeEvent,
 } from "@/sync/pending-orders.service";
 import { applyReferenceChangeEvent } from "@/reference/events";
+import {
+  openSyncDatabase,
+  insertOrder,
+  createLocalOrder,
+  transitionLocalOrder,
+  type SellerOrder,
+} from "@teincfood/core";
 import { syncLogger } from "@/utils/sync-logger";
 import { CLOUD_COMMAND_TIMEOUT_MS } from "@/utils/constants";
 import { activateKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -516,6 +523,28 @@ class LocalNodeService {
       secret: this.secret,
       onEvent: (event) => {
         syncLogger.event(event, "received", { origin: "lan" });
+        // New-DB LAN order sync — node broadcasts full SellerOrder or
+        // {action, orderId}; apply straight to SQLite (single source).
+        if ((event.event_type as string) === "order:sync") {
+          void (async () => {
+            try {
+              const p = event.payload as Record<string, unknown>;
+              if (p && typeof p.order_number === "string" && (p as { id?: unknown }).id) {
+                const db = await openSyncDatabase();
+                await insertOrder(db, p as unknown as SellerOrder & { hlc?: string });
+                return;
+              }
+              const action = (p as { action?: string }).action;
+              const orderId = (p as { orderId?: string }).orderId;
+              const bid = useBusinessStore.getState().activeBusiness?.id;
+              if (action && orderId && bid) {
+                try { await transitionLocalOrder(bid, String(orderId), action); } catch {}
+              }
+            } catch (e) {
+              syncLogger.debug("LocalNodeService", "LAN order:sync apply failed", { err: String(e) });
+            }
+          })();
+        }
         // Apply LAN events (pending order broadcasts, reconciled orders) to
         // the pending-orders store and persistence layer.
         applyPendingOrderEvent(event, "lan").catch((error) => {
@@ -598,6 +627,76 @@ class LocalNodeService {
 
   async handleNodeCommand(command: Command): Promise<DomainEvent | null> {
     syncLogger.command(command, "executing", { via: "local_node" });
+
+    // New-DB path for order commands — single write path via the domain
+    // service (SQLite + sync_jobs + hours gate), broadcast as order:sync
+    // SellerOrder JSON so peers insert directly. Coded business rejections
+    // (BUSINESS_CLOSED / HOURS_NOT_SYNCED / FORBIDDEN) are rethrown, never
+    // queued or forwarded.
+    if (command.command_type.startsWith("order:") || command.command_type.startsWith("payment:")) {
+      try {
+        const bid = command.business_id;
+        const payload = command.payload as Record<string, unknown>;
+        if (command.command_type === "order:create") {
+          const order = await createLocalOrder(bid, {
+            ...(payload as Record<string, unknown>),
+            command_id: command.command_id,
+            id: command.entity_id ?? command.command_id,
+            order_number:
+              (payload as { order_number?: string }).order_number ??
+              (payload as { local_order_number?: string }).local_order_number,
+          } as unknown as Parameters<typeof createLocalOrder>[1]);
+          const evt: DomainEvent = {
+            event_id: `lan-${command.command_id}`,
+            event_type: "order:sync" as DomainEvent["event_type"],
+            event_version: "1",
+            entity_id: order.id,
+            user_id: command.user_id,
+            device_id: command.device_id,
+            payload: order as unknown as Record<string, unknown>,
+            timestamp: new Date().toISOString(),
+          };
+          this.server?.broadcast(evt);
+          return evt;
+        }
+        const map: Record<string, string> = {
+          "order:accept": "accept",
+          "order:reject": "reject",
+          "order:start_preparing": "start_preparing",
+          "order:mark_ready": "mark_ready",
+          "order:complete_pickup": "complete_pickup",
+          "order:cancel": "cancel",
+          "payment:confirm_cash": "confirm_cash",
+        };
+        const action = map[command.command_type] ?? command.command_type.replace(/^order:/, "");
+        const orderId =
+          command.entity_id ??
+          (payload as { orderId?: string }).orderId ??
+          (payload as { order_id?: string }).order_id;
+        if (orderId) {
+          await transitionLocalOrder(bid, String(orderId), action);
+          const evt: DomainEvent = {
+            event_id: `lan-${command.command_id}`,
+            event_type: "order:sync" as DomainEvent["event_type"],
+            event_version: "1",
+            entity_id: String(orderId),
+            user_id: command.user_id,
+            device_id: command.device_id,
+            payload: { action, orderId: String(orderId) },
+            timestamp: new Date().toISOString(),
+          };
+          this.server?.broadcast(evt);
+          return evt;
+        }
+      } catch (e) {
+        const code = (e as { code?: string })?.code;
+        if (code === "BUSINESS_CLOSED" || code === "HOURS_NOT_SYNCED" || code === "FORBIDDEN") {
+          syncLogger.debug("LocalNodeService", "LAN handle rejected by lib guard, no fallback", { err: String(e), code });
+          throw e;
+        }
+        syncLogger.debug("LocalNodeService", "New-DB LAN handle failed, fallback to legacy queue", { err: String(e) });
+      }
+    }
 
     const { isCloudReachable } = useConnectivityStore.getState();
     // Treat "unknown" as reachable so the node actually attempts the cloud

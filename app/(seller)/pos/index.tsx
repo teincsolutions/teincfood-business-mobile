@@ -928,6 +928,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               timestamp: new Date().toISOString(),
             }),
           );
+          // Lib hours-guard rejections are coded — surface them to staff.
+          const code = (error as { code?: string })?.code;
+          if (code === "BUSINESS_CLOSED" || code === "HOURS_NOT_SYNCED") {
+            toast.error(error instanceof Error ? error.message : "Business is currently closed");
+          } else {
+            toast.error(error instanceof Error ? error.message : "Failed to place order");
+          }
         },
       },
     );
