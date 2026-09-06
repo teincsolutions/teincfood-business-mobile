@@ -4,16 +4,19 @@ import { Truck, FileText, User } from '@tamagui/lucide-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatPriceFromMinor } from '@/utils/currency';
-import type { SellerOrder } from '@/types/api';
+import type { SellerOrder } from "@teincfood/core";
+import { isDeliveryOrder } from "@teincfood/core";
 
 interface ReadyOrderCardProps {
   order: SellerOrder;
   onAssignRider: (orderId: string) => void;
   onHandover: (deliveryId: string) => void;
   onViewDetails: (order: SellerOrder) => void;
+  onCompletePickup?: (orderId: string) => void;
 }
 
-export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails }: ReadyOrderCardProps) {
+export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails, onCompletePickup }: ReadyOrderCardProps) {
+  const isDelivery = isDeliveryOrder(order);
   const hasDelivery = !!order.delivery_id;
 
   return (
@@ -66,27 +69,38 @@ export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails
 
         <XStack justifyContent="space-between" alignItems="center">
           <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
-          {hasDelivery && !order.merchant_handover_confirmed_at ? (
+          {isDelivery ? (
+            hasDelivery && !order.merchant_handover_confirmed_at ? (
+              <Button
+                height="$12"
+                $lg={{ height: "$12" }}
+                backgroundColor="$success"
+                onPress={() => onHandover(order.delivery_id!)}
+                icon={<Truck size={18} color="white" />}
+              >
+                <Text color="white" fontWeight="bold">HANDOVER TO RIDER</Text>
+              </Button>
+            ) : (
+              <Button
+                height="$12"
+                $lg={{ height: "$12" }}
+                backgroundColor="$primary"
+                onPress={() => onAssignRider(order.id)}
+                icon={<Truck size={18} color="white" />}
+              >
+                <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
+              </Button>
+            )
+          ) : onCompletePickup ? (
             <Button
               height="$12"
               $lg={{ height: "$12" }}
               backgroundColor="$success"
-              onPress={() => onHandover(order.delivery_id!)}
-              icon={<Truck size={18} color="white" />}
+              onPress={() => onCompletePickup(order.id)}
             >
-              <Text color="white" fontWeight="bold">HANDOVER TO RIDER</Text>
+              <Text color="white" fontWeight="bold">{order.order_type === "dine_in" ? "COMPLETE" : "PICKED UP"}</Text>
             </Button>
-          ) : (
-            <Button
-              height="$12"
-              $lg={{ height: "$12" }}
-              backgroundColor="$primary"
-              onPress={() => onAssignRider(order.id)}
-              icon={<Truck size={18} color="white" />}
-            >
-              <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
-            </Button>
-          )}
+          ) : null}
         </XStack>
       </YStack>
     </Card>

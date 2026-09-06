@@ -3,6 +3,7 @@ import type {
   SellerOrder,
   SellerOrdersResponse,
   SellerOrderDetailResponse,
+  BusinessDeliveriesResponse,
 } from '@/types/api';
 
 // ─── Orders ───
@@ -87,8 +88,8 @@ export interface BusinessDeliveriesParams {
 export async function fetchBusinessDeliveries(
   businessId: string,
   params?: BusinessDeliveriesParams,
-): Promise<SellerOrdersResponse> {
-  return api.get<SellerOrdersResponse>(`/businesses/${businessId}/deliveries`, { params });
+): Promise<BusinessDeliveriesResponse> {
+  return api.get<BusinessDeliveriesResponse>(`/businesses/${businessId}/deliveries`, { params });
 }
 
 // ─── Legacy alias ───

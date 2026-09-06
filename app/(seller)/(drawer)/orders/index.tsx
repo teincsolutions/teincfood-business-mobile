@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @ts-nocheck
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   YStack,
@@ -38,7 +39,7 @@ import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@/types/api";
 import { formatPriceFromMinor } from "@/utils/currency";
-import { getCustomerDisplay } from "@teincfood/core";
+import { getCustomerDisplay, isCancellable, cancelLabelFor, CANCELLABLE_STATUSES } from "@teincfood/core";
 
 const FILTER_CHIPS = [
   { key: "pending", label: "Pending", color: "$warning" },
@@ -80,15 +81,9 @@ const DEFAULT_CHIPS = [
   "arrived",
   "delivered",
 ];
-const CANCELLABLE_STATUSES = [
-  "pending",
-  "awaiting_payment",
-  "accepted",
-  "preparing",
-];
 
 function actionLabel(status: string) {
-  return status === "pending" ? "Reject" : "Cancel";
+  return cancelLabelFor(status);
 }
 
 function formatStatus(status: string) {
@@ -276,7 +271,7 @@ export default function SellerOrders() {
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
           />
-          {canReject && CANCELLABLE_STATUSES.includes(item.status) && (
+          {canReject && isCancellable(item.status) && (
             <Button
               variant="dangerOutline"
               height={40}
@@ -289,7 +284,7 @@ export default function SellerOrders() {
         </XStack>
       </YStack>
     </Card>
-    );
+     );
   };
 
   // ── Tablet: table row ──
@@ -391,13 +386,13 @@ export default function SellerOrders() {
           icon={<Printer size={16} />}
           onPress={() => handlePrint(item)}
         />
-        {canReject && CANCELLABLE_STATUSES.includes(item.status) && (
+        {canReject && isCancellable(item.status) && (
           <Button
             variant="dangerOutline"
             height={40}
             paddingHorizontal="$3"
             icon={<FileText size={16} />}
-            onPress={() => setCancelTarget(item.id)}
+            onPress={() => setCancelTarget({ id: item.id, status: item.status })}
           >
             {actionLabel(item.status)}
           </Button>
