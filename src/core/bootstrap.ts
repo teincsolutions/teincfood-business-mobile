@@ -182,7 +182,6 @@ function buildHttpClient(): HttpClient {
 function wireServiceAdapters(): void {
   try {
     Object.assign(corePosService as Record<string, unknown>, {
-      createPOSOrder: posSrv.createPOSOrder,
       fetchPOSOrderPreview: posSrv.fetchPOSOrderPreview,
       fetchBusinessOrders: posSrv.fetchBusinessOrders,
     });

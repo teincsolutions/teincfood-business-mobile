@@ -1,9 +1,9 @@
-// Shim → @teincfood/core order lifecycle (offline-first, device-owned outbox)
+// Shim → @teincfood/core order lifecycle (offline-first, SQLite + sync_jobs)
 export {
   usePOSOrdersQuery,
   usePOSOrderPreviewQuery,
   useCreatePOSOrderMutation,
-  usePendingOrders,
+  useBusinessOpenNow,
   POS_KEYS,
   SELLER_KEYS,
 } from "@teincfood/core";

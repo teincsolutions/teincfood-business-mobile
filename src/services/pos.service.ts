@@ -1,16 +1,9 @@
 import { api } from './api';
-import type { POSOrderCreateRequest, POSOrderCreateResponse, POSOrderPreviewRequest, POSOrderPreviewResponse } from '@/types/pos.types';
+import type { POSOrderPreviewRequest, POSOrderPreviewResponse } from '@/types/pos.types';
 import type { SellerOrdersResponse } from '@/types/api/seller.api';
 
-export async function createPOSOrder(
-  businessId: string,
-  data: POSOrderCreateRequest,
-): Promise<POSOrderCreateResponse> {
-  return api.post<POSOrderCreateResponse>(
-    `/businesses/${businessId}/pos/orders`,
-    data,
-  );
-}
+// NOTE: no createPOSOrder — order creation has exactly one path:
+// createLocalOrder in @teincfood/core (SQLite + sync_jobs + hours gate).
 
 export async function fetchPOSOrderPreview(
   businessId: string,
