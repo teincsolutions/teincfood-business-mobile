@@ -48,6 +48,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { printService } from "@/services/print.service";
+import { isDeliveryOrder } from "@teincfood/core";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "$yellow9",
@@ -613,6 +614,7 @@ export default function OrderDetails() {
               </Button>
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") &&
+              isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) &&
               order.delivery_person && (
                 <>
                   {order.merchant_handover_confirmed_at ? (
@@ -651,7 +653,7 @@ export default function OrderDetails() {
                   )}
                 </>
               )}
-            {order.status === "ready" && order.order_type === "takeout" && (
+            {order.status === "ready" && !isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) && (
               <Button
                 variant="primary"
                 width="100%"
@@ -668,7 +670,7 @@ export default function OrderDetails() {
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") &&
               !order.delivery_person &&
-              order.order_type !== "takeout" && (
+              isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) && (
                 <Button
                   variant="primary"
                   width="100%"

@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatPriceFromMinor } from "@/utils/currency";
-import type { SellerOrder } from "@/types/api";
+import type { SellerOrder } from "@teincfood/core";
 import { isUnpaid, isCancellable, cancelLabelFor } from "@teincfood/core";
 
 interface PendingOrderCardProps {
@@ -47,7 +47,7 @@ export function PendingOrderCard({
   getTimeSince,
 }: PendingOrderCardProps) {
   const isAccepted = order.status === "accepted";
-  const showCollectCash = onCollectCash && isUnpaid(order as unknown as Parameters<typeof isUnpaid>[0]) && order.status !== "cancelled";
+  const showCollectCash = onCollectCash && isUnpaid(order) && order.status !== "cancelled";
   const showPay = onPay && order.status === "awaiting_payment";
   const showCancel = onCancel && isCancellable(order.status);
 

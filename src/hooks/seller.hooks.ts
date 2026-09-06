@@ -23,24 +23,25 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useBusinessStore } from "@/stores/business.store";
 import * as sellerService from "@/services/seller.service";
 import type { BusinessDeliveriesParams } from "@/services/seller.service";
+import type { BusinessDelivery, BusinessDeliveriesResponse } from "@/types/api";
 import { SELLER_KEYS as Keys } from "@teincfood/core";
 
 export function useBusinessDeliveriesQuery(enabled = true, filters?: { status?: string; search?: string }) {
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
-  return useInfiniteQuery({
+  return useInfiniteQuery<BusinessDeliveriesResponse, Error, BusinessDelivery[]>({
     queryKey: Keys.deliveries(activeBusinessId, filters as Record<string, unknown>),
     queryFn: async ({ pageParam = 1 }) => {
       const params: BusinessDeliveriesParams = { page: pageParam as number, page_size: 20 };
       if (filters?.status) params.status = filters.status;
       if (filters?.search) params.search = filters.search;
-      return sellerService.fetchBusinessDeliveries(activeBusinessId!, params);
+      return sellerService.fetchBusinessDeliveries(activeBusinessId!, params) as Promise<BusinessDeliveriesResponse>;
     },
-    getNextPageParam: (lastPage: unknown) => {
-      const p = (lastPage as { pagination?: { page: number; total_pages: number } })?.pagination;
+    getNextPageParam: (lastPage) => {
+      const p = lastPage.pagination;
       return p && p.page < p.total_pages ? p.page + 1 : undefined;
     },
     initialPageParam: 1,
-    select: (data) => (data as { pages: { data: unknown[] }[] }).pages.flatMap((p) => p.data),
+    select: (data) => data.pages.flatMap((p) => p.data),
     enabled: enabled && Boolean(activeBusinessId),
   });
 }
