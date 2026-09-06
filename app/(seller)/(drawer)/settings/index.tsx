@@ -175,6 +175,12 @@ export default function SellerSettings() {
       route: "/(seller)/settings/local-node",
     },
     {
+      icon: Monitor,
+      label: "Diagnostics",
+      description: "Sync queue, DD, cloud reachability, wipe",
+      route: "/(seller)/settings/diagnostics",
+    },
+    {
       icon: Palette,
       label: "Theme",
       description: "Light, dark, or system",

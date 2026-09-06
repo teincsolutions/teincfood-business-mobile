@@ -50,6 +50,7 @@ import {
   usePOSOrdersQuery,
   usePOSOrderPreviewQuery,
   POS_KEYS,
+  useBusinessOpenNow,
 } from "@/hooks/pos.hooks";
 import {
   useAcceptKioskOrderMutation,
@@ -782,6 +783,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   );
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const businessOpen = useBusinessOpenNow(activeBusiness?.id);
+  const isBusinessClosed = !!activeBusiness?.id && !businessOpen.isLoading && businessOpen.data && !businessOpen.data.open;
 
   // Server-parity local pricing (offline/no-preview fallback):
   // mirrors backend calculate_pos_pricing so inclusive taxes stay embedded in
@@ -948,6 +951,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   ]);
 
   const handlePlaceOrder = useCallback(() => {
+    if (isBusinessClosed) {
+      toast.error(businessOpen.data?.reason === "no_hours_configured" ? "Operating hours not set yet. Please configure them in Settings." : "Business is currently closed");
+      return;
+    }
     if (
       checkoutForm.pos_payment_method === "mobile_money" &&
       !isCloudReachable
@@ -1356,22 +1363,24 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         borderTopWidth={1}
         borderTopColor="$borderColor"
       >
-        <Button
-          backgroundColor="$primary"
-          color="white"
-          fontWeight="700"
-          fontFamily="$body"
-          height={52}
-          disabled={createOrder.isPending}
-          pressStyle={{ opacity: 0.8 }}
-          onPress={handlePlaceOrder}
-        >
-          {createOrder.isPending ? (
-            <Spinner size="small" color="white" />
-          ) : (
-            `Place Order — ${formatPriceFromMinor(total)}`
-          )}
-        </Button>
+          <Button
+            backgroundColor="$primary"
+            color="white"
+            fontWeight="700"
+            fontFamily="$body"
+            height={52}
+            disabled={createOrder.isPending || isBusinessClosed}
+            pressStyle={{ opacity: 0.8 }}
+            onPress={handlePlaceOrder}
+          >
+            {createOrder.isPending ? (
+              <Spinner size="small" color="white" />
+            ) : isBusinessClosed ? (
+              "Business Closed"
+            ) : (
+              `Place Order — ${formatPriceFromMinor(total)}`
+            )}
+          </Button>
       </YStack>
 
       <CashPaymentSheet
