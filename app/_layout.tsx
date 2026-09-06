@@ -2,11 +2,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
-import { openSyncDatabase } from '../src/db/connection';
+import { openSyncDatabase, drainPending, syncReferenceDataOnReconnect, useSyncReconciliation, phoenixSocket } from '@teincfood/core';
 import { localNodeService } from '../src/local-node/service';
-import { drainPending } from '@teincfood/core';
-import { syncReferenceDataOnReconnect } from '../src/reference/events';
-import { useSyncReconciliation } from '../src/sync/use-sync-reconciliation';
 
 // Global handler for unhandled errors — prevents the app from freezing
 // when a non-fatal async error slips through.
@@ -49,7 +46,6 @@ import { LocationGuard } from '../src/components/LocationGuard';
 import { useBusinessesQuery } from '../src/hooks/useBusinessesQuery';
 import { useEventsConnection } from '../src/hooks/useEventsConnection';
 import { connectChatClient, disconnectChatClient } from '../src/utils/chat-service';
-import { phoenixSocket } from '../src/services/phoenix-socket.service';
 import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
 import * as sellerService from '../src/services/seller.service';
 import * as fleetService from '../src/services/fleet.service';

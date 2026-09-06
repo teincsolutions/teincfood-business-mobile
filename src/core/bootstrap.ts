@@ -6,8 +6,8 @@
  * process.env / import.meta.env itself.
  *
  * ensureCoreBootstrap() is idempotent and safe to call from anywhere (it is
- * invoked by src/db/connection.ts at import time so the app's existing
- * openSyncDatabase() call sites run against an already-bootstrapped core).
+ * invoked by the core's openSyncDatabase() at first import so the app's
+ * existing call sites run against an already-bootstrapped core).
  */
 import { openDatabaseAsync } from "expo-sqlite";
 import { mmkvStorage } from "@/utils/storage";
