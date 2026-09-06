@@ -350,3 +350,18 @@ export function ensureCoreBootstrap(): void {
 export function isCoreBootstrapped(): boolean {
   return bootstrapped;
 }
+
+// When this module is imported, ensure the SQLite driver and all platform
+// adapters are registered before any core service can be used. This replaces
+// the old side-effect in src/db/connection.ts that was deleted in the
+// shim cleanup (a59d9d3).
+ensureCoreBootstrap();
+
+/**
+ * Manual override: call this once at app startup (e.g. from a splash-screen
+ * init or root layout) if the module-side import-side-effect does not fire
+ * for any reason. Idempotent — safe to call multiple times.
+ */
+export function useCorePrime(): void {
+  if (!bootstrapped) bootstrapCore();
+}

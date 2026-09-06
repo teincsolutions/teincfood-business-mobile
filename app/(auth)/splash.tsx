@@ -10,6 +10,7 @@ import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useSecurityStore } from "@/stores/security.store";
+import { useCorePrime } from "@/core/bootstrap";
 import { queryClient } from "@/providers/QueryProvider";
 import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
@@ -55,10 +56,18 @@ export default function SplashScreen() {
   const setBiometricEnabled = useSecurityStore((s) => s.setBiometricEnabled);
   const locationHydrated = useLocationStore((s) => s.isHydrated);
   const hasLocation = useLocationStore((s) => s.hasLocation());
-  const storesHydrated =
+const storesHydrated =
     authHydrated && onboardingHydrated && roleHydrated && locationHydrated;
 
-  // Start entrance animations
+// Prime core bootstrap so SQLite driver is registered before any
+// @teincfood/core service (orderSnapshotsService, openSyncDatabase, etc.)
+// is used later in the app. This replaces the old src/db/connection.ts shim
+// that was deleted in the core 0.7.29 migration.
+useEffect(() => {
+  useCorePrime();
+}, []);
+
+// Start entrance animations
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
