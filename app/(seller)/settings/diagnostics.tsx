@@ -10,8 +10,8 @@ import {
   Button,
   Separator,
   Switch,
-  ChevronLeft,
 } from "tamagui";
+import { ChevronLeft } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import {
   getSyncJobsPendingCount,
@@ -69,12 +69,22 @@ export default function DiagnosticsScreen() {
 
   // Wire core syncLogger to our buffer (debug builds only)
   useEffect(() => {
-    const orig = { debug: syncLogger.debug, info: syncLogger.info, warn: syncLogger.warn, error: syncLogger.error };
-    syncLogger.debug = (ctx, msg, meta) => { pushLog("debug", ctx, msg, meta); orig.debug(ctx, msg, meta); };
-    syncLogger.info = (ctx, msg, meta) => { pushLog("info", ctx, msg, meta); orig.info(ctx, msg, meta); };
-    syncLogger.warn = (ctx, msg, meta) => { pushLog("warn", ctx, msg, meta); orig.warn(ctx, msg, meta); };
-    syncLogger.error = (ctx, msg, meta) => { pushLog("error", ctx, msg, meta); orig.error(ctx, msg, meta); };
-    return () => { Object.assign(syncLogger, orig); };
+    const methods: Array<"debug" | "info" | "warn" | "error"> = ["debug", "info", "warn", "error"];
+    const orig: Record<string, Function> = {};
+    methods.forEach((m) => {
+      orig[m] = syncLogger[m]?.bind(syncLogger) || (() => {});
+      // @ts-ignore
+      syncLogger[m] = (ctx: string, msg: string, meta?: Record<string, unknown>) => {
+        pushLog(m, ctx, msg, meta);
+        orig[m]?.(ctx, msg, meta);
+      };
+    });
+    return () => {
+      methods.forEach((m) => {
+        // @ts-ignore
+        syncLogger[m] = orig[m];
+      });
+    };
   }, []);
 
   // Keep logs in sync with buffer
