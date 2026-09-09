@@ -20,8 +20,11 @@ import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
-import { localNodeService } from "@/local-node/service";
+import { localNodeService, initLocalNodeService, localNodeStore } from "@teincfood/core";
 import type { ReferenceLocalNodeFetcher } from "@teincfood/core";
+import { ZeroconfDiscovery } from "@/local-node/drivers/zeroconf-discovery";
+import { TcpTransport } from "@/local-node/drivers/tcp-transport";
+import { ExpoKeepAlive } from "@/local-node/drivers/keep-alive";
 import {
   posService as corePosService,
   sellerService as coreSellerService,
@@ -313,6 +316,42 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     } catch {}
     try {
       syncBusinessBridge();
+    } catch {}
+    // Core-owned Local Node — drivers injected, lan_discover native via Zeroconf / Tauri poll
+    try {
+      initLocalNodeService({
+        getDeviceId: () => getAppInstanceId(),
+        getDeviceName: () => {
+          try { const { getDeviceDisplayName } = require("@/services/devices.service"); return getDeviceDisplayName(); } catch { return undefined; }
+        },
+        getBusiness: () => useBusinessStore.getState().activeBusiness as unknown as { id: string; ownerId?: string; owner_id?: string } | null,
+        getAuth: () => {
+          const s = useAuthStore.getState() as unknown as { user: unknown | null; accessToken: string | null };
+          return { user: s.user ?? null, accessToken: s.accessToken ?? null };
+        },
+        discovery: new ZeroconfDiscovery(),
+        transport: new TcpTransport(),
+        keepAlive: new ExpoKeepAlive(),
+      });
+      // Wire auth/business changes to re-initialize LAN (core service handles lifecycle)
+      try {
+        let prevBiz = useBusinessStore.getState().activeBusiness?.id ?? null;
+        let prevToken = (useAuthStore.getState() as unknown as { accessToken?: string | null }).accessToken ?? null;
+        useBusinessStore.subscribe((s: unknown, prev: unknown) => {
+          const id = (s as { activeBusiness?: { id?: string } })?.activeBusiness?.id ?? null;
+          const prevId = (prev as { activeBusiness?: { id?: string } })?.activeBusiness?.id ?? null;
+          if (id !== prevId) { prevBiz = id; localNodeService.initialize().catch(() => undefined); }
+        });
+        useAuthStore.subscribe((s: unknown, prev: unknown) => {
+          const tok = (s as { accessToken?: string | null })?.accessToken ?? null;
+          const prevTok = (prev as { accessToken?: string | null })?.accessToken ?? null;
+          if (tok !== prevTok) { prevToken = tok; localNodeService.initialize().catch(() => undefined); }
+        });
+        // Also handle foreground resume for real devices
+        try { const { AppState } = require("react-native"); AppState.addEventListener("change", (st: string) => { if (st === "active") localNodeService.reconnectNow(); }); } catch {}
+        // Re-hydrate persisted LAN flag (KVDriver now set) then kick lifecycle
+        try { localNodeStore.rehydrate().then(() => localNodeService.initialize().catch(() => undefined)).catch(() => localNodeService.initialize().catch(() => undefined)); } catch { localNodeService.initialize().catch(() => undefined); }
+      } catch {}
     } catch {}
     // 0.7.0: auto-lease device number per business (DD 01-99) for offline DD-RRR-CCC
     try {

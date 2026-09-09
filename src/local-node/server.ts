@@ -267,9 +267,9 @@ export class LocalNodeServer {
       {
         host: "127.0.0.1",
         port: this.options.port,
-        ca: SERVER_CERT,
+        rejectUnauthorized: false,
         connectTimeout: 5000,
-      },
+      } as never,
       () => {
         if (settled) return;
         settled = true;

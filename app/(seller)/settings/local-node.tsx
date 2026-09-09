@@ -15,31 +15,20 @@ export default function LocalNodeSettings() {
   const insets = useSafeAreaInsets();
   const store = useLocalNodeStore();
   const thisDeviceId = getAppInstanceId();
-  const isThisNode = store.electedNodeDeviceId === thisDeviceId;
 
   useEffect(() => {
     if (store.isLocalNodeEnabled) {
       localNodeService.initialize().catch(console.error);
     }
-  }, [store.isLocalNodeEnabled, store.electedNodeDeviceId]);
-
-  const [showConfirmDesignate, setShowConfirmDesignate] = useState(false);
+  }, [store.isLocalNodeEnabled]);
 
   const toggleLocalNode = async (enabled: boolean) => {
     store.setIsLocalNodeEnabled(enabled);
     if (!enabled) {
-      store.electNode(null);
       await localNodeService.shutdown();
+    } else {
+      localNodeService.initialize().catch(console.error);
     }
-  };
-
-  const designateThisDevice = () => {
-    setShowConfirmDesignate(true);
-  };
-
-  const confirmDesignate = () => {
-    setShowConfirmDesignate(false);
-    store.designateThisDevice();
   };
 
   return (
@@ -89,98 +78,27 @@ export default function LocalNodeSettings() {
             {store.isLocalNodeEnabled && (
               <>
                 <Separator marginVertical="$3" />
-                <XStack gap="$3" alignItems="center" marginBottom="$3">
-                  <Wifi color="$primary" />
-                  <YStack flex={1}>
-                    <Text fontWeight="bold">Designate This Device</Text>
-                    <Text fontSize="$2" color="$colorMuted">
-                      {isThisNode
-                        ? "This device is the active Local Node."
-                        : "Make this device the Local Node for this location."}
-                    </Text>
-                  </YStack>
-                  <Switch
-                    size="$6"
-                    checked={isThisNode}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        designateThisDevice();
-                      } else {
-                        store.electNode(null);
-                      }
-                    }}
-                    backgroundColor={
-                      isThisNode ? "$success" : "$borderColorHover"
-                    }
-                  >
-                    <Switch.Thumb backgroundColor="$background" />
-                  </Switch>
-                </XStack>
-
-                <Separator marginVertical="$3" />
                 <YStack gap="$2">
                   <XStack gap="$3" alignItems="center">
                     <Users color="$primary" />
                     <YStack flex={1}>
-                      <Text fontWeight="bold">
-                        {isThisNode ? "Connected Terminals" : "Discovered Terminals"}
-                      </Text>
+                      <Text fontWeight="bold">Discovered Terminals</Text>
                       <Text fontSize="$2" color="$colorMuted">
-                        {isThisNode
-                          ? `${store.connectedClients.length} terminal(s) connected.`
-                          : `${store.discoveredNodes.length} terminal(s) on the network.`}
+                        {`${store.discoveredNodes.length} terminal(s) on the network.`}
                       </Text>
                     </YStack>
                   </XStack>
 
-                  {isThisNode ? (
-                    store.connectedClients.length === 0 ? (
-                      <YStack alignItems="center" padding="$4" gap="$2">
-                        <Smartphone color="$colorMuted" />
-                        <Text fontSize="$2" color="$colorMuted" textAlign="center">
-                          No terminals connected yet. Other terminals will appear
-                          here when they connect over the local network.
-                        </Text>
-                      </YStack>
-                    ) : (
-                      store.connectedClients.map((client) => (
-                        <XStack
-                          key={client.deviceId}
-                          gap="$3"
-                          alignItems="center"
-                          padding="$3"
-                          borderRadius="$3"
-                          backgroundColor="$backgroundSoft"
-                        >
-                          <Smartphone color="$success" />
-                          <YStack flex={1}>
-                            <Text fontSize="$3" fontWeight="bold">
-                              {client.deviceName ?? client.deviceId}
-                            </Text>
-                            <Text fontSize="$2" color="$colorMuted">
-                              {client.host ?? "LAN client"}
-                            </Text>
-                          </YStack>
-                          <Text fontSize="$2" fontWeight="bold" color="$success">
-                            Connected
-                          </Text>
-                        </XStack>
-                      ))
-                    )
-                  ) : store.discoveredNodes.length === 0 ? (
+                  {store.discoveredNodes.length === 0 ? (
                     <YStack alignItems="center" padding="$4" gap="$2">
                       <Smartphone color="$colorMuted" />
                       <Text fontSize="$2" color="$colorMuted" textAlign="center">
-                        No terminals found. Make sure the Local Node device has
-                        Local Node enabled and is on the same Wi-Fi network.
+                        No terminals found. Make sure Local Node is enabled on all devices and they are on the same Wi-Fi network.
                       </Text>
                     </YStack>
                   ) : (
                     store.discoveredNodes.map((node) => {
-                      const isConnected =
-                        localNodeService.isConnectedToNode() &&
-                        localNodeService.getElectedNode()?.deviceId ===
-                          node.deviceId;
+                      const isConnected = localNodeService.isConnectedToNode() && store.connectedClients.some((c) => c.deviceId === node.deviceId);
                       return (
                         <XStack
                           key={node.deviceId}
@@ -190,27 +108,42 @@ export default function LocalNodeSettings() {
                           borderRadius="$3"
                           backgroundColor="$backgroundSoft"
                         >
-                          <Smartphone
-                            color={isConnected ? "$success" : "$colorMuted"}
-                          />
+                          <Smartphone color={isConnected ? "$success" : "$colorMuted"} />
                           <YStack flex={1}>
-                            <Text fontSize="$3" fontWeight="bold">
-                              {node.deviceName ?? node.host}
-                            </Text>
-                            <Text fontSize="$2" color="$colorMuted">
-                              {node.host}:{node.port}
-                            </Text>
+                            <Text fontSize="$3" fontWeight="bold">{node.deviceName ?? node.host}</Text>
+                            <Text fontSize="$2" color="$colorMuted">{node.host}:{node.port}</Text>
                           </YStack>
-                          <Text
-                            fontSize="$2"
-                            fontWeight="bold"
-                            color={isConnected ? "$success" : "$colorMuted"}
-                          >
+                          <Text fontSize="$2" fontWeight="bold" color={isConnected ? "$success" : "$colorMuted"}>
                             {isConnected ? "Connected" : "Discovered"}
                           </Text>
                         </XStack>
                       );
                     })
+                  )}
+                  <Separator marginVertical="$3" />
+                  <XStack gap="$3" alignItems="center">
+                    <Users color="$primary" />
+                    <YStack flex={1}>
+                      <Text fontWeight="bold">Connected Terminals</Text>
+                      <Text fontSize="$2" color="$colorMuted">{`${store.connectedClients.length} terminal(s) connected.`}</Text>
+                    </YStack>
+                  </XStack>
+                  {store.connectedClients.length === 0 ? (
+                    <YStack alignItems="center" padding="$4" gap="$2">
+                      <Smartphone color="$colorMuted" />
+                      <Text fontSize="$2" color="$colorMuted" textAlign="center">No terminals connected yet.</Text>
+                    </YStack>
+                  ) : (
+                    store.connectedClients.map((client) => (
+                      <XStack key={client.deviceId} gap="$3" alignItems="center" padding="$3" borderRadius="$3" backgroundColor="$backgroundSoft">
+                        <Smartphone color="$success" />
+                        <YStack flex={1}>
+                          <Text fontSize="$3" fontWeight="bold">{client.deviceName ?? client.deviceId}</Text>
+                          <Text fontSize="$2" color="$colorMuted">{client.host ?? "LAN client"}</Text>
+                        </YStack>
+                        <Text fontSize="$2" fontWeight="bold" color="$success">Connected</Text>
+                      </XStack>
+                    ))
                   )}
                 </YStack>
               </>
@@ -228,42 +161,14 @@ export default function LocalNodeSettings() {
 
           {store.isLocalNodeEnabled && (
             <Card padding="$4" bordered>
-              <Text fontWeight="bold" marginBottom="$2">
-                Status
-              </Text>
+              <Text fontWeight="bold" marginBottom="$2">Status</Text>
               <Text fontSize="$2" color="$colorMuted">
-                {isThisNode
-                  ? localNodeService.isLocalNode()
-                    ? "Listening for LAN connections."
-                    : "Starting..."
-                  : localNodeService.isConnectedToNode()
-                    ? (() => {
-                        const elected = store.discoveredNodes.find(
-                          (n) =>
-                            n.deviceId ===
-                            localNodeService.getElectedNode()?.deviceId,
-                        );
-                        return `Connected to ${
-                          elected?.deviceName ?? "Local Node"
-                        }.`;
-                      })()
-                    : "Scanning for Local Node..."}
+                {localNodeService.isLocalNode() ? "Listening for LAN connections." : localNodeService.isConnectedToNode() ? `Connected to ${store.connectedClients.length} peer(s).` : "Scanning for peers..."}
               </Text>
             </Card>
           )}
         </YStack>
       </ScrollView>
-
-      <AppAlertDialog
-        open={showConfirmDesignate}
-        onOpenChange={setShowConfirmDesignate}
-        title="Designate this device?"
-        description="This device will become the Local Node for this location. Only one device should be the Local Node at a time."
-        confirmText="Designate"
-        cancelText="Cancel"
-        onConfirm={confirmDesignate}
-        onCancel={() => setShowConfirmDesignate(false)}
-      />
     </YStack>
   );
 }
