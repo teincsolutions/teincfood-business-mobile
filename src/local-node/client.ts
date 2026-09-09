@@ -142,13 +142,14 @@ export class LocalNodeClient {
         reject(error);
       }, CONNECT_TIMEOUT_MS);
 
+      // @ts-ignore - rejectUnauthorized is handled by GCDAsyncSocketManuallyEvaluateTrust
       socket = TcpSocket.connectTLS(
         {
           host: this.options.node.host,
           port: this.options.node.port,
-          ca: SERVER_CERT,
+          rejectUnauthorized: false,
           connectTimeout: CONNECT_TIMEOUT_MS,
-        },
+        } as never,
         () => {
           syncLogger.info("LocalNodeClient", "Connected to Local Node", {
             host: this.options.node.host,

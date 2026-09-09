@@ -2,15 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, RefreshControl, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Button,
-  Separator,
-  Switch,
-} from "tamagui";
+import { YStack, XStack, Text, Card, Button, Separator, Switch } from "tamagui";
 import { ChevronLeft } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -34,7 +26,12 @@ import { router } from "expo-router";
 
 // Simple in-memory log buffer for the Diagnostics screen
 const logBuffer: string[] = [];
-function pushLog(level: string, context: string, message: string, meta?: Record<string, unknown>) {
+function pushLog(
+  level: string,
+  context: string,
+  message: string,
+  meta?: Record<string, unknown>,
+) {
   const line = `[${level.toUpperCase()}] ${context}: ${message}${meta ? " " + JSON.stringify(meta) : ""}`;
   logBuffer.unshift(line);
   if (logBuffer.length > 200) logBuffer.pop();
@@ -69,12 +66,21 @@ export default function DiagnosticsScreen() {
 
   // Wire core syncLogger to our buffer (debug builds only)
   useEffect(() => {
-    const methods: Array<"debug" | "info" | "warn" | "error"> = ["debug", "info", "warn", "error"];
+    const methods: Array<"debug" | "info" | "warn" | "error"> = [
+      "debug",
+      "info",
+      "warn",
+      "error",
+    ];
     const orig: Record<string, Function> = {};
     methods.forEach((m) => {
       orig[m] = syncLogger[m]?.bind(syncLogger) || (() => {});
       // @ts-ignore
-      syncLogger[m] = (ctx: string, msg: string, meta?: Record<string, unknown>) => {
+      syncLogger[m] = (
+        ctx: string,
+        msg: string,
+        meta?: Record<string, unknown>,
+      ) => {
         pushLog(m, ctx, msg, meta);
         orig[m]?.(ctx, msg, meta);
       };
@@ -96,7 +102,8 @@ export default function DiagnosticsScreen() {
   // Update phoenix socket state periodically without full refresh
   const phxTimerRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    const update = () => setPhxState(phoenixSocket.getConnectionState?.() ?? "unknown");
+    const update = () =>
+      setPhxState(phoenixSocket.getConnectionState?.() ?? "unknown");
     update();
     phxTimerRef.current = setInterval(update, 5_000);
     return () => phxTimerRef.current && clearInterval(phxTimerRef.current);
@@ -120,7 +127,9 @@ export default function DiagnosticsScreen() {
       setDeviceNumber(getDeviceNumber(businessId));
       setLastProbe(`refreshed ${new Date().toLocaleTimeString()}`);
     } catch (error) {
-      syncLogger.error("Diagnostics", "refresh failed", { error: String(error) });
+      syncLogger.error("Diagnostics", "refresh failed", {
+        error: String(error),
+      });
     }
   }, [businessId]);
 
@@ -145,8 +154,10 @@ export default function DiagnosticsScreen() {
       await refresh();
       const after = await getSyncJobsPendingCount(businessId);
       if (after === 0) toast.success("All queued orders synced");
-      else if (!deviceNumber) toast.error("Still queued — device has no DD (lease online once)");
-      else toast.error(`Still queued (${after} pending) — check token/DD/cloud`);
+      else if (!deviceNumber)
+        toast.error("Still queued — device has no DD (lease online once)");
+      else
+        toast.error(`Still queued (${after} pending) — check token/DD/cloud`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sync failed");
     } finally {
@@ -168,7 +179,9 @@ export default function DiagnosticsScreen() {
       setLastProbe(`${ok ? "OK" : res.status} in ${Date.now() - started}ms`);
     } catch (error) {
       setCloudReachable("unreachable");
-      setLastProbe(`failed in ${Date.now() - started}ms: ${error instanceof Error ? error.message : String(error)}`);
+      setLastProbe(
+        `failed in ${Date.now() - started}ms: ${error instanceof Error ? error.message : String(error)}`,
+      );
     } finally {
       setProbing(false);
     }
@@ -214,7 +227,9 @@ export default function DiagnosticsScreen() {
                 router.replace("/(auth)/login");
               }, 800);
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : "Wipe failed");
+              toast.error(
+                error instanceof Error ? error.message : "Wipe failed",
+              );
             }
           },
         },
@@ -235,27 +250,46 @@ export default function DiagnosticsScreen() {
   }, [businessId, refresh]);
 
   const StatusRow = useMemo(
-    () => ({ label, value, color, badge }: { label: string; value: string; color?: string; badge?: boolean }) => (
-      <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$3" color="$color" fontFamily="$body">{label}</Text>
-        {badge && color ? (
-          <Badge backgroundColor={color}>
-            <Text color="white" fontSize="$2">{value}</Text>
-          </Badge>
-        ) : (
-          <Text fontSize="$3" color="$color" fontFamily="$body">{value}</Text>
-        )}
-      </XStack>
-    ),
-    []
+    () =>
+      ({
+        label,
+        value,
+        color,
+        badge,
+      }: {
+        label: string;
+        value: string;
+        color?: string;
+        badge?: boolean;
+      }) => (
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$3" color="$color" fontFamily="$body">
+            {label}
+          </Text>
+          {badge && color ? (
+            <Badge backgroundColor={color}>
+              <Text color="$white" fontSize="$2">
+                {value}
+              </Text>
+            </Badge>
+          ) : (
+            <Text fontSize="$3" color="$color" fontFamily="$body">
+              {value}
+            </Text>
+          )}
+        </XStack>
+      ),
+    [],
   );
 
-  const onlineColor = isOnline ? "success" : "error";
+  const onlineColor = isOnline ? "$success" : "$error";
   const cloudColor =
-    isCloudReachable === "reachable" ? "success"
-    : isCloudReachable === "unreachable" ? "error"
-    : "colorMuted";
-  const pendingColor = pending ? "warning" : "success";
+    isCloudReachable === "reachable"
+      ? "$success"
+      : isCloudReachable === "unreachable"
+        ? "$error"
+        : "colorMuted";
+  const pendingColor = pending ? "warning" : "$success";
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -279,16 +313,25 @@ export default function DiagnosticsScreen() {
         >
           <ChevronLeft size={20} color="$color" />
         </Button>
-        <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">Diagnostics</Text>
+        <Text
+          fontSize="$6"
+          fontWeight="700"
+          fontFamily="$heading"
+          color="$color"
+        >
+          Diagnostics
+        </Text>
         <Switch
           checked={showLogs}
           onCheckedChange={setShowLogs}
-          backgroundColor={showLogs ? "success" : "colorMuted"}
+          backgroundColor={showLogs ? "$success" : "colorMuted"}
           size="$4"
         >
           <Switch.Thumb animation="quick" backgroundColor="$white" />
         </Switch>
-        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">Logs</Text>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+          Logs
+        </Text>
       </XStack>
 
       <ScrollView
@@ -297,21 +340,37 @@ export default function DiagnosticsScreen() {
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={refresh} tintColor="$primary" />
+          <RefreshControl
+            refreshing={false}
+            onRefresh={refresh}
+            tintColor="$primary"
+          />
         }
       >
         {/* Connection Status */}
         <Card padding="$4" bordered marginBottom="$3">
           <YStack gap="$2">
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">CONNECTION</Text>
-            <StatusRow label="Online" value={isOnline ? "yes" : "no"} badge color={onlineColor} />
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              CONNECTION
+            </Text>
+            <StatusRow
+              label="Online"
+              value={isOnline ? "yes" : "no"}
+              badge
+              color={onlineColor}
+            />
             <StatusRow
               label="Cloud"
               value={isCloudReachable}
               badge
               color={cloudColor}
             />
-            <StatusRow label="WebSocket" value={phxState} badge color="colorMuted" />
+            <StatusRow
+              label="WebSocket"
+              value={phxState}
+              badge
+              color="colorMuted"
+            />
             <StatusRow label="DD" value={deviceNumber ?? "—"} />
             <StatusRow label="Orders cached" value={ordersCount ?? "—"} />
           </YStack>
@@ -321,14 +380,20 @@ export default function DiagnosticsScreen() {
         <Card padding="$4" bordered marginBottom="$3">
           <YStack gap="$2">
             <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">SYNC JOBS</Text>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                SYNC JOBS
+              </Text>
               <Badge backgroundColor={pendingColor}>
-                <Text color="white" fontSize="$2" fontWeight="700">{pending ?? "—"}</Text>
+                <Text color="white" fontSize="$2" fontWeight="700">
+                  {pending ?? "—"}
+                </Text>
               </Badge>
             </XStack>
             <Separator marginVertical="$2" />
             {jobs.length === 0 ? (
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">(queue is empty)</Text>
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                (queue is empty)
+              </Text>
             ) : (
               jobs.map((j) => (
                 <YStack key={j.id} gap="$1">
@@ -336,12 +401,21 @@ export default function DiagnosticsScreen() {
                     <Text fontSize="$2" fontFamily="monospace" color="$color">
                       {j.command_type}@{j.status.slice(0, 4)}
                     </Text>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="monospace">
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="monospace"
+                    >
                       {j.id.slice(0, 8)} · x{j.attempts}
                     </Text>
                   </XStack>
                   {j.last_error ? (
-                    <Text fontSize="$1" color="error" fontFamily="monospace" numberOfLines={2}>
+                    <Text
+                      fontSize="$1"
+                      color="$error"
+                      fontFamily="monospace"
+                      numberOfLines={2}
+                    >
                       {j.last_error.slice(0, 120)}
                     </Text>
                   ) : null}
@@ -354,17 +428,44 @@ export default function DiagnosticsScreen() {
         {/* Actions */}
         <Card padding="$4" bordered marginBottom="$3">
           <YStack gap="$2">
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">ACTIONS</Text>
-            <Button backgroundColor="$primary" color="white" disabled={draining || !accessToken || !isOnline} onPress={handleSyncNow}>
-              {draining ? "Syncing" : `Sync now${pending ? ` (${pending})` : ""}`}
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              ACTIONS
+            </Text>
+            <Button
+              backgroundColor="$primary"
+              color="white"
+              disabled={draining || !accessToken || !isOnline}
+              onPress={handleSyncNow}
+            >
+              {draining
+                ? "Syncing"
+                : `Sync now${pending ? ` (${pending})` : ""}`}
             </Button>
-            <Button variant="outline" disabled={probing} onPress={handleProbeCloud}>
+            <Button
+              variant="outline"
+              disabled={probing}
+              onPress={handleProbeCloud}
+            >
               {probing ? "Probing" : "Probe Cloud /health"}
             </Button>
-            {lastProbe && <Text fontSize="$2" color="$colorSecondary" fontFamily="body">last: {lastProbe}</Text>}
-            <Button variant="outline" onPress={handleLeaseNow}>Lease DD now</Button>
-            <Button variant="outline" onPress={handleClearOffline}>Clear Offline Data</Button>
-            <Button variant="danger" onPress={handleWipeNewInstall} marginTop="$2">Wipe for new install</Button>
+            {lastProbe && (
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="body">
+                last: {lastProbe}
+              </Text>
+            )}
+            <Button variant="outline" onPress={handleLeaseNow}>
+              Lease DD now
+            </Button>
+            <Button variant="outline" onPress={handleClearOffline}>
+              Clear Offline Data
+            </Button>
+            <Button
+              variant="danger"
+              onPress={handleWipeNewInstall}
+              marginTop="$2"
+            >
+              Wipe for new install
+            </Button>
           </YStack>
         </Card>
 
@@ -373,15 +474,34 @@ export default function DiagnosticsScreen() {
           <Card padding="$4" bordered marginBottom="$3">
             <YStack gap="$2">
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">LOGS (latest 200)</Text>
-                <Button size="$2" variant="outline" onPress={() => { logBuffer.length = 0; setLogs([]); }}>Clear</Button>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  LOGS (latest 200)
+                </Text>
+                <Button
+                  size="$2"
+                  variant="outline"
+                  onPress={() => {
+                    logBuffer.length = 0;
+                    setLogs([]);
+                  }}
+                >
+                  Clear
+                </Button>
               </XStack>
               {logs.length === 0 ? (
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">(no logs yet — trigger some sync activity)</Text>
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  (no logs yet — trigger some sync activity)
+                </Text>
               ) : (
                 <YStack gap="$1" style={{ maxHeight: 300 }}>
                   {logs.map((line, i) => (
-                    <Text key={i} fontSize="$1" fontFamily="monospace" color="$color" numberOfLines={1}>
+                    <Text
+                      key={i}
+                      fontSize="$1"
+                      fontFamily="monospace"
+                      color="$color"
+                      numberOfLines={1}
+                    >
                       {line}
                     </Text>
                   ))}
@@ -391,8 +511,15 @@ export default function DiagnosticsScreen() {
           </Card>
         )}
 
-        <Text fontSize="$2" color="$colorMuted" fontFamily="$body" marginTop="$4" textAlign="center">
-          Single source: SQLite orders + sync_jobs. Reconnect triggers FIFO drain via local node + cloud transport.
+        <Text
+          fontSize="$2"
+          color="$colorMuted"
+          fontFamily="$body"
+          marginTop="$4"
+          textAlign="center"
+        >
+          Single source: SQLite orders + sync_jobs. Reconnect triggers FIFO
+          drain via local node + cloud transport.
         </Text>
       </ScrollView>
     </YStack>
