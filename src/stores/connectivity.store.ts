@@ -17,6 +17,7 @@ import NetInfo, {
   type NetInfoSubscription,
 } from "@react-native-community/netinfo";
 import { syncLogger } from "@teincfood/core";
+import { API_BASE_URL } from "@/utils/constants";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
 
@@ -58,6 +59,7 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
 
   setNetworkState: (state) => {
     const isOnline = netInfoStateToOnline(state);
+    const wasOnline = useConnectivityStore.getState().isOnline;
     set({
       isOnline,
       connectionType: state.type,
@@ -74,6 +76,11 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
         ? (state.details as { isConnectionExpensive?: boolean }).isConnectionExpensive
         : null,
     });
+    // Network (re)gained with unknown cloud state: probe now so the first
+    // user command doesn't pay a timeout discovering the backend is down.
+    if (isOnline && !wasOnline) {
+      void probeCloud();
+    }
   },
 
   setCloudReachable: (reachable) => {
@@ -82,16 +89,14 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
       reachable,
     });
 
-    // When the cloud is marked unreachable, schedule a reset back to "unknown"
-    // so subsequent commands retry the cloud after a cooldown instead of being
-    // permanently stuck on the offline fallback. Arm the cooldown only once per
-    // unreachable period: a steady stream of failing commands (e.g. a local
-    // node forwarding an outbox) must not keep re-arming it, or the cloud is
-    // never probed again and everything queues forever.
+    // When the cloud is marked unreachable, probe after a cooldown instead of
+    // blindly flipping to "unknown": a probe settles the state without making
+    // a user command eat a full timeout. Armed once per unreachable period.
     if (reachable === "unreachable") {
       if (retryTimer) return;
       retryTimer = setTimeout(() => {
-        useConnectivityStore.getState().setCloudReachable("unknown");
+        retryTimer = null;
+        void probeCloud();
       }, CLOUD_RETRY_COOLDOWN_MS);
     } else {
       clearRetryTimer();
@@ -99,7 +104,8 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
   },
 
   initialize: () => {
-    // Fetch current state immediately
+    // Fetch current state immediately + settle cloud state via probe (boot
+    // with backend down must not leave every first command paying timeout).
     NetInfo.fetch()
       .then((state) => {
         useConnectivityStore.getState().setNetworkState(state);
@@ -109,6 +115,7 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
           error: String(error),
         });
       });
+    void probeCloud();
 
     const subscription: NetInfoSubscription = NetInfo.addEventListener(
       (state) => {
@@ -139,4 +146,44 @@ export function useIsCloudReachable(): boolean {
 
 export function useIsOnline(): boolean {
   return useConnectivityStore((s) => s.isOnline);
+}
+
+/** Backend health probe timeout. Short: settling cloud state must never block UX. */
+const PROBE_TIMEOUT_MS = 4_000;
+
+function healthUrl(): string {
+  try {
+    // Backend serves health at /api/health (router scope "/api"), not under /api/v1.
+    return new URL("/api/health", API_BASE_URL).toString();
+  } catch {
+    return `${API_BASE_URL}/../health`;
+  }
+}
+
+/**
+ * Probe the cloud and settle `isCloudReachable` (zustand + core via bridge).
+ * No-auth GET /api/health with a short timeout. Called at boot, on network
+ * regain, and after the unreachable cooldown — so the engine never pays a
+ * full command timeout just to discover the backend is down.
+ */
+export async function probeCloud(): Promise<boolean> {
+  const url = healthUrl();
+  const started = Date.now();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    const elapsed = Date.now() - started;
+    if (res.ok) {
+      syncLogger.debug("ConnectivityStore", "probeCloud reachable", { url, elapsed });
+      useConnectivityStore.getState().setCloudReachable("reachable");
+      return true;
+    }
+    syncLogger.debug("ConnectivityStore", "probeCloud HTTP non-2xx", { url, elapsed, status: res.status });
+  } catch (error) {
+    syncLogger.debug("ConnectivityStore", "probeCloud failed", { url, error: String(error) });
+  }
+  useConnectivityStore.getState().setCloudReachable("unreachable");
+  return false;
 }
