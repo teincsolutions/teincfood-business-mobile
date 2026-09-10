@@ -142,11 +142,12 @@ export class LocalNodeClient {
         reject(error);
       }, CONNECT_TIMEOUT_MS);
 
-      // @ts-ignore - rejectUnauthorized is handled by GCDAsyncSocketManuallyEvaluateTrust
+      // @ts-ignore - rejectUnauthorized is handled by GCDAsyncSocketManuallyEvaluateTrust; ca pins the shared LAN identity (SAN teinc-local-node/*.local/192.168.1.43-50)
       socket = TcpSocket.connectTLS(
         {
           host: this.options.node.host,
           port: this.options.node.port,
+          ca: SERVER_CERT,
           rejectUnauthorized: false,
           connectTimeout: CONNECT_TIMEOUT_MS,
         } as never,

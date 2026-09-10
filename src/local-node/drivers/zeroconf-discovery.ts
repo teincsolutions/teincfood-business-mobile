@@ -41,7 +41,7 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
         SERVICE_TYPE,
         SERVICE_PROTOCOL,
         SERVICE_DOMAIN,
-        `${opts.deviceId}.${SERVICE_DOMAIN}`,
+        opts.deviceId,
         opts.port,
         {
           deviceId: opts.deviceId,
@@ -142,7 +142,7 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
     try {
       this.stopScanning();
       if (this.published && this.publishOpts) {
-        this.zeroconf.unpublishService(`${this.publishOpts.deviceId}.${SERVICE_DOMAIN}`);
+        this.zeroconf.unpublishService(this.publishOpts.deviceId);
       }
       this.published = false;
     } catch (error) {

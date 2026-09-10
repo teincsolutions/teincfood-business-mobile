@@ -351,6 +351,24 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
         try { const { AppState } = require("react-native"); AppState.addEventListener("change", (st: string) => { if (st === "active") localNodeService.reconnectNow(); }); } catch {}
         // Re-hydrate persisted LAN flag (KVDriver now set) then kick lifecycle
         try { localNodeStore.rehydrate().then(() => localNodeService.initialize().catch(() => undefined)).catch(() => localNodeService.initialize().catch(() => undefined)); } catch { localNodeService.initialize().catch(() => undefined); }
+        // Retry mesh start after Zustand rehydrate (same businessId, owner optional) — ensures harness/desktop/mobile converge
+        try {
+          let retries = 0;
+          const iv = setInterval(() => {
+            retries++;
+            try {
+              const biz = useBusinessStore.getState().activeBusiness as unknown as { id?: string } | null;
+              const auth = useAuthStore.getState() as unknown as { user: unknown; accessToken: string | null };
+              const enabled = localNodeStore.getState().isLocalNodeEnabled;
+              const listening = localNodeService.isLocalNode();
+              if (enabled && biz?.id && auth?.accessToken && !listening && retries < 30) {
+                localNodeService.initialize().catch(() => undefined);
+              }
+              if (retries >= 30 || listening) clearInterval(iv);
+            } catch {}
+          }, 2000);
+          if ((iv as unknown as { unref?: () => void }).unref) (iv as unknown as { unref: () => void }).unref?.();
+        } catch {}
       } catch {}
     } catch {}
     // 0.7.0: auto-lease device number per business (DD 01-99) for offline DD-RRR-CCC

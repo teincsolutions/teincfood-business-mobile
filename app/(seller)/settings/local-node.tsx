@@ -82,10 +82,8 @@ export default function LocalNodeSettings() {
                   <XStack gap="$3" alignItems="center">
                     <Users color="$primary" />
                     <YStack flex={1}>
-                      <Text fontWeight="bold">Discovered Terminals</Text>
-                      <Text fontSize="$2" color="$colorMuted">
-                        {`${store.discoveredNodes.length} terminal(s) on the network.`}
-                      </Text>
+                      <Text fontWeight="bold">Terminals</Text>
+                      <Text fontSize="$2" color="$colorMuted">{`${store.discoveredNodes.length} discovered • ${store.connectedClients.length} connected`}</Text>
                     </YStack>
                   </XStack>
 
@@ -98,7 +96,7 @@ export default function LocalNodeSettings() {
                     </YStack>
                   ) : (
                     store.discoveredNodes.map((node) => {
-                      const isConnected = localNodeService.isConnectedToNode() && store.connectedClients.some((c) => c.deviceId === node.deviceId);
+                      const isConnected = store.connectedClients.some((c) => c.deviceId === node.deviceId);
                       return (
                         <XStack
                           key={node.deviceId}
@@ -120,31 +118,6 @@ export default function LocalNodeSettings() {
                       );
                     })
                   )}
-                  <Separator marginVertical="$3" />
-                  <XStack gap="$3" alignItems="center">
-                    <Users color="$primary" />
-                    <YStack flex={1}>
-                      <Text fontWeight="bold">Connected Terminals</Text>
-                      <Text fontSize="$2" color="$colorMuted">{`${store.connectedClients.length} terminal(s) connected.`}</Text>
-                    </YStack>
-                  </XStack>
-                  {store.connectedClients.length === 0 ? (
-                    <YStack alignItems="center" padding="$4" gap="$2">
-                      <Smartphone color="$colorMuted" />
-                      <Text fontSize="$2" color="$colorMuted" textAlign="center">No terminals connected yet.</Text>
-                    </YStack>
-                  ) : (
-                    store.connectedClients.map((client) => (
-                      <XStack key={client.deviceId} gap="$3" alignItems="center" padding="$3" borderRadius="$3" backgroundColor="$backgroundSoft">
-                        <Smartphone color="$success" />
-                        <YStack flex={1}>
-                          <Text fontSize="$3" fontWeight="bold">{client.deviceName ?? client.deviceId}</Text>
-                          <Text fontSize="$2" color="$colorMuted">{client.host ?? "LAN client"}</Text>
-                        </YStack>
-                        <Text fontSize="$2" fontWeight="bold" color="$success">Connected</Text>
-                      </XStack>
-                    ))
-                  )}
                 </YStack>
               </>
             )}
@@ -163,7 +136,14 @@ export default function LocalNodeSettings() {
             <Card padding="$4" bordered>
               <Text fontWeight="bold" marginBottom="$2">Status</Text>
               <Text fontSize="$2" color="$colorMuted">
-                {localNodeService.isLocalNode() ? "Listening for LAN connections." : localNodeService.isConnectedToNode() ? `Connected to ${store.connectedClients.length} peer(s).` : "Scanning for peers..."}
+                {(() => {
+                  const listening = localNodeService.isLocalNode();
+                  const connected = localNodeService.isConnectedToNode();
+                  if (listening && connected) return `Listening on :${store.localNodePort} • Connected to ${store.connectedClients.length} peer(s) • ${store.discoveredNodes.length} discovered.`;
+                  if (listening) return `Listening on :${store.localNodePort} for LAN peers. ${store.discoveredNodes.length} discovered.`;
+                  if (connected) return `Connected to ${store.connectedClients.length} peer(s).`;
+                  return "Scanning for peers...";
+                })()}
               </Text>
             </Card>
           )}
