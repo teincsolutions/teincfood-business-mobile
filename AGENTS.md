@@ -229,4 +229,6 @@ Mesh spec: `../teincfood-core/docs/MESH.md` (single source of truth — it wins 
 - [x] **Discovery** — bare `deviceId` mDNS instance, self/`fe80` filtered, routable IPv4 only, bootstrap retry (2s×30) after KV hydrate
 - [x] **Single Terminals card** — `Listening on :port • Connected • discovered` via `lan-*` events
 - [x] **Verified stable** — phone ↔ desktop ↔ harness-B triangle `Connected`, redials ≈ 0 steady-state; `npx tsc --noEmit` 0 errors
+- **Setup (local node on phone):** `assets/tls/{server-cert.pem,server-key.pem,server-keystore.p12}` pinned identity (passwordless p12; Metro `assetExts` includes `pem,p12`) → Settings → Local Node → Enable + port (default `44621`) → single Terminals card shows `Listening on :port • Connected • discovered`. Same Wi-Fi + same active business as the other terminals. Reload the app (Metro re-bundle) after every `@teincfood/core` tgz refresh.
+- **Verify:** card shows all peer ids `Connected`; airplane-mode POS create (`DD-RRR-CCC`) appears on peers via `order:sync` same `UUID`; transitions + `confirm_cash` converge; reconnect replays without dupes
 - **Do not reintroduce:** elected-node logic, owner-derived secrets, `rejectUnauthorized: false`-style TLS bypasses, dual cards
