@@ -152,6 +152,10 @@ See [detailed plan](.opencode/plans/rider-delivery-engine-plan.md) for full brea
 
 ## Phase 8: Offline Sync & LAN Reliability ✅ COMPLETE
 
+> NOTE (2026-09-10, mesh landing `core@0.7.31`): the elected-node passages below
+> (`connectToElectedNode`, node-vs-client relay, `LocalNodeServer` roles) are
+> SUPERSEDED — see Phase 10. Kept for history. Mesh spec: `../teincfood-core/docs/MESH.md`.
+
 Fixes the cloud-routing bug (orders stuck offline while cloud is "unknown"), pending-order invisibility (queued orders never visible on any terminal), and the Local Node reconnect hot-loop.
 
 **Cloud routing:**
@@ -213,3 +217,16 @@ Operating fully offline requires menus, orders, roles/permissions, members, taxe
 - Image rendering must go through `useCachedImageUrl`/`CachedAvatarImage` (never raw remote `source={{ uri }}`) so images display offline; the cache lives in durable `documentDirectory`, and orphaned files are pruned after 30 days during sync.
 
 **Next (unfinished):** connectivity hardening already investigated but **not implemented** — strict `isCloudReachable === "reachable"` cloud gate in `SyncEngine`/`handleNodeCommand`, `/api/v1/health` probe, decouple LAN connect/disconnect from `setCloudReachable`, bounded cold-start pre-flight. Pending user sign-off.
+
+---
+
+## Phase 10: LAN Mesh (no election) ✅ COMPLETE (`core@0.7.31`)
+
+Mesh spec: `../teincfood-core/docs/MESH.md` (single source of truth — it wins on conflict).
+
+- [x] **Lib-owned crypto** — `src/local-node/security.ts` re-exports core (`deriveLanSecret` business-only, FIPS SHA-256 fallback for Hermes); duplicate formula deleted
+- [x] **Pinned TLS, no client certs** — `client.ts`/`server.ts` `ca: SERVER_CERT`, passwordless `server-keystore.p12` (passworded p12 broke TLS context), `servername teinc-local-node`; `rejectUnauthorized` bypass removed
+- [x] **Discovery** — bare `deviceId` mDNS instance, self/`fe80` filtered, routable IPv4 only, bootstrap retry (2s×30) after KV hydrate
+- [x] **Single Terminals card** — `Listening on :port • Connected • discovered` via `lan-*` events
+- [x] **Verified stable** — phone ↔ desktop ↔ harness-B triangle `Connected`, redials ≈ 0 steady-state; `npx tsc --noEmit` 0 errors
+- **Do not reintroduce:** elected-node logic, owner-derived secrets, `rejectUnauthorized: false`-style TLS bypasses, dual cards
