@@ -106,6 +106,11 @@ export class LocalNodeClient {
   private eventBuffer: DomainEvent[] = [];
   private eventHandler: ((event: DomainEvent) => void) | null = null;
   private authenticated = false;
+  // Reassembly buffer: TCP/TLS frames split lines arbitrarily. Without this,
+  // a message split across two chunks parses as malformed on the first chunk
+  // (silently dropped) and as garbage on the second. Server side already
+  // buffers; the client must too.
+  private frameBuffer = "";
 
   constructor(options: LocalNodeClientOptions) {
     this.options = options;
@@ -198,6 +203,7 @@ export class LocalNodeClient {
     this.socket?.destroy();
     this.socket = null;
     this.authenticated = false;
+    this.frameBuffer = "";
     this.pendingReplies.clear();
     this.pendingReferenceReplies.clear();
   }
@@ -289,7 +295,9 @@ export class LocalNodeClient {
     resolve: () => void,
     reject: (error: Error) => void,
   ): void {
-    const lines = data.split("\n");
+    this.frameBuffer += data;
+    const lines = this.frameBuffer.split("\n");
+    this.frameBuffer = lines.pop() ?? "";
     for (const line of lines) {
       if (!line.trim()) continue;
       try {
