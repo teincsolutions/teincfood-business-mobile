@@ -210,6 +210,8 @@ function wireServiceAdapters(): void {
       updateMenuItem: menuSrv.updateMenuItem,
       deleteMenuItem: menuSrv.deleteMenuItem,
       createCategory: menuSrv.createBusinessCategory,
+      updateCategory: menuSrv.updateBusinessCategory,
+      deleteCategory: menuSrv.deleteBusinessCategory,
     });
     Object.assign(coreBusinessService as Record<string, unknown>, {
       fetchBusinessMembers: businessSrv.fetchBusinessMembers,
