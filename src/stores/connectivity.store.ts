@@ -21,8 +21,9 @@ import { API_BASE_URL } from "@/utils/constants";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
 
-/** How long to keep the cloud marked unreachable before retrying. */
-const CLOUD_RETRY_COOLDOWN_MS = 15_000;
+/** Steady heartbeat between probes. Fixed cadence (not backed off): one small
+ * no-auth GET per minute is cheap; retries elsewhere carry the backoff. */
+const CLOUD_RETRY_COOLDOWN_MS = 60_000;
 
 interface ConnectivityState {
   isOnline: boolean;
