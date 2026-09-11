@@ -1,6 +1,7 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { toast } from "sonner-native";
 import { mmkvStorage } from "@/utils/storage";
 
 /**
@@ -30,8 +31,21 @@ const queryClientPersister = createSyncStoragePersister({
 
 /**
  * Shared QueryClient instance.
+ *
+ * Global mutation error toast: card/kitchen/POS handlers call `.mutate()`
+ * without per-call onError, so without this failures are silent. Per-call
+ * onError (where provided) still runs first; this is the safety net so no
+ * mutation ever fails invisibly.
  */
 export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      try {
+        const message = error instanceof Error ? error.message : "Something went wrong";
+        toast.error(message);
+      } catch {}
+    },
+  }),
   defaultOptions: {
     queries: {
       retry: 2,
