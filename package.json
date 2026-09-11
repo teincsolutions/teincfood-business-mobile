@@ -42,7 +42,7 @@
     "@tanstack/react-query": "^5.75.0",
     "@tanstack/react-query-persist-client": "^5.101.2",
     "@teincfood/chat-client": "0.1.12",
-    "@teincfood/core": "file:../teincfood-core/teincfood-core-0.7.36.tgz",
+    "@teincfood/core": "file:../teincfood-core/teincfood-core-0.7.37.tgz",
     "@teincfood/rn-notifications": "^0.2.0",
     "axios": "^1.14.0",
     "babel-preset-expo": "^55.0.14-canary-20260328-bdc6273",
