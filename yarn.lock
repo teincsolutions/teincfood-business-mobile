@@ -3773,9 +3773,9 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@file:../teincfood-core/teincfood-core-0.7.33.tgz":
-  version "0.7.33"
-  resolved "file:../teincfood-core/teincfood-core-0.7.33.tgz#866d5a19c11c174fd687dc9adb2fa41b2061bf67"
+"@teincfood/core@file:../teincfood-core/teincfood-core-0.7.35.tgz":
+  version "0.7.35"
+  resolved "file:../teincfood-core/teincfood-core-0.7.35.tgz#fc7e95b9db1e66d2f672b6ebc695d64c0b6bc6b9"
 
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"
