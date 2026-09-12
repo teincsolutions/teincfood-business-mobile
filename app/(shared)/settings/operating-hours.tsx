@@ -15,9 +15,9 @@ import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
-import { fetchOperatingHours, upsertOperatingHours } from "@/services/business.service";
+import { upsertOperatingHours } from "@/services/business.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@teincfood/core";
+import { extractApiErrorMessage, referenceSyncService, setOperatingHoursLocal, useOperatingHours } from "@teincfood/core";
 import type { OperatingHoursEntry } from "@teincfood/core";
 
 interface DaySchedule {
@@ -72,31 +72,27 @@ export default function OperatingHoursSettings() {
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
   const [schedule, setSchedule] = useState<Record<number, DaySchedule>>(defaultSchedule);
 
+  // Read from local reference cache (offline-first)
+  const { data: localHours, isLoading } = useOperatingHours(activeBusinessId, !!activeBusinessId);
+
   useEffect(() => {
-    if (!activeBusinessId) {
-      setLoadingHours(false);
-      return;
-    }
-    fetchOperatingHours(activeBusinessId)
-      .then((res) => {
-        const entries = res?.data;
-        if (Array.isArray(entries)) {
-          const merged = { ...defaultSchedule };
-          for (const entry of entries) {
-            if (entry.day_of_week !== undefined) {
-              merged[entry.day_of_week] = {
-                isOpen: !entry.is_closed,
-                openTime: entry.open_time ? entry.open_time.slice(0, 5) : "",
-                closeTime: entry.close_time ? entry.close_time.slice(0, 5) : "",
-              };
-            }
-          }
-          setSchedule(merged);
+    if (!isLoading && localHours) {
+      const merged = { ...defaultSchedule };
+      for (const entry of localHours) {
+        if (entry.day_of_week !== undefined) {
+          merged[entry.day_of_week] = {
+            isOpen: !entry.is_closed,
+            openTime: entry.open_time ? entry.open_time.slice(0, 5) : "",
+            closeTime: entry.close_time ? entry.close_time.slice(0, 5) : "",
+          };
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingHours(false));
-  }, [activeBusinessId]);
+      }
+      setSchedule(merged);
+      setLoadingHours(false);
+    } else if (!activeBusinessId) {
+      setLoadingHours(false);
+    }
+  }, [localHours, isLoading, activeBusinessId]);
 
   const toggleDay = (dayIndex: number) => {
     setSchedule((prev) => {
@@ -153,7 +149,17 @@ export default function OperatingHoursSettings() {
           is_closed: !s.isOpen,
         };
       });
-      await upsertOperatingHours(activeBusinessId, hours);
+      // Write to local reference cache first (offline-first)
+      await setOperatingHoursLocal(activeBusinessId, hours);
+      // Then try network sync
+      try {
+        await upsertOperatingHours(activeBusinessId, hours);
+        // Sync reference data to update local cache immediately
+        try { await referenceSyncService.sync({ businessId: activeBusinessId, keys: ["operating-hours"] }); } catch {}
+      } catch (networkError) {
+        // Network failed but local save succeeded - will sync when online
+        console.warn("[OperatingHours] Network sync failed, saved locally:", networkError);
+      }
       setSaveStatus("success");
       toast.success("Operating hours saved successfully!");
       setTimeout(() => router.back(), 1500);

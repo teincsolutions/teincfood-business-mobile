@@ -10,7 +10,7 @@ import {
 } from "@tamagui/lucide-icons";
 import type { MenuItem } from "@teincfood/core";
 import { formatPriceFromMinor } from "@teincfood/core";
-import { useResponsive } from "@teincfood/core";
+import { useResponsive } from "@/utils/responsive";
 import { useCachedImageUrl } from "@teincfood/core";
 
 interface MenuItemCardProps {

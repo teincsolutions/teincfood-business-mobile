@@ -40,7 +40,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor } from "@teincfood/core";
+import { formatPriceFromMinor, useCachedImageUrl } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
 import { useBusinessTaxRulesQuery } from "@teincfood/core";
@@ -84,6 +84,7 @@ import {
 } from "@/components/pos";
 import { PendingOrderCard, PreparingOrderCard } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
+import { CachedImage } from "@/components/ui/CachedImage";
 import { FlatList } from "react-native-gesture-handler";
 import { Button } from "@/components/ui";
 
@@ -574,10 +575,10 @@ function CartPanel({
                 overflow="hidden"
               >
                 {item.menu_item.image_url ? (
-                  <Image
+                  <CachedImage
                     source={{ uri: item.menu_item.image_url }}
-                    width="100%"
-                    height="100%"
+                    style={{ width: "100%", height: "100%" }}
+                    placeholder={<Utensils size={20} color="$colorSecondary" />}
                   />
                 ) : (
                   <Utensils size={20} color="$colorSecondary" />

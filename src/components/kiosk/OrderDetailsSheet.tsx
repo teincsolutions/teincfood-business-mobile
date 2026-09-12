@@ -14,7 +14,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { useResponsive } from "@teincfood/core";
+import { useResponsive } from "@/utils/responsive";
 import { formatPriceFromMinor } from "@teincfood/core";
 import type { SellerOrder } from "@teincfood/core";
 

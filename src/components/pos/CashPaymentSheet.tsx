@@ -1,6 +1,14 @@
 // @ts-nocheck
 import { useState, useMemo } from "react";
-import { YStack, XStack, Text, Button, Separator, Sheet, useMedia } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Button,
+  Separator,
+  Sheet,
+  useMedia,
+} from "tamagui";
 import { NumericKeypad } from "./NumericKeypad";
 import { formatPriceFromMinor } from "@teincfood/core";
 
@@ -53,7 +61,7 @@ export function CashPaymentSheet({
       modal
       open={open}
       onOpenChange={handleOpenChange}
-      snapPoints={[70]}
+      snapPoints={[80]}
       dismissOnSnapToBottom
       zIndex={200_000}
     >
@@ -68,17 +76,37 @@ export function CashPaymentSheet({
         borderTopLeftRadius="$6"
         borderTopRightRadius="$6"
         padding="$5"
-        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
+        {...(media.md || media.lg
+          ? { maxWidth: 600, alignSelf: "center" }
+          : {})}
       >
         <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
         <YStack gap="$4" flex={1}>
-          <Text fontSize="$6" fontWeight="800" fontFamily="$heading" textAlign="center">
+          <Text
+            fontSize="$6"
+            fontWeight="800"
+            fontFamily="$heading"
+            textAlign="center"
+          >
             Cash Payment
           </Text>
 
-          <YStack backgroundColor="$backgroundSoft" borderRadius="$4" padding="$4" alignItems="center" gap="$2">
-            <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">Amount Due</Text>
-            <Text fontSize="$8" fontWeight="900" fontFamily="$heading" color="$color">
+          <YStack
+            backgroundColor="$backgroundSoft"
+            borderRadius="$4"
+            padding="$4"
+            alignItems="center"
+            gap="$2"
+          >
+            <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">
+              Amount Due
+            </Text>
+            <Text
+              fontSize="$8"
+              fontWeight="900"
+              fontFamily="$heading"
+              color="$color"
+            >
               {formatPriceFromMinor(totalMinor, currency)}
             </Text>
           </YStack>
@@ -86,7 +114,12 @@ export function CashPaymentSheet({
           <Separator />
 
           <YStack gap="$2">
-            <Text fontSize="$5" fontWeight="700" fontFamily="$heading" textAlign="center">
+            <Text
+              fontSize="$5"
+              fontWeight="700"
+              fontFamily="$heading"
+              textAlign="center"
+            >
               Amount Tendered
             </Text>
             <Text
@@ -94,10 +127,18 @@ export function CashPaymentSheet({
               fontWeight="900"
               fontFamily="$heading"
               textAlign="center"
-              color={sufficient ? "$color" : tenderedText ? "$red9" : "$colorSecondary"}
+              color={
+                sufficient
+                  ? "$color"
+                  : tenderedText
+                    ? "$red9"
+                    : "$colorSecondary"
+              }
               minHeight={48}
             >
-              {tenderedText ? formatPriceFromMinor(tenderedMinor, currency) : "—"}
+              {tenderedText
+                ? formatPriceFromMinor(tenderedMinor, currency)
+                : "—"}
             </Text>
             {tenderedMinor > 0 && (
               <XStack justifyContent="center" gap="$2">
@@ -127,7 +168,12 @@ export function CashPaymentSheet({
               pressStyle={{ opacity: 0.8 }}
               onPress={handleConfirm}
             >
-              <Text color="white" fontWeight="700" fontSize="$5" fontFamily="$body">
+              <Text
+                color="white"
+                fontWeight="700"
+                fontSize="$5"
+                fontFamily="$body"
+              >
                 {isProcessing
                   ? "Processing..."
                   : `Confirm — ${formatPriceFromMinor(totalMinor, currency)}`}
