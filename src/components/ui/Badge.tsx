@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React from 'react';
-import { styled, XStack, Text } from 'tamagui';
+import React from "react";
+import { styled, XStack, Text } from "tamagui";
 
 /**
  * Badge Component
@@ -9,41 +9,41 @@ import { styled, XStack, Text } from 'tamagui';
 export interface BadgeProps {
   children: React.ReactNode;
   backgroundColor?: string;
-  size?: '$1' | '$2' | '$3' | '$4';
-  variant?: 'solid' | 'outline';
+  size?: "$1" | "$2" | "$3" | "$4";
+  variant?: "solid" | "outline";
 }
 
 const BadgeContainer = styled(XStack, {
-  name: 'Badge',
-  borderRadius: '$12',
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingHorizontal: '$2',
-  paddingVertical: '$1',
-  
+  name: "Badge",
+  borderRadius: "$12",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: "$2",
+  paddingVertical: "$1",
+
   variants: {
     size: {
-      '$1': {
-        paddingHorizontal: '$1',
-        paddingVertical: '$0.5',
+      $1: {
+        paddingHorizontal: "$1",
+        paddingVertical: "$0.5",
         minWidth: 16,
         height: 16,
       },
-      '$2': {
-        paddingHorizontal: '$1.5',
-        paddingVertical: '$0.5',
+      $2: {
+        paddingHorizontal: "$1.5",
+        paddingVertical: "$0.5",
         minWidth: 20,
         height: 20,
       },
-      '$3': {
-        paddingHorizontal: '$2',
-        paddingVertical: '$1',
+      $3: {
+        paddingHorizontal: "$2",
+        paddingVertical: "$1",
         minWidth: 24,
         height: 24,
       },
-      '$4': {
-        paddingHorizontal: '$2.5',
-        paddingVertical: '$1.5',
+      $4: {
+        paddingHorizontal: "$2.5",
+        paddingVertical: "$1.5",
         minWidth: 28,
         height: 28,
       },
@@ -51,21 +51,18 @@ const BadgeContainer = styled(XStack, {
   } as const,
 
   defaultVariants: {
-    size: '$2',
+    size: "$2",
   },
 });
 
-export function Badge({ 
-  children, 
-  backgroundColor = '$blue10',
-  size = '$2',
-  variant = 'solid',
+export function Badge({
+  children,
+  backgroundColor = "$blue10",
+  size = "$2",
+  variant = "solid",
 }: BadgeProps) {
   return (
-    <BadgeContainer 
-      background={backgroundColor}
-      size={size}
-    >
+    <BadgeContainer background={backgroundColor} size={size}>
       {children}
     </BadgeContainer>
   );

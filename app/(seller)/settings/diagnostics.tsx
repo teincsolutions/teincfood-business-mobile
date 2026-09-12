@@ -1,10 +1,18 @@
 // @ts-nocheck
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, RefreshControl, ScrollView } from "react-native";
+import { Alert, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YStack, XStack, Text, Card, Button, Separator, Switch, Input } from "tamagui";
-import { ChevronLeft } from "@tamagui/lucide-icons";
-import { Badge } from "@/components/ui/Badge";
+import {
+  YStack,
+  XStack,
+  Text,
+  ScrollView,
+  Card,
+  Separator,
+  Switch,
+  Input,
+} from "tamagui";
+import { ChevronLeft, X } from "@tamagui/lucide-icons";
 import {
   getSyncJobsPendingCount,
   debugDumpSyncJobs,
@@ -32,6 +40,7 @@ import { router } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { Badge, Button } from "@/components/ui";
 
 export default function DiagnosticsScreen() {
   const insets = useSafeAreaInsets();
@@ -183,9 +192,7 @@ export default function DiagnosticsScreen() {
       // Single source: shared connectivity-store probe (correct /api/health
       // URL + cooldown + confirmed-unreachable tracking).
       const ok = await probeCloud();
-      setLastProbe(
-        `${ok ? "OK" : "unreachable"} in ${Date.now() - started}ms`,
-      );
+      setLastProbe(`${ok ? "OK" : "unreachable"} in ${Date.now() - started}ms`);
     } catch (error) {
       setLastProbe(
         `failed in ${Date.now() - started}ms: ${error instanceof Error ? error.message : String(error)}`,
@@ -308,16 +315,23 @@ export default function DiagnosticsScreen() {
         color?: string;
         badge?: boolean;
       }) => (
-        <XStack justifyContent="space-between" alignItems="center">
+        <XStack flex={1} justifyContent="space-between" alignItems="center">
           <Text fontSize="$3" color="$color" fontFamily="$body">
             {label}
           </Text>
           {badge && color ? (
-            <Badge backgroundColor={color}>
+            <XStack
+              backgroundColor={color}
+              alignItems="center"
+              justifyContent="center"
+              borderRadius={16}
+              px="$1.5"
+              py="$.5"
+            >
               <Text color="$white" fontSize="$2">
                 {value}
               </Text>
-            </Badge>
+            </XStack>
           ) : (
             <Text fontSize="$3" color="$color" fontFamily="$body">
               {value}
@@ -334,8 +348,8 @@ export default function DiagnosticsScreen() {
       ? "$success"
       : isCloudReachable === "unreachable"
         ? "$error"
-        : "colorMuted";
-  const pendingColor = pending ? "warning" : "$success";
+        : "$colorMuted";
+  const pendingColor = pending ? "$warning" : "$success";
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -370,8 +384,8 @@ export default function DiagnosticsScreen() {
         <Switch
           checked={showLogs}
           onCheckedChange={setShowLogs}
-          backgroundColor={showLogs ? "$success" : "colorMuted"}
-          size="$4"
+          backgroundColor={showLogs ? "$color.green" : "$colorMuted"}
+          size="$6"
         >
           <Switch.Thumb animation="quick" backgroundColor="$white" />
         </Switch>
@@ -415,7 +429,7 @@ export default function DiagnosticsScreen() {
               label="WebSocket"
               value={phxState}
               badge
-              color="colorMuted"
+              color="$colorMuted"
             />
             <StatusRow label="DD" value={deviceNumber ?? "—"} />
             <StatusRow label="Orders cached" value={ordersCount ?? "—"} />
@@ -535,20 +549,19 @@ export default function DiagnosticsScreen() {
               </Text>
             ) : (
               loadStats.map((s) => (
-                <XStack key={s.subsystem} justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$2" fontFamily="monospace" color="$color">
-                    {s.subsystem}
-                  </Text>
-                  <Badge
-                    backgroundColor={
-                      s.perMin > 10 ? "$error" : s.perMin > 0 ? "warning" : "colorMuted"
-                    }
-                  >
-                    <Text color="white" fontSize="$2" fontWeight="700">
-                      {s.perMin}/m · {s.total}
-                    </Text>
-                  </Badge>
-                </XStack>
+                <StatusRow
+                  key={s.subsystem}
+                  label={s.subsystem.replace("_", " ").toUpperCase()}
+                  value={`${s.perMin}/m · ${s.total}`}
+                  badge
+                  color={
+                    s.perMin > 10
+                      ? "$error"
+                      : s.perMin > 0
+                        ? "$warning"
+                        : "$colorMuted"
+                  }
+                />
               ))
             )}
           </YStack>
@@ -562,7 +575,7 @@ export default function DiagnosticsScreen() {
             </Text>
             <Button
               backgroundColor="$primary"
-              color="white"
+              color="$white"
               disabled={draining || !accessToken || !isOnline}
               onPress={handleSyncNow}
             >
@@ -607,14 +620,25 @@ export default function DiagnosticsScreen() {
                   LOGS ({filteredLogs.length}/{logs.length})
                 </Text>
                 <XStack gap="$1">
-                  <Button size="$2" variant="outline" onPress={handleCopyLogs}>
+                  <Button
+                    height={"$8"}
+                    size={"$2"}
+                    variant="outline"
+                    onPress={handleCopyLogs}
+                  >
                     Copy
                   </Button>
-                  <Button size="$2" variant="outline" onPress={handleShareLogs}>
+                  <Button
+                    height={"$8"}
+                    size={"$2"}
+                    variant="outline"
+                    onPress={handleShareLogs}
+                  >
                     Share
                   </Button>
                   <Button
-                    size="$2"
+                    size={"$2"}
+                    height={"$8"}
                     variant="outline"
                     onPress={() => clearDebugLogs()}
                   >
@@ -626,11 +650,10 @@ export default function DiagnosticsScreen() {
                 {["all", "debug", "info", "warn", "error", "log"].map((l) => (
                   <Button
                     key={l}
-                    size="$2"
+                    size="$4"
+                    height="$8"
                     variant={logLevel === l ? undefined : "outline"}
-                    backgroundColor={
-                      logLevel === l ? "$primary" : undefined
-                    }
+                    backgroundColor={logLevel === l ? "$primary" : undefined}
                     color={logLevel === l ? "white" : undefined}
                     onPress={() => setLogLevel(l)}
                   >
@@ -639,7 +662,6 @@ export default function DiagnosticsScreen() {
                 ))}
               </XStack>
               <Input
-                size="$2"
                 flex={1}
                 placeholder="filter logs…"
                 value={logQuery}
@@ -651,8 +673,8 @@ export default function DiagnosticsScreen() {
                   (no logs yet — trigger some sync activity)
                 </Text>
               ) : (
-                <YStack gap="$1" style={{ maxHeight: 300 }}>
-                  {filteredLogs.slice(0, 120).map((e) => (
+                <ScrollView gap="$1" style={{ maxHeight: 300 }}>
+                  {filteredLogs.slice(0, 250).map((e) => (
                     <Text
                       key={e.id}
                       fontSize="$1"
@@ -661,15 +683,15 @@ export default function DiagnosticsScreen() {
                         e.level === "error"
                           ? "$error"
                           : e.level === "warn"
-                            ? "warning"
+                            ? "$warning"
                             : "$color"
                       }
-                      numberOfLines={1}
+                      numberOfLines={3}
                     >
-                      [{e.level.slice(0, 4)}] {e.text.slice(0, 160)}
+                      [{e.level.slice(0, 4)}] {e.text.slice(0, 250)}
                     </Text>
                   ))}
-                </YStack>
+                </ScrollView>
               )}
             </YStack>
           </Card>

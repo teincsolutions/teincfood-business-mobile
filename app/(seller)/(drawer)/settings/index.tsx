@@ -189,7 +189,13 @@ export default function SellerSettings() {
   ];
 
   return (
-    <YStack flex={1} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      {...(media.md || media.lg
+        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+        : {})}
+    >
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack
           paddingHorizontal="$4"
@@ -320,15 +326,29 @@ export default function SellerSettings() {
                 Display Settings
               </Text>
 
-              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                gap="$3"
+              >
                 <YStack flex={1}>
                   <XStack gap="$2" alignItems="center">
                     <Monitor size={18} color="$colorSecondary" />
-                    <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$body"
+                      color="$color"
+                    >
                       Callout Display
                     </Text>
                   </XStack>
-                  <Text color="$colorSecondary" fontSize="$3" fontFamily="$body" marginLeft={26}>
+                  <Text
+                    color="$colorSecondary"
+                    fontSize="$3"
+                    fontFamily="$body"
+                    marginLeft={26}
+                  >
                     Customer order status screen for wall-mounted display
                   </Text>
                 </YStack>
@@ -344,15 +364,29 @@ export default function SellerSettings() {
 
               <Separator />
 
-              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                gap="$3"
+              >
                 <YStack flex={1}>
                   <XStack gap="$2" alignItems="center">
                     <ChefHat size={18} color="$colorSecondary" />
-                    <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$body"
+                      color="$color"
+                    >
                       Kitchen Display
                     </Text>
                   </XStack>
-                  <Text color="$colorSecondary" fontSize="$3" fontFamily="$body" marginLeft={26}>
+                  <Text
+                    color="$colorSecondary"
+                    fontSize="$3"
+                    fontFamily="$body"
+                    marginLeft={26}
+                  >
                     Order preparation pipeline for kitchen staff
                   </Text>
                 </YStack>
