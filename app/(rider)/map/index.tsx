@@ -26,7 +26,7 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   useRiderProfileQuery,
   useRiderDeliveriesQuery,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 import {
   getDirectionsPolyline,
   estimateDurationSeconds,

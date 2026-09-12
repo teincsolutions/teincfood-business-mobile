@@ -7,9 +7,9 @@ import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
   useUserInvitationsQuery,
-} from "@/hooks/useInvitations";
+} from "@teincfood/core";
 import { useSellerOrderQuery } from "@/hooks/seller.hooks";
-import { useJoinRequestsQuery } from "@/hooks/useFleet";
+import { useJoinRequestsQuery } from "@teincfood/core";
 import { useNotificationsMutations } from "@teincfood/rn-notifications";
 import * as sellerService from "@/services/seller.service";
 import * as fleetService from "@/services/fleet.service";

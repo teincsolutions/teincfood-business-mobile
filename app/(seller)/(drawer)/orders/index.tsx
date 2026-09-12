@@ -30,7 +30,7 @@ import {
   useCancelOrderMutation,
   SELLER_KEYS,
 } from "@/hooks/seller.hooks";
-import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";

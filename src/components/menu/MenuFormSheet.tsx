@@ -25,7 +25,7 @@ import {
   EMPTY_FORM,
   toMinor,
 } from '@/services/menu.service';
-import { formatPrice } from '@teincfood/core';
+import { formatPrice, useCachedImageUrl } from '@teincfood/core';
 
 interface MenuFormSheetProps {
   open: boolean;
@@ -94,6 +94,7 @@ export function MenuFormSheet({
   const media = useMedia();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addCategoryName, setAddCategoryName] = useState('');
+  const imageUrl = useCachedImageUrl(form.image_url);
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
@@ -366,10 +367,10 @@ export function MenuFormSheet({
                     Item Image
                   </Text>
                   
-                  {form.image_url ? (
+                  {imageUrl ? (
                     <YStack position="relative" width={120} height={120}>
                       <Image
-                        source={{ uri: form.image_url }}
+                        source={{ uri: imageUrl }}
                         style={{ width: 120, height: 120, borderRadius: 8 }}
                       />
                       <TouchableOpacity

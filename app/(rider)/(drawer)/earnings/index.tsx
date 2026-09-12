@@ -14,8 +14,8 @@ import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import {
   useRiderEarningsSummaryQuery,
-  useWalletHistoryQuery,
-} from "@/hooks/useRider";
+  useRiderWalletHistoryQuery,
+} from "@teincfood/core";
 import { formatPriceFromMinor } from "@teincfood/core";
 
 const PERIODS = [
@@ -32,7 +32,7 @@ export default function RiderEarningsScreen() {
   );
 
   const { data: earningsSummary } = useRiderEarningsSummaryQuery(period);
-  const { data: transactionsData = [] } = useWalletHistoryQuery();
+  const { data: transactionsData = [] } = useRiderWalletHistoryQuery();
 
   const summary = earningsSummary?.data;
   const totalEarningsMinor = summary?.total_earnings_minor ?? 0;

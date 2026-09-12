@@ -6,7 +6,7 @@ import { formatPriceFromMinor } from "@teincfood/core";
 import type { MenuItem } from "@teincfood/core";
 import { ItemCustomizerSheet } from "./ItemCustomizerSheet";
 import { Button } from "../ui";
-import { useCachedImageUrl } from "@/hooks/useCachedImage";
+import { useCachedImageUrl } from "@teincfood/core";
 
 interface FoodCardProps {
   item: MenuItem;

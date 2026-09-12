@@ -30,7 +30,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useAuthStore } from "@/stores/auth.store";
 import { authService } from "@/services/auth.service";
-import { useRiderProfileQuery } from "@/hooks/useRider";
+import { useRiderProfileQuery } from "@teincfood/core";
 import { useRiderLocationTracking } from "@/hooks/useRiderLocationTracking";
 import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
 import { DrawerContentScrollView } from "@react-navigation/drawer";

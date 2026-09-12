@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { useAddVehicleMutation, useFleetRidersQuery } from "@/hooks/useFleet";
+import { useAddVehicleMutation, useFleetRidersQuery } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import {

@@ -6,7 +6,7 @@
  */
 
 import { Avatar } from "tamagui";
-import { useCachedImageUrl } from "@/hooks/useCachedImage";
+import { useCachedImageUrl } from "@teincfood/core";
 
 type AvatarImageProps = React.ComponentProps<typeof Avatar.Image> & {
   src?: string | null;

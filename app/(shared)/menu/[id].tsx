@@ -5,7 +5,7 @@ import { YStack, XStack, Text, Card, Separator, useTheme } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton, Button } from '@/components/ui';
 import { useMenuItemsQuery } from '@/hooks/menu.hooks';
-import { useCachedImageUrl } from '@/hooks/useCachedImage';
+import { useCachedImageUrl } from '@teincfood/core';
 import { formatPriceFromMinor } from '@teincfood/core';
 import {
   UtensilsCrossed,

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useReferenceData } from "@/reference/hooks";
+import { useReferenceData } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import type { FeatureKey } from "@/constants/feature-keys";
 

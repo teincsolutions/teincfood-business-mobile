@@ -8,6 +8,10 @@ import { useResponsive } from "@/utils/responsive";
 import { useLocalSearchParams } from "expo-router";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
+import {
+  buildMenuItemEnvelope,
+  validateMenuItemInput,
+} from "@teincfood/core";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";
@@ -161,22 +165,61 @@ export default function SellerMenu() {
       toast.error("Please select a category");
       return;
     }
+    if (!businessId) {
+      toast.error("No active business");
+      return;
+    }
 
-    const baseData = {
-      name: form.name.trim(),
-      description: form.description.trim(),
-      priceMinor: toMinor(form.price),
-      categoryId: form.category,
-      dietaryTags: form.dietaryTags,
-      variants: form.variants,
-      extras: form.extras,
-      available: form.is_available,
-      imageUrl: form.image_key || form.image_url || null,
-    };
+    const priceMinor = toMinor(form.price);
+    const categoryName =
+      allCategories.find((c: any) => c.id === form.category)?.name ?? "";
+    // Temp form ids are numeric (Date.now()); backend ids are UUIDs — only
+    // UUIDs survive into the cache record.
+    const isUuid = (v: unknown) =>
+      typeof v === "string" && v.includes("-") ? v : undefined;
+    const variantInputs = form.variants.map((v: any) => ({
+      id: isUuid(v.id),
+      name: v.name,
+      price_adjustment: v.price_adjustment,
+    }));
+    const extraInputs = form.extras.map((e: any) => ({
+      id: isUuid(e.id),
+      name: e.name,
+      price_minor: e.price_minor,
+    }));
+    // Offline validation mirror — reject exactly what the backend rejects.
+    try {
+      validateMenuItemInput({ name: form.name.trim(), price_minor: priceMinor, category_id: form.category, variants: form.variants, extras: form.extras });
+    } catch (e: any) {
+      if (e?.name === "ValidationError") {
+        if (e.details) setFieldErrors(e.details);
+        else toast.error(e.message);
+        return;
+      }
+      throw e;
+    }
+    // Envelope: backend wire payload + backend-shaped cache record, built
+    // together by the caller (owns every field).
+    const buildEnvelope = (id: string | undefined) =>
+      buildMenuItemEnvelope({
+        id,
+        businessId,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        priceMinor,
+        categoryId: form.category,
+        categoryName,
+        dietaryTags: form.dietaryTags,
+        variants: variantInputs,
+        extras: extraInputs,
+        available: form.is_available,
+        imageUrl: form.image_key || form.image_url || null,
+      });
 
     if (editingItem) {
+      const { wire, cacheRecord } = buildEnvelope(editingItem.id);
       updateMutation.mutate(
-        { id: editingItem.id, updates: baseData },
+        { id: editingItem.id, payload: { ...wire, cacheRecord } },
         {
           onSuccess: () => setSheetOpen(false),
           onError: (err: any) => {
@@ -200,8 +243,11 @@ export default function SellerMenu() {
         },
       );
     } else {
-      createMutation.mutate(baseData, {
-        onSuccess: () => setSheetOpen(false),
+      const { wire, cacheRecord } = buildEnvelope(undefined);
+      createMutation.mutate(
+        { ...wire, id: cacheRecord.id, cacheRecord },
+        {
+          onSuccess: () => setSheetOpen(false),
         onError: (err: any) => {
           console.debug(
             "[Menu] Create item error:",
@@ -227,9 +273,34 @@ export default function SellerMenu() {
   // ─── Toggle availability ───────────────────────────────────────
   const toggleAvailability = (id: string) => {
     const item = (data ?? []).find((i: any) => i.id === id);
-    if (item) {
-      toggleMutation.mutate({ id, available: !item.is_available });
-    }
+    if (!item || !businessId) return;
+    const { cacheRecord } = buildMenuItemEnvelope({
+      id: item.id,
+      businessId,
+      name: item.name,
+      description: item.description,
+      priceMinor: item.basePrice.amountMinor,
+      categoryId: item.category_id,
+      categoryName: item.category?.name ?? "",
+      dietaryTags: item.dietary_tags ?? [],
+      variants: (item.variants ?? []).map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        price_adjustment: v.price.amountMinor - item.basePrice.amountMinor,
+      })),
+      extras: (item.extras ?? []).map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        price_minor: e.amountMinor,
+      })),
+      available: !item.is_available,
+      imageUrl: item.image_url,
+    });
+    toggleMutation.mutate({
+      id,
+      available: !item.is_available,
+      cacheRecord,
+    });
   };
 
   // ─── Delete ────────────────────────────────────────────────────

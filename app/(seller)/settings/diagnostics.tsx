@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, RefreshControl, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YStack, XStack, Text, Card, Button, Separator, Switch } from "tamagui";
+import { YStack, XStack, Text, Card, Button, Separator, Switch, Input } from "tamagui";
 import { ChevronLeft } from "@tamagui/lucide-icons";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -16,33 +16,28 @@ import {
   phoenixSocket,
   syncLogger,
   ensureDeviceLease,
+  commandQueueService,
+  getDebugLogs,
+  subscribeDebugLogs,
+  clearDebugLogs,
+  getAttemptStats,
+  type LogEntry,
 } from "@teincfood/core";
-import { useConnectivityStore } from "@/stores/connectivity.store";
+import { useConnectivityStore, probeCloud } from "@/stores/connectivity.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { useAuthStore } from "@/stores/auth.store";
-import { API_BASE_URL } from "@/utils/constants";
+import { API_BASE_URL, WS_BASE_URL } from "@/utils/constants";
 import { toast } from "sonner-native";
 import { router } from "expo-router";
-
-// Simple in-memory log buffer for the Diagnostics screen
-const logBuffer: string[] = [];
-function pushLog(
-  level: string,
-  context: string,
-  message: string,
-  meta?: Record<string, unknown>,
-) {
-  const line = `[${level.toUpperCase()}] ${context}: ${message}${meta ? " " + JSON.stringify(meta) : ""}`;
-  logBuffer.unshift(line);
-  if (logBuffer.length > 200) logBuffer.pop();
-}
+import * as Clipboard from "expo-clipboard";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 export default function DiagnosticsScreen() {
   const insets = useSafeAreaInsets();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id ?? null);
   const isOnline = useConnectivityStore((s) => s.isOnline);
   const isCloudReachable = useConnectivityStore((s) => s.isCloudReachable);
-  const setCloudReachable = useConnectivityStore((s) => s.setCloudReachable);
   const accessToken = useAuthStore((s) => s.accessToken);
   const [pending, setPending] = useState<number | null>(null);
   const [jobs, setJobs] = useState<
@@ -62,42 +57,56 @@ export default function DiagnosticsScreen() {
   const [lastProbe, setLastProbe] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(false);
   const [phxState, setPhxState] = useState<string>("unknown");
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loadStats, setLoadStats] = useState<
+    Array<{
+      subsystem: string;
+      total: number;
+      perMin: number;
+      lastAt: string | null;
+      lastDetail: string | null;
+    }>
+  >([]);
+  const [logLevel, setLogLevel] = useState<string>("all");
+  const [logQuery, setLogQuery] = useState("");
+  const [outbox, setOutbox] = useState<
+    Array<{
+      id: string;
+      command_type: string;
+      status: string;
+      retry_count: number;
+      error: string | null;
+      created_at: string;
+    }>
+  >([]);
 
-  // Wire core syncLogger to our buffer (debug builds only)
+  // Shared core log store (always-on capture installed at bootstrap — same
+  // source Desktop Diagnostics reads, not a screen-local buffer).
   useEffect(() => {
-    const methods: Array<"debug" | "info" | "warn" | "error"> = [
-      "debug",
-      "info",
-      "warn",
-      "error",
-    ];
-    const orig: Record<string, Function> = {};
-    methods.forEach((m) => {
-      orig[m] = syncLogger[m]?.bind(syncLogger) || (() => {});
-      // @ts-ignore
-      syncLogger[m] = (
-        ctx: string,
-        msg: string,
-        meta?: Record<string, unknown>,
-      ) => {
-        pushLog(m, ctx, msg, meta);
-        orig[m]?.(ctx, msg, meta);
-      };
-    });
+    setLogs(getDebugLogs());
+    try {
+      setLoadStats(getAttemptStats());
+    } catch {}
+    const id = setInterval(() => {
+      try {
+        setLoadStats(getAttemptStats());
+      } catch {}
+    }, 5_000);
+    const unsub = subscribeDebugLogs(() => setLogs(getDebugLogs()));
     return () => {
-      methods.forEach((m) => {
-        // @ts-ignore
-        syncLogger[m] = orig[m];
-      });
+      clearInterval(id);
+      unsub();
     };
   }, []);
 
-  // Keep logs in sync with buffer
-  useEffect(() => {
-    const id = setInterval(() => setLogs([...logBuffer]), 1_000);
-    return () => clearInterval(id);
-  }, []);
+  const filteredLogs = useMemo(() => {
+    const q = logQuery.trim().toLowerCase();
+    return logs.filter(
+      (e) =>
+        (logLevel === "all" || e.level === logLevel) &&
+        (!q || e.text.toLowerCase().includes(q)),
+    );
+  }, [logs, logLevel, logQuery]);
 
   // Update phoenix socket state periodically without full refresh
   const phxTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,13 +121,15 @@ export default function DiagnosticsScreen() {
   const refresh = useCallback(async () => {
     if (!businessId) return;
     try {
-      const [p, dump, db] = await Promise.all([
+      const [p, dump, outboxDump, db] = await Promise.all([
         getSyncJobsPendingCount(businessId),
         debugDumpSyncJobs(businessId),
+        commandQueueService.debugDumpCommands(businessId),
         openSyncDatabase(),
       ]);
       setPending(p);
       setJobs(dump.slice(-5).reverse());
+      setOutbox(outboxDump.slice(-8).reverse());
       const countRow = await db.getFirstAsync<{ c: number }>(
         "SELECT COUNT(*) as c FROM orders WHERE business_id = ?",
         [businessId],
@@ -169,23 +180,58 @@ export default function DiagnosticsScreen() {
     setProbing(true);
     const started = Date.now();
     try {
-      const url = `${API_BASE_URL.replace(/\/$/, "")}/health`;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 4_000);
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
-      const ok = res.ok;
-      setCloudReachable(ok ? "reachable" : "unreachable");
-      setLastProbe(`${ok ? "OK" : res.status} in ${Date.now() - started}ms`);
+      // Single source: shared connectivity-store probe (correct /api/health
+      // URL + cooldown + confirmed-unreachable tracking).
+      const ok = await probeCloud();
+      setLastProbe(
+        `${ok ? "OK" : "unreachable"} in ${Date.now() - started}ms`,
+      );
     } catch (error) {
-      setCloudReachable("unreachable");
       setLastProbe(
         `failed in ${Date.now() - started}ms: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
       setProbing(false);
     }
-  }, [setCloudReachable]);
+  }, []);
+
+  const handleCopyLogs = useCallback(async () => {
+    const text = filteredLogs
+      .slice()
+      .reverse()
+      .map((e) => `${e.ts} [${e.level}] ${e.text}`)
+      .join("\n");
+    await Clipboard.setStringAsync(text || "(no logs)");
+    toast.success(`Copied ${filteredLogs.length} log lines`);
+  }, [filteredLogs]);
+
+  const handleShareLogs = useCallback(async () => {
+    try {
+      const stats = getAttemptStats()
+        .map(
+          (s) =>
+            `${s.subsystem}: total=${s.total} perMin=${s.perMin} last=${s.lastAt ?? "—"} detail=${s.lastDetail ?? "—"}`,
+        )
+        .join("\n");
+      const text =
+        `LOAD\n${stats || "(none)"}\n\nLOGS\n` +
+        filteredLogs
+          .slice()
+          .reverse()
+          .map((e) => `${e.ts} [${e.level}] ${e.text}`)
+          .join("\n");
+      const uri = `${FileSystem.cacheDirectory ?? ""}teinc-diagnostics.log`;
+      await FileSystem.writeAsStringAsync(uri, text || "(no logs)");
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { dialogTitle: "Teinc diagnostics log" });
+      } else {
+        await Clipboard.setStringAsync(uri);
+        toast.success("Sharing unavailable — path copied");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Share failed");
+    }
+  }, [filteredLogs]);
 
   const handleClearOffline = useCallback(async () => {
     if (!businessId) return;
@@ -373,6 +419,8 @@ export default function DiagnosticsScreen() {
             />
             <StatusRow label="DD" value={deviceNumber ?? "—"} />
             <StatusRow label="Orders cached" value={ordersCount ?? "—"} />
+            <StatusRow label="API" value={API_BASE_URL} />
+            <StatusRow label="WS" value={WS_BASE_URL} />
           </YStack>
         </Card>
 
@@ -425,6 +473,87 @@ export default function DiagnosticsScreen() {
           </YStack>
         </Card>
 
+        {/* Engine Outbox (commands table — survives restarts) */}
+        <Card padding="$4" bordered marginBottom="$3">
+          <YStack gap="$2">
+            <XStack justifyContent="space-between" alignItems="center">
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                ENGINE OUTBOX
+              </Text>
+              <Badge backgroundColor={outbox.length ? "warning" : "$success"}>
+                <Text color="white" fontSize="$2" fontWeight="700">
+                  {outbox.length}
+                </Text>
+              </Badge>
+            </XStack>
+            <Separator marginVertical="$2" />
+            {outbox.length === 0 ? (
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                (outbox is empty)
+              </Text>
+            ) : (
+              outbox.map((c) => (
+                <YStack key={c.id} gap="$1">
+                  <XStack justifyContent="space-between">
+                    <Text fontSize="$2" fontFamily="monospace" color="$color">
+                      {c.command_type}@{c.status.slice(0, 4)}
+                    </Text>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="monospace"
+                    >
+                      {c.id.slice(0, 8)} · x{c.retry_count}
+                    </Text>
+                  </XStack>
+                  {c.error ? (
+                    <Text
+                      fontSize="$1"
+                      color="$error"
+                      fontFamily="monospace"
+                      numberOfLines={2}
+                    >
+                      {c.error.slice(0, 120)}
+                    </Text>
+                  ) : null}
+                </YStack>
+              ))
+            )}
+          </YStack>
+        </Card>
+
+        {/* Load — attempts per subsystem (total + trailing 60s) */}
+        <Card padding="$4" bordered marginBottom="$3">
+          <YStack gap="$2">
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              LOAD (/MIN + TOTAL)
+            </Text>
+            <Separator marginVertical="$2" />
+            {loadStats.length === 0 ? (
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                (no attempts recorded yet)
+              </Text>
+            ) : (
+              loadStats.map((s) => (
+                <XStack key={s.subsystem} justifyContent="space-between" alignItems="center">
+                  <Text fontSize="$2" fontFamily="monospace" color="$color">
+                    {s.subsystem}
+                  </Text>
+                  <Badge
+                    backgroundColor={
+                      s.perMin > 10 ? "$error" : s.perMin > 0 ? "warning" : "colorMuted"
+                    }
+                  >
+                    <Text color="white" fontSize="$2" fontWeight="700">
+                      {s.perMin}/m · {s.total}
+                    </Text>
+                  </Badge>
+                </XStack>
+              ))
+            )}
+          </YStack>
+        </Card>
+
         {/* Actions */}
         <Card padding="$4" bordered marginBottom="$3">
           <YStack gap="$2">
@@ -469,40 +598,75 @@ export default function DiagnosticsScreen() {
           </YStack>
         </Card>
 
-        {/* Logs */}
+        {/* Logs — shared core store, same source as Desktop */}
         {showLogs && (
           <Card padding="$4" bordered marginBottom="$3">
             <YStack gap="$2">
               <XStack justifyContent="space-between" alignItems="center">
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  LOGS (latest 200)
+                  LOGS ({filteredLogs.length}/{logs.length})
                 </Text>
-                <Button
-                  size="$2"
-                  variant="outline"
-                  onPress={() => {
-                    logBuffer.length = 0;
-                    setLogs([]);
-                  }}
-                >
-                  Clear
-                </Button>
+                <XStack gap="$1">
+                  <Button size="$2" variant="outline" onPress={handleCopyLogs}>
+                    Copy
+                  </Button>
+                  <Button size="$2" variant="outline" onPress={handleShareLogs}>
+                    Share
+                  </Button>
+                  <Button
+                    size="$2"
+                    variant="outline"
+                    onPress={() => clearDebugLogs()}
+                  >
+                    Clear
+                  </Button>
+                </XStack>
               </XStack>
-              {logs.length === 0 ? (
+              <XStack gap="$1" flexWrap="wrap">
+                {["all", "debug", "info", "warn", "error", "log"].map((l) => (
+                  <Button
+                    key={l}
+                    size="$2"
+                    variant={logLevel === l ? undefined : "outline"}
+                    backgroundColor={
+                      logLevel === l ? "$primary" : undefined
+                    }
+                    color={logLevel === l ? "white" : undefined}
+                    onPress={() => setLogLevel(l)}
+                  >
+                    {l}
+                  </Button>
+                ))}
+              </XStack>
+              <Input
+                size="$2"
+                flex={1}
+                placeholder="filter logs…"
+                value={logQuery}
+                onChangeText={setLogQuery}
+                autoCapitalize="none"
+              />
+              {filteredLogs.length === 0 ? (
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                   (no logs yet — trigger some sync activity)
                 </Text>
               ) : (
                 <YStack gap="$1" style={{ maxHeight: 300 }}>
-                  {logs.map((line, i) => (
+                  {filteredLogs.slice(0, 120).map((e) => (
                     <Text
-                      key={i}
+                      key={e.id}
                       fontSize="$1"
                       fontFamily="monospace"
-                      color="$color"
+                      color={
+                        e.level === "error"
+                          ? "$error"
+                          : e.level === "warn"
+                            ? "warning"
+                            : "$color"
+                      }
                       numberOfLines={1}
                     >
-                      {line}
+                      [{e.level.slice(0, 4)}] {e.text.slice(0, 160)}
                     </Text>
                   ))}
                 </YStack>

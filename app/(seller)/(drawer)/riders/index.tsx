@@ -32,7 +32,7 @@ import {
   useApproveJoinRequestMutation,
   useRejectJoinRequestMutation,
   useInviteRiderMutation,
-} from "@/hooks/useFleet";
+} from "@teincfood/core";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";

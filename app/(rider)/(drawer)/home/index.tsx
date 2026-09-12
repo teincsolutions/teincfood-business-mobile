@@ -28,7 +28,7 @@ import {
   useActiveDeliveryQuery,
   useUpdateOnlineStatusMutation,
   useRiderDeliveriesQuery,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 
 /**

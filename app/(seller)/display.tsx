@@ -19,11 +19,11 @@ import {
   CheckCircle,
   LogOut,
 } from "@tamagui/lucide-icons";
-import { usePOSOrdersQuery, POS_KEYS } from "@/hooks/pos.hooks";
+import { usePOSOrdersQuery, POS_KEYS } from "@teincfood/core";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useDisplayStore } from "@/stores/display.store";
 import { useSecurityStore } from "@/stores/security.store";
-import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { CalloutCard } from "@/components/pos/CalloutCard";
 
 function LiveClock() {

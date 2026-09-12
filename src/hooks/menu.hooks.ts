@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBusinessStore } from "@/stores/business.store";
 import * as menuService from "@/services/menu.service";
 import { emitReferenceChanged, runOfflineCapableMutation } from "@teincfood/core";
+import { buildMenuCategoryEnvelope, getCachedCategories } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { CATALOG_KEYS } from "@teincfood/core";
@@ -12,8 +13,11 @@ export function useCreateMenuCategoryMutation() {
   const qc = useQueryClient();
   return useMutation({
     // Engine route (cloud → LAN → queue) via runOfflineCapableMutation.
-    mutationFn: (data: { name: string; description?: string; sort_order?: number }) =>
-      runOfflineCapableMutation({ run: () => menuService.createBusinessCategory(bid!, data), commandType: "menu:create_category", businessId: bid!, payload: data }),
+    mutationFn: (data: { name: string; description?: string; sort_order?: number }) => {
+      const { wire, cacheRecord } = buildMenuCategoryEnvelope({ name: data.name, sort_order: data.sort_order });
+      const payload = { ...data, ...wire, cacheRecord };
+      return runOfflineCapableMutation({ run: () => menuService.createBusinessCategory(bid!, data), commandType: "menu:create_category", businessId: bid!, entityId: cacheRecord.id, payload });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category created"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
     onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
@@ -22,8 +26,12 @@ export function useUpdateMenuCategoryMutation() {
   const bid = useBusinessStore((s) => s.activeBusiness?.id);
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { categoryId: string; name: string; description?: string; sort_order?: number }) =>
-      runOfflineCapableMutation({ run: () => menuService.updateBusinessCategory(bid!, data.categoryId, { name: data.name, ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}) }), commandType: "menu:update_category", businessId: bid!, entityId: data.categoryId, payload: data }),
+    mutationFn: (data: { categoryId: string; name: string; description?: string; sort_order?: number }) => {
+      const current = bid ? getCachedCategories(qc, bid).find((c) => c.id === data.categoryId) : undefined;
+      const wire = { name: data.name, ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}) };
+      const { cacheRecord } = buildMenuCategoryEnvelope({ id: data.categoryId, name: data.name, sort_order: data.sort_order ?? current?.sort_order ?? 0 });
+      return runOfflineCapableMutation({ run: () => menuService.updateBusinessCategory(bid!, data.categoryId, wire), commandType: "menu:update_category", businessId: bid!, entityId: data.categoryId, payload: { ...data, cacheRecord } });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category updated"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
     onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
@@ -42,8 +50,8 @@ export function useToggleAvailabilityMutation() {
   const bid = useBusinessStore((s) => s.activeBusiness?.id);
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, available }: { id: string; available: boolean }) =>
-      runOfflineCapableMutation({ run: () => menuService.toggleItemAvailability(id, available), commandType: "menu:update_item", businessId: bid!, entityId: id, payload: { id, available } }),
+    mutationFn: ({ id, available, cacheRecord }: { id: string; available: boolean; cacheRecord?: unknown }) =>
+      runOfflineCapableMutation({ run: () => menuService.toggleItemAvailability(id, available), commandType: "menu:update_item", businessId: bid!, entityId: id, payload: cacheRecord ? { id, available, cacheRecord } : { id, available } }),
     onMutate: async ({ id, available }: { id: string; available: boolean }) => {
       await qc.cancelQueries({ queryKey: CATALOG_KEYS.items(bid) });
       const prev = qc.getQueriesData({ queryKey: CATALOG_KEYS.items(bid) });

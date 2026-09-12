@@ -24,8 +24,8 @@ import {
   useDeliveryZonesQuery,
   useUpdateDeliveryZonesMutation,
   useToggleDeliveryZoneMutation,
-} from "@/hooks/useRider";
-import type { DeliveryZone } from "@/models/rider.model";
+} from "@teincfood/core";
+import type { DeliveryZone } from "@teincfood/core";
 
 /**
  * Rider Delivery Zones Screen

@@ -41,7 +41,7 @@ import {
   useCompletePickupMutation,
   useConfirmHandoverMutation,
 } from "@/hooks/seller.hooks";
-import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useOrderRealtimeUpdates } from "@teincfood/core";
 import {
   useAvailableRidersQuery,
   useAssignRiderMutation,

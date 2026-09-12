@@ -10,7 +10,7 @@ import { RatingModal } from './RatingModal';
 import { OrderDetailModal } from './OrderDetailModal';
 import { useCartStore } from '@/stores/cart.store';
 import { useRemoveOrderMutation } from '@/services/orders.service';
-import { useCachedImageUrl } from '@/hooks/useCachedImage';
+import { useCachedImageUrl } from '@teincfood/core';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: '$gray400' },

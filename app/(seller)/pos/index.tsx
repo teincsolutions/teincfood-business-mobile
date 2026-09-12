@@ -43,7 +43,7 @@ import { toast } from "sonner-native";
 import { formatPriceFromMinor } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
-import { useBusinessTaxRulesQuery } from "@/hooks/tax.hooks";
+import { useBusinessTaxRulesQuery } from "@teincfood/core";
 import { calculatePricing } from "@teincfood/core";
 import {
   useCreatePOSOrderMutation,
@@ -51,7 +51,7 @@ import {
   usePOSOrderPreviewQuery,
   POS_KEYS,
   useBusinessOpenNow,
-} from "@/hooks/pos.hooks";
+} from "@teincfood/core";
 import {
   useAcceptKioskOrderMutation,
   useStartPreparingKioskOrderMutation,
@@ -62,7 +62,7 @@ import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useBusinessStore } from "@/stores/business.store";
-import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
 import type {
