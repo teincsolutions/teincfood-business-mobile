@@ -9,11 +9,11 @@ import {
   Bike,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
-import { useAllBalancesQuery, useBusinessWalletBalanceQuery } from "@/hooks/useWallet";
+import { useAllBalancesQuery, useBusinessWalletBalanceQuery } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useEntitlements } from "@/hooks/useEntitlements";
-import { useReferenceData } from "@/reference/hooks";
+import { useReferenceData } from "@teincfood/core";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;

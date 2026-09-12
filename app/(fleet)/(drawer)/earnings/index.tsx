@@ -14,7 +14,7 @@ import { Button } from "@/components/ui";
 import {
   useFleetDashboardQuery,
   useFleetRidersQuery,
-} from "@/hooks/useFleet";
+} from "@teincfood/core";
 import { formatPriceFromMinor } from "@teincfood/core";
 
 export default function FleetEarningsScreen() {

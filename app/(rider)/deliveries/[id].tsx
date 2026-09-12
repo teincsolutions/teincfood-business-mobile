@@ -21,9 +21,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import polyline from "@mapbox/polyline";
 import {
-  useDeliveryDetailQuery,
+  useRiderDeliveryDetailQuery,
   useUpdateDeliveryStatusMutation,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 import type { RiderDeliveryDetail } from "@teincfood/core";
 import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@teincfood/core";
@@ -54,7 +54,7 @@ export default function RiderDeliveryDetails() {
 
   useRiderDeliveryRealtimeUpdates();
 
-  const { data: response, isLoading } = useDeliveryDetailQuery(id as string);
+  const { data: response, isLoading } = useRiderDeliveryDetailQuery(id as string);
   const delivery = response?.data ?? null;
   const updateStatus = useUpdateDeliveryStatusMutation();
 

@@ -10,7 +10,7 @@ import { BackButton, Button, FormInput } from "@/components/ui";
 import {
   useVehicleInfoQuery,
   useCreateVehicleMutation,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 import type { RiderVehicleRequest } from "@teincfood/core";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { toast } from "sonner-native";

@@ -16,6 +16,7 @@ import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
 import { setConnectivityState, setAuthProvider } from "@teincfood/core";
+import { initDebugLogCapture } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
@@ -32,6 +33,13 @@ import {
   menuService as coreMenuService,
   businessService as coreBusinessService,
   rolesService as coreRolesService,
+  walletService as coreWalletService,
+  riderService as coreRiderService,
+  fleetService as coreFleetService,
+  deliveryService as coreDeliveryService,
+  dashboardService as coreDashboardService,
+  analyticsService as coreAnalyticsService,
+  placesService as corePlacesService,
   imageCacheService as coreImageCache,
 } from "@teincfood/core";
 import * as Print from "expo-print";
@@ -48,6 +56,15 @@ import * as kioskSrv from "@/services/kiosk.service";
 import * as menuSrv from "@/services/menu.service";
 import * as businessSrv from "@/services/business.service";
 import * as rolesSrv from "@/services/roles.service";
+import * as walletSrv from "@/services/wallet.service";
+import * as riderSrv from "@/services/rider.service";
+import * as fleetSrv from "@/services/fleet.service";
+import * as deliverySrv from "@/services/delivery.service";
+import * as dashboardSrv from "@/services/seller-dashboard.service";
+import * as analyticsSrv from "@/services/seller-analytics.service";
+import * as placesSrv from "@/services/places.service";
+import { setNotifyHandlers } from "@teincfood/core";
+import { toast } from "sonner-native";
 import * as desktopImageCache from "@teincfood/core";
 import type { SQLiteDatabase } from "expo-sqlite";
 
@@ -215,13 +232,98 @@ function wireServiceAdapters(): void {
     });
     Object.assign(coreBusinessService as Record<string, unknown>, {
       fetchBusinessMembers: businessSrv.fetchBusinessMembers,
+      inviteBusinessMember: (businessSrv as unknown as { inviteBusinessMember?: unknown }).inviteBusinessMember,
+      removeBusinessMember: (businessSrv as unknown as { removeBusinessMember?: unknown }).removeBusinessMember,
+      fetchBusinessMemberInvitations: (businessSrv as unknown as { fetchBusinessMemberInvitations?: unknown }).fetchBusinessMemberInvitations,
+      revokeBusinessMemberInvitation: (businessSrv as unknown as { revokeBusinessMemberInvitation?: unknown }).revokeBusinessMemberInvitation,
+      deleteBusinessMemberInvitation: (businessSrv as unknown as { deleteBusinessMemberInvitation?: unknown }).deleteBusinessMemberInvitation,
+      fetchUserInvitations: (businessSrv as unknown as { fetchUserInvitations?: unknown }).fetchUserInvitations,
+      leaveBusiness: (businessSrv as unknown as { leaveBusiness?: unknown }).leaveBusiness,
+      acceptBusinessInvitation: (businessSrv as unknown as { acceptBusinessInvitation?: unknown }).acceptBusinessInvitation,
       fetchBusinessTaxRules: businessSrv.fetchBusinessTaxRules,
+      createBusinessTaxRule: (businessSrv as unknown as { createBusinessTaxRule?: unknown }).createBusinessTaxRule,
+      updateTaxRule: (businessSrv as unknown as { updateTaxRule?: unknown }).updateTaxRule,
+      deleteTaxRule: (businessSrv as unknown as { deleteTaxRule?: unknown }).deleteTaxRule,
       fetchBusinessById: businessSrv.fetchBusinessById,
       fetchOperatingHours: businessSrv.fetchOperatingHours,
       fetchMyBusinessMembership: businessSrv.fetchMyBusinessMembership,
     });
     Object.assign(coreRolesService as Record<string, unknown>, {
       fetchBusinessRoles: rolesSrv.fetchBusinessRoles,
+    });
+    Object.assign(coreWalletService as Record<string, unknown>, {
+      fetchAllBalances: walletSrv.fetchAllBalances,
+      fetchBusinessWalletBalance: walletSrv.fetchBusinessWalletBalance,
+      fetchWalletHistory: walletSrv.fetchWalletHistory,
+    });
+    Object.assign(coreRiderService as Record<string, unknown>, {
+      fetchRiderProfile: riderSrv.fetchRiderProfile,
+      updateRiderProfile: riderSrv.updateRiderProfile,
+      updateOnlineStatus: riderSrv.updateOnlineStatus,
+      fetchRiderMetrics: riderSrv.fetchRiderMetrics,
+      fetchRiderDashboard: riderSrv.fetchRiderDashboard,
+      fetchRiderStatistics: riderSrv.fetchRiderStatistics,
+      fetchAvailableOrders: riderSrv.fetchAvailableOrders,
+      acceptDelivery: riderSrv.acceptDelivery,
+      selfAssignDelivery: riderSrv.selfAssignDelivery,
+      fetchActiveDelivery: riderSrv.fetchActiveDelivery,
+      fetchRiderDeliveries: riderSrv.fetchRiderDeliveries,
+      fetchDeliveryDetail: riderSrv.fetchDeliveryDetail,
+      markDeliveryInTransit: riderSrv.markDeliveryInTransit,
+      markDeliveryArrived: riderSrv.markDeliveryArrived,
+      markDeliveryDelivered: riderSrv.markDeliveryDelivered,
+      markDeliveryFailed: riderSrv.markDeliveryFailed,
+      markDeliveryReturned: riderSrv.markDeliveryReturned,
+      confirmDeliveryPickup: riderSrv.confirmDeliveryPickup,
+      confirmDeliveryHandover: riderSrv.confirmDeliveryHandover,
+      fetchRiderEarnings: riderSrv.fetchRiderEarnings,
+      fetchEarningsBreakdown: riderSrv.fetchEarningsBreakdown,
+      fetchRiderEarningsSummary: riderSrv.fetchRiderEarningsSummary,
+      fetchWalletHistory: riderSrv.fetchWalletHistory,
+      fetchVehicleInfo: riderSrv.fetchVehicleInfo,
+      createVehicle: riderSrv.createVehicle,
+      fetchDeliveryZones: riderSrv.fetchDeliveryZones,
+      updateDeliveryZones: riderSrv.updateDeliveryZones,
+      toggleDeliveryZone: riderSrv.toggleDeliveryZone,
+      fetchNavigationSettings: riderSrv.fetchNavigationSettings,
+      updateNavigationSettings: riderSrv.updateNavigationSettings,
+      fetchNavigationApps: riderSrv.fetchNavigationApps,
+      fetchVehicleTypes: riderSrv.fetchVehicleTypes,
+    });
+    setNotifyHandlers({ success: (m) => toast.success(m), error: (m) => toast.error(m) });
+    Object.assign(coreDeliveryService as Record<string, unknown>, {
+      fetchBusinessDeliveries: deliverySrv.fetchBusinessDeliveries,
+      fetchDeliveryDetail: deliverySrv.fetchDeliveryDetail,
+    });
+    Object.assign(coreDashboardService as Record<string, unknown>, {
+      fetchSellerDashboard: dashboardSrv.fetchSellerDashboard,
+    });
+    Object.assign(coreAnalyticsService as Record<string, unknown>, {
+      fetchSellerAnalytics: analyticsSrv.fetchSellerAnalytics,
+      fetchRevenueSummary: analyticsSrv.fetchRevenueSummary,
+    });
+    Object.assign(corePlacesService as Record<string, unknown>, {
+      searchPlaces: placesSrv.placesService.searchPlaces.bind(placesSrv.placesService),
+      getPlaceDetails: placesSrv.placesService.getPlaceDetails.bind(placesSrv.placesService),
+      clearCache: placesSrv.placesService.clearCache.bind(placesSrv.placesService),
+    });
+    Object.assign(coreFleetService as Record<string, unknown>, {
+      fetchFleetRiders: fleetSrv.fetchFleetRiders,
+      fetchFleetRider: fleetSrv.fetchFleetRider,
+      inviteRider: fleetSrv.inviteRider,
+      approveRider: fleetSrv.approveRider,
+      suspendRider: fleetSrv.suspendRider,
+      activateRider: fleetSrv.activateRider,
+      fetchRiderKyc: fleetSrv.fetchRiderKyc,
+      fetchJoinRequests: fleetSrv.fetchJoinRequests,
+      approveJoinRequest: fleetSrv.approveJoinRequest,
+      rejectJoinRequest: fleetSrv.rejectJoinRequest,
+      fetchInvitations: fleetSrv.fetchInvitations,
+      revokeInvitation: fleetSrv.revokeInvitation,
+      fetchFleetVehicles: fleetSrv.fetchFleetVehicles,
+      addVehicle: fleetSrv.addVehicle,
+      removeVehicle: fleetSrv.removeVehicle,
+      fetchFleetDashboard: fleetSrv.fetchFleetDashboard,
     });
   } catch {}
   try {
@@ -271,6 +373,8 @@ function syncBusinessBridge(): void {
 export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
   if (bootstrapped) return null;
   try {
+    // Always-on shared log capture (same store Desktop Diagnostics reads).
+    initDebugLogCapture();
     console.debug("[bootstrapCore] env (app-owned)", { API_BASE_URL, WS_BASE_URL });
     const sqliteDriver = buildSqliteDriver();
     const kvDriver = buildKVDriver();
@@ -378,6 +482,9 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       const ensureLeaseForBusiness = (bid: string | null | undefined) => {
         if (!bid) return;
         import("@teincfood/core").then((m) => (m as any).ensureDeviceLease?.(bid).catch(() => {})).catch(() => {});
+        // One-time janitor: drop cached menu rows that are not backend-shaped
+        // MenuItems (older builds cached raw wire payloads and crashed readers).
+        import("@teincfood/core").then((m) => (m as any).purgeNonCanonicalMenuCache?.(bid).catch(() => {})).catch(() => {});
       };
       const currentId: string | null = useBusinessStore.getState().activeBusiness?.id ?? null;
       if (currentId) ensureLeaseForBusiness(currentId);

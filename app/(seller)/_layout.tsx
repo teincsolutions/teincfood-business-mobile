@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useDisplayStore } from '@/stores/display.store';
 import { useMyBusinessCapabilities } from '@/hooks/useMyBusinessCapabilities';
-import { useBusinessReferenceDataSync } from '@/reference/hooks';
-import { useOfflineOrderHydration } from '@/hooks/offline-orders.hooks';
+import { useBusinessReferenceDataSync } from '@teincfood/core';
+import { useOfflineOrderHydration } from '@teincfood/core';
 import { routeCapabilities } from '@/constants/route-capabilities';
 import { toast } from 'sonner-native';
 

@@ -17,7 +17,7 @@ import {
   useNavigationSettingsQuery,
   useUpdateNavigationSettingsMutation,
   useNavigationAppsQuery,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 
 /**
  * Rider Navigation Settings Screen

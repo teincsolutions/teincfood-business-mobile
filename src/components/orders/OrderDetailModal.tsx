@@ -7,7 +7,7 @@ import { formatCurrency } from "@teincfood/core";
 import type { Order } from "@/models/order.model";
 import { use } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useCachedImageUrl } from "@/hooks/useCachedImage";
+import { useCachedImageUrl } from "@teincfood/core";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200";

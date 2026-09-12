@@ -17,7 +17,7 @@ import {
   useRiderProfileQuery,
   useVehicleInfoQuery,
   useToggleOnlineMutation,
-} from "@/hooks/useRider";
+} from "@teincfood/core";
 
 export default function RiderSettings() {
   const router = useRouter();

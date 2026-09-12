@@ -20,7 +20,7 @@ import { formatPriceFromMinor } from "@teincfood/core";
 import { usePOSStore } from "@/stores/pos.store";
 import type { MenuItem } from "@teincfood/core";
 import { Button } from "../ui";
-import { useCachedImageUrl } from "@/hooks/useCachedImage";
+import { useCachedImageUrl } from "@teincfood/core";
 
 interface ItemCustomizerSheetProps {
   item: MenuItem;

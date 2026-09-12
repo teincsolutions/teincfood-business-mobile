@@ -17,7 +17,7 @@ import {
   ChevronRight,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
-import { useFleetRidersQuery } from "@/hooks/useFleet";
+import { useFleetRidersQuery } from "@teincfood/core";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
 

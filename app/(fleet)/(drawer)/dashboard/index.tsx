@@ -13,7 +13,7 @@ import {
   Plus,
   X,
 } from "@tamagui/lucide-icons";
-import { useFleetDashboardQuery, useFleetRidersQuery } from "@/hooks/useFleet";
+import { useFleetDashboardQuery, useFleetRidersQuery } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner, Button } from "@/components/ui";

@@ -7,7 +7,7 @@ import axios, {
 } from "axios";
 import { API_BASE_URL } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth.store";
-import { extractFromResponseBody } from "@teincfood/core";
+import { extractFromResponseBody, recordAttempt } from "@teincfood/core";
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -46,6 +46,7 @@ axiosInstance.interceptors.request.use(
       console.log("Token exists:", token);
       config.headers.Authorization = `Bearer ${token}`;
     }
+    try { recordAttempt("rest_attempt", `${config.method?.toUpperCase()} ${config.url ?? ""}`); } catch {}
     console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
       data: config.data,
       params: config.params,

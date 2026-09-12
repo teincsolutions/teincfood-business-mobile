@@ -29,8 +29,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useRouter } from "expo-router";
-import { useBusinessDeliveriesQuery } from "@/hooks/delivery.hooks";
-import { useOrderRealtimeUpdates } from "@/hooks/useOrderRealtimeUpdates";
+import { useBusinessDeliveriesQuery } from "@teincfood/core";
+import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
 import { useResponsive } from "@/utils/responsive";
 import { useFilterStore } from "@/stores/filter.store";

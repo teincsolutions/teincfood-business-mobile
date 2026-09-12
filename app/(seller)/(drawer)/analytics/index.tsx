@@ -17,7 +17,7 @@ import { formatPriceFromMinor } from "@teincfood/core";
 import {
   useRevenueSummaryQuery,
   useSellerAnalyticsQuery,
-} from "@/hooks/seller-analytics.hooks";
+} from "@teincfood/core";
 import { Badge } from "@/components/ui/Badge";
 
 const PERIODS = [

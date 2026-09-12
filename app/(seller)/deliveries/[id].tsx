@@ -16,7 +16,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { BackButton, Button } from "@/components/ui";
-import { useDeliveryDetailQuery } from "@/hooks/useDeliveryDetail";
+import { useDeliveryDetailQuery } from "@teincfood/core";
 import { formatPriceFromMinor } from "@teincfood/core";
 import { DeliveryTimeline, getDeliveryStepIndex } from "@/components/tracking/DeliveryTimeline";
 

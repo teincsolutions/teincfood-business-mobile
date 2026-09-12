@@ -10,7 +10,7 @@ import {
   User,
   ChevronRight,
 } from "@tamagui/lucide-icons";
-import { useFleetVehiclesQuery, useFleetRidersQuery } from "@/hooks/useFleet";
+import { useFleetVehiclesQuery, useFleetRidersQuery } from "@teincfood/core";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
 

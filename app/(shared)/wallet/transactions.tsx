@@ -4,7 +4,7 @@ import { YStack, XStack, Text, Spinner, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowUpRight, ArrowDownLeft, Clock } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
-import { useWalletHistoryQuery } from "@/hooks/useWallet";
+import { useWalletHistoryQuery } from "@teincfood/core";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
@@ -26,7 +26,7 @@ export default function TransactionHistoryScreen() {
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useWalletHistoryQuery();
 
-  const entries = data?.entries ?? [];
+  const entries = (data ?? []) as { type: string; amount_minor: number }[];
 
   const renderItem = ({ item }) => {
     const isCredit = item.type === "credit";

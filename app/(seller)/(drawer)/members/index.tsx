@@ -44,8 +44,8 @@ import {
   useBusinessMembersQuery,
   useInviteMemberMutation,
   useRemoveMemberMutation,
-} from "@/hooks/useBusinessMembers";
-import { useBusinessRolesQuery } from "@/hooks/useRoles";
+} from "@teincfood/core";
+import { useBusinessRolesQuery } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
 const ROLE_LABELS: Record<string, string> = {

@@ -84,6 +84,20 @@ export async function acceptBusinessInvitation(data: { code: string }): Promise<
   return api.post<{ data: Record<string, unknown> }>('/businesses/memberships/accept', data);
 }
 
+// ─── Business Member Invitations ───
+
+export async function fetchBusinessMemberInvitations(businessId: string): Promise<{ data: { id: string }[] }> {
+  return api.get(`/businesses/${businessId}/members/invitations`);
+}
+
+export async function revokeBusinessMemberInvitation(businessId: string, invitationId: string): Promise<{ data: unknown }> {
+  return api.post(`/businesses/${businessId}/members/invitations/${invitationId}/revoke`);
+}
+
+export async function deleteBusinessMemberInvitation(businessId: string, invitationId: string): Promise<{ data: { deleted: boolean } }> {
+  return api.delete(`/businesses/${businessId}/members/invitations/${invitationId}`);
+}
+
 // ─── User Invitations ───
 
 export interface UserInvitation {

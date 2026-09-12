@@ -18,7 +18,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import polyline from "@mapbox/polyline";
-import { useRiderProfileQuery } from "@/hooks/useRider";
+import { useRiderProfileQuery } from "@teincfood/core";
 import { getDirectionsPolyline, estimateDurationSeconds } from "@/services/directions.service";
 import { useResponsive } from "@/utils/responsive";
 

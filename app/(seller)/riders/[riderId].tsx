@@ -27,7 +27,7 @@ import {
   useRiderKycQuery,
   useSuspendRiderMutation,
   useActivateRiderMutation,
-} from "@/hooks/useFleet";
+} from "@teincfood/core";
 import { RiderKycSheet } from "@/components/rider/RiderKycSheet";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";

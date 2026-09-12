@@ -20,7 +20,7 @@ import {
   useRiderProfileQuery,
   useAvailableOrdersQuery,
   useClaimOrderMutation,
-} from '@/hooks/useRider';
+} from "@teincfood/core";
 import { useRiderDeliveryRealtimeUpdates } from '@/hooks/useRiderDeliveryRealtimeUpdates';
 
 type FilterOption = 'all' | 'active' | 'completed';

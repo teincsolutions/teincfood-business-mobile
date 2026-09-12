@@ -16,7 +16,7 @@ import NetInfo, {
   type NetInfoStateType,
   type NetInfoSubscription,
 } from "@react-native-community/netinfo";
-import { syncLogger } from "@teincfood/core";
+import { recordAttempt, syncLogger } from "@teincfood/core";
 import { API_BASE_URL } from "@/utils/constants";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
@@ -132,23 +132,6 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
   };
 });
 
-/**
- * Convenience hook that returns true when the cloud is assumed reachable.
- *
- * "unknown" is treated as reachable by default to keep the online-first
- * behavior. The Sync Engine will downgrade to queueing on the first failed
- * cloud heartbeat.
- */
-export function useIsCloudReachable(): boolean {
-  return useConnectivityStore(
-    (s) => s.isCloudReachable === "reachable" || s.isCloudReachable === "unknown",
-  );
-}
-
-export function useIsOnline(): boolean {
-  return useConnectivityStore((s) => s.isOnline);
-}
-
 /** Backend health probe timeout. Short: settling cloud state must never block UX. */
 const PROBE_TIMEOUT_MS = 4_000;
 
@@ -170,6 +153,7 @@ function healthUrl(): string {
 export async function probeCloud(): Promise<boolean> {
   const url = healthUrl();
   const started = Date.now();
+  recordAttempt("probe", "probeCloud");
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);

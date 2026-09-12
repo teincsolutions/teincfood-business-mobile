@@ -26,8 +26,8 @@ import { useRouter } from "expo-router";
 import { BackButton, Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { MessageButton } from "@/components/chat/MessageButton";
-import { useRiderProfileQuery } from "@/hooks/useRider";
-import { useLeaveBusinessMutation } from "@/hooks/useInvitations";
+import { useRiderProfileQuery } from "@teincfood/core";
+import { useLeaveBusinessMutation } from "@teincfood/core";
 
 export default function RiderBusinessesScreen() {
   const router = useRouter();

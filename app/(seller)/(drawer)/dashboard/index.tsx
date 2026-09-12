@@ -21,7 +21,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
-import { useSellerDashboardQuery } from "@/hooks/seller-dashboard.hooks";
+import { useSellerDashboardQuery } from "@teincfood/core";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";

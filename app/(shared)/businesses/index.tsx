@@ -20,7 +20,7 @@ import { useMyBusinesses } from "@/hooks/useMyBusinesses";
 import {
   useLeaveBusinessMutation,
   useAcceptFleetInvitationMutation,
-} from "@/hooks/useInvitations";
+} from "@teincfood/core";
 
 export default function BusinessesScreen() {
   const router = useRouter();

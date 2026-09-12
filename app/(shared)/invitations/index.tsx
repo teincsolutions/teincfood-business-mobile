@@ -9,7 +9,7 @@ import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import {
   useUserInvitationsQuery,
   useLeaveBusinessMutation,
-} from "@/hooks/useInvitations";
+} from "@teincfood/core";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
 import { useNotificationsList } from "@teincfood/rn-notifications";
 

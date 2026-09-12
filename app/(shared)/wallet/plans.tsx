@@ -8,7 +8,7 @@ import { BackButton, Button } from "@/components/ui";
 import { useBusinessStore } from "@/stores/business.store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as subService from "@/services/subscription.service";
-import { REFERENCE_KEYS } from "@/reference/hooks";
+import { REFERENCE_KEYS } from "@teincfood/core";
 import { referenceSyncService } from "@teincfood/core";
 
 export default function PlansScreen() {
