@@ -404,10 +404,10 @@ function MenuBrowser() {
             paddingHorizontal: 20,
             paddingVertical: 20,
             paddingBottom: 40,
-            gap: 16,
+            gap: 8,
           }}
           renderItem={({ item }) => (
-            <YStack width={(width - 48) / foodColumns}>
+            <YStack width={(width - 48) / foodColumns} mr={isTablet ? 0 : 8}>
               <FoodCard item={item} />
             </YStack>
           )}
@@ -785,7 +785,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
   const businessOpen = useBusinessOpenNow(activeBusiness?.id);
-  const isBusinessClosed = !!activeBusiness?.id && !businessOpen.isLoading && businessOpen.data && !businessOpen.data.open;
+  const isBusinessClosed =
+    !!activeBusiness?.id &&
+    !businessOpen.isLoading &&
+    businessOpen.data &&
+    !businessOpen.data.open;
 
   // Server-parity local pricing (offline/no-preview fallback):
   // mirrors backend calculate_pos_pricing so inclusive taxes stay embedded in
@@ -793,7 +797,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const localPricing = useMemo(() => {
     if (items.length === 0) return null;
     try {
-      const currency = (activeBusiness as unknown as { currency?: string; currency_code?: string })?.currency ?? (activeBusiness as unknown as { currency_code?: string })?.currency_code ?? "GHS";
+      const currency =
+        (
+          activeBusiness as unknown as {
+            currency?: string;
+            currency_code?: string;
+          }
+        )?.currency ??
+        (activeBusiness as unknown as { currency_code?: string })
+          ?.currency_code ??
+        "GHS";
       return calculatePricing({
         items,
         taxRules: taxRules?.data ?? [],
@@ -802,7 +815,12 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     } catch {
       return null;
     }
-  }, [items, taxRules, (activeBusiness as unknown as { currency?: string })?.currency, (activeBusiness as unknown as { currency_code?: string })?.currency_code]);
+  }, [
+    items,
+    taxRules,
+    (activeBusiness as unknown as { currency?: string })?.currency,
+    (activeBusiness as unknown as { currency_code?: string })?.currency_code,
+  ]);
 
   const serverPricing = previewOrder.data?.data;
   // Prefer the authoritative cloud preview; fall back to the local engine.
@@ -865,7 +883,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       quantity: i.quantity,
       unit_price_minor: i.unit_price_minor,
       variant_name: i.selected_variant?.name,
-      addons: i.selected_addons.map((a) => ({ name: a.name, price_minor: a.price_minor })),
+      addons: i.selected_addons.map((a) => ({
+        name: a.name,
+        price_minor: a.price_minor,
+      })),
     }));
 
     console.debug(
@@ -935,9 +956,15 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           // Lib hours-guard rejections are coded — surface them to staff.
           const code = (error as { code?: string })?.code;
           if (code === "BUSINESS_CLOSED" || code === "HOURS_NOT_SYNCED") {
-            toast.error(error instanceof Error ? error.message : "Business is currently closed");
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Business is currently closed",
+            );
           } else {
-            toast.error(error instanceof Error ? error.message : "Failed to place order");
+            toast.error(
+              error instanceof Error ? error.message : "Failed to place order",
+            );
           }
         },
       },
@@ -953,7 +980,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
   const handlePlaceOrder = useCallback(() => {
     if (isBusinessClosed) {
-      toast.error(businessOpen.data?.reason === "no_hours_configured" ? "Operating hours not set yet. Please configure them in Settings." : "Business is currently closed");
+      toast.error(
+        businessOpen.data?.reason === "no_hours_configured"
+          ? "Operating hours not set yet. Please configure them in Settings."
+          : "Business is currently closed",
+      );
       return;
     }
     if (
@@ -1364,24 +1395,24 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         borderTopWidth={1}
         borderTopColor="$borderColor"
       >
-          <Button
-            backgroundColor="$primary"
-            color="white"
-            fontWeight="700"
-            fontFamily="$body"
-            height={52}
-            disabled={createOrder.isPending || isBusinessClosed}
-            pressStyle={{ opacity: 0.8 }}
-            onPress={handlePlaceOrder}
-          >
-            {createOrder.isPending ? (
-              <Spinner size="small" color="white" />
-            ) : isBusinessClosed ? (
-              "Business Closed"
-            ) : (
-              `Place Order — ${formatPriceFromMinor(total)}`
-            )}
-          </Button>
+        <Button
+          backgroundColor="$primary"
+          color="white"
+          fontWeight="700"
+          fontFamily="$body"
+          height={52}
+          disabled={createOrder.isPending || isBusinessClosed}
+          pressStyle={{ opacity: 0.8 }}
+          onPress={handlePlaceOrder}
+        >
+          {createOrder.isPending ? (
+            <Spinner size="small" color="white" />
+          ) : isBusinessClosed ? (
+            "Business Closed"
+          ) : (
+            `Place Order — ${formatPriceFromMinor(total)}`
+          )}
+        </Button>
       </YStack>
 
       <CashPaymentSheet

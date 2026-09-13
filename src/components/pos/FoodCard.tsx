@@ -22,7 +22,7 @@ export function FoodCard({ item }: FoodCardProps) {
       <Card
         elevate
         width="100%"
-        marginBottom="$3"
+        marginBottom="$2"
         backgroundColor="$background"
         borderRadius="$5"
         pressStyle={item.is_available ? { scale: 0.98 } : undefined}
