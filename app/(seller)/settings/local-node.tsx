@@ -87,37 +87,52 @@ export default function LocalNodeSettings() {
                     </YStack>
                   </XStack>
 
-                  {store.discoveredNodes.length === 0 ? (
-                    <YStack alignItems="center" padding="$4" gap="$2">
-                      <Smartphone color="$colorMuted" />
-                      <Text fontSize="$2" color="$colorMuted" textAlign="center">
-                        No terminals found. Make sure Local Node is enabled on all devices and they are on the same Wi-Fi network.
-                      </Text>
-                    </YStack>
-                  ) : (
-                    store.discoveredNodes.map((node) => {
-                      const isConnected = store.connectedClients.some((c) => c.deviceId === node.deviceId);
+                  {(() => {
+                    const merged = new Map<string, { deviceId: string; label: string; detail: string; connected: boolean }>();
+                    for (const n of store.discoveredNodes) {
+                      const id = n.deviceId;
+                      const connected = store.connectedClients.some((c) => c.deviceId === id);
+                      merged.set(id, { deviceId: id, label: n.deviceName ?? n.host, detail: `${n.host}:${n.port}`, connected });
+                    }
+                    for (const c of store.connectedClients) {
+                      if (!merged.has(c.deviceId)) {
+                        merged.set(c.deviceId, { deviceId: c.deviceId, label: c.deviceName ?? c.host ?? c.deviceId, detail: c.host ?? "", connected: true });
+                      } else {
+                        const e = merged.get(c.deviceId)!;
+                        e.connected = true;
+                      }
+                    }
+                    const nodes = [...merged.values()];
+                    if (nodes.length === 0) {
                       return (
-                        <XStack
-                          key={node.deviceId}
-                          gap="$3"
-                          alignItems="center"
-                          padding="$3"
-                          borderRadius="$3"
-                          backgroundColor="$backgroundSoft"
-                        >
-                          <Smartphone color={isConnected ? "$success" : "$colorMuted"} />
-                          <YStack flex={1}>
-                            <Text fontSize="$3" fontWeight="bold">{node.deviceName ?? node.host}</Text>
-                            <Text fontSize="$2" color="$colorMuted">{node.host}:{node.port}</Text>
-                          </YStack>
-                          <Text fontSize="$2" fontWeight="bold" color={isConnected ? "$success" : "$colorMuted"}>
-                            {isConnected ? "Connected" : "Discovered"}
+                        <YStack alignItems="center" padding="$4" gap="$2">
+                          <Smartphone color="$colorMuted" />
+                          <Text fontSize="$2" color="$colorMuted" textAlign="center">
+                            No terminals found. Make sure Local Node is enabled on all devices and they are on the same Wi-Fi network.
                           </Text>
-                        </XStack>
+                        </YStack>
                       );
-                    })
-                  )}
+                    }
+                    return nodes.map((n) => (
+                      <XStack
+                        key={n.deviceId}
+                        gap="$3"
+                        alignItems="center"
+                        padding="$3"
+                        borderRadius="$3"
+                        backgroundColor="$backgroundSoft"
+                      >
+                        <Smartphone color={n.connected ? "$success" : "$colorMuted"} />
+                        <YStack flex={1}>
+                          <Text fontSize="$3" fontWeight="bold">{n.label}</Text>
+                          {n.detail ? <Text fontSize="$2" color="$colorMuted">{n.detail}</Text> : null}
+                        </YStack>
+                        <Text fontSize="$2" fontWeight="bold" color={n.connected ? "$success" : "$colorMuted"}>
+                          {n.connected ? "Connected" : "Discovered"}
+                        </Text>
+                      </XStack>
+                    ));
+                  })()}
                 </YStack>
               </>
             )}
