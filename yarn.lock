@@ -3787,7 +3787,7 @@
 
 "@teincfood/core@file:../teincfood-core/teincfood-core-v0.7.50.tgz":
   version "0.7.50"
-  resolved "file:../teincfood-core/teincfood-core-v0.7.50.tgz#8c041b880d0eeeb39f9170c6991f1d0ccfcbefb9"
+  resolved "file:../teincfood-core/teincfood-core-v0.7.50.tgz"
   dependencies:
     "@tanstack/query-async-storage-persister" "^5.102.8"
 
