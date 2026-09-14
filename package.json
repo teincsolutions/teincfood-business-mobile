@@ -66,6 +66,7 @@
     "expo-live-activity": "^0.4.2",
     "expo-local-authentication": "~55.0.9",
     "expo-location": "~55.1.4",
+    "expo-network": "~55.0.18",
     "expo-notifications": "^55.0.14",
     "expo-print": "~55.0.16",
     "expo-router": "^55.0.0",

@@ -5217,6 +5217,11 @@ expo-modules-core@55.0.25:
   dependencies:
     invariant "^2.2.4"
 
+expo-network@~55.0.18:
+  version "55.0.18"
+  resolved "https://registry.yarnpkg.com/expo-network/-/expo-network-55.0.18.tgz#05024393fa4ae67a7212e267aaf81ed933a0a320"
+  integrity sha512-zHKgRbTbPAN/TYbnV4r2DGlTvq5DG26n/N0S/MF41i3S/kcU6fad/YNgdkixmXt2JFNOCfT3OnouV2q7OyYAWg==
+
 expo-notifications@^55.0.14:
   version "55.0.24"
   resolved "https://registry.npmjs.org/expo-notifications/-/expo-notifications-55.0.24.tgz"
