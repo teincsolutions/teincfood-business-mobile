@@ -3785,9 +3785,9 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@/Users/ericmensah/Projects/teincfood-core/teincfood-core-0.7.42.tgz":
-  version "0.7.42"
-  resolved "/Users/ericmensah/Projects/teincfood-core/teincfood-core-0.7.42.tgz#407ad2d2e5ed096578025272cc161a3a6b257f14"
+"@teincfood/core@file:../teincfood-core/teincfood-core-v0.7.50.tgz":
+  version "0.7.50"
+  resolved "file:../teincfood-core/teincfood-core-v0.7.50.tgz#8c041b880d0eeeb39f9170c6991f1d0ccfcbefb9"
   dependencies:
     "@tanstack/query-async-storage-persister" "^5.102.8"
 
