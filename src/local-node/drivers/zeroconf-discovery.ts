@@ -8,6 +8,7 @@ import { syncLogger } from "@teincfood/core";
 import { getDeviceDisplayName } from "@/services/devices.service";
 import type { DiscoveredNode } from "@teincfood/core";
 import type { DiscoveryAdapter } from "@teincfood/core";
+import { TcpSweepRunner, NODE_PROBE_PORT } from "./tcp-sweep";
 
 const SERVICE_TYPE = "teincnode";
 const SERVICE_PROTOCOL = "tcp";
@@ -26,6 +27,13 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
   private publishOpts: (Opts & { port: number }) | null = null;
   private scanning = false;
   private published = false;
+  /**
+   * Unicast sweep fallback (mirrors desktop tcp_sweep): mDNS browse is
+   * best-effort cross-platform, so an empty browse window must not mean an
+   * invisible peer. Runs only while scanning; core dedups sweep hits
+   * against mDNS records by host:port.
+   */
+  private sweep: TcpSweepRunner | null = null;
 
   setOptions(opts: Opts): void {
     this.options = opts;
@@ -118,11 +126,22 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
 
     this.zeroconf.scan(SERVICE_TYPE, SERVICE_PROTOCOL, SERVICE_DOMAIN);
     syncLogger.info("LocalNodeDiscovery", "Scanning for nodes", { scanning: true });
+    try {
+      this.sweep?.stop();
+      this.sweep = new TcpSweepRunner(NODE_PROBE_PORT, {
+        onNodeFound: (node) => this.options?.onNodeFound?.(node),
+      });
+      this.sweep.start();
+    } catch {}
   }
 
   stopScanning(): void {
     if (!this.scanning) return;
     this.scanning = false;
+    try {
+      this.sweep?.stop();
+      this.sweep = null;
+    } catch {}
     try {
       this.zeroconf.stop();
       // FIX: remove listeners after stop to prevent duplicates on next start
@@ -139,6 +158,10 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
   }
 
   stop(): void {
+    try {
+      this.sweep?.stop();
+      this.sweep = null;
+    } catch {}
     try {
       this.stopScanning();
       if (this.published && this.publishOpts) {
