@@ -7,24 +7,16 @@ import axios, {
 } from "axios";
 import { API_BASE_URL } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth.store";
-import { extractFromResponseBody, recordAttempt } from "@teincfood/core";
-
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (error: Error) => void;
-}> = [];
-
-const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
+import {
+  extractFromResponseBody,
+  recordAttempt,
+  extractAuthFailure,
+  isAccessExpired,
+  isSessionDead,
+  hasAuthRetrySkip,
+  refreshSession,
+  clearAuth,
+} from "@teincfood/core";
 
 /**
  * Axios client instance for the Teinc Food Business API.
@@ -43,7 +35,6 @@ axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
-      console.log("Token exists:", token);
       config.headers.Authorization = `Bearer ${token}`;
     }
     try { recordAttempt("rest_attempt", `${config.method?.toUpperCase()} ${config.url ?? ""}`); } catch {}
@@ -60,117 +51,68 @@ axiosInstance.interceptors.request.use(
   (error: unknown) => Promise.reject(error),
 );
 
-// Response interceptor: handle errors globally with token refresh
+// Response interceptor: session lifecycle is owned by @teincfood/core.
+// This layer only attaches tokens, normalizes errors, and delegates
+// classification (isAccessExpired/isSessionDead) + recovery
+// (refreshSession/clearAuth) to core. No local refresh state.
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response.data,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
     const status = error.response?.status;
     const responseData = error.response?.data as
       | Record<string, unknown>
       | undefined;
 
-    let errorCode: string | undefined;
     let errorMessage: string | undefined;
-
     if (responseData && typeof responseData === "object") {
-      const data = responseData as Record<string, unknown>;
-      errorMessage = extractFromResponseBody(data) ?? undefined;
+      errorMessage =
+        extractFromResponseBody(responseData as Record<string, unknown>) ??
+        undefined;
+    }
+    const rejectAsApiError = () =>
+      Promise.reject(
+        new ApiError(
+          status ?? 500,
+          errorMessage || error.message || "An unexpected error occurred",
+          responseData,
+        ),
+      );
 
-      const errorField = data.error;
-      if (errorField && typeof errorField === "object") {
-        errorCode = (errorField as Record<string, unknown>).code as
-          | string
-          | undefined;
-      } else if (typeof errorField === "string") {
-        errorCode = errorField;
-      }
+    // Core-owned refresh calls must never recurse into session handling —
+    // their own 401 rejects immediately for core to classify.
+    if (originalRequest && hasAuthRetrySkip(originalRequest)) {
+      return rejectAsApiError();
     }
 
-    // Token expired — attempt refresh
-    if (
-      status === 401 &&
-      errorCode === "TOKEN_EXPIRED" &&
-      !originalRequest._retry
-    ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-              }
-              resolve(axiosInstance(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
+    const failure = extractAuthFailure(error);
 
+    // Access token expired — single-flight refresh in core, then retry once.
+    // Concurrent 401s share core's in-flight refresh (no local queue, no
+    // refresh-token rotation races).
+    if (originalRequest && isAccessExpired(failure) && !originalRequest._retry) {
       originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        if (!refreshToken) {
-          useAuthStore.getState().clearAuth();
-          throw new Error("No refresh token available");
-        }
-
-        const response = await axiosInstance.post("/auth/refresh", {
-          refresh_token: refreshToken,
-        });
-        const data = response as unknown as {
-          access_token: string;
-          refresh_token: string;
-        };
-
-        useAuthStore
-          .getState()
-          .setTokens(data.access_token, data.refresh_token);
-
-        processQueue(null, data.access_token);
-        isRefreshing = false;
-
+      const tokens = await refreshSession().catch(() => null);
+      if (tokens?.access_token) {
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+          originalRequest.headers.Authorization = `Bearer ${tokens.access_token}`;
         }
-
         return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError as Error, null);
-        isRefreshing = false;
-        // Only clear auth for auth errors (401/403), not server/network errors
-        const refreshStatus = (refreshError as AxiosError).response?.status;
-        if (refreshStatus === 401 || refreshStatus === 403) {
-          useAuthStore.getState().clearAuth();
-        }
-        return Promise.reject(refreshError);
       }
+      return rejectAsApiError();
     }
 
-    // Only clear auth for actual token/session errors. A 401 WITHOUT a body
-    // (e.g. a proxy/gateway or an HTML error page) must NOT log the user out
-    // mid-shift — the app keeps working offline / over the Local Node.
-    const AUTH_INVALIDATING_CODES = [
-      "UNAUTHORIZED",
-      "TOKEN_INVALID",
-      "SESSION_EXPIRED",
-      "ACCOUNT_DISABLED",
-    ];
-    if (status === 401 && errorCode !== "TOKEN_EXPIRED") {
-      const isAuthError =
-        !!errorCode && AUTH_INVALIDATING_CODES.includes(errorCode);
-      if (isAuthError) {
-        useAuthStore.getState().clearAuth();
-      }
+    // Refresh/session dead (e.g. REFRESH_FAILED "Token has expired") —
+    // core clearAuth() routes to login. A 401 WITHOUT a code (proxy/gateway
+    // HTML) never logs out mid-shift; the app keeps working offline.
+    if (isSessionDead(failure)) {
+      try {
+        clearAuth();
+      } catch {}
     }
-
-    const message =
-      errorMessage || error.message || "An unexpected error occurred";
-    return Promise.reject(new ApiError(status ?? 500, message, responseData));
+    return rejectAsApiError();
   },
 );
 

@@ -15,7 +15,7 @@ import { createTeincCore } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
-import { setConnectivityState, setAuthProvider } from "@teincfood/core";
+import { setConnectivityState, setAuthProvider, setAuthRefreshProvider, setAuthTokensProvider, setAuthClearProvider } from "@teincfood/core";
 import { initDebugLogCapture } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
@@ -389,6 +389,12 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     })();
     wireServiceAdapters();
     try { setAuthProvider(() => useAuthStore.getState().accessToken ?? null); } catch {}
+    // Core owns the session lifecycle (access-expired → refresh →
+    // refresh-expired → logout). Without these, core clearAuth() is a no-op
+    // and core cannot read/store tokens.
+    try { setAuthRefreshProvider(() => useAuthStore.getState().refreshToken ?? null); } catch {}
+    try { setAuthTokensProvider((at: string, rt: string) => { try { useAuthStore.getState().setTokens(at, rt); } catch {} }); } catch {}
+    try { setAuthClearProvider(() => { try { useAuthStore.getState().clearAuth(); } catch {} }); } catch {}
     try {
       const deviceId = getAppInstanceId();
       if (deviceId) setAppInstanceId(deviceId);
