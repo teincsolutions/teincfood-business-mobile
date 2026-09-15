@@ -1859,6 +1859,9 @@ function TodayTab() {
     date_to: today,
   });
   const insets = useSafeAreaInsets();
+  const { isTablet, isLandscape, width } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
+  const [todayContainerWidth, setTodayContainerWidth] = useState(0);
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
 
@@ -1896,6 +1899,91 @@ function TodayTab() {
     if (status === "cancelled") return "$red9";
     return "$gray9";
   };
+
+  // Tablet landscape table layout (row, not card) — mirrors desktop TodayTable
+  const COL_ORDER_TODAY = 130;
+  const COL_STATUS_TODAY = 110;
+  const COL_TOTAL_TODAY = 110;
+  const COL_TIME_TODAY = 90;
+  const COL_ACTIONS_TODAY = 100;
+  const availWidthToday = todayContainerWidth || width;
+  const remainingToday = Math.max(160, availWidthToday - (COL_ORDER_TODAY + COL_STATUS_TODAY + COL_TOTAL_TODAY + COL_TIME_TODAY + COL_ACTIONS_TODAY) - 48);
+  const customerWidthToday = Math.max(140, Math.round(remainingToday));
+  const tableTotalToday = COL_ORDER_TODAY + customerWidthToday + COL_STATUS_TODAY + COL_TOTAL_TODAY + COL_TIME_TODAY + COL_ACTIONS_TODAY + 48;
+
+  const todayTableHeader = (
+    <XStack
+      borderBottomWidth={2}
+      borderBottomColor="$borderColor"
+      paddingVertical="$3"
+      paddingHorizontal="$4"
+      backgroundColor="$backgroundSoft"
+    >
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={COL_ORDER_TODAY}>Order #</Text>
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={customerWidthToday}>Customer</Text>
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={COL_STATUS_TODAY} textAlign="center">Status</Text>
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={COL_TOTAL_TODAY} textAlign="center">Total</Text>
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={COL_TIME_TODAY} textAlign="center">Time</Text>
+      <Text fontWeight="bold" fontSize="$4" color="$colorMuted" width={COL_ACTIONS_TODAY} textAlign="right">Actions</Text>
+    </XStack>
+  );
+
+  const renderTabletTodayRow = ({ item }: { item: SellerOrder }) => (
+    <XStack borderBottomWidth={1} borderBottomColor="$borderColor" paddingVertical="$3" paddingHorizontal="$4" alignItems="center">
+      <Text fontWeight="bold" fontSize="$4" width={COL_ORDER_TODAY} numberOfLines={1}>{item.order_number}</Text>
+      <Text fontSize="$4" width={customerWidthToday} numberOfLines={1}>{item.customer_name || item.user?.full_name || "—"}</Text>
+      <YStack width={COL_STATUS_TODAY} alignItems="center">
+        <YStack backgroundColor={statusColor(item.status)} paddingHorizontal="$2" paddingVertical="$1" borderRadius="$full">
+          <Text fontSize="$2" color="white" fontWeight="700" textTransform="capitalize" numberOfLines={1}>{item.status.replace(/_/g, " ")}</Text>
+        </YStack>
+      </YStack>
+      <Text fontSize="$4" fontWeight="700" color="$primary" width={COL_TOTAL_TODAY} textAlign="center">{formatPriceFromMinor(item.total_minor)}</Text>
+      <Text fontSize="$3" color="$colorMuted" width={COL_TIME_TODAY} textAlign="center">{new Date(item.inserted_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
+      <XStack width={COL_ACTIONS_TODAY} justifyContent="flex-end">
+        <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
+      </XStack>
+    </XStack>
+  );
+
+  if (isTabletLandscape) {
+    return (
+      <YStack flex={1} backgroundColor="$background" onLayout={(e: any) => setTodayContainerWidth(e.nativeEvent.layout.width)}>
+        <YStack marginBottom="$2" paddingHorizontal="$5" paddingTop="$4">
+          <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">Today's Orders</Text>
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$1">{allTodayOrders.length} order{allTodayOrders.length !== 1 ? "s" : ""}{showActive ? ` (${activeOrders.length} active)` : ""}</Text>
+        </YStack>
+        <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          <YStack width={tableTotalToday} flex={1}>
+            {todayTableHeader}
+            {allTodayOrders.length === 0 ? (
+              <YStack padding="$8" alignItems="center" gap="$3">
+                <Package size={80} color="$gray200" />
+                <Text fontSize="$5" fontWeight="600" color="$colorSecondary" textAlign="center">No orders today yet</Text>
+                <Button variant="outline" height={44} onPress={refetch}>Refresh</Button>
+              </YStack>
+            ) : (
+              <FlatList
+                data={sortedOrders}
+                keyExtractor={(item) => item.id}
+                renderItem={renderTabletTodayRow}
+                onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+                onEndReachedThreshold={0.5}
+                refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="$primary" />}
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
+                ListFooterComponent={isFetchingNextPage ? <YStack padding="$4" alignItems="center"><Spinner size="small" color="$primary" /></YStack> : null}
+                initialNumToRender={20}
+                windowSize={10}
+                maxToRenderPerBatch={15}
+                removeClippedSubviews={false}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              />
+            )}
+          </YStack>
+        </ScrollView>
+      </YStack>
+    );
+  }
 
   return (
     <FlatList
