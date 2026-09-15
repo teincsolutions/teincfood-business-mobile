@@ -129,12 +129,17 @@ export default function OrderDetails() {
   };
 
   const handlePreview = async () => {
+    if (!order) {
+      toast.error("Order not loaded");
+      return;
+    }
     try {
-      const html = await printService.fetchReceipt(order!.id, "html");
+      // Offline-first core template — no network, works for DD-RRR-CCC queued orders
+      const html = printService.generateLocalReceipt(order, "html");
       setReceiptPreview({ html });
     } catch (err) {
       console.debug("[ReceiptPreview] Failed", err);
-      toast.error("Failed to load receipt preview — check backend logs");
+      toast.error("Failed to generate receipt preview");
     }
   };
 
