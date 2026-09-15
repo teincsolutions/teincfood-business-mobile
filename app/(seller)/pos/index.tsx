@@ -37,6 +37,7 @@ import {
   DoorClosed,
   PanelLeftClose,
   Printer,
+  FileText,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
@@ -62,6 +63,7 @@ import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useBusinessStore } from "@/stores/business.store";
+import { useCompletePickupMutation, useConfirmHandoverMutation, useAssignRiderMutation, useCancelOrderMutation } from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
@@ -82,7 +84,7 @@ import {
   CashPaymentSheet,
   PaymentProcessingModal,
 } from "@/components/pos";
-import { PendingOrderCard, PreparingOrderCard } from "@/components/kiosk";
+import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
 import { FlatList } from "react-native-gesture-handler";
@@ -1460,51 +1462,95 @@ const getTimeSince = (dateString: string | null | undefined): number => {
 function POSReadyCard({
   order,
   onPrint,
+  onCompletePickup,
+  onAssignRider,
+  onHandover,
+  onCancel,
 }: {
   order: SellerOrder;
   onPrint?: (id: string) => void;
+  onCompletePickup?: (id: string) => void;
+  onAssignRider?: (id: string) => void;
+  onHandover?: (deliveryId: string) => void;
+  onCancel?: (order: SellerOrder) => void;
 }) {
+  const callout = (order as any).callout_number ?? order.order_number?.slice(-3) ?? "";
+  const isDelivery = (order as any).order_type === "delivery" || !!(order as any).is_delivery;
+  const hasDelivery = !!(order as any).delivery_id;
+  const minutes = order.inserted_at ? Math.max(0, Math.floor((Date.now() - new Date(order.inserted_at).getTime()) / 60000)) : 0;
   return (
-    <Card
-      padding="$4"
-      bordered
-      backgroundColor="$green2"
-      borderColor="$success"
-      borderWidth={1}
-    >
-      <YStack gap="$2">
+    <Card padding="$4" bordered backgroundColor="$green2" borderColor="$success" borderWidth={1}>
+      <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$7" fontWeight="bold" fontFamily="$heading">
-            {order.order_number}
-          </Text>
-          <Badge backgroundColor="$success" size="$2">
-            <Text color="white" fontSize="$1" fontWeight="bold">
-              READY
-            </Text>
-          </Badge>
+          <Text fontSize="$6" fontWeight="bold">{order.order_number}</Text>
+          <XStack gap="$2" alignItems="center">
+            <Clock size={14} color="$colorMuted" />
+            <Text fontSize="$2" color="$colorMuted">{minutes}m ago</Text>
+          </XStack>
         </XStack>
-        {order.customer_name && (
-          <Text fontSize="$4" color="$colorMuted" fontFamily="$body">
-            {order.customer_name}
-          </Text>
+        <Badge backgroundColor="$success" size="$2" alignSelf="flex-start">
+          <Text color="white" fontSize="$1" fontWeight="bold">READY</Text>
+        </Badge>
+        {callout ? <Text fontSize="$2" color="$primary" fontWeight="700">Callout #{callout}</Text> : null}
+        {(order.customer_name || (order as any).user?.full_name) && (
+          <XStack gap="$1" alignItems="center">
+            <User size={14} color="$colorMuted" />
+            <Text fontSize="$3" color="$colorMuted">{order.customer_name || (order as any).user.full_name}</Text>
+          </XStack>
         )}
-        <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-          {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
-        </Text>
-        <XStack justifyContent="flex-end">
-          {onPrint && (
-            <Button
-              height={32}
-              width={36}
-              padding={0}
-              variant="outline"
-              borderColor="$borderColor"
-              backgroundColor="$background"
-              onPress={() => onPrint(order.id)}
-            >
-              <Printer size={14} color="$color" />
+        <YStack gap="$1">
+          {(order.items || []).map((item: any) => {
+            const variantName = item.variant_name || item.selected_variant?.name;
+            const addons = item.addons || item.selected_addons || [];
+            return (
+              <YStack key={item.id} gap="$1">
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$3" flex={1} numberOfLines={2}>{item.quantity}x {item.menu_item?.name || item.name} {variantName ? `· ${variantName}` : ""}</Text>
+                  <Text fontSize="$3" color="$colorMuted">{formatPriceFromMinor(item.subtotal ?? item.unit_price * item.quantity, (order as any).currency)}</Text>
+                </XStack>
+                {addons.length > 0 && <Text fontSize="$2" color="$colorMuted" paddingLeft="$2">+ {addons.map((a: any) => a.name).join(", ")}</Text>}
+              </YStack>
+            );
+          })}
+        </YStack>
+        {order.notes ? (
+          <XStack gap="$2" alignItems="flex-start">
+            <FileText size={14} color="$info" />
+            <Text fontSize="$2" color="$info" flex={1}>{order.notes}</Text>
+          </XStack>
+        ) : null}
+        <Separator />
+        <XStack justifyContent="space-between" alignItems="center">
+          <Text fontSize="$5" fontWeight="bold" color="$primary">{formatPriceFromMinor((order as any).total_minor, (order as any).currency)}</Text>
+          <XStack gap="$2" alignItems="center">
+            {onPrint && (
+              <Button height={32} width={36} padding={0} variant="outline" borderColor="$borderColor" backgroundColor="$background" onPress={() => onPrint(order.id)}>
+                <Printer size={14} color="$color" />
+              </Button>
+            )}
+          </XStack>
+        </XStack>
+        <XStack gap="$2" flexWrap="wrap">
+          {isDelivery ? (
+            hasDelivery && !(order as any).merchant_handover_confirmed_at ? (
+              <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onHandover?.((order as any).delivery_id!)}>
+                <Text color="white" fontSize="$3" fontWeight="700">Handover to rider</Text>
+              </Button>
+            ) : (
+              <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onAssignRider?.(order.id)}>
+                <Text color="white" fontSize="$3" fontWeight="700">Assign rider</Text>
+              </Button>
+            )
+          ) : onCompletePickup ? (
+            <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onCompletePickup(order.id)}>
+              <Text color="white" fontSize="$3" fontWeight="700">{(order as any).order_type === "dine_in" ? "Complete" : "Picked up"}</Text>
             </Button>
-          )}
+          ) : null}
+          {onCancel ? (
+            <Button height={36} paddingHorizontal="$3" backgroundColor="white" borderWidth={1} borderColor="$borderColor" borderRadius="$3" onPress={() => onCancel(order)}>
+              <Text fontSize="$3" fontWeight="700" color="$error">Cancel</Text>
+            </Button>
+          ) : null}
         </XStack>
       </YStack>
     </Card>
@@ -1516,6 +1562,10 @@ function InProgressTab() {
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
+  const completePickup = useCompletePickupMutation();
+  const confirmHandover = useConfirmHandoverMutation();
+  const assignRider = useAssignRiderMutation();
+  const cancelOrder = useCancelOrderMutation();
   const { isTablet, isLandscape } = useResponsive();
   const isTabletLandscape = isTablet && isLandscape;
 
@@ -1701,6 +1751,10 @@ function InProgressTab() {
                       key={order.id}
                       order={order}
                       onPrint={(id) => printService.printOrderReceipt(id)}
+                      onCompletePickup={(id) => completePickup.mutate(id)}
+                      onAssignRider={(id) => assignRider.mutate(id)}
+                      onHandover={(deliveryId) => confirmHandover.mutate(deliveryId)}
+                      onCancel={(o) => cancelOrder.mutate(o.id)}
                     />
                   ))
                 )}
@@ -1833,6 +1887,10 @@ function InProgressTab() {
                   key={order.id}
                   order={order}
                   onPrint={(id) => printService.printOrderReceipt(id)}
+                  onCompletePickup={(id) => completePickup.mutate(id)}
+                  onAssignRider={(id) => assignRider.mutate(id)}
+                  onHandover={(deliveryId) => confirmHandover.mutate(deliveryId)}
+                  onCancel={(o) => cancelOrder.mutate(o.id)}
                 />
               ))
             )}

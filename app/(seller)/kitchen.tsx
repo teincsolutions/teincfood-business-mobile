@@ -30,7 +30,7 @@ import {
   useAssignRiderMutation,
   useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
-import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
+import { useConfirmHandoverMutation, useCompletePickupMutation } from "@/hooks/seller.hooks";
 import { useDisplayStore } from "@/stores/display.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useOrderRealtimeUpdates } from "@teincfood/core";
@@ -155,6 +155,7 @@ export default function KitchenDisplay() {
   const markReady = useMarkKioskOrderReadyMutation();
   const assignRider = useAssignRiderMutation();
   const confirmHandover = useConfirmHandoverMutation();
+  const completePickup = useCompletePickupMutation();
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
 
   const orderList = orders ?? [];
@@ -338,6 +339,7 @@ export default function KitchenDisplay() {
                 order={order}
                 onAssignRider={handleOpenRiderSheet}
                 onHandover={handleHandover}
+                onCompletePickup={(id) => completePickup.mutate(id)}
                 onViewDetails={handleViewDetails}
               />
             ))}

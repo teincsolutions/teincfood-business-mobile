@@ -64,9 +64,16 @@ export function PendingOrderCard({
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$6" fontWeight="bold">
-            {order.order_number}
-          </Text>
+          <YStack>
+            <Text fontSize="$6" fontWeight="bold">
+              {order.order_number}
+            </Text>
+            {(order.callout_number != null || order.order_number) && (
+              <Text fontSize="$2" color="$primary" fontWeight="700">
+                Callout #{order.callout_number ?? order.order_number.slice(-3)}
+              </Text>
+            )}
+          </YStack>
           <XStack gap="$2" alignItems="center">
             <Clock size={14} color="$colorMuted" />
             <Text fontSize="$2" color="$colorMuted">
@@ -95,16 +102,27 @@ export function PendingOrderCard({
         )}
 
         <YStack gap="$1">
-          {order.items.map((item, index) => (
-            <XStack key={item.id} justifyContent="space-between">
-              <Text fontSize="$3">
-                {item.quantity}x {item.menu_item?.name}
-              </Text>
-              <Text fontSize="$3" color="$colorMuted">
-                {formatPriceFromMinor(item.subtotal, order.currency)}
-              </Text>
-            </XStack>
-          ))}
+          {order.items.map((item, index) => {
+            const variantName = (item as any).variant_name || (item as any).selected_variant?.name;
+            const addons = (item as any).addons || (item as any).selected_addons || [];
+            return (
+              <YStack key={item.id} gap="$1">
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$3" flex={1} numberOfLines={2}>
+                    {item.quantity}x {item.menu_item?.name} {variantName ? `· ${variantName}` : ""}
+                  </Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    {formatPriceFromMinor(item.subtotal, order.currency)}
+                  </Text>
+                </XStack>
+                {addons.length > 0 && (
+                  <Text fontSize="$2" color="$colorMuted" paddingLeft="$2">
+                    + {addons.map((a: any) => a.name).join(", ")}
+                  </Text>
+                )}
+              </YStack>
+            );
+          })}
         </YStack>
 
         {order.notes && (
