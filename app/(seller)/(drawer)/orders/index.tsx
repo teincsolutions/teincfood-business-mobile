@@ -260,7 +260,7 @@ export default function SellerOrders() {
             variant="outline"
             height={40}
             icon={<ExternalLink size={14} />}
-            onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+            onPress={() => router.push({ pathname: "/(seller)/orders/[id]", params: { id: item.id } } as any)}
           >
             View
           </Button>
@@ -375,7 +375,7 @@ export default function SellerOrders() {
           height={40}
           paddingHorizontal="$3"
           icon={<ExternalLink size={16} />}
-          onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+          onPress={() => router.push({ pathname: isTablet ? "/(seller)/orders/details/[id]" : "/(seller)/orders/[id]", params: { id: item.id } } as any)}
         >
           View
         </Button>
@@ -560,8 +560,11 @@ export default function SellerOrders() {
           horizontal
           showsHorizontalScrollIndicator={true}
           style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
         >
-          <YStack width={tableTotal}>
+          <YStack width={tableTotal} flex={1}>
             {tableHeader}
             {allOrders.length === 0 ? (
               <YStack padding="$8" alignItems="center">
@@ -597,7 +600,9 @@ export default function SellerOrders() {
                 initialNumToRender={20}
                 windowSize={10}
                 maxToRenderPerBatch={15}
-                removeClippedSubviews
+                removeClippedSubviews={false}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
               />
             )}
           </YStack>
