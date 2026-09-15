@@ -2272,13 +2272,17 @@ function TodayTab() {
           <Button
             size="$2"
             variant="outline"
-            icon={<Eye size={14} />}
+            height={40}
+            width={40}
+            icon={({ size }) => <Eye size={size * 1.5} />}
             onPress={() => {}}
           />
           <Button
             size="$2"
+            height={40}
+            width={40}
             variant="outline"
-            icon={<Printer size={14} />}
+            icon={({ size }) => <Printer size={size * 1.5} />}
             onPress={() => printService.printOrderReceipt(item.id)}
           />
           {action && (
@@ -2286,33 +2290,34 @@ function TodayTab() {
               size="$2"
               backgroundColor="$primary"
               borderRadius="$2"
+              height={40}
+              width={40}
+              icon={({ size }) => <Printer size={size} />}
               onPress={() => {
                 if (action.key === "complete_pickup")
                   completePickup.mutate(item.id);
               }}
             >
-              <Text color="white" fontSize="$2" fontWeight="700">
-                {action.label}
-              </Text>
+              {action.label}
             </Button>
           )}
           {isUnpaid(item) && item.status !== "cancelled" && (
             <Button
               size="$2"
-              height={"$2"}
-              width={"$2"}
-              variant="ghost"
-              icon={<Banknote size={14} />}
+              height={40}
+              width={40}
+              variant="outline"
+              icon={({ size }) => <Banknote size={1.5 * size} />}
               onPress={() => confirmCashPayment.mutate(item.id)}
             />
           )}
           {isCancellable(item.status) && (
             <Button
               size="$2"
-              height={"$2"}
-              width={"$2"}
-              variant="ghost"
-              icon={<XCircle size={14} />}
+              variant="danger"
+              height={40}
+              width={40}
+              icon={({ size }) => <XCircle size={1.5 * size} />}
               chromeless
               onPress={() => cancelOrder.mutate(item.id)}
             />
