@@ -5,8 +5,8 @@ export default function OrdersLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        presentation: "card",
-        animation: "slide_from_right",
+        presentation: "modal",
+        animation: "slide_from_left",
       }}
     />
   );
