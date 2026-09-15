@@ -28,6 +28,14 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
   private scanning = false;
   private published = false;
   /**
+   * Pending loss reports by deviceId. mDNS browse flaps: a peer missing from
+   * one browse window (record refresh gap) is usually still there, and the
+   * mesh must not drop a discovered entry on a single miss — sockets (not
+   * discovery) drive teardown. Mirrors the Node harness 8s grace. Cancelled
+   * if the peer is re-resolved before the timer fires.
+   */
+  private pendingDown = new Map<string, ReturnType<typeof setTimeout>>();
+  /**
    * Unicast sweep fallback (mirrors desktop tcp_sweep): mDNS browse is
    * best-effort cross-platform, so an empty browse window must not mean an
    * invisible peer. Runs only while scanning; core dedups sweep hits
@@ -107,6 +115,12 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
         lastSeenAt: new Date().toISOString(),
       };
       syncLogger.debug("LocalNodeDiscovery", "Node found", { node, addresses: addresses ?? [] });
+      // Re-resolved: cancel any pending loss report for this peer.
+      const pending = this.pendingDown.get(deviceId);
+      if (pending) {
+        clearTimeout(pending);
+        this.pendingDown.delete(deviceId);
+      }
       this.options?.onNodeFound?.(node);
     });
 
@@ -114,8 +128,13 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
       const s = service as { txt?: Record<string, string>; name: string };
       const txt = s.txt ?? {};
       const deviceId = txt.deviceId ?? s.name;
-      syncLogger.debug("LocalNodeDiscovery", "Node removed", { deviceId });
-      this.options?.onNodeLost?.(deviceId);
+      syncLogger.debug("LocalNodeDiscovery", "Node lost (8s grace before report)", { deviceId });
+      if (this.pendingDown.has(deviceId)) return;
+      const t = setTimeout(() => {
+        this.pendingDown.delete(deviceId);
+        this.options?.onNodeLost?.(deviceId);
+      }, 8000);
+      this.pendingDown.set(deviceId, t);
     });
 
     (this.zeroconf as unknown as { on: (e: string, fn: (s: unknown) => void) => void }).on("error", (error: unknown) => {
@@ -162,6 +181,10 @@ export class ZeroconfDiscovery implements DiscoveryAdapter {
       this.sweep?.stop();
       this.sweep = null;
     } catch {}
+    for (const t of this.pendingDown.values()) {
+      try { clearTimeout(t); } catch {}
+    }
+    this.pendingDown.clear();
     try {
       this.stopScanning();
       if (this.published && this.publishOpts) {

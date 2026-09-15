@@ -24,7 +24,15 @@ export interface ReferenceFetchResult {
 }
 import { computeProof } from "./security";
 
-const SERVER_CERT = require("../../assets/tls/server-cert.pem");
+/**
+ * CA root certificate that signed the server cert. Mobile uses
+ * `rejectUnauthorized: false` because react-native-tcp-socket's iOS
+ * `didReceiveTrust:` does byte-comparison (not chain validation), which fails
+ * with CA-signed certs. Identity is verified by the app-layer
+ * hello→challenge→auth handshake. Desktop enforces full CA chain validation
+ * via rustls.
+ */
+const CA_CERT = require("../../assets/tls/ca-cert.pem");
 
 /** Timeout for the TLS connect + auth handshake. */
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -147,12 +155,15 @@ export class LocalNodeClient {
         reject(error);
       }, CONNECT_TIMEOUT_MS);
 
-      // @ts-ignore - rejectUnauthorized is handled by GCDAsyncSocketManuallyEvaluateTrust; ca pins the shared LAN identity (SAN teinc-local-node/*.local/192.168.1.43-50)
+      // @ts-ignore - rejectUnauthorized: false because iOS didReceiveTrust: does
+      // byte-comparison (not chain validation); identity is proven by the
+      // app-layer challenge-response handshake. Desktop enforces full CA chain
+      // validation via rustls.
       socket = TcpSocket.connectTLS(
         {
           host: this.options.node.host,
           port: this.options.node.port,
-          ca: SERVER_CERT,
+          ca: CA_CERT,
           rejectUnauthorized: false,
           connectTimeout: CONNECT_TIMEOUT_MS,
         } as never,
