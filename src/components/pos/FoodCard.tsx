@@ -22,7 +22,6 @@ export function FoodCard({ item }: FoodCardProps) {
       <Card
         elevate
         width="100%"
-        marginBottom="$2"
         backgroundColor="$background"
         borderRadius="$5"
         pressStyle={item.is_available ? { scale: 0.98 } : undefined}
@@ -108,8 +107,10 @@ export function FoodCard({ item }: FoodCardProps) {
             fontWeight="700"
             fontFamily="$heading"
             color="$color"
-            numberOfLines={1}
-            $md={{ fontSize: "$6" }}
+            numberOfLines={2}
+            lineHeight={18}
+            minHeight={36}
+            $md={{ fontSize: "$6", lineHeight: 22, minHeight: 44 }}
           >
             {item.name}
           </Text>
@@ -117,8 +118,10 @@ export function FoodCard({ item }: FoodCardProps) {
             fontSize="$2"
             color="$colorSecondary"
             fontFamily="$body"
-            numberOfLines={1}
-            $md={{ fontSize: "$4" }}
+            numberOfLines={2}
+            lineHeight={14}
+            minHeight={14}
+            $md={{ fontSize: "$4", lineHeight: 16, minHeight: 16 }}
           >
             {item.description ?? ""}
           </Text>
