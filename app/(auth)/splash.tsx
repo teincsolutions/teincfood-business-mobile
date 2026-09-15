@@ -56,18 +56,18 @@ export default function SplashScreen() {
   const setBiometricEnabled = useSecurityStore((s) => s.setBiometricEnabled);
   const locationHydrated = useLocationStore((s) => s.isHydrated);
   const hasLocation = useLocationStore((s) => s.hasLocation());
-const storesHydrated =
+  const storesHydrated =
     authHydrated && onboardingHydrated && roleHydrated && locationHydrated;
 
-// Prime core bootstrap so SQLite driver is registered before any
-// @teincfood/core service (orderSnapshotsService, openSyncDatabase, etc.)
-// is used later in the app. This replaces the old src/db/connection.ts shim
-// that was deleted in the core 0.7.29 migration.
-useEffect(() => {
-  useCorePrime();
-}, []);
+  // Prime core bootstrap so SQLite driver is registered before any
+  // @teincfood/core service (orderSnapshotsService, openSyncDatabase, etc.)
+  // is used later in the app. This replaces the old src/db/connection.ts shim
+  // that was deleted in the core 0.7.29 migration.
+  useEffect(() => {
+    useCorePrime();
+  }, []);
 
-// Start entrance animations
+  // Start entrance animations
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
@@ -267,7 +267,7 @@ useEffect(() => {
     return <Redirect href={redirectTarget} />;
   }
 
-  const logoSize = isTablet ? 160 : 120;
+  const logoSize = isTablet ? 200 : 150;
   const brandFontSize = isTablet ? 56 : 42;
   const subtitleFontSize = isTablet ? 20 : 15;
   const statusFontSize = isTablet ? 20 : 14;
