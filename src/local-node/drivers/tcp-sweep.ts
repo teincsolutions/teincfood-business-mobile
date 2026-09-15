@@ -61,12 +61,32 @@ async function localSubnet(): Promise<{ base: string; ownIp: string } | null> {
   try {
     const ip = await Network.getIpAddressAsync();
     const m = ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$/);
-    if (!m) return null;
-    if (m[1].startsWith("127.")) return null;
+    if (!m) {
+      warnOnce(`non-ipv4:${ip}`, "LocalNodeSweep", "Skipping sweep: no IPv4 subnet (IPv6-only address?)", { ip });
+      return null;
+    }
+    if (m[1].startsWith("127.")) {
+      warnOnce("loopback", "LocalNodeSweep", "Skipping sweep: loopback address", { ip });
+      return null;
+    }
+    warnedCauses.clear();
     return { base: m[1], ownIp: ip };
-  } catch {
+  } catch (e) {
+    warnOnce("error", "LocalNodeSweep", "Skipping sweep: IP detection failed", { error: String(e) });
     return null;
   }
+}
+
+// Warn-once per distinct cause (reset on success): a dead sweep is otherwise
+// completely silent ("quiet by design" hid real misconfigurations), while
+// warning every 20s forever would flood logs.
+const warnedCauses = new Set<string>();
+function warnOnce(key: string, tag: string, msg: string, data: Record<string, unknown>): void {
+  if (warnedCauses.has(key)) return;
+  warnedCauses.add(key);
+  try {
+    syncLogger.warn(tag, msg, data);
+  } catch {}
 }
 
 export interface SweepCallbacks {

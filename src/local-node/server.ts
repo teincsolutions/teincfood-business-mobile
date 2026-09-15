@@ -30,7 +30,7 @@ import { computeProof, generateNonce } from "./security";
 import { patchTLSServerListen } from "./tls-listen-patch";
 
 const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
-const SERVER_CERT = require("../../assets/tls/server-cert.pem");
+const CA_CERT = require("../../assets/tls/ca-cert.pem");
 
 /** Listen retry budget for EADDRINUSE (stale socket after reload/restart). */
 const START_RETRY_ATTEMPTS = 3;
@@ -267,7 +267,7 @@ export class LocalNodeServer {
       {
         host: "127.0.0.1",
         port: this.options.port,
-        ca: SERVER_CERT,
+        ca: CA_CERT,
         rejectUnauthorized: false,
         connectTimeout: 5000,
       } as never,
