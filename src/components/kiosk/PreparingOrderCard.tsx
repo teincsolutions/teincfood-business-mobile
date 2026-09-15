@@ -66,19 +66,27 @@ export function PreparingOrderCard({ order, onMarkReady, onViewDetails, onPrint 
           <XStack gap="$2" alignItems="center">
             <Text fontSize="$5" fontWeight="bold">{formatPriceFromMinor(order.total_minor, order.currency)}</Text>
             {onPrint && (
-              <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
-                <Printer size={14} />
+              <Button
+                height={32}
+                width={36}
+                padding={0}
+                variant="outline"
+                borderColor="$borderColor"
+                backgroundColor="$background"
+                onPress={() => onPrint(order.id)}
+              >
+                <Printer size={14} color="$color" />
               </Button>
             )}
           </XStack>
           <Button
-            height="$12"
-            $lg={{ height: "$12" }}
-            backgroundColor="$success"
+            height={36}
+            paddingHorizontal="$3"
+            backgroundColor="$primary"
+            borderRadius="$3"
             onPress={() => onMarkReady(order.id)}
-            icon={<CheckCircle size={18} color="white" />}
           >
-            <Text color="white" fontWeight="bold">MARK READY</Text>
+            <Text color="white" fontSize="$3" fontWeight="700">Mark ready</Text>
           </Button>
         </XStack>
       </YStack>

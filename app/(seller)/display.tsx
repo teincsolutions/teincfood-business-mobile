@@ -22,6 +22,7 @@ import {
 import { usePOSOrdersQuery, POS_KEYS } from "@teincfood/core";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useDisplayStore } from "@/stores/display.store";
+import { useResponsive } from "@/utils/responsive";
 import { useSecurityStore } from "@/stores/security.store";
 import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { CalloutCard } from "@/components/pos/CalloutCard";
@@ -44,14 +45,16 @@ function StatusColumn({
   color,
   icon: Icon,
   orders,
+  isTabletLandscape,
 }: {
   label: string;
   color: string;
   icon: any;
   orders: any[];
+  isTabletLandscape?: boolean;
 }) {
   return (
-    <YStack gap="$1.5" width="100%" $gtSm={{ flex: 1, minWidth: 200 }}>
+    <YStack gap="$1.5" width="100%" flex={isTabletLandscape ? 1 : undefined} minWidth={isTabletLandscape ? 200 : undefined}>
       <XStack gap="$1" alignItems="center" justifyContent="center">
         <Icon size={18} color={color} />
         <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color={color}>
@@ -93,6 +96,9 @@ export default function CalloutDisplay() {
 
   useKeepAwake();
   useOrderRealtimeUpdates(POS_KEYS.all);
+
+  const { isLandscape, width } = useResponsive();
+  const isTabletLandscape = width >= 768 && isLandscape;
 
   const { data: orders } = usePOSOrdersQuery(undefined, true);
   const orderList = orders ?? [];
@@ -170,24 +176,32 @@ export default function CalloutDisplay() {
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <XStack padding="$3" gap="$3" alignItems="flex-start" flexDirection="column" $gtSm={{ flexDirection: "row" }}>
+        <XStack
+          padding={isTabletLandscape ? "$5" : "$3"}
+          gap={isTabletLandscape ? "$4" : "$3"}
+          alignItems="flex-start"
+          flexDirection={isTabletLandscape ? "row" : "column"}
+        >
           <StatusColumn
             label="Pending"
             color="$orange10"
             icon={Timer}
             orders={pendingOrders}
+            isTabletLandscape={isTabletLandscape}
           />
           <StatusColumn
             label="Preparing"
             color="$blue10"
             icon={Utensils}
             orders={preparingOrders}
+            isTabletLandscape={isTabletLandscape}
           />
           <StatusColumn
             label="Ready"
             color="$green10"
             icon={CheckCircle}
             orders={readyOrders}
+            isTabletLandscape={isTabletLandscape}
           />
         </XStack>
       </ScrollView>

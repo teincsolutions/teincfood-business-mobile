@@ -404,10 +404,10 @@ function MenuBrowser() {
             paddingHorizontal: 20,
             paddingVertical: 20,
             paddingBottom: 40,
-            gap: 8,
+            gap: 16,
           }}
           renderItem={({ item }) => (
-            <YStack width={(width - 48) / foodColumns} mr={isTablet ? 0 : 8}>
+            <YStack width={(width - 56) / foodColumns} mr={isTablet ? 4 : 8}>
               <FoodCard item={item} />
             </YStack>
           )}
@@ -1482,11 +1482,15 @@ function POSReadyCard({
         <XStack justifyContent="flex-end">
           {onPrint && (
             <Button
-              size="$2"
+              height={32}
+              width={36}
+              padding={0}
               variant="outline"
+              borderColor="$borderColor"
+              backgroundColor="$background"
               onPress={() => onPrint(order.id)}
             >
-              <Printer size={14} />
+              <Printer size={14} color="$color" />
             </Button>
           )}
         </XStack>
@@ -1500,10 +1504,8 @@ function InProgressTab() {
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
-  const { width } = useResponsive();
-
-  const isTablet = width >= 768;
-  const isLargeTablet = width >= 1024;
+  const { isTablet, isLandscape } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
 
   const activeOrders = useMemo(
     () =>
@@ -1552,8 +1554,8 @@ function InProgressTab() {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      {isTablet ? (
-        <XStack padding="$4" gap="$4" alignItems="flex-start">
+      {isTabletLandscape ? (
+        <XStack padding="$5" gap="$4" alignItems="flex-start">
           <YStack flex={1} minWidth={280} gap="$3">
             <XStack gap="$2" alignItems="center">
               <Clock size={20} color="$orange10" />
@@ -1600,61 +1602,59 @@ function InProgressTab() {
             )}
           </YStack>
 
-          {isLargeTablet ? (
-            <>
-              <YStack flex={1} minWidth={280} gap="$3">
-                <XStack gap="$2" alignItems="center">
-                  <Utensils size={20} color="$blue10" />
-                  <Text
-                    fontSize="$5"
-                    fontWeight="700"
-                    fontFamily="$heading"
-                    color="$color"
-                  >
-                    Preparing
-                  </Text>
-                  <Badge backgroundColor="$blue10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">
-                      {preparingOrders.length}
-                    </Text>
-                  </Badge>
-                </XStack>
-                {preparingOrders.length === 0 ? (
-                  <Card
-                    padding="$6"
-                    backgroundColor="$backgroundStrong"
-                    borderRadius="$4"
-                    alignItems="center"
-                    gap="$2"
-                  >
-                    <CheckCircle size={36} color="$gray200" />
-                    <Text
-                      fontSize="$4"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      No preparing orders
-                    </Text>
-                  </Card>
-                ) : (
-                  preparingOrders.map((order) => (
-                    <PreparingOrderCard
-                      key={order.id}
-                      order={order}
-                      onMarkReady={() => markReady.mutate(order.id)}
-                      onViewDetails={() => {}}
-                      onPrint={(id) => printService.printOrderReceipt(id)}
-                    />
-                  ))
-                )}
-              </YStack>
+          <YStack flex={1} minWidth={280} gap="$3">
+            <XStack gap="$2" alignItems="center">
+              <Utensils size={20} color="$blue10" />
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Preparing
+              </Text>
+              <Badge backgroundColor="$blue10" size="$2">
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {preparingOrders.length}
+                </Text>
+              </Badge>
+            </XStack>
+            {preparingOrders.length === 0 ? (
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
+                <CheckCircle size={36} color="$gray200" />
+                <Text
+                  fontSize="$4"
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                >
+                  No preparing orders
+                </Text>
+              </Card>
+            ) : (
+              preparingOrders.map((order) => (
+                <PreparingOrderCard
+                  key={order.id}
+                  order={order}
+                  onMarkReady={() => markReady.mutate(order.id)}
+                  onViewDetails={() => {}}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
+                />
+              ))
+            )}
+          </YStack>
 
-              <YStack flex={1} minWidth={280} gap="$3">
-                <XStack gap="$2" alignItems="center">
-                  <CheckCircle size={20} color="$green10" />
-                  <Text
-                    fontSize="$5"
-                    fontWeight="700"
+          <YStack flex={1} minWidth={280} gap="$3">
+            <XStack gap="$2" alignItems="center">
+              <CheckCircle size={20} color="$green10" />
+              <Text
+                fontSize="$5"
+                fontWeight="700"
                     fontFamily="$heading"
                     color="$color"
                   >
@@ -1693,102 +1693,6 @@ function InProgressTab() {
                   ))
                 )}
               </YStack>
-            </>
-          ) : (
-            <YStack flex={1} minWidth={280} gap="$4">
-              <YStack gap="$3">
-                <XStack gap="$2" alignItems="center">
-                  <Utensils size={20} color="$blue10" />
-                  <Text
-                    fontSize="$5"
-                    fontWeight="700"
-                    fontFamily="$heading"
-                    color="$color"
-                  >
-                    Preparing
-                  </Text>
-                  <Badge backgroundColor="$blue10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">
-                      {preparingOrders.length}
-                    </Text>
-                  </Badge>
-                </XStack>
-                {preparingOrders.length === 0 ? (
-                  <Card
-                    padding="$6"
-                    backgroundColor="$backgroundStrong"
-                    borderRadius="$4"
-                    alignItems="center"
-                    gap="$2"
-                  >
-                    <CheckCircle size={36} color="$gray200" />
-                    <Text
-                      fontSize="$4"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      No preparing orders
-                    </Text>
-                  </Card>
-                ) : (
-                  preparingOrders.map((order) => (
-                    <PreparingOrderCard
-                      key={order.id}
-                      order={order}
-                      onMarkReady={() => markReady.mutate(order.id)}
-                      onViewDetails={() => {}}
-                      onPrint={(id) => printService.printOrderReceipt(id)}
-                    />
-                  ))
-                )}
-              </YStack>
-
-              <YStack gap="$3">
-                <XStack gap="$2" alignItems="center">
-                  <CheckCircle size={20} color="$green10" />
-                  <Text
-                    fontSize="$5"
-                    fontWeight="700"
-                    fontFamily="$heading"
-                    color="$color"
-                  >
-                    Ready
-                  </Text>
-                  <Badge backgroundColor="$green10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">
-                      {readyOrders.length}
-                    </Text>
-                  </Badge>
-                </XStack>
-                {readyOrders.length === 0 ? (
-                  <Card
-                    padding="$6"
-                    backgroundColor="$backgroundStrong"
-                    borderRadius="$4"
-                    alignItems="center"
-                    gap="$2"
-                  >
-                    <CheckCircle size={36} color="$gray200" />
-                    <Text
-                      fontSize="$4"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      No ready orders
-                    </Text>
-                  </Card>
-                ) : (
-                  readyOrders.map((order) => (
-                    <POSReadyCard
-                      key={order.id}
-                      order={order}
-                      onPrint={(id) => printService.printOrderReceipt(id)}
-                    />
-                  ))
-                )}
-              </YStack>
-            </YStack>
-          )}
         </XStack>
       ) : (
         <YStack padding="$4" gap="$4">

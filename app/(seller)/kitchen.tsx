@@ -22,6 +22,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { usePOSOrdersQuery, POS_KEYS } from "@teincfood/core";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { useResponsive } from "@/utils/responsive";
 import {
   useAcceptKioskOrderMutation,
   useStartPreparingKioskOrderMutation,
@@ -62,11 +63,13 @@ function StatusColumn({
   color,
   icon: Icon,
   children,
+  isTabletLandscape,
 }: {
   label: string;
   color: string;
   icon: any;
   children: React.ReactNode;
+  isTabletLandscape?: boolean;
 }) {
   const count = useMemo(() => {
     if (Array.isArray(children)) return children.length;
@@ -74,7 +77,7 @@ function StatusColumn({
   }, [children]);
 
   return (
-    <YStack gap="$3" width="100%" $gtSm={{ flex: 1, minWidth: 280 }}>
+    <YStack gap="$3" width="100%" flex={isTabletLandscape ? 1 : undefined} minWidth={isTabletLandscape ? 280 : undefined}>
       <XStack gap="$2" alignItems="center">
         <Icon size={20} color={color} />
         <Text
@@ -142,6 +145,9 @@ export default function KitchenDisplay() {
 
   useKeepAwake();
   useOrderRealtimeUpdates(POS_KEYS.all);
+
+  const { isLandscape, width } = useResponsive();
+  const isTabletLandscape = width >= 768 && isLandscape;
 
   const { data: orders } = usePOSOrdersQuery(undefined, true);
   const acceptOrder = useAcceptKioskOrderMutation();
@@ -294,8 +300,13 @@ export default function KitchenDisplay() {
       </XStack>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <XStack padding="$3" gap="$3" alignItems="flex-start" flexDirection="column" $gtSm={{ flexDirection: "row" }}>
-          <StatusColumn label="To Prepare" color="$orange10" icon={Timer}>
+        <XStack
+          padding={isTabletLandscape ? "$5" : "$3"}
+          gap={isTabletLandscape ? "$4" : "$3"}
+          alignItems="flex-start"
+          flexDirection={isTabletLandscape ? "row" : "column"}
+        >
+          <StatusColumn label="To Prepare" color="$orange10" icon={Timer} isTabletLandscape={isTabletLandscape}>
             {acceptedOrders.map((order) => (
               <PendingOrderCard
                 key={order.id}
@@ -309,7 +320,7 @@ export default function KitchenDisplay() {
             ))}
           </StatusColumn>
 
-          <StatusColumn label="Preparing" color="$blue10" icon={Utensils}>
+          <StatusColumn label="Preparing" color="$blue10" icon={Utensils} isTabletLandscape={isTabletLandscape}>
             {preparingOrders.map((order) => (
               <PreparingOrderCard
                 key={order.id}
@@ -320,7 +331,7 @@ export default function KitchenDisplay() {
             ))}
           </StatusColumn>
 
-          <StatusColumn label="Ready" color="$green10" icon={CheckCircle}>
+          <StatusColumn label="Ready" color="$green10" icon={CheckCircle} isTabletLandscape={isTabletLandscape}>
             {readyOrders.map((order) => (
               <ReadyOrderCard
                 key={order.id}

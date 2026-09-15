@@ -72,33 +72,34 @@ export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails
           {isDelivery ? (
             hasDelivery && !order.merchant_handover_confirmed_at ? (
               <Button
-                height="$12"
-                $lg={{ height: "$12" }}
-                backgroundColor="$success"
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="$primary"
+                borderRadius="$3"
                 onPress={() => onHandover(order.delivery_id!)}
-                icon={<Truck size={18} color="white" />}
               >
-                <Text color="white" fontWeight="bold">HANDOVER TO RIDER</Text>
+                <Text color="white" fontSize="$3" fontWeight="700">Handover to rider</Text>
               </Button>
             ) : (
               <Button
-                height="$12"
-                $lg={{ height: "$12" }}
+                height={36}
+                paddingHorizontal="$3"
                 backgroundColor="$primary"
+                borderRadius="$3"
                 onPress={() => onAssignRider(order.id)}
-                icon={<Truck size={18} color="white" />}
               >
-                <Text color="white" fontWeight="bold">ASSIGN RIDER</Text>
+                <Text color="white" fontSize="$3" fontWeight="700">Assign rider</Text>
               </Button>
             )
           ) : onCompletePickup ? (
             <Button
-              height="$12"
-              $lg={{ height: "$12" }}
-              backgroundColor="$success"
+              height={36}
+              paddingHorizontal="$3"
+              backgroundColor="$primary"
+              borderRadius="$3"
               onPress={() => onCompletePickup(order.id)}
             >
-              <Text color="white" fontWeight="bold">{order.order_type === "dine_in" ? "COMPLETE" : "PICKED UP"}</Text>
+              <Text color="white" fontSize="$3" fontWeight="700">{order.order_type === "dine_in" ? "Complete" : "Picked up"}</Text>
             </Button>
           ) : null}
         </XStack>
