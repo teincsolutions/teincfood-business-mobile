@@ -43,7 +43,16 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor, useCachedImageUrl, isUnpaid, isCancellable, cancelLabelFor, nextActionFor, getCustomerDisplay, formatDate } from "@teincfood/core";
+import {
+  formatPriceFromMinor,
+  useCachedImageUrl,
+  isUnpaid,
+  isCancellable,
+  cancelLabelFor,
+  nextActionFor,
+  getCustomerDisplay,
+  formatDate,
+} from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
 import { useBusinessTaxRulesQuery } from "@teincfood/core";
@@ -65,7 +74,13 @@ import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import { useBusinessStore } from "@/stores/business.store";
-import { useCompletePickupMutation, useConfirmHandoverMutation, useAssignRiderMutation, useCancelOrderMutation, useConfirmCashPaymentMutation } from "@/hooks/seller.hooks";
+import {
+  useCompletePickupMutation,
+  useConfirmHandoverMutation,
+  useAssignRiderMutation,
+  useCancelOrderMutation,
+  useConfirmCashPaymentMutation,
+} from "@/hooks/seller.hooks";
 import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
@@ -86,7 +101,11 @@ import {
   CashPaymentSheet,
   PaymentProcessingModal,
 } from "@/components/pos";
-import { PendingOrderCard, PreparingOrderCard, ReadyOrderCard } from "@/components/kiosk";
+import {
+  PendingOrderCard,
+  PreparingOrderCard,
+  ReadyOrderCard,
+} from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
 import { FlatList } from "react-native-gesture-handler";
@@ -303,8 +322,10 @@ function MenuBrowser() {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
-  const effectiveWidth = measuredWidth ?? (isTabletLandscape ? width * 0.6 : width);
-  const cardWidth = (effectiveWidth - 40 - (foodColumns - 1) * 16) / foodColumns;
+  const effectiveWidth =
+    measuredWidth ?? (isTabletLandscape ? width * 0.6 : width);
+  const cardWidth =
+    (effectiveWidth - 40 - (foodColumns - 1) * 16) / foodColumns;
 
   const { data: categories } = useMenuCategoriesQuery();
   const filters = useMemo(() => {
@@ -319,7 +340,10 @@ function MenuBrowser() {
   const itemsList = useMemo(() => menuItems ?? [], [menuItems]);
 
   return (
-    <YStack flex={1} onLayout={(e: any) => setMeasuredWidth(e.nativeEvent.layout.width)}>
+    <YStack
+      flex={1}
+      onLayout={(e: any) => setMeasuredWidth(e.nativeEvent.layout.width)}
+    >
       <YStack>
         <XStack paddingHorizontal="$5" paddingVertical="$3" gap="$2">
           <YStack
@@ -877,7 +901,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const executePlaceOrder = useCallback(() => {
     const { autoPrint } = usePrinterStore.getState();
 
-    const subtotalMinor = serverPricing?.subtotal_minor ?? localPricing?.subtotal_minor ?? total;
+    const subtotalMinor =
+      serverPricing?.subtotal_minor ?? localPricing?.subtotal_minor ?? total;
     const taxMinor = serverPricing?.tax_minor ?? localPricing?.tax_minor ?? 0;
 
     const orderItems = items.map((i) => ({
@@ -1476,41 +1501,81 @@ function POSReadyCard({
   onHandover?: (deliveryId: string) => void;
   onCancel?: (order: SellerOrder) => void;
 }) {
-  const callout = (order as any).callout_number ?? order.order_number?.slice(-3) ?? "";
-  const isDelivery = (order as any).order_type === "delivery" || !!(order as any).is_delivery;
+  const callout =
+    (order as any).callout_number ?? order.order_number?.slice(-3) ?? "";
+  const isDelivery =
+    (order as any).order_type === "delivery" || !!(order as any).is_delivery;
   const hasDelivery = !!(order as any).delivery_id;
-  const minutes = order.inserted_at ? Math.max(0, Math.floor((Date.now() - new Date(order.inserted_at).getTime()) / 60000)) : 0;
+  const minutes = order.inserted_at
+    ? Math.max(
+        0,
+        Math.floor(
+          (Date.now() - new Date(order.inserted_at).getTime()) / 60000,
+        ),
+      )
+    : 0;
   return (
-    <Card padding="$4" bordered backgroundColor="$green2" borderColor="$success" borderWidth={1}>
+    <Card
+      padding="$4"
+      bordered
+      backgroundColor="$green2"
+      borderColor="$success"
+      borderWidth={1}
+    >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$6" fontWeight="bold">{order.order_number}</Text>
+          <Text fontSize="$6" fontWeight="bold">
+            {order.order_number}
+          </Text>
           <XStack gap="$2" alignItems="center">
             <Clock size={14} color="$colorMuted" />
-            <Text fontSize="$2" color="$colorMuted">{minutes}m ago</Text>
+            <Text fontSize="$2" color="$colorMuted">
+              {minutes}m ago
+            </Text>
           </XStack>
         </XStack>
         <Badge backgroundColor="$success" size="$2" alignSelf="flex-start">
-          <Text color="white" fontSize="$1" fontWeight="bold">READY</Text>
+          <Text color="white" fontSize="$1" fontWeight="bold">
+            READY
+          </Text>
         </Badge>
-        {callout ? <Text fontSize="$2" color="$primary" fontWeight="700">Callout #{callout}</Text> : null}
+        {callout ? (
+          <Text fontSize="$2" color="$primary" fontWeight="700">
+            Callout #{callout}
+          </Text>
+        ) : null}
         {(order.customer_name || (order as any).user?.full_name) && (
           <XStack gap="$1" alignItems="center">
             <User size={14} color="$colorMuted" />
-            <Text fontSize="$3" color="$colorMuted">{order.customer_name || (order as any).user.full_name}</Text>
+            <Text fontSize="$3" color="$colorMuted">
+              {order.customer_name || (order as any).user.full_name}
+            </Text>
           </XStack>
         )}
         <YStack gap="$1">
           {(order.items || []).map((item: any) => {
-            const variantName = item.variant_name || item.selected_variant?.name;
+            const variantName =
+              item.variant_name || item.selected_variant?.name;
             const addons = item.addons || item.selected_addons || [];
             return (
               <YStack key={item.id} gap="$1">
                 <XStack justifyContent="space-between">
-                  <Text fontSize="$3" flex={1} numberOfLines={2}>{item.quantity}x {item.menu_item?.name || item.name} {variantName ? `· ${variantName}` : ""}</Text>
-                  <Text fontSize="$3" color="$colorMuted">{formatPriceFromMinor(item.subtotal ?? item.unit_price * item.quantity, (order as any).currency)}</Text>
+                  <Text fontSize="$3" flex={1} numberOfLines={2}>
+                    {item.quantity}x {item.menu_item?.name || item.name}{" "}
+                    {variantName ? `· ${variantName}` : ""}
+                  </Text>
+                  <Text fontSize="$3" color="$colorMuted">
+                    {formatPriceFromMinor(
+                      item.subtotal ?? item.unit_price * item.quantity,
+                      (order as any).currency,
+                    )}
+                  </Text>
                 </XStack>
-                {addons.length > 0 && <Text fontSize="$2" color="$colorMuted" paddingLeft="$2">+ {addons.map((a: any) => a.name).join(", ")}</Text>}
+                {addons.length > 0 && (
+                  <Text fontSize="$2" color="$colorMuted" paddingLeft="$2">
+                    + {addons.map((a: any) => a.name).join(", ")}
+                  </Text>
+                )}
               </YStack>
             );
           })}
@@ -1518,15 +1583,30 @@ function POSReadyCard({
         {order.notes ? (
           <XStack gap="$2" alignItems="flex-start">
             <FileText size={14} color="$info" />
-            <Text fontSize="$2" color="$info" flex={1}>{order.notes}</Text>
+            <Text fontSize="$2" color="$info" flex={1}>
+              {order.notes}
+            </Text>
           </XStack>
         ) : null}
         <Separator />
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$5" fontWeight="bold" color="$primary">{formatPriceFromMinor((order as any).total_minor, (order as any).currency)}</Text>
+          <Text fontSize="$5" fontWeight="bold" color="$primary">
+            {formatPriceFromMinor(
+              (order as any).total_minor,
+              (order as any).currency,
+            )}
+          </Text>
           <XStack gap="$2" alignItems="center">
             {onPrint && (
-              <Button height={32} width={36} padding={0} variant="outline" borderColor="$borderColor" backgroundColor="$background" onPress={() => onPrint(order.id)}>
+              <Button
+                height={32}
+                width={36}
+                padding={0}
+                variant="outline"
+                borderColor="$borderColor"
+                backgroundColor="$background"
+                onPress={() => onPrint(order.id)}
+              >
                 <Printer size={14} color="$color" />
               </Button>
             )}
@@ -1535,22 +1615,58 @@ function POSReadyCard({
         <XStack gap="$2" flexWrap="wrap">
           {isDelivery ? (
             hasDelivery && !(order as any).merchant_handover_confirmed_at ? (
-              <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onHandover?.((order as any).delivery_id!)}>
-                <Text color="white" fontSize="$3" fontWeight="700">Handover to rider</Text>
+              <Button
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="$primary"
+                borderRadius="$3"
+                onPress={() => onHandover?.((order as any).delivery_id!)}
+              >
+                <Text color="white" fontSize="$3" fontWeight="700">
+                  Handover to rider
+                </Text>
               </Button>
             ) : (
-              <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onAssignRider?.(order.id)}>
-                <Text color="white" fontSize="$3" fontWeight="700">Assign rider</Text>
+              <Button
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="$primary"
+                borderRadius="$3"
+                onPress={() => onAssignRider?.(order.id)}
+              >
+                <Text color="white" fontSize="$3" fontWeight="700">
+                  Assign rider
+                </Text>
               </Button>
             )
           ) : onCompletePickup ? (
-            <Button height={36} paddingHorizontal="$3" backgroundColor="$primary" borderRadius="$3" onPress={() => onCompletePickup(order.id)}>
-              <Text color="white" fontSize="$3" fontWeight="700">{(order as any).order_type === "dine_in" ? "Complete" : "Picked up"}</Text>
+            <Button
+              height={36}
+              paddingHorizontal="$3"
+              backgroundColor="$primary"
+              borderRadius="$3"
+              onPress={() => onCompletePickup(order.id)}
+            >
+              <Text color="white" fontSize="$3" fontWeight="700">
+                {(order as any).order_type === "dine_in"
+                  ? "Complete"
+                  : "Picked up"}
+              </Text>
             </Button>
           ) : null}
           {onCancel ? (
-            <Button height={36} paddingHorizontal="$3" backgroundColor="white" borderWidth={1} borderColor="$borderColor" borderRadius="$3" onPress={() => onCancel(order)}>
-              <Text fontSize="$3" fontWeight="700" color="$error">Cancel</Text>
+            <Button
+              height={36}
+              paddingHorizontal="$3"
+              backgroundColor="white"
+              borderWidth={1}
+              borderColor="$borderColor"
+              borderRadius="$3"
+              onPress={() => onCancel(order)}
+            >
+              <Text fontSize="$3" fontWeight="700" color="$error">
+                Cancel
+              </Text>
             </Button>
           ) : null}
         </XStack>
@@ -1692,11 +1808,7 @@ function InProgressTab() {
                 gap="$2"
               >
                 <CheckCircle size={36} color="$gray200" />
-                <Text
-                  fontSize="$4"
-                  color="$colorSecondary"
-                  fontFamily="$body"
-                >
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
                   No preparing orders
                 </Text>
               </Card>
@@ -1719,48 +1831,46 @@ function InProgressTab() {
               <Text
                 fontSize="$5"
                 fontWeight="700"
-                    fontFamily="$heading"
-                    color="$color"
-                  >
-                    Ready
-                  </Text>
-                  <Badge backgroundColor="$green10" size="$2">
-                    <Text color="white" fontSize="$1" fontWeight="bold">
-                      {readyOrders.length}
-                    </Text>
-                  </Badge>
-                </XStack>
-                {readyOrders.length === 0 ? (
-                  <Card
-                    padding="$6"
-                    backgroundColor="$backgroundStrong"
-                    borderRadius="$4"
-                    alignItems="center"
-                    gap="$2"
-                  >
-                    <CheckCircle size={36} color="$gray200" />
-                    <Text
-                      fontSize="$4"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      No ready orders
-                    </Text>
-                  </Card>
-                ) : (
-                  readyOrders.map((order) => (
-                    <POSReadyCard
-                      key={order.id}
-                      order={order}
-                      onPrint={(id) => printService.printOrderReceipt(id)}
-                      onCompletePickup={(id) => completePickup.mutate(id)}
-                      onAssignRider={(id) => assignRider.mutate(id)}
-                      onHandover={(deliveryId) => confirmHandover.mutate(deliveryId)}
-                      onCancel={(o) => cancelOrder.mutate(o.id)}
-                    />
-                  ))
-                )}
-              </YStack>
+                fontFamily="$heading"
+                color="$color"
+              >
+                Ready
+              </Text>
+              <Badge backgroundColor="$green10" size="$2">
+                <Text color="white" fontSize="$1" fontWeight="bold">
+                  {readyOrders.length}
+                </Text>
+              </Badge>
+            </XStack>
+            {readyOrders.length === 0 ? (
+              <Card
+                padding="$6"
+                backgroundColor="$backgroundStrong"
+                borderRadius="$4"
+                alignItems="center"
+                gap="$2"
+              >
+                <CheckCircle size={36} color="$gray200" />
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No ready orders
+                </Text>
+              </Card>
+            ) : (
+              readyOrders.map((order) => (
+                <POSReadyCard
+                  key={order.id}
+                  order={order}
+                  onPrint={(id) => printService.printOrderReceipt(id)}
+                  onCompletePickup={(id) => completePickup.mutate(id)}
+                  onAssignRider={(id) => assignRider.mutate(id)}
+                  onHandover={(deliveryId) =>
+                    confirmHandover.mutate(deliveryId)
+                  }
+                  onCancel={(o) => cancelOrder.mutate(o.id)}
+                />
+              ))
+            )}
+          </YStack>
         </XStack>
       ) : (
         <YStack padding="$4" gap="$4">
@@ -1891,7 +2001,9 @@ function InProgressTab() {
                   onPrint={(id) => printService.printOrderReceipt(id)}
                   onCompletePickup={(id) => completePickup.mutate(id)}
                   onAssignRider={(id) => assignRider.mutate(id)}
-                  onHandover={(deliveryId) => confirmHandover.mutate(deliveryId)}
+                  onHandover={(deliveryId) =>
+                    confirmHandover.mutate(deliveryId)
+                  }
                   onCancel={(o) => cancelOrder.mutate(o.id)}
                 />
               ))
@@ -1963,7 +2075,17 @@ function TodayTab() {
   const COL_TIME_TODAY = 100;
   const COL_TOTAL_TODAY = 100;
   const COL_ACTIONS_TODAY = 220;
-  const tableTotalToday = COL_ORDER_TODAY + COL_CUSTOMER_TODAY + COL_TYPE_TODAY + COL_PAYMENT_TODAY + COL_STATUS_TODAY + COL_DELIVERY_TODAY + COL_TIME_TODAY + COL_TOTAL_TODAY + COL_ACTIONS_TODAY + 48;
+  const tableTotalToday =
+    COL_ORDER_TODAY +
+    COL_CUSTOMER_TODAY +
+    COL_TYPE_TODAY +
+    COL_PAYMENT_TODAY +
+    COL_STATUS_TODAY +
+    COL_DELIVERY_TODAY +
+    COL_TIME_TODAY +
+    COL_TOTAL_TODAY +
+    COL_ACTIONS_TODAY +
+    48;
 
   const statusBg = (status: string) => {
     if (["pending", "awaiting_payment"].includes(status)) return "#f59e0b";
@@ -1975,7 +2097,8 @@ function TodayTab() {
     return "#9ca3af";
   };
 
-  const fmt = (st: string) => st.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+  const fmt = (st: string) =>
+    st.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
 
   const todayTableHeader = (
     <XStack
@@ -1985,15 +2108,80 @@ function TodayTab() {
       paddingHorizontal="$4"
       backgroundColor="$backgroundSoft"
     >
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_ORDER_TODAY}>Order</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_CUSTOMER_TODAY}>Customer</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_TYPE_TODAY}>Type</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_PAYMENT_TODAY}>Payment</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_STATUS_TODAY}>Status</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_DELIVERY_TODAY}>Delivery</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_TIME_TODAY}>Placed</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_TOTAL_TODAY} textAlign="right">Total</Text>
-      <Text fontWeight="bold" fontSize="$3" color="$colorMuted" width={COL_ACTIONS_TODAY} textAlign="right">Actions</Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_ORDER_TODAY}
+      >
+        Order
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_CUSTOMER_TODAY}
+      >
+        Customer
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_TYPE_TODAY}
+      >
+        Type
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_PAYMENT_TODAY}
+      >
+        Payment
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_STATUS_TODAY}
+      >
+        Status
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_DELIVERY_TODAY}
+      >
+        Delivery
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_TIME_TODAY}
+      >
+        Placed
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_TOTAL_TODAY}
+        textAlign="right"
+      >
+        Total
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$3"
+        color="$colorMuted"
+        width={COL_ACTIONS_TODAY}
+        textAlign="right"
+      >
+        Actions
+      </Text>
     </XStack>
   );
 
@@ -2001,38 +2189,133 @@ function TodayTab() {
     const action = nextActionFor(item);
     const { name: customerName } = getCustomerDisplay(item as any);
     return (
-      <XStack borderBottomWidth={1} borderBottomColor="$borderColor" paddingVertical="$3" paddingHorizontal="$4" alignItems="center">
+      <XStack
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        paddingVertical="$3"
+        paddingHorizontal="$4"
+        alignItems="center"
+      >
         <YStack width={COL_ORDER_TODAY}>
-          <Text fontWeight="bold" fontSize="$3" numberOfLines={1}>{item.order_number}</Text>
-          {item.callout_number != null && <Text fontSize="$2" color="$colorMuted">#{item.callout_number}</Text>}
+          <Text fontWeight="bold" fontSize="$3" numberOfLines={1}>
+            {item.order_number}
+          </Text>
+          {item.callout_number != null && (
+            <Text fontSize="$2" color="$colorMuted">
+              #{item.callout_number}
+            </Text>
+          )}
         </YStack>
-        <Text fontSize="$3" width={COL_CUSTOMER_TODAY} numberOfLines={1}>{customerName || "—"}</Text>
-        <Text fontSize="$3" width={COL_TYPE_TODAY} numberOfLines={1}>{fmt((item.order_type ?? "pos") as string)}</Text>
+        <Text fontSize="$3" width={COL_CUSTOMER_TODAY} numberOfLines={1}>
+          {customerName || "—"}
+        </Text>
+        <Text fontSize="$3" width={COL_TYPE_TODAY} numberOfLines={1}>
+          {fmt((item.order_type ?? "pos") as string)}
+        </Text>
         <YStack width={COL_PAYMENT_TODAY}>
-          <Text fontSize="$3" numberOfLines={1}>{fmt((item.pos_payment_method ?? item.payment_mode ?? "cash") as string)}</Text>
-          {isUnpaid(item) && <Text fontSize="$2" fontWeight="700" color="$warning">UNPAID</Text>}
+          <Text fontSize="$3" numberOfLines={1}>
+            {fmt(
+              (item.pos_payment_method ??
+                item.payment_mode ??
+                "cash") as string,
+            )}
+          </Text>
+          {isUnpaid(item) && (
+            <Text fontSize="$2" fontWeight="700" color="$warning">
+              UNPAID
+            </Text>
+          )}
         </YStack>
         <YStack width={COL_STATUS_TODAY} alignItems="center">
-          <YStack backgroundColor={statusBg(item.status)} paddingHorizontal="$2" paddingVertical="$1" borderRadius="$full">
-            <Text fontSize="$2" color="white" fontWeight="700" numberOfLines={1}>{fmt(item.status)}</Text>
+          <YStack
+            backgroundColor={statusBg(item.status)}
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius="$full"
+          >
+            <Text
+              fontSize="$2"
+              color="white"
+              fontWeight="700"
+              numberOfLines={1}
+            >
+              {fmt(item.status)}
+            </Text>
           </YStack>
         </YStack>
-        <Text fontSize="$3" width={COL_DELIVERY_TODAY} numberOfLines={1}>{item.delivery_id ? (item.rider?.name ?? "Awaiting rider") : "—"}</Text>
-        <Text fontSize="$3" color="$colorMuted" width={COL_TIME_TODAY} numberOfLines={1}>{formatDate(item.inserted_at)}</Text>
-        <Text fontSize="$3" fontWeight="700" color="$primary" width={COL_TOTAL_TODAY} textAlign="right">{formatPriceFromMinor(item.total_minor)}</Text>
-        <XStack width={COL_ACTIONS_TODAY} justifyContent="flex-end" gap="$1" alignItems="center">
-          <Button size="$2" variant="outline" icon={<Eye size={14} />} onPress={() => {}} />
-          <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
+        <Text fontSize="$3" width={COL_DELIVERY_TODAY} numberOfLines={1}>
+          {item.delivery_id ? (item.rider?.name ?? "Awaiting rider") : "—"}
+        </Text>
+        <Text
+          fontSize="$3"
+          color="$colorMuted"
+          width={COL_TIME_TODAY}
+          numberOfLines={1}
+        >
+          {formatDate(item.inserted_at)}
+        </Text>
+        <Text
+          fontSize="$3"
+          fontWeight="700"
+          color="$primary"
+          width={COL_TOTAL_TODAY}
+          textAlign="right"
+        >
+          {formatPriceFromMinor(item.total_minor)}
+        </Text>
+        <XStack
+          width={COL_ACTIONS_TODAY}
+          justifyContent="flex-end"
+          gap="$1"
+          alignItems="center"
+        >
+          <Button
+            size="$2"
+            variant="outline"
+            icon={<Eye size={14} />}
+            onPress={() => {}}
+          />
+          <Button
+            size="$2"
+            variant="outline"
+            icon={<Printer size={14} />}
+            onPress={() => printService.printOrderReceipt(item.id)}
+          />
           {action && (
-            <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={() => { if (action.key === "complete_pickup") completePickup.mutate(item.id); }}>
-              <Text color="white" fontSize="$2" fontWeight="700">{action.label}</Text>
+            <Button
+              size="$2"
+              backgroundColor="$primary"
+              borderRadius="$2"
+              onPress={() => {
+                if (action.key === "complete_pickup")
+                  completePickup.mutate(item.id);
+              }}
+            >
+              <Text color="white" fontSize="$2" fontWeight="700">
+                {action.label}
+              </Text>
             </Button>
           )}
           {isUnpaid(item) && item.status !== "cancelled" && (
-            <Button size="$2" variant="outline" icon={<Banknote size={14} />} onPress={() => confirmCashPayment.mutate(item.id)} />
+            <Button
+              size="$2"
+              height={"$2"}
+              width={"$2"}
+              variant="ghost"
+              icon={<Banknote size={14} />}
+              onPress={() => confirmCashPayment.mutate(item.id)}
+            />
           )}
           {isCancellable(item.status) && (
-            <Button size="$2" variant="outline" icon={<XCircle size={14} />} chromeless onPress={() => cancelOrder.mutate(item.id)} />
+            <Button
+              size="$2"
+              height={"$2"}
+              width={"$2"}
+              variant="ghost"
+              icon={<XCircle size={14} />}
+              chromeless
+              onPress={() => cancelOrder.mutate(item.id)}
+            />
           )}
         </XStack>
       </XStack>
@@ -2043,28 +2326,76 @@ function TodayTab() {
     return (
       <YStack flex={1} backgroundColor="$background">
         <YStack marginBottom="$2" paddingHorizontal="$5" paddingTop="$4">
-          <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">Today's Orders</Text>
-          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" marginTop="$1">{allTodayOrders.length} order{allTodayOrders.length !== 1 ? "s" : ""}{showActive ? ` (${activeOrders.length} active)` : ""}</Text>
+          <Text
+            fontSize="$6"
+            fontWeight="700"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Today's Orders
+          </Text>
+          <Text
+            fontSize="$4"
+            color="$colorSecondary"
+            fontFamily="$body"
+            marginTop="$1"
+          >
+            {allTodayOrders.length} order
+            {allTodayOrders.length !== 1 ? "s" : ""}
+            {showActive ? ` (${activeOrders.length} active)` : ""}
+          </Text>
         </YStack>
-        <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+        >
           <YStack width={tableTotalToday} flex={1}>
             {todayTableHeader}
             {allTodayOrders.length === 0 ? (
               <YStack padding="$8" alignItems="center" gap="$3">
                 <Package size={80} color="$gray200" />
-                <Text fontSize="$5" fontWeight="600" color="$colorSecondary" textAlign="center">No orders today yet</Text>
-                <Button variant="outline" height={44} onPress={refetch}>Refresh</Button>
+                <Text
+                  fontSize="$5"
+                  fontWeight="600"
+                  color="$colorSecondary"
+                  textAlign="center"
+                >
+                  No orders today yet
+                </Text>
+                <Button variant="outline" height={44} onPress={refetch}>
+                  Refresh
+                </Button>
               </YStack>
             ) : (
               <FlatList
                 data={sortedOrders}
                 keyExtractor={(item) => item.id}
                 renderItem={renderTabletTodayRow}
-                onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+                onEndReached={() => {
+                  if (hasNextPage) fetchNextPage();
+                }}
                 onEndReachedThreshold={0.5}
-                refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="$primary" />}
-                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
-                ListFooterComponent={isFetchingNextPage ? <YStack padding="$4" alignItems="center"><Spinner size="small" color="$primary" /></YStack> : null}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isFetching}
+                    onRefresh={refetch}
+                    tintColor="$primary"
+                  />
+                }
+                contentContainerStyle={{
+                  paddingBottom: Math.max(insets.bottom + 20, 24),
+                }}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <YStack padding="$4" alignItems="center">
+                      <Spinner size="small" color="$primary" />
+                    </YStack>
+                  ) : null
+                }
                 initialNumToRender={20}
                 windowSize={10}
                 maxToRenderPerBatch={15}
@@ -2150,47 +2481,146 @@ function TodayTab() {
           <>
             {index === 0 && showActive && (
               <YStack paddingVertical="$2" paddingHorizontal="$1">
-                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$orange10">In Progress</Text>
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color="$orange10"
+                >
+                  In Progress
+                </Text>
               </YStack>
             )}
             {index === activeOrders.length && showCompleted && (
-              <YStack paddingVertical="$2" paddingHorizontal="$1" marginTop="$2">
-                <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$gray10">Completed</Text>
+              <YStack
+                paddingVertical="$2"
+                paddingHorizontal="$1"
+                marginTop="$2"
+              >
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color="$gray10"
+                >
+                  Completed
+                </Text>
               </YStack>
             )}
-            <Card elevate padding="$4" marginBottom="$3" backgroundColor="$backgroundStrong" borderRadius="$5">
+            <Card
+              elevate
+              padding="$4"
+              marginBottom="$3"
+              backgroundColor="$backgroundStrong"
+              borderRadius="$5"
+            >
               <YStack gap="$2">
                 <XStack justifyContent="space-between" alignItems="flex-start">
                   <YStack flex={1} gap="$1">
-                    <Text fontWeight="700" fontSize="$5" fontFamily="$heading" color="$color">{item.order_number}</Text>
-                    {item.callout_number != null && <Text fontSize="$2" color="$primary" fontWeight="700">Callout #{item.callout_number}</Text>}
-                    <Text fontSize="$3" color="$colorSecondary">{customerName || "—"}</Text>
-                    <Text fontSize="$2" color="$colorMuted">{fmt((item.order_type ?? "pos") as string)} · {fmt((item.pos_payment_method ?? item.payment_mode ?? "cash") as string)}</Text>
-                    {item.delivery_id && <Text fontSize="$2" color="$colorMuted">{item.rider?.name ?? "Awaiting rider"}</Text>}
-                    <Text fontSize="$2" color="$colorMuted">{formatDate(item.inserted_at)}</Text>
+                    <Text
+                      fontWeight="700"
+                      fontSize="$5"
+                      fontFamily="$heading"
+                      color="$color"
+                    >
+                      {item.order_number}
+                    </Text>
+                    {item.callout_number != null && (
+                      <Text fontSize="$2" color="$primary" fontWeight="700">
+                        Callout #{item.callout_number}
+                      </Text>
+                    )}
+                    <Text fontSize="$3" color="$colorSecondary">
+                      {customerName || "—"}
+                    </Text>
+                    <Text fontSize="$2" color="$colorMuted">
+                      {fmt((item.order_type ?? "pos") as string)} ·{" "}
+                      {fmt(
+                        (item.pos_payment_method ??
+                          item.payment_mode ??
+                          "cash") as string,
+                      )}
+                    </Text>
+                    {item.delivery_id && (
+                      <Text fontSize="$2" color="$colorMuted">
+                        {item.rider?.name ?? "Awaiting rider"}
+                      </Text>
+                    )}
+                    <Text fontSize="$2" color="$colorMuted">
+                      {formatDate(item.inserted_at)}
+                    </Text>
                   </YStack>
                   <YStack alignItems="flex-end" gap="$1">
-                    <Text fontWeight="800" fontSize="$5" fontFamily="$body" color="$primary">{formatPriceFromMinor(item.total_minor)}</Text>
-                    <YStack backgroundColor={statusBg(item.status)} paddingHorizontal="$2" paddingVertical="$1" borderRadius="$full">
-                      <Text fontSize="$2" color="white" fontWeight="700">{fmt(item.status)}</Text>
+                    <Text
+                      fontWeight="800"
+                      fontSize="$5"
+                      fontFamily="$body"
+                      color="$primary"
+                    >
+                      {formatPriceFromMinor(item.total_minor)}
+                    </Text>
+                    <YStack
+                      backgroundColor={statusBg(item.status)}
+                      paddingHorizontal="$2"
+                      paddingVertical="$1"
+                      borderRadius="$full"
+                    >
+                      <Text fontSize="$2" color="white" fontWeight="700">
+                        {fmt(item.status)}
+                      </Text>
                     </YStack>
-                    {isUnpaid(item) && <Text fontSize="$2" fontWeight="700" color="$warning">UNPAID</Text>}
+                    {isUnpaid(item) && (
+                      <Text fontSize="$2" fontWeight="700" color="$warning">
+                        UNPAID
+                      </Text>
+                    )}
                   </YStack>
                 </XStack>
                 <Separator marginVertical="$1" borderColor="$borderColor" />
                 <XStack gap="$2" flexWrap="wrap" justifyContent="flex-end">
-                  <Button size="$2" variant="outline" icon={<Eye size={14} />} onPress={() => {}} />
-                  <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
+                  <Button
+                    size="$2"
+                    variant="outline"
+                    icon={<Eye size={14} />}
+                    onPress={() => {}}
+                  />
+                  <Button
+                    size="$2"
+                    variant="outline"
+                    icon={<Printer size={14} />}
+                    onPress={() => printService.printOrderReceipt(item.id)}
+                  />
                   {action && (
-                    <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={() => { if (action.key === "complete_pickup") completePickup.mutate(item.id); }}>
-                      <Text color="white" fontSize="$2" fontWeight="700">{action.label}</Text>
+                    <Button
+                      size="$2"
+                      backgroundColor="$primary"
+                      borderRadius="$2"
+                      onPress={() => {
+                        if (action.key === "complete_pickup")
+                          completePickup.mutate(item.id);
+                      }}
+                    >
+                      <Text color="white" fontSize="$2" fontWeight="700">
+                        {action.label}
+                      </Text>
                     </Button>
                   )}
                   {isUnpaid(item) && item.status !== "cancelled" && (
-                    <Button size="$2" variant="outline" icon={<Banknote size={14} />} onPress={() => confirmCashPayment.mutate(item.id)} />
+                    <Button
+                      size="$2"
+                      variant="outline"
+                      icon={<Banknote size={14} />}
+                      onPress={() => confirmCashPayment.mutate(item.id)}
+                    />
                   )}
                   {isCancellable(item.status) && (
-                    <Button size="$2" variant="outline" icon={<XCircle size={14} />} chromeless onPress={() => cancelOrder.mutate(item.id)} />
+                    <Button
+                      size="$2"
+                      variant="outline"
+                      icon={<XCircle size={14} />}
+                      chromeless
+                      onPress={() => cancelOrder.mutate(item.id)}
+                    />
                   )}
                 </XStack>
               </YStack>
