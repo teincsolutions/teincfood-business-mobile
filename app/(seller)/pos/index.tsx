@@ -294,9 +294,13 @@ function NewOrderTab() {
 
 function MenuBrowser() {
   const { isTablet, isLandscape, width } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
   const foodColumns = isTablet ? 3 : 2;
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const effectiveWidth = measuredWidth ?? (isTabletLandscape ? width * 0.6 : width);
+  const cardWidth = (effectiveWidth - 40 - (foodColumns - 1) * 16) / foodColumns;
 
   const { data: categories } = useMenuCategoriesQuery();
   const filters = useMemo(() => {
@@ -311,7 +315,7 @@ function MenuBrowser() {
   const itemsList = useMemo(() => menuItems ?? [], [menuItems]);
 
   return (
-    <YStack flex={1}>
+    <YStack flex={1} onLayout={(e: any) => setMeasuredWidth(e.nativeEvent.layout.width)}>
       <YStack>
         <XStack paddingHorizontal="$5" paddingVertical="$3" gap="$2">
           <YStack
@@ -407,7 +411,7 @@ function MenuBrowser() {
             gap: 16,
           }}
           renderItem={({ item }) => (
-            <YStack width={(width - 56) / foodColumns} mr={isTablet ? 4 : 8}>
+            <YStack width={cardWidth}>
               <FoodCard item={item} />
             </YStack>
           )}
