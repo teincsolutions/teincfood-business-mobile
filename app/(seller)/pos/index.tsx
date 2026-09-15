@@ -2000,13 +2000,6 @@ function TodayTab() {
   const renderTabletTodayRow = ({ item }: { item: SellerOrder }) => {
     const action = nextActionFor(item);
     const { name: customerName } = getCustomerDisplay(item as any);
-    const handleAction = useCallback(() => {
-      if (!action) return;
-      if (action.key === "accept") { /* no-op in today */ }
-      if (action.key === "start_preparing") { /* no-op in today */ }
-      if (action.key === "mark_ready") { /* no-op in today */ }
-      if (action.key === "complete_pickup") completePickup.mutate(item.id);
-    }, [action, item.id]);
     return (
       <XStack borderBottomWidth={1} borderBottomColor="$borderColor" paddingVertical="$3" paddingHorizontal="$4" alignItems="center">
         <YStack width={COL_ORDER_TODAY}>
@@ -2031,7 +2024,7 @@ function TodayTab() {
           <Button size="$2" variant="outline" icon={<Eye size={14} />} onPress={() => {}} />
           <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
           {action && (
-            <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={handleAction}>
+            <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={() => { if (action.key === "complete_pickup") completePickup.mutate(item.id); }}>
               <Text color="white" fontSize="$2" fontWeight="700">{action.label}</Text>
             </Button>
           )}
@@ -2153,10 +2146,6 @@ function TodayTab() {
       renderItem={({ item, index }) => {
         const action = nextActionFor(item);
         const { name: customerName } = getCustomerDisplay(item as any);
-        const handleAction = useCallback(() => {
-          if (!action) return;
-          if (action.key === "complete_pickup") completePickup.mutate(item.id);
-        }, [action, item.id]);
         return (
           <>
             {index === 0 && showActive && (
@@ -2193,7 +2182,7 @@ function TodayTab() {
                   <Button size="$2" variant="outline" icon={<Eye size={14} />} onPress={() => {}} />
                   <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
                   {action && (
-                    <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={handleAction}>
+                    <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={() => { if (action.key === "complete_pickup") completePickup.mutate(item.id); }}>
                       <Text color="white" fontSize="$2" fontWeight="700">{action.label}</Text>
                     </Button>
                   )}
