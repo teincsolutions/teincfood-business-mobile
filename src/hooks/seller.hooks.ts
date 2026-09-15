@@ -13,6 +13,7 @@ export {
   useCancelOrderMutation,
   useConfirmHandoverMutation,
   useAssignRiderMutation,
+  useConfirmCashPaymentMutation,
   useUpdateOrderStatusMutation,
   isQueuedTransition,
   SELLER_KEYS,
