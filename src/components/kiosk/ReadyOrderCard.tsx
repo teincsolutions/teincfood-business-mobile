@@ -18,6 +18,7 @@ interface ReadyOrderCardProps {
 export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails, onCompletePickup }: ReadyOrderCardProps) {
   const isDelivery = isDeliveryOrder(order);
   const hasDelivery = !!order.delivery_id;
+  const callout = (order as any).callout_number ?? order.order_number?.slice(-3) ?? "";
 
   return (
     <Card
@@ -32,7 +33,10 @@ export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails
     >
       <YStack gap="$3">
         <XStack justifyContent="space-between" alignItems="center">
-          <Text fontSize="$6" fontWeight="bold">{order.order_number}</Text>
+          <YStack>
+            <Text fontSize="$6" fontWeight="bold">{order.order_number}</Text>
+            {callout ? <Text fontSize="$2" color="$primary" fontWeight="700">Callout #{callout}</Text> : null}
+          </YStack>
           <Badge backgroundColor="$success" size="$2">
             <Text color="white" fontSize="$1">READY</Text>
           </Badge>
@@ -57,12 +61,19 @@ export function ReadyOrderCard({ order, onAssignRider, onHandover, onViewDetails
         )}
 
         <YStack gap="$1">
-          {order.items.map((item, index) => (
-            <XStack key={item.id} justifyContent="space-between">
-              <Text fontSize="$3">{item.quantity}x {item.menu_item?.name}</Text>
-              <Text fontSize="$3" color="$colorMuted">{formatPriceFromMinor(item.subtotal, order.currency)}</Text>
-            </XStack>
-          ))}
+          {order.items.map((item, index) => {
+            const variantName = (item as any).variant_name || (item as any).selected_variant?.name;
+            const addons = (item as any).addons || (item as any).selected_addons || [];
+            return (
+              <YStack key={item.id} gap="$1">
+                <XStack justifyContent="space-between">
+                  <Text fontSize="$3" flex={1} numberOfLines={2}>{item.quantity}x {item.menu_item?.name} {variantName ? `· ${variantName}` : ""}</Text>
+                  <Text fontSize="$3" color="$colorMuted">{formatPriceFromMinor(item.subtotal, order.currency)}</Text>
+                </XStack>
+                {addons.length > 0 && <Text fontSize="$2" color="$colorMuted" paddingLeft="$2">+ {addons.map((a: any) => a.name).join(", ")}</Text>}
+              </YStack>
+            );
+          })}
         </YStack>
 
         <Separator />
