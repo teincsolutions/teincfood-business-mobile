@@ -873,6 +873,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const executePlaceOrder = useCallback(() => {
     const { autoPrint } = usePrinterStore.getState();
 
+    const subtotalMinor = serverPricing?.subtotal_minor ?? localPricing?.subtotal_minor ?? total;
+    const taxMinor = serverPricing?.tax_minor ?? localPricing?.tax_minor ?? 0;
+
     const orderItems = items.map((i) => ({
       menu_item_id: i.menu_item.id,
       quantity: i.quantity,
@@ -914,6 +917,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         customer_name: checkoutForm.customer_name || undefined,
         customer_phone: checkoutForm.customer_phone,
         pos_payment_method: checkoutForm.pos_payment_method,
+        total_minor: total,
+        subtotal_minor: subtotalMinor,
+        tax_minor: taxMinor,
+        tax_lines: taxLines,
         items: orderItems,
         item_snapshots: itemSnapshots,
       } as unknown as Parameters<typeof createOrder.mutate>[0],
