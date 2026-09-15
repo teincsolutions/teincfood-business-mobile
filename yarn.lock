@@ -3785,10 +3785,10 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.12.tgz"
   integrity sha512-pznP758xB/+YsBzND4oofIeex8ihXbqjeEXuUn+VuIjceWf/ILNndnAp6DQ5Mu84J2JmOk1sU5rUyFc4O5+UzA==
 
-"@teincfood/core@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.8.0.tgz#7b6fae982a3449b9634e0e1eee7143f063bd63f6"
-  integrity sha512-Lynd9YbdI0tv2gg1ioCgQU6h5/lU6xQpzNkET+tspFQPNC8gtottYN0kadecpcjh9Q6HJIURK5ZVeecn9PV/Xw==
+"@teincfood/core@^0.8.2":
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.8.2.tgz#79aea5a373c201fca05462e71b2dad8f52d889b5"
+  integrity sha512-vpglBOoEeYxcAI2njCBuHEn57BzmrpZN66vbTMF7ihJq2F282KB2twi44U8PG2bf65oYYsBAnjb244SgnwEAZQ==
   dependencies:
     "@tanstack/query-async-storage-persister" "^5.102.8"
 
