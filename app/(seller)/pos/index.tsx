@@ -404,6 +404,7 @@ function MenuBrowser() {
           data={itemsList}
           keyExtractor={(item) => item.id}
           numColumns={foodColumns}
+          columnWrapperStyle={foodColumns > 1 ? { gap: 16 } : undefined}
           contentContainerStyle={{
             paddingHorizontal: 20,
             paddingVertical: 20,
