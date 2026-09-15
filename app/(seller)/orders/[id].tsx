@@ -8,8 +8,9 @@ import {
   Separator,
   Sheet,
   useMedia,
+  ScrollView,
 } from "tamagui";
-import { ScrollView, Linking, Modal } from "react-native";
+import { Linking, Modal } from "react-native";
 import { WebView } from "react-native-webview";
 import {
   SafeAreaView,
@@ -191,9 +192,6 @@ export default function OrderDetails() {
       paddingTop={Math.max(insets.top + 8, 24)}
       paddingBottom={insets.bottom + 16}
       backgroundColor="$background"
-      {...(media.md || media.lg
-        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
-        : {})}
     >
       {/* Header */}
       <XStack
@@ -229,7 +227,11 @@ export default function OrderDetails() {
         </YStack>
       </XStack>
 
-      <ScrollView>
+      <ScrollView
+        {...(media.md || media.lg
+          ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+          : {})}
+      >
         <YStack padding="$4" gap="$4">
           {/* Customer Info */}
           <Card padding="$4" bordered>
@@ -614,7 +616,9 @@ export default function OrderDetails() {
               </Button>
             )}
             {(order.status === "ready" || order.status === "waiting_pickup") &&
-              isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) &&
+              isDeliveryOrder(
+                order as unknown as Parameters<typeof isDeliveryOrder>[0],
+              ) &&
               order.delivery_person && (
                 <>
                   {order.merchant_handover_confirmed_at ? (
@@ -653,24 +657,29 @@ export default function OrderDetails() {
                   )}
                 </>
               )}
-            {order.status === "ready" && !isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) && (
-              <Button
-                variant="primary"
-                width="100%"
-                onPress={() =>
-                  showDialog(
-                    "Complete Pickup",
-                    `Hand ${order.order_number} to the customer?`,
-                    () => completePickupMutation.mutate(order.id),
-                  )
-                }
-              >
-                Handed to Customer
-              </Button>
-            )}
+            {order.status === "ready" &&
+              !isDeliveryOrder(
+                order as unknown as Parameters<typeof isDeliveryOrder>[0],
+              ) && (
+                <Button
+                  variant="primary"
+                  width="100%"
+                  onPress={() =>
+                    showDialog(
+                      "Complete Pickup",
+                      `Hand ${order.order_number} to the customer?`,
+                      () => completePickupMutation.mutate(order.id),
+                    )
+                  }
+                >
+                  Handed to Customer
+                </Button>
+              )}
             {(order.status === "ready" || order.status === "waiting_pickup") &&
               !order.delivery_person &&
-              isDeliveryOrder(order as unknown as Parameters<typeof isDeliveryOrder>[0]) && (
+              isDeliveryOrder(
+                order as unknown as Parameters<typeof isDeliveryOrder>[0],
+              ) && (
                 <Button
                   variant="primary"
                   width="100%"
