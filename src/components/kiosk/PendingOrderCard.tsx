@@ -124,67 +124,92 @@ export function PendingOrderCard({
               {formatPriceFromMinor(order.total_minor, order.currency)}
             </Text>
             {onPrint && (
-              <Button size="$2" variant="outline" onPress={() => onPrint(order.id)}>
-                <Printer size={14} />
+              <Button
+                height={32}
+                width={36}
+                padding={0}
+                variant="outline"
+                borderColor="$borderColor"
+                backgroundColor="$background"
+                onPress={() => onPrint(order.id)}
+              >
+                <Printer size={14} color="$color" />
               </Button>
             )}
           </XStack>
           <XStack gap="$2" flexWrap="wrap" justifyContent="flex-end">
             {showPay && (
               <Button
-                size="$2"
+                height={36}
+                paddingHorizontal="$3"
                 backgroundColor="$primary"
+                borderRadius="$3"
                 disabled={!!payingOrderId}
+                opacity={payingOrderId ? 0.4 : 1}
                 onPress={() => onPay!(order)}
-                icon={<Smartphone size={14} color="white" />}
               >
-                <Text color="white" fontWeight="bold">{payingOrderId === order.id ? "Paying…" : "Pay now"}</Text>
+                <Text color="white" fontSize="$3" fontWeight="700">{payingOrderId === order.id ? "Paying…" : "Pay now"}</Text>
               </Button>
             )}
             {showCollectCash && (
               <Button
-                size="$2"
+                height={36}
+                paddingHorizontal="$3"
                 backgroundColor="$primary"
+                borderRadius="$3"
                 disabled={!!collectingOrderId}
+                opacity={collectingOrderId ? 0.4 : 1}
                 onPress={() => onCollectCash!(order)}
-                icon={<Banknote size={14} color="white" />}
               >
-                <Text color="white" fontWeight="bold">{collectingOrderId === order.id ? "Recording…" : "Collect cash"}</Text>
+                <Text color="white" fontSize="$3" fontWeight="700">{collectingOrderId === order.id ? "Recording…" : "Collect cash"}</Text>
               </Button>
             )}
-            {isAccepted ? (
+            {!isAccepted && (
               <Button
-                height="$8"
-                $lg={{ height: "$10" }}
-                backgroundColor="$warning"
-                onPress={() => onStartPreparing(order.id)}
-                icon={<ChefHat size={16} color="white" />}
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="white"
+                borderWidth={1}
+                borderColor="$borderColor"
+                borderRadius="$3"
+                onPress={() => onReject(order.id)}
               >
-                <Text color="white" fontWeight="bold">START PREPARING</Text>
+                <Text fontSize="$3" fontWeight="700" color="$error">Reject</Text>
               </Button>
-            ) : (
-              <>
-                <Button
-                  size="$2"
-                  backgroundColor="$error"
-                  onPress={() => onReject(order.id)}
-                  icon={<XCircle size={16} color="white" />}
-                >
-                  <Text color="white" fontWeight="bold">REJECT</Text>
-                </Button>
-                <Button
-                  size="$2"
-                  backgroundColor="$success"
-                  onPress={() => onAccept(order.id)}
-                  icon={<CheckCircle size={16} color="white" />}
-                >
-                  <Text color="white" fontWeight="bold">ACCEPT</Text>
-                </Button>
-              </>
+            )}
+            {(order.status === "pending") && (
+              <Button
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="$primary"
+                borderRadius="$3"
+                onPress={() => onAccept(order.id)}
+              >
+                <Text color="white" fontSize="$3" fontWeight="700">Accept</Text>
+              </Button>
+            )}
+            {(order.status === "pending" || order.status === "accepted") && (
+              <Button
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="$primary"
+                borderRadius="$3"
+                onPress={() => onStartPreparing(order.id)}
+              >
+                <Text color="white" fontSize="$3" fontWeight="700">Start preparing</Text>
+              </Button>
             )}
             {showCancel && (
-              <Button size="$2" variant="outline" onPress={() => onCancel!(order)}>
-                <Text fontWeight="bold" color="$error">{cancelLabelFor(order.status)}</Text>
+              <Button
+                height={36}
+                paddingHorizontal="$3"
+                backgroundColor="white"
+                borderWidth={1}
+                borderColor="$borderColor"
+                borderRadius="$3"
+                onPress={() => onCancel!(order)}
+              >
+                <Text fontSize="$3" fontWeight="700" color="$error">{cancelLabelFor(order.status)}</Text>
               </Button>
             )}
           </XStack>
