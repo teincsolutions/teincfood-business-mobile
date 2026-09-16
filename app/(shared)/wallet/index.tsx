@@ -38,6 +38,7 @@ export default function WalletScreen() {
   const isSellerOrFleet = role === "seller" || role === "fleet_manager";
   const ent = useEntitlements();
   const entData = ent.data as Record<string, unknown> | undefined;
+  const entEvaluation = ent.evaluation;
   const isTrial = entData?.subscription_status === "trialing";
   const periodEnd = entData?.current_period_end as string | undefined;
 
@@ -132,6 +133,21 @@ export default function WalletScreen() {
                     {isTrial && periodEnd ? (
                       <Text fontSize="$3" color="$warning" fontFamily="$body">
                         Trial ends {new Date(periodEnd).toLocaleDateString()}
+                      </Text>
+                    ) : null}
+                    {entEvaluation.state === "expired" ? (
+                      <Text fontSize="$3" color="$error" fontFamily="$body">
+                        Subscription expired — open Manage plan to renew
+                      </Text>
+                    ) : null}
+                    {entEvaluation.state === "grace" ? (
+                      <Text fontSize="$3" color="$warning" fontFamily="$body">
+                        Payment overdue — renew soon to keep features
+                      </Text>
+                    ) : null}
+                    {entEvaluation.mustReconnect ? (
+                      <Text fontSize="$3" color="$error" fontFamily="$body">
+                        Reconnect to verify your subscription
                       </Text>
                     ) : null}
                     <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">

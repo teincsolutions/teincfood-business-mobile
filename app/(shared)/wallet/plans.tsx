@@ -1,96 +1,492 @@
-// @ts-nocheck
-import { useState } from "react";
-import { ScrollView, Alert } from "react-native";
+// @ts-nocheck — Tamagui stack props (alignItems/padding/etc.) don't typecheck
+// under this repo's tsconfig; every other Tamagui screen uses the same escape.
+import { useMemo, useState } from "react";
+import { Alert, FlatList, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton, Button } from "@/components/ui";
-import { useBusinessStore } from "@/stores/business.store";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import * as subService from "@/services/subscription.service";
-import { REFERENCE_KEYS } from "@teincfood/core";
-import { referenceSyncService } from "@teincfood/core";
+import { Crown, TicketPercent } from "@tamagui/lucide-icons";
+import { BackButton, Button, FormInput } from "@/components/ui";
+import { toast } from "sonner-native";
+import type { Promo } from "@teincfood/core";
+import {
+  useSubscriptionPlansQuery,
+  useMySubscriptionQuery,
+  useUpdateSubscriptionMutation,
+  useBusinessPromosQuery,
+  useCreatePromoMutation,
+  useDeletePromoMutation,
+} from "@/hooks/useSubscription";
+import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
+import type { SubscriptionPlan } from "@/services/subscription.service";
 
-export default function PlansScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const qc = useQueryClient();
-  const [selecting, setSelecting] = useState<string | null>(null);
+type Tab = "plan" | "promos";
 
-  const plansQuery = useQuery({
-    queryKey: ["subscription-plans"],
-    queryFn: () => subService.listSubscriptionPlans(),
-    enabled: !!businessId,
-  });
+function formatMoney(minor: number, currency: string): string {
+  return `${currency} ${(minor / 100).toFixed(2)}`;
+}
 
-  const subQuery = useQuery({
-    queryKey: ["my-subscription", businessId],
-    queryFn: () => subService.fetchMySubscription(businessId!),
-    enabled: !!businessId,
-  });
+const FEATURE_LABELS: Record<string, string> = {
+  "seller.online_orders": "Online orders",
+  "seller.pos.terminal": "POS terminal",
+  "seller.promo": "Promo campaigns",
+  "fleet.dispatch": "Dispatch",
+  "limits.menu_items": "Menus",
+  "limits.members": "Members",
+  "limits.terminals_linked": "Terminals",
+  "limits.promo_active": "Active promos",
+  "limits.riders": "Riders",
+  "limits.vehicles": "Vehicles",
+};
 
-  const update = useMutation({
-    mutationFn: (planId: string) => subService.updateMySubscription(businessId!, { subscription_plan_id: planId, provider: "paystack" }),
-    onSuccess: async () => {
-      await subQuery.refetch();
-      // Bust offline cache
-      if (businessId) {
-        await referenceSyncService.sync({ businessId, keys: ["subscription:entitlements"], force: true });
-        qc.invalidateQueries({ queryKey: REFERENCE_KEYS.data("subscription:entitlements") });
-      }
-      Alert.alert("Plan updated", "Your subscription has been updated.");
-      router.back();
-    },
-    onError: (e: unknown) => {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Failed", msg);
-    },
-  });
+function FeatureMatrix({ features }: { features: Record<string, unknown> }) {
+  const entries = useMemo(
+    () =>
+      Object.entries(features).filter(
+        ([key]) => key in FEATURE_LABELS,
+      ),
+    [features],
+  );
 
-  if (plansQuery.isLoading || subQuery.isLoading) {
+  if (entries.length === 0) {
     return (
-      <YStack flex={1} alignItems="center" justifyContent="center">
+      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+        {`Standard features included`}
+      </Text>
+    );
+  }
+
+  return (
+    <YStack gap="$1">
+      {entries.map(([key, value]) => {
+        const label = FEATURE_LABELS[key] ?? key;
+        const display =
+          typeof value === "boolean"
+            ? value
+              ? `✓ ${label}`
+              : `— ${label}`
+            : `${label}: ${String(value)}`;
+        return (
+          <Text key={key} fontSize="$2" color="$colorSecondary" fontFamily="$body">
+            {display}
+          </Text>
+        );
+      })}
+    </YStack>
+  );
+}
+
+function StatusBanner() {
+  const { data, evaluation } = useEntitlements();
+  const periodEnd = data?.["current_period_end"] as string | undefined;
+
+  const { title, tone } = useMemo(() => {
+    switch (evaluation.state) {
+      case "trialing":
+        return {
+          title:
+            periodEnd != null
+              ? `Trial ends ${new Date(periodEnd).toLocaleDateString()}`
+              : `Trial active`,
+          tone: "$warning" as const,
+        };
+      case "active":
+        return { title: `Subscription active`, tone: "$primary" as const };
+      case "grace":
+        return { title: `Payment overdue — renew soon to keep features`, tone: "$warning" as const };
+      case "expired":
+        return { title: `Subscription expired — select a plan below`, tone: "$error" as const };
+      case "stale-blocked":
+        return { title: `Reconnect to verify your subscription`, tone: "$error" as const };
+      case "no-plan":
+        return { title: `No plan — pay-per-order rates apply`, tone: "$colorSecondary" as const };
+      default:
+        return { title: evaluation.reason, tone: "$colorSecondary" as const };
+    }
+  }, [evaluation, periodEnd]);
+
+  return (
+    <Card padding="$3" bordered>
+      <XStack gap="$2" alignItems="center">
+        <Crown size={18} />
+        <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+          {`Status: ${String(data?.["subscription_status"] ?? evaluation.state)}`}
+        </Text>
+      </XStack>
+      <Text fontSize="$3" color={tone} fontFamily="$body">
+        {title}
+      </Text>
+      {evaluation.mustReconnect ? (
+        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+          {`Open this screen online to refresh your subscription`}
+        </Text>
+      ) : null}
+    </Card>
+  );
+}
+
+function PlanCard({
+  plan,
+  isCurrent,
+  isPopular,
+  yearly,
+  updating,
+  onSelect,
+}: {
+  plan: SubscriptionPlan;
+  isCurrent: boolean;
+  isPopular: boolean;
+  yearly: boolean;
+  updating: boolean;
+  onSelect: () => void;
+}) {
+  const price =
+    yearly && plan.yearly_fee_minor > 0
+      ? `${formatMoney(plan.yearly_fee_minor, plan.currency)}/yr`
+      : `${formatMoney(plan.monthly_fee_minor, plan.currency)}/mo`;
+  return (
+    <Card bordered padding="$4" gap="$2" borderWidth={isCurrent || isPopular ? 2 : 1} borderColor={isCurrent ? `$primary` : isPopular ? `$warning` : undefined}>
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
+          {plan.name}
+        </Text>
+        {isCurrent ? (
+          <Text fontSize="$2" fontWeight="700" color="$primary" fontFamily="$body">
+            {`Current`}
+          </Text>
+        ) : isPopular ? (
+          <Text fontSize="$2" fontWeight="700" color="$warning" fontFamily="$body">
+            {`Most popular`}
+          </Text>
+        ) : null}
+      </XStack>
+      <Text fontSize="$8" fontWeight="800" fontFamily="$heading" color="$color">
+        {price}
+      </Text>
+      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+        {`${plan.commission_rate_percent}% commission per order • ${plan.trial_days}d free trial`}
+      </Text>
+      <Separator />
+      <FeatureMatrix features={plan.features ?? {}} />
+      {isCurrent ? null : (
+        <Button loading={updating} disabled={updating} onPress={onSelect}>
+          {updating ? `Updating…` : `Select ${plan.name}`}
+        </Button>
+      )}
+    </Card>
+  );
+}
+
+function PlanTab() {
+  const plansQuery = useSubscriptionPlansQuery();
+  const subQuery = useMySubscriptionQuery();
+  const update = useUpdateSubscriptionMutation();
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const [yearly, setYearly] = useState(false);
+
+  const currentPlanId =
+    (subQuery.data?.configuration.subscription_plan_id as string | null) ?? null;
+  // Single column, one card per row, ordered free → paid.
+  const plans = useMemo(() => {
+    const list = [...(plansQuery.data ?? subQuery.data?.available_plans ?? [])];
+    list.sort((a, b) => a.monthly_fee_minor - b.monthly_fee_minor);
+    return list;
+  }, [plansQuery.data, subQuery.data]);
+  const popularId = useMemo(() => {
+    const paid = plans.filter((p) => p.monthly_fee_minor > 0);
+    if (paid.length === 0) return null;
+    return paid.reduce((best, p) => (p.monthly_fee_minor > best.monthly_fee_minor ? p : best)).id;
+  }, [plans]);
+
+  const isLoading = plansQuery.isLoading || subQuery.isLoading;
+  const isError = plansQuery.isError || subQuery.isError;
+
+  if (isLoading) {
+    return (
+      <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
         <Spinner size="large" />
       </YStack>
     );
   }
 
-  const currentPlanId = (subQuery.data?.configuration.subscription_plan_id as string | null) ?? null;
-  const plans = plansQuery.data ?? subQuery.data?.available_plans ?? [];
+  if (isError) {
+    return (
+      <YStack gap="$3" alignItems="center" padding="$4">
+        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+          {`Couldn't load plans. Check your connection.`}
+        </Text>
+        <Button
+          variant="outline"
+          onPress={() => {
+            void plansQuery.refetch();
+            void subQuery.refetch();
+          }}
+        >
+          {`Retry`}
+        </Button>
+      </YStack>
+    );
+  }
+
+  const confirmSelect = (plan: SubscriptionPlan) => {
+    Alert.alert(
+      `Switch to ${plan.name}?`,
+      `${formatMoney(plan.monthly_fee_minor, plan.currency)}/mo • ${plan.commission_rate_percent}% commission. Billed by your payment provider.`,
+      [
+        { text: `Cancel`, style: `cancel` },
+        {
+          text: `Confirm`,
+          onPress: () => {
+            setSelecting(plan.id);
+            update.mutate(plan.id, {
+              onSuccess: () => {
+                setSelecting(null);
+                toast.success(`Plan updated to ${plan.name}`);
+              },
+              onError: (e) => {
+                setSelecting(null);
+                const msg = e instanceof Error ? e.message : String(e);
+                toast.error(msg);
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <FlatList
+      data={plans}
+      keyExtractor={(p) => p.id}
+      numColumns={1}
+      initialNumToRender={10}
+      windowSize={5}
+      maxToRenderPerBatch={10}
+      removeClippedSubviews
+      contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={plansQuery.isRefetching || subQuery.isRefetching}
+          onRefresh={() => {
+            void plansQuery.refetch();
+            void subQuery.refetch();
+          }}
+        />
+      }
+      ListHeaderComponent={
+        <XStack gap="$2">
+          <Button variant={yearly ? `outline` : `primary`} flex={1} onPress={() => setYearly(false)}>
+            {`Monthly`}
+          </Button>
+          <Button variant={yearly ? `primary` : `outline`} flex={1} onPress={() => setYearly(true)}>
+            {`Yearly`}
+          </Button>
+        </XStack>
+      }
+      ListEmptyComponent={
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+          {`No plans available right now.`}
+        </Text>
+      }
+      renderItem={({ item }) => (
+        <PlanCard
+          plan={item}
+          isCurrent={currentPlanId === item.id}
+          isPopular={popularId === item.id && currentPlanId !== item.id}
+          yearly={yearly}
+          updating={update.isPending && selecting === item.id}
+          onSelect={() => confirmSelect(item)}
+        />
+      )}
+    />
+  );
+}
+
+function PromoRow({ promo, onDelete, deleting }: { promo: Promo; onDelete: () => void; deleting: boolean }) {
+  const discount =
+    promo.discount_percent != null
+      ? `${promo.discount_percent}% off`
+      : promo.discount_minor != null
+        ? `${formatMoney(promo.discount_minor, `GHS`)} off`
+        : `Discount`;
+  const uses =
+    promo.max_uses != null ? `Used ${promo.used_count}/${promo.max_uses}` : `Used ${promo.used_count} times`;
+
+  return (
+    <Card bordered padding="$3" gap="$1">
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+          {promo.code}
+        </Text>
+        <Text fontSize="$2" color={promo.is_active ? "$primary" : "$colorSecondary"} fontFamily="$body">
+          {promo.is_active ? `Active` : `Inactive`}
+        </Text>
+      </XStack>
+      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+        {`${discount} • ${uses}`}
+      </Text>
+      {promo.expires_at ? (
+        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+          {`Expires ${new Date(promo.expires_at).toLocaleDateString()}`}
+        </Text>
+      ) : null}
+      <Button variant="outline" loading={deleting} disabled={deleting} onPress={onDelete}>
+        {deleting ? `Removing…` : `Remove`}
+      </Button>
+    </Card>
+  );
+}
+
+function PromosTab() {
+  const canUsePromos = useHasFeature("seller.promo");
+  const promosQuery = useBusinessPromosQuery();
+  const createPromo = useCreatePromoMutation();
+  const deletePromo = useDeletePromoMutation();
+  const [code, setCode] = useState(``);
+  const [percent, setPercent] = useState(``);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  if (!canUsePromos) {
+    return (
+      <YStack gap="$2" padding="$4">
+        <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+          {`Promo campaigns need a plan with promos`}
+        </Text>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+          {`Your current plan doesn't include promo campaigns. Switch plans to unlock discount codes for your customers.`}
+        </Text>
+      </YStack>
+    );
+  }
+
+  const submit = () => {
+    const trimmedCode = code.trim().toUpperCase();
+    const pct = Number(percent);
+    if (!trimmedCode) {
+      toast.error(`Enter a promo code`);
+      return;
+    }
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      toast.error(`Discount must be between 1 and 100%`);
+      return;
+    }
+    createPromo.mutate(
+      { code: trimmedCode, discount_percent: pct },
+      {
+        onSuccess: () => {
+          setCode(``);
+          setPercent(``);
+          toast.success(`Promo ${trimmedCode} created`);
+        },
+        onError: (e) => {
+          const msg = e instanceof Error ? e.message : String(e);
+          toast.error(msg);
+        },
+      },
+    );
+  };
+
+  const confirmDelete = (promo: Promo) => {
+    Alert.alert(`Remove ${promo.code}?`, `Customers won't be able to use this code anymore.`, [
+      { text: `Cancel`, style: `cancel` },
+      {
+        text: `Remove`,
+        style: `destructive`,
+        onPress: () => {
+          setDeletingId(promo.id);
+          deletePromo.mutate(promo.id, {
+            onSuccess: () => {
+              setDeletingId(null);
+              toast.success(`Promo removed`);
+            },
+            onError: (e) => {
+              setDeletingId(null);
+              const msg = e instanceof Error ? e.message : String(e);
+              toast.error(msg);
+            },
+          });
+        },
+      },
+    ]);
+  };
+
+  return (
+    <YStack flex={1} gap="$3">
+      <Card bordered padding="$3" gap="$2">
+        <XStack gap="$2" alignItems="center">
+          <TicketPercent size={18} />
+          <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+            {`New promo code`}
+          </Text>
+        </XStack>
+        <FormInput label={`Code`} value={code} onChangeText={setCode} autoCapitalize={`characters`} placeholder={`FESTIVE10`} />
+        <FormInput
+          label={`Discount %`}
+          value={percent}
+          onChangeText={setPercent}
+          keyboardType={`numeric`}
+          placeholder={`10`}
+        />
+        <Button loading={createPromo.isPending} disabled={createPromo.isPending} onPress={submit}>
+          {createPromo.isPending ? `Creating…` : `Create promo`}
+        </Button>
+      </Card>
+      {promosQuery.isLoading ? (
+        <YStack alignItems="center" padding="$4">
+          <Spinner size="large" />
+        </YStack>
+      ) : (
+        <FlatList
+          data={promosQuery.data ?? []}
+          keyExtractor={(p) => p.id}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews
+          scrollEnabled={false}
+          contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={promosQuery.isRefetching} onRefresh={() => void promosQuery.refetch()} />
+          }
+          ListEmptyComponent={
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              {`No promo codes yet. Create one above.`}
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <PromoRow promo={item} deleting={deletePromo.isPending && deletingId === item.id} onDelete={() => confirmDelete(item)} />
+          )}
+        />
+      )}
+    </YStack>
+  );
+}
+
+export default function PlansScreen() {
+  const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<Tab>(`plan`);
 
   return (
     <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
       <XStack padding="$4" gap="$2" alignItems="center">
         <BackButton />
-        <Text fontSize="$7" fontWeight="bold">Choose Plan</Text>
+        <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+          {`Subscription & Plan`}
+        </Text>
       </XStack>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text fontSize="$3" color="$colorSecondary">Online always has commission, offline has subscription — one plan covers both. Trial 30d same as Starter (3 menus, 1 member, 1 terminal).</Text>
-        {plans.map((p) => {
-          const isCurrent = currentPlanId === p.id;
-          return (
-            <Card key={p.id} bordered padding="$3" gap="$2">
-              <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$5" fontWeight="600">{p.name}</Text>
-                {isCurrent ? <Text fontSize="$2" color="$primary">Current</Text> : null}
-              </XStack>
-              <Text fontSize="$3" color="$colorSecondary">Commission {p.commission_rate_percent}% • GHS {(p.monthly_fee_minor/100).toFixed(2)}/mo • Trial {p.trial_days}d</Text>
-              <Text fontSize="$2" color="$colorSecondary">Limits: {JSON.stringify(p.features)}</Text>
-              <Button
-                disabled={isCurrent || update.isPending}
-                onPress={() => {
-                  setSelecting(p.id);
-                  update.mutate(p.id);
-                }}
-              >
-                {isCurrent ? "Current plan" : update.isPending && selecting===p.id ? "Updating…" : "Select"}
-              </Button>
-            </Card>
-          );
-        })}
-        {plans.length===0 ? <Text color="$colorSecondary">No plans available.</Text> : null}
-      </ScrollView>
+      <YStack paddingHorizontal="$4" gap="$3" flex={1}>
+        <StatusBanner />
+        <XStack gap="$2">
+          <Button variant={tab === `plan` ? `primary` : `outline`} flex={1} onPress={() => setTab(`plan`)}>
+            {`Plan`}
+          </Button>
+          <Button variant={tab === `promos` ? `primary` : `outline`} flex={1} onPress={() => setTab(`promos`)}>
+            {`Promos`}
+          </Button>
+        </XStack>
+        <Separator />
+        {tab === `plan` ? <PlanTab /> : <PromosTab />}
+      </YStack>
     </YStack>
   );
 }
