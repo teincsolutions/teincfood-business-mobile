@@ -1,7 +1,13 @@
 // @ts-nocheck — Tamagui stack props (alignItems/padding/etc.) don't typecheck
 // under this repo's tsconfig; every other Tamagui screen uses the same escape.
 import { useMemo, useState } from "react";
-import { Alert, FlatList, RefreshControl } from "react-native";
+import {
+  Alert,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Crown, TicketPercent } from "@tamagui/lucide-icons";
@@ -40,10 +46,7 @@ const FEATURE_LABELS: Record<string, string> = {
 
 function FeatureMatrix({ features }: { features: Record<string, unknown> }) {
   const entries = useMemo(
-    () =>
-      Object.entries(features).filter(
-        ([key]) => key in FEATURE_LABELS,
-      ),
+    () => Object.entries(features).filter(([key]) => key in FEATURE_LABELS),
     [features],
   );
 
@@ -66,12 +69,118 @@ function FeatureMatrix({ features }: { features: Record<string, unknown> }) {
               : `— ${label}`
             : `${label}: ${String(value)}`;
         return (
-          <Text key={key} fontSize="$2" color="$colorSecondary" fontFamily="$body">
+          <Text
+            key={key}
+            fontSize="$2"
+            color="$colorSecondary"
+            fontFamily="$body"
+          >
             {display}
           </Text>
         );
       })}
     </YStack>
+  );
+}
+
+function SectionTabs({
+  tab,
+  onChange,
+}: {
+  tab: Tab;
+  onChange: (t: Tab) => void;
+}) {
+  const options: { key: Tab; label: string }[] = [
+    { key: `plan`, label: `Plan` },
+    { key: `promos`, label: `Promos` },
+  ];
+  return (
+    <XStack
+      backgroundColor="$backgroundSoft"
+      borderRadius="$4"
+      padding="$1"
+      gap="$1"
+    >
+      {options.map((opt) => {
+        const active = tab === opt.key;
+        return (
+          <TouchableOpacity
+            key={opt.key}
+            onPress={() => onChange(opt.key)}
+            style={{ flex: 1 }}
+            accessibilityRole={`tab`}
+            accessibilityState={{ selected: active }}
+          >
+            <YStack
+              alignItems="center"
+              justifyContent="center"
+              paddingVertical="$2"
+              borderRadius="$3"
+              backgroundColor={active ? `$primary` : `transparent`}
+            >
+              <Text
+                fontSize="$4"
+                fontWeight={active ? `700` : `400`}
+                fontFamily="$heading"
+                color={active ? `$white` : `$colorSecondary`}
+              >
+                {opt.label}
+              </Text>
+            </YStack>
+          </TouchableOpacity>
+        );
+      })}
+    </XStack>
+  );
+}
+
+function BillingPeriodToggle({
+  yearly,
+  onChange,
+}: {
+  yearly: boolean;
+  onChange: (y: boolean) => void;
+}) {
+  const options = [
+    { key: false, label: `Monthly` },
+    { key: true, label: `Yearly` },
+  ];
+  return (
+    <XStack alignItems="center" justifyContent="center" gap="$4">
+      {options.map((opt) => {
+        const active = yearly === opt.key;
+        return (
+          <TouchableOpacity
+            key={opt.label}
+            onPress={() => onChange(opt.key)}
+            accessibilityRole={`radio`}
+            accessibilityState={{ selected: active }}
+          >
+            <YStack
+              alignItems="center"
+              gap="$1"
+              paddingVertical="$1"
+              paddingHorizontal="$2"
+            >
+              <Text
+                fontSize="$3"
+                fontWeight={active ? `700` : `400`}
+                fontFamily="$body"
+                color={active ? `$primary` : `$colorSecondary`}
+              >
+                {opt.label}
+              </Text>
+              <YStack
+                height={2}
+                width={32}
+                borderRadius={1}
+                backgroundColor={active ? `$primary` : `transparent`}
+              />
+            </YStack>
+          </TouchableOpacity>
+        );
+      })}
+    </XStack>
   );
 }
 
@@ -92,13 +201,25 @@ function StatusBanner() {
       case "active":
         return { title: `Subscription active`, tone: "$primary" as const };
       case "grace":
-        return { title: `Payment overdue — renew soon to keep features`, tone: "$warning" as const };
+        return {
+          title: `Payment overdue — renew soon to keep features`,
+          tone: "$warning" as const,
+        };
       case "expired":
-        return { title: `Subscription expired — select a plan below`, tone: "$error" as const };
+        return {
+          title: `Subscription expired — select a plan below`,
+          tone: "$error" as const,
+        };
       case "stale-blocked":
-        return { title: `Reconnect to verify your subscription`, tone: "$error" as const };
+        return {
+          title: `Reconnect to verify your subscription`,
+          tone: "$error" as const,
+        };
       case "no-plan":
-        return { title: `No plan — pay-per-order rates apply`, tone: "$colorSecondary" as const };
+        return {
+          title: `No plan — pay-per-order rates apply`,
+          tone: "$colorSecondary" as const,
+        };
       default:
         return { title: evaluation.reason, tone: "$colorSecondary" as const };
     }
@@ -108,7 +229,12 @@ function StatusBanner() {
     <Card padding="$3" bordered>
       <XStack gap="$2" alignItems="center">
         <Crown size={18} />
-        <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$4"
+          fontWeight="600"
+          fontFamily="$heading"
+          color="$color"
+        >
           {`Status: ${String(data?.["subscription_status"] ?? evaluation.state)}`}
         </Text>
       </XStack>
@@ -144,17 +270,38 @@ function PlanCard({
       ? `${formatMoney(plan.yearly_fee_minor, plan.currency)}/yr`
       : `${formatMoney(plan.monthly_fee_minor, plan.currency)}/mo`;
   return (
-    <Card bordered padding="$4" gap="$2" borderWidth={isCurrent || isPopular ? 2 : 1} borderColor={isCurrent ? `$primary` : isPopular ? `$warning` : undefined}>
+    <Card
+      bordered
+      padding="$4"
+      gap="$2"
+      borderWidth={isCurrent || isPopular ? 2 : 1}
+      borderColor={isCurrent ? `$primary` : isPopular ? `$warning` : undefined}
+    >
       <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$6"
+          fontWeight="700"
+          fontFamily="$heading"
+          color="$color"
+        >
           {plan.name}
         </Text>
         {isCurrent ? (
-          <Text fontSize="$2" fontWeight="700" color="$primary" fontFamily="$body">
+          <Text
+            fontSize="$2"
+            fontWeight="700"
+            color="$primary"
+            fontFamily="$body"
+          >
             {`Current`}
           </Text>
         ) : isPopular ? (
-          <Text fontSize="$2" fontWeight="700" color="$warning" fontFamily="$body">
+          <Text
+            fontSize="$2"
+            fontWeight="700"
+            color="$warning"
+            fontFamily="$body"
+          >
             {`Most popular`}
           </Text>
         ) : null}
@@ -184,7 +331,8 @@ function PlanTab() {
   const [yearly, setYearly] = useState(false);
 
   const currentPlanId =
-    (subQuery.data?.configuration.subscription_plan_id as string | null) ?? null;
+    (subQuery.data?.configuration.subscription_plan_id as string | null) ??
+    null;
   // Single column, one card per row, ordered free → paid.
   const plans = useMemo(() => {
     const list = [...(plansQuery.data ?? subQuery.data?.available_plans ?? [])];
@@ -194,7 +342,9 @@ function PlanTab() {
   const popularId = useMemo(() => {
     const paid = plans.filter((p) => p.monthly_fee_minor > 0);
     if (paid.length === 0) return null;
-    return paid.reduce((best, p) => (p.monthly_fee_minor > best.monthly_fee_minor ? p : best)).id;
+    return paid.reduce((best, p) =>
+      p.monthly_fee_minor > best.monthly_fee_minor ? p : best,
+    ).id;
   }, [plans]);
 
   const isLoading = plansQuery.isLoading || subQuery.isLoading;
@@ -263,6 +413,7 @@ function PlanTab() {
       windowSize={5}
       maxToRenderPerBatch={10}
       removeClippedSubviews
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
       refreshControl={
         <RefreshControl
@@ -274,14 +425,7 @@ function PlanTab() {
         />
       }
       ListHeaderComponent={
-        <XStack gap="$2">
-          <Button variant={yearly ? `outline` : `primary`} flex={1} onPress={() => setYearly(false)}>
-            {`Monthly`}
-          </Button>
-          <Button variant={yearly ? `primary` : `outline`} flex={1} onPress={() => setYearly(true)}>
-            {`Yearly`}
-          </Button>
-        </XStack>
+        <BillingPeriodToggle yearly={yearly} onChange={setYearly} />
       }
       ListEmptyComponent={
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
@@ -302,7 +446,15 @@ function PlanTab() {
   );
 }
 
-function PromoRow({ promo, onDelete, deleting }: { promo: Promo; onDelete: () => void; deleting: boolean }) {
+function PromoRow({
+  promo,
+  onDelete,
+  deleting,
+}: {
+  promo: Promo;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
   const discount =
     promo.discount_percent != null
       ? `${promo.discount_percent}% off`
@@ -310,15 +462,26 @@ function PromoRow({ promo, onDelete, deleting }: { promo: Promo; onDelete: () =>
         ? `${formatMoney(promo.discount_minor, `GHS`)} off`
         : `Discount`;
   const uses =
-    promo.max_uses != null ? `Used ${promo.used_count}/${promo.max_uses}` : `Used ${promo.used_count} times`;
+    promo.max_uses != null
+      ? `Used ${promo.used_count}/${promo.max_uses}`
+      : `Used ${promo.used_count} times`;
 
   return (
     <Card bordered padding="$3" gap="$1">
       <XStack justifyContent="space-between" alignItems="center">
-        <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          fontFamily="$heading"
+          color="$color"
+        >
           {promo.code}
         </Text>
-        <Text fontSize="$2" color={promo.is_active ? "$primary" : "$colorSecondary"} fontFamily="$body">
+        <Text
+          fontSize="$2"
+          color={promo.is_active ? "$primary" : "$colorSecondary"}
+          fontFamily="$body"
+        >
           {promo.is_active ? `Active` : `Inactive`}
         </Text>
       </XStack>
@@ -330,7 +493,12 @@ function PromoRow({ promo, onDelete, deleting }: { promo: Promo; onDelete: () =>
           {`Expires ${new Date(promo.expires_at).toLocaleDateString()}`}
         </Text>
       ) : null}
-      <Button variant="outline" loading={deleting} disabled={deleting} onPress={onDelete}>
+      <Button
+        variant="outline"
+        loading={deleting}
+        disabled={deleting}
+        onPress={onDelete}
+      >
         {deleting ? `Removing…` : `Remove`}
       </Button>
     </Card>
@@ -349,7 +517,12 @@ function PromosTab() {
   if (!canUsePromos) {
     return (
       <YStack gap="$2" padding="$4">
-        <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$4"
+          fontWeight="600"
+          fontFamily="$heading"
+          color="$color"
+        >
           {`Promo campaigns need a plan with promos`}
         </Text>
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
@@ -387,39 +560,63 @@ function PromosTab() {
   };
 
   const confirmDelete = (promo: Promo) => {
-    Alert.alert(`Remove ${promo.code}?`, `Customers won't be able to use this code anymore.`, [
-      { text: `Cancel`, style: `cancel` },
-      {
-        text: `Remove`,
-        style: `destructive`,
-        onPress: () => {
-          setDeletingId(promo.id);
-          deletePromo.mutate(promo.id, {
-            onSuccess: () => {
-              setDeletingId(null);
-              toast.success(`Promo removed`);
-            },
-            onError: (e) => {
-              setDeletingId(null);
-              const msg = e instanceof Error ? e.message : String(e);
-              toast.error(msg);
-            },
-          });
+    Alert.alert(
+      `Remove ${promo.code}?`,
+      `Customers won't be able to use this code anymore.`,
+      [
+        { text: `Cancel`, style: `cancel` },
+        {
+          text: `Remove`,
+          style: `destructive`,
+          onPress: () => {
+            setDeletingId(promo.id);
+            deletePromo.mutate(promo.id, {
+              onSuccess: () => {
+                setDeletingId(null);
+                toast.success(`Promo removed`);
+              },
+              onError: (e) => {
+                setDeletingId(null);
+                const msg = e instanceof Error ? e.message : String(e);
+                toast.error(msg);
+              },
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
-    <YStack flex={1} gap="$3">
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={promosQuery.isRefetching}
+          onRefresh={() => void promosQuery.refetch()}
+        />
+      }
+    >
       <Card bordered padding="$3" gap="$2">
         <XStack gap="$2" alignItems="center">
           <TicketPercent size={18} />
-          <Text fontSize="$4" fontWeight="600" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$4"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$color"
+          >
             {`New promo code`}
           </Text>
         </XStack>
-        <FormInput label={`Code`} value={code} onChangeText={setCode} autoCapitalize={`characters`} placeholder={`FESTIVE10`} />
+        <FormInput
+          label={`Code`}
+          value={code}
+          onChangeText={setCode}
+          autoCapitalize={`characters`}
+          placeholder={`FESTIVE10`}
+        />
         <FormInput
           label={`Discount %`}
           value={percent}
@@ -427,7 +624,11 @@ function PromosTab() {
           keyboardType={`numeric`}
           placeholder={`10`}
         />
-        <Button loading={createPromo.isPending} disabled={createPromo.isPending} onPress={submit}>
+        <Button
+          loading={createPromo.isPending}
+          disabled={createPromo.isPending}
+          onPress={submit}
+        >
           {createPromo.isPending ? `Creating…` : `Create promo`}
         </Button>
       </Card>
@@ -439,26 +640,29 @@ function PromosTab() {
         <FlatList
           data={promosQuery.data ?? []}
           keyExtractor={(p) => p.id}
+          numColumns={1}
           initialNumToRender={10}
           windowSize={5}
           maxToRenderPerBatch={10}
           removeClippedSubviews
+          showsVerticalScrollIndicator={false}
           scrollEnabled={false}
-          contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
-          refreshControl={
-            <RefreshControl refreshing={promosQuery.isRefetching} onRefresh={() => void promosQuery.refetch()} />
-          }
+          contentContainerStyle={{ gap: 12 }}
           ListEmptyComponent={
             <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
               {`No promo codes yet. Create one above.`}
             </Text>
           }
           renderItem={({ item }) => (
-            <PromoRow promo={item} deleting={deletePromo.isPending && deletingId === item.id} onDelete={() => confirmDelete(item)} />
+            <PromoRow
+              promo={item}
+              deleting={deletePromo.isPending && deletingId === item.id}
+              onDelete={() => confirmDelete(item)}
+            />
           )}
         />
       )}
-    </YStack>
+    </ScrollView>
   );
 }
 
@@ -467,23 +671,25 @@ export default function PlansScreen() {
   const [tab, setTab] = useState<Tab>(`plan`);
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      paddingTop={Math.max(insets.top + 8, 16)}
+    >
       <XStack padding="$4" gap="$2" alignItems="center">
         <BackButton />
-        <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$7"
+          fontWeight="bold"
+          fontFamily="$heading"
+          color="$color"
+        >
           {`Subscription & Plan`}
         </Text>
       </XStack>
       <YStack paddingHorizontal="$4" gap="$3" flex={1}>
         <StatusBanner />
-        <XStack gap="$2">
-          <Button variant={tab === `plan` ? `primary` : `outline`} flex={1} onPress={() => setTab(`plan`)}>
-            {`Plan`}
-          </Button>
-          <Button variant={tab === `promos` ? `primary` : `outline`} flex={1} onPress={() => setTab(`promos`)}>
-            {`Promos`}
-          </Button>
-        </XStack>
+        <SectionTabs tab={tab} onChange={setTab} />
         <Separator />
         {tab === `plan` ? <PlanTab /> : <PromosTab />}
       </YStack>
