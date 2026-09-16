@@ -50,6 +50,7 @@ import {
   isCancellable,
   cancelLabelFor,
   nextActionFor,
+  isDeliveryOrder,
   getCustomerDisplay,
   formatDate,
 } from "@teincfood/core";
@@ -68,6 +69,7 @@ import {
   useAcceptKioskOrderMutation,
   useStartPreparingKioskOrderMutation,
   useMarkKioskOrderReadyMutation,
+  useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
 import { usePrinterStore } from "@/stores/printer.store";
@@ -106,6 +108,7 @@ import {
   PendingOrderCard,
   PreparingOrderCard,
   ReadyOrderCard,
+  RiderSelectionSheet,
 } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
@@ -1487,6 +1490,49 @@ const getTimeSince = (dateString: string | null | undefined): number => {
   return Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
 };
 
+/**
+ * Shared rider-assignment flow for POS tabs (In Progress + Today).
+ * Delivery assign is strictly online: the sheet lists live riders, select
+ * assigns via POST /deliveries/assign, failures toast loudly (code-surfaced).
+ */
+function useRiderAssign() {
+  const [showRiderSheet, setShowRiderSheet] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const assignRider = useAssignRiderMutation();
+  const { data: riders } = useAvailableRidersQuery(showRiderSheet);
+  const openFor = useCallback((orderId: string) => {
+    setSelectedOrderId(orderId);
+    setShowRiderSheet(true);
+  }, []);
+  const handleSelectRider = useCallback(
+    async (riderId: string) => {
+      if (!selectedOrderId) return;
+      const orderId = selectedOrderId;
+      setShowRiderSheet(false);
+      setSelectedOrderId(null);
+      try {
+        await assignRider.mutateAsync({ orderId, riderId });
+        toast.success("Rider assigned");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to assign rider");
+      }
+    },
+    [selectedOrderId, assignRider],
+  );
+  const sheet = (
+    <RiderSelectionSheet
+      visible={showRiderSheet}
+      onClose={() => {
+        setShowRiderSheet(false);
+        setSelectedOrderId(null);
+      }}
+      riders={(riders as any) ?? []}
+      onSelectRider={handleSelectRider}
+    />
+  );
+  return { openFor, sheet };
+}
+
 function POSReadyCard({
   order,
   onPrint,
@@ -1504,8 +1550,9 @@ function POSReadyCard({
 }) {
   const callout =
     (order as any).callout_number ?? order.order_number?.slice(-3) ?? "";
-  const isDelivery =
-    (order as any).order_type === "delivery" || !!(order as any).is_delivery;
+  // Single source: delivery = order_type delivery OR delivery_id present.
+  // Never offer complete-pickup for delivery (backend 422 INVALID_TRANSITION).
+  const isDelivery = isDeliveryOrder(order as any);
   const hasDelivery = !!(order as any).delivery_id;
   const minutes = order.inserted_at
     ? Math.max(
@@ -1683,10 +1730,10 @@ function InProgressTab() {
   const markReady = useMarkKioskOrderReadyMutation();
   const completePickup = useCompletePickupMutation();
   const confirmHandover = useConfirmHandoverMutation();
-  const assignRider = useAssignRiderMutation();
   const cancelOrder = useCancelOrderMutation();
   const { isTablet, isLandscape } = useResponsive();
   const isTabletLandscape = isTablet && isLandscape;
+  const { openFor: openRiderSheet, sheet: riderSheet } = useRiderAssign();
 
   const activeOrders = useMemo(
     () =>
@@ -1863,7 +1910,7 @@ function InProgressTab() {
                   order={order}
                   onPrint={(id) => printService.printOrderReceipt(id)}
                   onCompletePickup={(id) => completePickup.mutate(id)}
-                  onAssignRider={(id) => assignRider.mutate(id)}
+                  onAssignRider={openRiderSheet}
                   onHandover={(deliveryId) =>
                     confirmHandover.mutate(deliveryId)
                   }
@@ -2001,7 +2048,7 @@ function InProgressTab() {
                   order={order}
                   onPrint={(id) => printService.printOrderReceipt(id)}
                   onCompletePickup={(id) => completePickup.mutate(id)}
-                  onAssignRider={(id) => assignRider.mutate(id)}
+                  onAssignRider={openRiderSheet}
                   onHandover={(deliveryId) =>
                     confirmHandover.mutate(deliveryId)
                   }
@@ -2012,6 +2059,7 @@ function InProgressTab() {
           </YStack>
         </YStack>
       )}
+      {riderSheet}
     </ScrollView>
   );
 }
@@ -2041,6 +2089,8 @@ function TodayTab() {
   const completePickup = useCompletePickupMutation();
   const cancelOrder = useCancelOrderMutation();
   const confirmCashPayment = useConfirmCashPaymentMutation();
+  const confirmHandover = useConfirmHandoverMutation();
+  const { openFor: openRiderSheet, sheet: riderSheet } = useRiderAssign();
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
 
@@ -2198,7 +2248,19 @@ function TodayTab() {
       if (action.key === "accept") acceptOrder.mutate(item.id);
       if (action.key === "start_preparing") startPreparing.mutate(item.id);
       if (action.key === "mark_ready") markReady.mutate(item.id);
+      // Walk-in only: nextActionFor never returns this for delivery orders.
       if (action.key === "complete_pickup") completePickup.mutate(item.id);
+      // Delivery flow (strictly online): ready without rider → assign sheet,
+      // ready/waiting_pickup with rider → merchant handover confirm.
+      if (action.key === "assign_rider") openRiderSheet(item.id);
+      if (action.key === "confirm_handover") {
+        const deliveryId = (item as any).delivery_id as string | undefined;
+        if (!deliveryId) {
+          toast.error("No delivery assigned yet — assign a rider first");
+          return;
+        }
+        confirmHandover.mutate(deliveryId);
+      }
     };
     return (
       <XStack borderBottomWidth={1} borderBottomColor="$borderColor" paddingVertical="$3" paddingHorizontal="$4" alignItems="center">
@@ -2253,6 +2315,7 @@ function TodayTab() {
 
   if (isTabletLandscape) {
     return (
+      <>
       <YStack flex={1} backgroundColor="$background">
         <YStack marginBottom="$2" paddingHorizontal="$5" paddingTop="$4">
           <Text
@@ -2336,10 +2399,13 @@ function TodayTab() {
           </YStack>
         </ScrollView>
       </YStack>
+      {riderSheet}
+      </>
     );
   }
 
   return (
+    <>
     <FlatList
       data={sortedOrders}
       keyExtractor={(item) => item.id}
@@ -2411,7 +2477,19 @@ function TodayTab() {
           if (action.key === "accept") acceptOrder.mutate(item.id);
           if (action.key === "start_preparing") startPreparing.mutate(item.id);
           if (action.key === "mark_ready") markReady.mutate(item.id);
+          // Walk-in only: nextActionFor never returns this for delivery orders.
           if (action.key === "complete_pickup") completePickup.mutate(item.id);
+          // Delivery flow (strictly online): ready without rider → assign sheet,
+          // ready/waiting_pickup with rider → merchant handover confirm.
+          if (action.key === "assign_rider") openRiderSheet(item.id);
+          if (action.key === "confirm_handover") {
+            const deliveryId = (item as any).delivery_id as string | undefined;
+            if (!deliveryId) {
+              toast.error("No delivery assigned yet — assign a rider first");
+              return;
+            }
+            confirmHandover.mutate(deliveryId);
+          }
         };
         return (
           <>
@@ -2482,5 +2560,7 @@ function TodayTab() {
       maxToRenderPerBatch={10}
       removeClippedSubviews
     />
+    {riderSheet}
+    </>
   );
 }
