@@ -23,6 +23,7 @@ import {
   Monitor,
   ChefHat,
   Server,
+  Crown,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -167,6 +168,12 @@ export default function SellerSettings() {
       label: "Payment Settings",
       description: "Bank account, payout schedule",
       route: "/(seller)/settings/payment-settings",
+    },
+    {
+      icon: Crown,
+      label: "Subscription & Plan",
+      description: "Plan, billing status, promos",
+      route: "/(shared)/wallet/plans",
     },
     {
       icon: Server,

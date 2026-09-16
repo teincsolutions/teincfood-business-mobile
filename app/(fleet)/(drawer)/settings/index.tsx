@@ -14,6 +14,7 @@ import {
   Edit,
   Save,
   MailOpen,
+  Crown,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -62,6 +63,12 @@ export default function FleetSettingsScreen() {
       title: "Invitations",
       description: "Pending rider invitations",
       onPress: () => router.push("/(shared)/invitations"),
+    },
+    {
+      icon: Crown,
+      title: "Subscription & Plan",
+      description: "Plan, billing status, promos",
+      onPress: () => router.push("/(shared)/wallet/plans"),
     },
     {
       icon: Shield,

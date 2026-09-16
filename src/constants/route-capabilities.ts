@@ -9,4 +9,5 @@ export const routeCapabilities: Record<string, string> = {
   '/(seller)/members': 'business_members_manage',
   '/(seller)/riders': 'riders_manage',
   '/(shared)/wallet': 'finance_read',
+  '/(shared)/wallet/plans': 'finance_read',
 };

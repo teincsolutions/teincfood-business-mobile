@@ -4,6 +4,7 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   slug: string;
+  business_type: string;
   commission_rate_percent: number;
   monthly_fee_minor: number;
   yearly_fee_minor: number;
@@ -32,8 +33,9 @@ export interface Entitlements extends Record<string, unknown> {
   business_type: string;
 }
 
-export async function listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  const res = await api.get<{ data: SubscriptionPlan[] }>("/subscription-plans");
+export async function listSubscriptionPlans(businessType?: string): Promise<SubscriptionPlan[]> {
+  const qs = businessType ? `?business_type=${encodeURIComponent(businessType)}` : ``;
+  const res = await api.get<{ data: SubscriptionPlan[] }>(`/subscription-plans${qs}`);
   // axios interceptor unwraps data, but reference service expects nested
   return (res as unknown as { data: SubscriptionPlan[] }).data ?? [];
 }

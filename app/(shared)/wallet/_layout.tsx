@@ -10,6 +10,7 @@ export default function WalletLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="transactions" />
+      <Stack.Screen name="plans" />
     </Stack>
   );
 }
