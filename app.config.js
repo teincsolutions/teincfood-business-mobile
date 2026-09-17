@@ -19,7 +19,12 @@ module.exports = {
     updates: {
       url: "https://u.expo.dev/afa9b762-7069-493e-9a0d-de02c757e3bc",
       enabled: true,
-      checkAutomatically: "ON_LOAD",
+      // Branch pinned at build time (see eas.json profile env). Without this
+      // the binary listens on the default channel and `eas update --channel
+      // <name>` never reaches it.
+      channel: process.env.EXPO_PUBLIC_UPDATE_CHANNEL || "production",
+      // Manual dialog flow in useOTAUpdate owns the UX; only auto-recover.
+      checkAutomatically: "ON_ERROR_RECOVERY",
       fallbackToCacheTimeout: 0,
     },
     splash: {
