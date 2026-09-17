@@ -30,6 +30,9 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.teincfood.business",
+      // Universal links: https://food.teincsolutions.com/invite?code=
+      // opens the app when installed (association file served by the site).
+      associatedDomains: ["applinks:food.teincsolutions.com"],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         LSApplicationQueriesSchemes: ["tel"],
@@ -68,6 +71,22 @@ module.exports = {
       },
       package: "com.teincfood.business",
       predictiveBackGestureEnabled: false,
+      // App Links: https://food.teincsolutions.com/invite?code=
+      // opens the app when installed (assetlinks served by the site).
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [
+            {
+              scheme: "https",
+              host: "food.teincsolutions.com",
+              pathPrefix: "/invite",
+            },
+          ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
       notification: {
         icon: "@drawable/ic_notification",
         color: "#ff7622",
