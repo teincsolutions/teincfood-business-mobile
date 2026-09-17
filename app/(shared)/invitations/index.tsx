@@ -13,9 +13,9 @@ import {
   useLeaveBusinessMutation,
   useAcceptBusinessInvitationMutation,
   useAcceptFleetInvitationMutation,
+  useDeclineBusinessInvitationMutation,
   extractApiErrorMessage,
 } from "@teincfood/core";
-import { useDeclineBusinessInvitationMutation } from "@/hooks/useInvitationMutations";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
