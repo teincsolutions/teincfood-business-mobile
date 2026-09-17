@@ -3,26 +3,36 @@ import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import { Clock, CheckCircle } from "@tamagui/lucide-icons";
-import { BackButton, Button } from "@/components/ui";
+import { BackButton, Button, FormInput } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { toast } from "sonner-native";
 import {
   useUserInvitationsQuery,
   useLeaveBusinessMutation,
+  useAcceptBusinessInvitationMutation,
+  useAcceptFleetInvitationMutation,
+  extractApiErrorMessage,
 } from "@teincfood/core";
-import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
-import { useNotificationsList } from "@teincfood/rn-notifications";
+import { useDeclineBusinessInvitationMutation } from "@/hooks/useInvitationMutations";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
   const media = useMedia();
+  const { code: linkedCode } = useLocalSearchParams<{ code?: string }>();
   const { data: invitesRes, refetch, isRefetching } = useUserInvitationsQuery();
-  const { data: notificationsList } = useNotificationsList();
-  const notifications = notificationsList?.notifications ?? [];
   const leaveBusiness = useLeaveBusinessMutation();
+  const acceptMember = useAcceptBusinessInvitationMutation();
+  const acceptFleet = useAcceptFleetInvitationMutation();
+  const declineMember = useDeclineBusinessInvitationMutation();
 
   const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null);
+  const [confirmDeclineCode, setConfirmDeclineCode] = useState<string | null>(null);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  const [manualCode, setManualCode] = useState(
+    typeof linkedCode === "string" ? linkedCode : "",
+  );
 
   const invitations = invitesRes?.data ?? [];
 
@@ -34,6 +44,53 @@ export default function InvitationsScreen() {
     (i) => i.status === "accepted" || i.status === "active",
   );
 
+  const markDone = (id: string) =>
+    setConfirmedIds((prev) => new Set(prev).add(id));
+
+  const acceptByCode = (
+    code: string,
+    itemId: string | null,
+    onError?: (msg: string) => void,
+  ) => {
+    // Member endpoint first; fleet codes fall through to the fleet endpoint.
+    acceptMember.mutate(
+      { code },
+      {
+        onSuccess: () => {
+          if (itemId) markDone(itemId);
+          toast.success("Invitation accepted!");
+        },
+        onError: () => {
+          acceptFleet.mutate(
+            { code },
+            {
+              onSuccess: () => {
+                if (itemId) markDone(itemId);
+                toast.success("You have joined the business!");
+              },
+              onError: (e2) => {
+                const msg = extractApiErrorMessage(e2);
+                console.debug("[Invitations] accept failed", e2);
+                if (onError) onError(msg);
+                else toast.error(msg);
+              },
+            },
+          );
+        },
+      },
+    );
+  };
+
+  const submitManualCode = () => {
+    const code = manualCode.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      toast.error("Enter the 6-digit code from your invitation");
+      return;
+    }
+    const match = pending.find((i) => i.code === code);
+    acceptByCode(code, match ? match.id : null);
+  };
+
   const handleConfirmLeave = () => {
     if (!confirmLeaveId) return;
     leaveBusiness.mutate(confirmLeaveId, {
@@ -41,17 +98,31 @@ export default function InvitationsScreen() {
     });
   };
 
-  const renderPending = ({ item }) => {
-    // Find matching notification for the accept/dismiss buttons
-    const matchingNotif = notifications.find(
-      (n) =>
-        n.payload?.code === item.code &&
-        n.payload?.notification_category ===
-          (item.type === "fleet_rider"
-            ? "rider_invitation"
-            : "business_member_invitation"),
+  const handleConfirmDecline = () => {
+    if (!confirmDeclineCode) return;
+    const code = confirmDeclineCode;
+    declineMember.mutate(
+      { code },
+      {
+        onSuccess: () => {
+          const match = pending.find((i) => i.code === code);
+          if (match) markDone(match.id);
+          toast.success("Invitation declined");
+        },
+        onError: (e) => {
+          console.debug("[Invitations] decline failed", e);
+          toast.error(extractApiErrorMessage(e));
+        },
+        onSettled: () => setConfirmDeclineCode(null),
+      },
     );
+  };
 
+  const busy =
+    acceptMember.isPending || acceptFleet.isPending || declineMember.isPending;
+
+  const renderPending = ({ item }) => {
+    const isFleet = item.type === "fleet_rider";
     return (
       <Card padding="$4" bordered marginBottom="$3">
         <YStack gap="$2">
@@ -59,23 +130,38 @@ export default function InvitationsScreen() {
             {item.business_name || "Business"}
           </Text>
           <Text fontSize="$3" color="$colorMuted">
-            {item.type === "fleet_rider"
+            {isFleet
               ? "Invited to join as a delivery rider"
-              : "Invited to join as a team member"}
+              : `Invited to join as a team member${item.role ? ` • ${item.role}` : ""}`}
           </Text>
           <Text fontSize="$2" color="$colorMuted">
             {item.created_at
               ? new Date(item.created_at).toLocaleDateString()
               : ""}
           </Text>
-          {matchingNotif && (
-            <NotificationActionCard
-              notification={matchingNotif}
-              onDone={() =>
-                setConfirmedIds((prev) => new Set(prev).add(item.id))
-              }
-            />
-          )}
+          <XStack gap="$2" marginTop="$1">
+            <YStack flex={1}>
+              <Button
+                loading={busy}
+                disabled={busy}
+                onPress={() => item.code && acceptByCode(item.code, item.id)}
+              >
+                Accept
+              </Button>
+            </YStack>
+            {isFleet ? null : (
+              <YStack flex={1}>
+                <Button
+                  variant="outline"
+                  loading={false}
+                  disabled={busy}
+                  onPress={() => item.code && setConfirmDeclineCode(item.code)}
+                >
+                  Decline
+                </Button>
+              </YStack>
+            )}
+          </XStack>
         </YStack>
       </Card>
     );
@@ -167,6 +253,32 @@ export default function InvitationsScreen() {
           padding: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
+        ListHeaderComponent={
+          <Card padding="$4" bordered marginBottom="$3">
+            <YStack gap="$2">
+              <Text fontSize="$5" fontWeight="600">
+                Have a code?
+              </Text>
+              <Text fontSize="$3" color="$colorMuted">
+                Enter the 6-digit code from your email or SMS invitation.
+              </Text>
+              <FormInput
+                label="Invitation code"
+                value={manualCode}
+                onChangeText={(v) => setManualCode(v.replace(/\D/g, "").slice(0, 6))}
+                keyboardType="numeric"
+                placeholder="123456"
+              />
+              <Button
+                loading={busy}
+                disabled={busy || manualCode.trim().length !== 6}
+                onPress={submitManualCode}
+              >
+                Use code
+              </Button>
+            </YStack>
+          </Card>
+        }
         ListEmptyComponent={
           <YStack alignItems="center" paddingVertical="$10" gap="$4">
             <Clock size={48} color="$colorMuted" />
@@ -191,6 +303,16 @@ export default function InvitationsScreen() {
         confirmText="Leave"
         isDestructive
         onConfirm={handleConfirmLeave}
+      />
+
+      <AppAlertDialog
+        open={confirmDeclineCode !== null}
+        onOpenChange={() => setConfirmDeclineCode(null)}
+        title="Decline invitation"
+        description="This invitation will be removed. The business can invite you again later."
+        confirmText="Decline"
+        isDestructive
+        onConfirm={handleConfirmDecline}
       />
     </YStack>
   );

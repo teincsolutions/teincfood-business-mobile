@@ -49,6 +49,7 @@ import { connectChatClient, disconnectChatClient } from '../src/utils/chat-servi
 import { subscribeAuthCleanup } from '../src/services/auth-cleanup.service';
 import * as sellerService from '../src/services/seller.service';
 import * as fleetService from '../src/services/fleet.service';
+import * as businessService from '../src/services/business.service';
 import { api } from '../src/services/api';
 import { AlertProvider } from '../src/contexts/AlertContext';
 import { AlertContainer } from '../src/contexts/AlertContainer';
@@ -210,7 +211,14 @@ function AppShell() {
           if (joinRequestId) fleetService.rejectJoinRequest(joinRequestId).catch(console.error);
           return;
         case 'accept_invitation':
-          if (code) fleetService.acceptFleetInvitation({ code }).catch(console.error);
+          if (code) {
+            // Member vs fleet/rider invites use different endpoints.
+            if (data.notification_category === 'business_member_invitation') {
+              businessService.acceptBusinessInvitation({ code }).catch(console.error);
+            } else {
+              fleetService.acceptFleetInvitation({ code }).catch(console.error);
+            }
+          }
           if (route) router.push(route);
           return;
         case 'decline_invitation':

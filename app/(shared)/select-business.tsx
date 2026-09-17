@@ -19,6 +19,7 @@ import { useRoleStore } from "@/stores/role.store";
 import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
+import { PendingInvitesBanner } from "@/components/invitations/PendingInvitesBanner";
 
 export default function SelectBusinessScreen() {
   const router = useRouter();
@@ -181,6 +182,9 @@ export default function SelectBusinessScreen() {
       >
         Choose which business you want to manage
       </Text>
+      <YStack width="100%" marginTop="$2">
+        <PendingInvitesBanner />
+      </YStack>
     </YStack>
   );
 
