@@ -16,6 +16,7 @@ import {
   useDeclineBusinessInvitationMutation,
   extractApiErrorMessage,
 } from "@teincfood/core";
+import { useRefreshBusinesses } from "@/hooks/useRefreshBusinesses";
 
 export default function InvitationsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,6 +27,7 @@ export default function InvitationsScreen() {
   const acceptMember = useAcceptBusinessInvitationMutation();
   const acceptFleet = useAcceptFleetInvitationMutation();
   const declineMember = useDeclineBusinessInvitationMutation();
+  const refreshBusinesses = useRefreshBusinesses();
 
   const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null);
   const [confirmDeclineCode, setConfirmDeclineCode] = useState<string | null>(null);
@@ -47,27 +49,48 @@ export default function InvitationsScreen() {
   const markDone = (id: string) =>
     setConfirmedIds((prev) => new Set(prev).add(id));
 
+  // Hide every pending row for a business once any of its codes is accepted —
+  // email + phone invites are separate rows for the same business.
+  const markBusinessDone = (businessId: string | null | undefined) => {
+    if (!businessId) return;
+    setConfirmedIds((prev) => {
+      const next = new Set(prev);
+      for (const i of invitations) {
+        if (i.business_id === businessId && i.status === "pending") {
+          next.add(i.id);
+        }
+      }
+      return next;
+    });
+  };
+
+  const businessIdOf = (res: unknown): string | null => {
+    const data = (res as { data?: { business_id?: string } } | null)?.data;
+    return data?.business_id ?? null;
+  };
+
   const acceptByCode = (
     code: string,
     itemId: string | null,
     onError?: (msg: string) => void,
   ) => {
+    const matched = itemId ? pending.find((i) => i.id === itemId) ?? null : null;
+    const onAccepted = (res: unknown) => {
+      markBusinessDone(matched?.business_id ?? businessIdOf(res));
+      if (itemId) markDone(itemId);
+      toast.success("Invitation accepted!");
+      void refreshBusinesses(matched?.business_id ?? businessIdOf(res));
+    };
     // Member endpoint first; fleet codes fall through to the fleet endpoint.
     acceptMember.mutate(
       { code },
       {
-        onSuccess: () => {
-          if (itemId) markDone(itemId);
-          toast.success("Invitation accepted!");
-        },
+        onSuccess: onAccepted,
         onError: () => {
           acceptFleet.mutate(
             { code },
             {
-              onSuccess: () => {
-                if (itemId) markDone(itemId);
-                toast.success("You have joined the business!");
-              },
+              onSuccess: onAccepted,
               onError: (e2) => {
                 const msg = extractApiErrorMessage(e2);
                 console.debug("[Invitations] accept failed", e2);
@@ -94,7 +117,10 @@ export default function InvitationsScreen() {
   const handleConfirmLeave = () => {
     if (!confirmLeaveId) return;
     leaveBusiness.mutate(confirmLeaveId, {
-      onSettled: () => setConfirmLeaveId(null),
+      onSettled: () => {
+        setConfirmLeaveId(null);
+        void refreshBusinesses(null);
+      },
     });
   };
 
