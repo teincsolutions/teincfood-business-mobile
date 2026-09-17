@@ -48,9 +48,9 @@ import {
   useBusinessMemberInvitationsQuery,
   useRevokeMemberInvitationMutation,
   useDeleteMemberInvitationMutation,
+  useResendMemberInvitationMutation,
   extractApiErrorMessage,
 } from "@teincfood/core";
-import { useResendMemberInvitationMutation } from "@/hooks/useInvitationMutations";
 import { useBusinessRolesQuery } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
