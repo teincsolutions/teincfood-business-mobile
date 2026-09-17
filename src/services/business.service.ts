@@ -84,6 +84,10 @@ export async function acceptBusinessInvitation(data: { code: string }): Promise<
   return api.post<{ data: Record<string, unknown> }>('/businesses/memberships/accept', data);
 }
 
+export async function declineBusinessInvitation(data: { code: string }): Promise<{ data: Record<string, unknown> }> {
+  return api.post<{ data: Record<string, unknown> }>('/businesses/memberships/decline', data);
+}
+
 // ─── Business Member Invitations ───
 
 export async function fetchBusinessMemberInvitations(businessId: string): Promise<{ data: { id: string }[] }> {
@@ -92,6 +96,10 @@ export async function fetchBusinessMemberInvitations(businessId: string): Promis
 
 export async function revokeBusinessMemberInvitation(businessId: string, invitationId: string): Promise<{ data: unknown }> {
   return api.post(`/businesses/${businessId}/members/invitations/${invitationId}/revoke`);
+}
+
+export async function resendBusinessMemberInvitation(businessId: string, invitationId: string): Promise<{ data: unknown }> {
+  return api.post(`/businesses/${businessId}/members/invitations/${invitationId}/resend`);
 }
 
 export async function deleteBusinessMemberInvitation(businessId: string, invitationId: string): Promise<{ data: { deleted: boolean } }> {

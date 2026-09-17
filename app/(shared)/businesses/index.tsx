@@ -20,6 +20,7 @@ import { useMyBusinesses } from "@/hooks/useMyBusinesses";
 import {
   useLeaveBusinessMutation,
   useAcceptFleetInvitationMutation,
+  useAcceptBusinessInvitationMutation,
 } from "@teincfood/core";
 
 export default function BusinessesScreen() {
@@ -29,7 +30,8 @@ export default function BusinessesScreen() {
   const { entries, isLoading, refetchAll } = useMyBusinesses();
   const ownedCount = entries.filter((e) => e.type === "owned").length;
   const leaveMutation = useLeaveBusinessMutation();
-  const acceptInvitation = useAcceptFleetInvitationMutation();
+  const acceptFleetInvitation = useAcceptFleetInvitationMutation();
+  const acceptMemberInvitation = useAcceptBusinessInvitationMutation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<
@@ -227,7 +229,12 @@ export default function BusinessesScreen() {
                 variant="primary"
                 onPress={(e) => {
                   e.stopPropagation();
-                  acceptInvitation.mutate({ code: entry.code });
+                  // Member and fleet/rider invites use different endpoints.
+                  if (entry.type === "member_invitation") {
+                    acceptMemberInvitation.mutate({ code: entry.code });
+                  } else {
+                    acceptFleetInvitation.mutate({ code: entry.code });
+                  }
                 }}
               >
                 Accept

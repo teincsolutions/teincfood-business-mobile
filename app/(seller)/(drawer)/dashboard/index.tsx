@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
+import { PendingInvitesBanner } from "@/components/invitations/PendingInvitesBanner";
 import { useSellerDashboardQuery } from "@teincfood/core";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
@@ -117,6 +118,9 @@ export default function SellerDashboard() {
       >
         {/* Service Status */}
         <ServiceStatusBanner kyc_status={bizKycStatus} kycRoute={bannerRoute} />
+
+        {/* Pending invitations */}
+        <PendingInvitesBanner />
 
         {/* No Business Banner */}
         {!hasBusiness && !dismissNoBusiness && (
