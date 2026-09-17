@@ -9,14 +9,16 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_UPDATE_CHANNEL": "development"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_UPDATE_CHANNEL": "preview"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
