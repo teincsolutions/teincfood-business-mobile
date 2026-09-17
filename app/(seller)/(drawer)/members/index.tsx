@@ -40,11 +40,17 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { toast } from "sonner-native";
 import {
   useBusinessMembersQuery,
   useInviteMemberMutation,
   useRemoveMemberMutation,
+  useBusinessMemberInvitationsQuery,
+  useRevokeMemberInvitationMutation,
+  useDeleteMemberInvitationMutation,
+  extractApiErrorMessage,
 } from "@teincfood/core";
+import { useResendMemberInvitationMutation } from "@/hooks/useInvitationMutations";
 import { useBusinessRolesQuery } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
@@ -74,6 +80,10 @@ export default function MembersScreen() {
   const { data: rolesData } = useBusinessRolesQuery();
   const inviteMember = useInviteMemberMutation();
   const removeMember = useRemoveMemberMutation();
+  const sentInvitesQuery = useBusinessMemberInvitationsQuery();
+  const revokeInvite = useRevokeMemberInvitationMutation();
+  const deleteInvite = useDeleteMemberInvitationMutation();
+  const resendInvite = useResendMemberInvitationMutation();
 
   const members = response?.data ?? [];
   const roles = rolesData?.data ?? {};
@@ -84,6 +94,13 @@ export default function MembersScreen() {
   const [showAllCaps, setShowAllCaps] = useState(false);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  const sentInvites: any[] =
+    (sentInvitesQuery.data as any)?.data ??
+    (Array.isArray(sentInvitesQuery.data) ? (sentInvitesQuery.data as any) : []);
 
   const handleInvite = () => {
     if (inviteMember.isPending) return;
@@ -110,6 +127,82 @@ export default function MembersScreen() {
     removeMember.mutate(removingMember.user_id);
     setRemoveDialogOpen(false);
     setRemovingMember(null);
+  };
+
+  const handleResend = (invite: any) => {
+    setResendingId(invite.id);
+    resendInvite.mutate(invite.id, {
+      onSuccess: () => toast.success("Invitation resent"),
+      onError: (e) => {
+        console.debug("[Members] resend failed", e);
+        toast.error(extractApiErrorMessage(e));
+      },
+      onSettled: () => setResendingId(null),
+    });
+  };
+
+  const handleConfirmRevoke = () => {
+    if (!revokeTarget) return;
+    revokeInvite.mutate(revokeTarget.id);
+    setRevokeTarget(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteInvite.mutate(deleteTarget.id);
+    setDeleteTarget(null);
+  };
+
+  const renderSentInvite = ({ item }: { item: any }) => {
+    const contact = item.invited_email || item.invited_phone || "—";
+    const isPending = item.status === "pending";
+    return (
+      <Card padding="$3" bordered>
+        <XStack alignItems="center" gap="$3">
+          <YStack flex={1} gap="$1">
+            <Text fontWeight="600" fontSize="$4">
+              {contact}
+            </Text>
+            <Text fontSize="$2" color="$colorMuted">
+              {`${ROLE_LABELS[item.role] || item.role} • ${item.status}${item.expires_at ? ` • expires ${new Date(item.expires_at).toLocaleDateString()}` : ""}`}
+            </Text>
+          </YStack>
+          {isPending && canManageMembers && (
+            <XStack gap="$2">
+              <Button
+                size="$2"
+                variant="outline"
+                loading={resendingId === item.id}
+                disabled={resendingId === item.id}
+                onPress={() => handleResend(item)}
+              >
+                Resend
+              </Button>
+              <Button
+                size="$2"
+                variant="danger"
+                loading={revokeInvite.isPending}
+                disabled={revokeInvite.isPending}
+                onPress={() => setRevokeTarget(item)}
+              >
+                Revoke
+              </Button>
+            </XStack>
+          )}
+          {!isPending && item.status !== "accepted" && canManageMembers && (
+            <Button
+              size="$2"
+              variant="dangerOutline"
+              loading={deleteInvite.isPending}
+              disabled={deleteInvite.isPending}
+              onPress={() => setDeleteTarget(item)}
+            >
+              Delete
+            </Button>
+          )}
+        </XStack>
+      </Card>
+    );
   };
 
   return (
@@ -145,10 +238,27 @@ export default function MembersScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching || isLoading}
-            onRefresh={refetch}
+            onRefresh={() => {
+              refetch();
+              void sentInvitesQuery.refetch();
+            }}
           />
         }
         contentContainerStyle={{ padding: 16, gap: 12 }}
+        ListHeaderComponent={
+          sentInvites.length === 0 ? null : (
+            <YStack gap="$2" marginBottom="$2">
+              <Text fontSize="$5" fontWeight="700">
+                {`Sent invitations (${sentInvites.length})`}
+              </Text>
+              {sentInvites.map((invite) => (
+                <YStack key={invite.id}>
+                  {renderSentInvite({ item: invite })}
+                </YStack>
+              ))}
+            </YStack>
+          )
+        }
         ListEmptyComponent={
           <YStack
             flex={1}
@@ -418,6 +528,28 @@ export default function MembersScreen() {
         confirmText="Remove"
         isDestructive
         onConfirm={handleRemove}
+      />
+
+      {/* Revoke Confirmation */}
+      <AppAlertDialog
+        open={revokeTarget !== null}
+        onOpenChange={() => setRevokeTarget(null)}
+        title="Revoke invitation"
+        description={`Cancel the pending invitation to ${revokeTarget?.invited_email || revokeTarget?.invited_phone || "this person"}?`}
+        confirmText="Revoke"
+        isDestructive
+        onConfirm={handleConfirmRevoke}
+      />
+
+      {/* Delete Confirmation */}
+      <AppAlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={() => setDeleteTarget(null)}
+        title="Delete invitation"
+        description="Remove this invitation record? This cannot be undone."
+        confirmText="Delete"
+        isDestructive
+        onConfirm={handleConfirmDelete}
       />
     </YStack>
   );
