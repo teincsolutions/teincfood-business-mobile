@@ -71,6 +71,21 @@ export default function BusinessDetailScreen() {
   const isDefault = getDefaultBusiness()?.id === id;
   const isActive = business?.status === "active";
 
+  const { data: membershipRes } = useQuery({
+    queryKey: ["membership", id],
+    queryFn: async () => {
+      const res = await businessService.fetchMyBusinessMembership(id);
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const canEditProfile =
+    (membershipRes as { capabilities?: string[]; source?: string } | undefined)?.capabilities?.includes(
+      "business_profile_manage",
+    ) ??
+    (membershipRes as { source?: string } | undefined)?.source === "owner";
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
@@ -293,7 +308,7 @@ export default function BusinessDetailScreen() {
               Save
             </Button>
           </XStack>
-        ) : (
+        ) : canEditProfile ? (
           <Button
             size="$3"
             variant="outline"
@@ -302,7 +317,7 @@ export default function BusinessDetailScreen() {
           >
             Edit
           </Button>
-        )}
+        ) : null}
       </XStack>
 
       <ScrollView
