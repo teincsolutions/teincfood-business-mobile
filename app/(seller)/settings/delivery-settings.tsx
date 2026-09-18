@@ -24,6 +24,7 @@ import {
 import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { api } from "@/services/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner-native";
@@ -59,6 +60,7 @@ export default function DeliverySettings() {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   const { activeBusinessId } = useActiveBusiness();
+  const canEdit = useHasCapability("business_profile_manage");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -161,12 +163,18 @@ export default function DeliverySettings() {
             width={"auto"}
             height={44}
             loading={saveMutation.isPending}
+            disabled={!canEdit}
             icon={<Save size="$4" color="white" />}
             onPress={handleSave}
           >
             Save
           </Button>
         </XStack>
+        {!canEdit && (
+          <XStack backgroundColor="$yellow2" padding="$3" gap="$2" alignItems="center" borderBottomWidth={1} borderBottomColor="$yellow6">
+            <Text color="$yellow10" fontSize="$3" fontWeight="600">Only business managers can change delivery settings.</Text>
+          </XStack>
+        )}
 
           {/* Status banner */}
           {saveStatus !== "idle" && (

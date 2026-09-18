@@ -55,7 +55,7 @@ interface MenuFormSheetProps {
   onSave: () => void;
   categorySheetOpen: boolean;
   onCategorySheetOpenChange: (open: boolean) => void;
-  onAddCategory: (name: string) => void;
+  onAddCategory?: (name: string) => void;
   isAddingCategory?: boolean;
 }
 
@@ -179,7 +179,7 @@ export function MenuFormSheet({
 
   const handleAddCategory = () => {
     const name = addCategoryName.trim();
-    if (!name) return;
+    if (!name || !onAddCategory) return;
     onAddCategory(name);
     closeAddCategory();
   };
@@ -283,26 +283,28 @@ export function MenuFormSheet({
                       </Text>
                       <ChevronDown size={18} color={theme.colorSecondary?.val} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Keyboard.dismiss();
-                        setAddCategoryOpen((v) => !v);
-                      }}
-                      style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 8,
-                        backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {addCategoryOpen ? (
-                        <X size={20} color="#ef4444" />
-                      ) : (
-                        <Plus size={22} color={theme.primary?.val || '#F97316'} />
-                      )}
-                    </TouchableOpacity>
+                    {onAddCategory ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          Keyboard.dismiss();
+                          setAddCategoryOpen((v) => !v);
+                        }}
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 8,
+                          backgroundColor: theme.backgroundSoft?.val || '#f3f4f6',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {addCategoryOpen ? (
+                          <X size={20} color="#ef4444" />
+                        ) : (
+                          <Plus size={22} color={theme.primary?.val || '#F97316'} />
+                        )}
+                      </TouchableOpacity>
+                    ) : null}
                   </XStack>
 
                   {addCategoryOpen && (

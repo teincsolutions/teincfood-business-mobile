@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
 import * as businessService from '@/services/business.service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useHasCapability } from '@/hooks/useMyBusinessCapabilities';
 
 export default function PaymentSettings() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function PaymentSettings() {
   const insets = useSafeAreaInsets();
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
   const queryClient = useQueryClient();
+  const canEdit = useHasCapability("business_profile_manage");
 
   const settings = activeBusiness?.paymentSettings || {};
   const [acceptCash, setAcceptCash] = useState(settings.acceptCash ?? true);
@@ -90,20 +92,32 @@ export default function PaymentSettings() {
           />
           <Text fontSize="$6" fontWeight="bold">Payment Settings</Text>
         </XStack>
-        <TamaguiButton
-          height={44}
-          paddingHorizontal="$4"
-          backgroundColor="$primary"
-          borderRadius="$3"
-          onPress={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-          icon={<Save size={18} color="white" />}
-        >
-          <Text color="white" fontWeight="bold">
-            {saveMutation.isPending ? 'Saving...' : 'Save'}
-          </Text>
-        </TamaguiButton>
+        {canEdit && (
+          <TamaguiButton
+            height={44}
+            paddingHorizontal="$4"
+            backgroundColor="$primary"
+            borderRadius="$3"
+            onPress={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            icon={<Save size={18} color="white" />}
+          >
+            <Text color="white" fontWeight="bold">
+              {saveMutation.isPending ? 'Saving...' : 'Save'}
+            </Text>
+          </TamaguiButton>
+        )}
       </XStack>
+
+      {!canEdit ? (
+        <YStack padding="$4">
+          <Card padding="$4" bordered backgroundColor="$yellow2">
+            <Text fontSize="$3" color="$yellow10">
+              Only business managers can change payment settings.
+            </Text>
+          </Card>
+        </YStack>
+      ) : (
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4">
@@ -208,6 +222,7 @@ export default function PaymentSettings() {
           </Button>
         </YStack>
       </ScrollView>
+      )}
     </YStack>
   );
 }

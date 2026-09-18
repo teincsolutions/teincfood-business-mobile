@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button } from "@/components/ui";
 import { FormInput } from "@/components/ui/FormInput";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { Tags, Plus, Globe, Pencil, Trash2 } from "@tamagui/lucide-icons";
 import {
   useMenuCategoriesQuery,
@@ -24,6 +25,7 @@ import {
 } from "@/hooks/menu.hooks";
 
 export default function ManageCategories() {
+  const canManageMenu = useHasCapability("menu_manage");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const media = useMedia();
@@ -120,6 +122,7 @@ export default function ManageCategories() {
           size="$3"
           icon={<Plus size={16} />}
           onPress={openAdd}
+          disabled={!canManageMenu}
         >
           Add
         </Button>
@@ -147,6 +150,7 @@ export default function ManageCategories() {
                   variant="outline"
                   icon={<Plus size={16} />}
                   onPress={openAdd}
+                  disabled={!canManageMenu}
                 >
                   Add Category
                 </Button>
@@ -202,7 +206,7 @@ export default function ManageCategories() {
                       <Text fontSize="$3" color="$colorMuted">
                         #{cat.sort_order ?? ""}
                       </Text>
-                      {isCustom(cat) && (
+                      {isCustom(cat) && canManageMenu && (
                         <>
                           <Button
                             size="$2"

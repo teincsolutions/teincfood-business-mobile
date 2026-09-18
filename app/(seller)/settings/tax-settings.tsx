@@ -34,6 +34,7 @@ import {
 import type { TaxRule } from "@teincfood/core";
 import { taxRuleToForm, defaultTaxRuleForm } from "@/types/tax.types";
 import type { TaxRuleForm } from "@/types/tax.types";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
 const APPLIES_TO_OPTIONS = [
   { value: "subtotal" as const, label: "Subtotal" },
@@ -56,6 +57,7 @@ export default function TaxSettings() {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const canManageTax = useHasCapability("tax_rules_manage");
   const { data, isLoading } = useBusinessTaxRulesQuery();
   const createMutation = useCreateTaxRuleMutation();
   const updateMutation = useUpdateTaxRuleMutation();
@@ -181,6 +183,12 @@ export default function TaxSettings() {
                   Select a business to manage tax rules
                 </Text>
               </YStack>
+            </Card>
+          ) : !canManageTax ? (
+            <Card padding="$4" bordered backgroundColor="$yellow2">
+              <Text fontSize="$3" color="$yellow10">
+                Only business managers can change tax rules.
+              </Text>
             </Card>
           ) : (
             <>

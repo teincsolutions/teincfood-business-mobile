@@ -40,6 +40,7 @@ import {
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
+import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
 
 /**
  * Seller Settings Screen
@@ -49,6 +50,11 @@ export default function SellerSettings() {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+  const canManageProfile = useHasCapability("business_profile_manage");
+  const canManageBilling = useHasCapability("finance_billing_manage");
+  const canManageTax = useHasCapability("tax_rules_manage");
+  const { data: membership } = useMyBusinessCapabilities();
+  const myCaps = new Set(membership?.capabilities ?? []);
   const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
 
@@ -134,6 +140,7 @@ export default function SellerSettings() {
       label: "Operating Hours",
       description: "Set your business hours",
       route: "/(shared)/settings/operating-hours",
+      capability: "business_profile_manage",
     },
     {
       icon: MailOpen,
@@ -146,6 +153,7 @@ export default function SellerSettings() {
       label: "Delivery Settings",
       description: "Delivery radius, fees, minimum order",
       route: "/(seller)/settings/delivery-settings",
+      capability: "business_profile_manage",
     },
     {
       icon: Printer,
@@ -153,7 +161,7 @@ export default function SellerSettings() {
       description: "Configure POS thermal printer",
       route: "/(seller)/settings/printer",
     },
-    ...(activeBusiness
+    ...(activeBusiness && canManageTax
       ? [
           {
             icon: Percent,
@@ -163,18 +171,26 @@ export default function SellerSettings() {
           },
         ]
       : []),
-    {
-      icon: CreditCard,
-      label: "Payment Settings",
-      description: "Bank account, payout schedule",
-      route: "/(seller)/settings/payment-settings",
-    },
-    {
-      icon: Crown,
-      label: "Subscription & Plan",
-      description: "Plan, billing status, promos",
-      route: "/(shared)/wallet/plans",
-    },
+    ...(canManageProfile
+      ? [
+          {
+            icon: CreditCard,
+            label: "Payment Settings",
+            description: "Bank account, payout schedule",
+            route: "/(seller)/settings/payment-settings",
+          },
+        ]
+      : []),
+    ...(canManageBilling
+      ? [
+          {
+            icon: Crown,
+            label: "Subscription & Plan",
+            description: "Plan, billing status, promos",
+            route: "/(shared)/wallet/plans",
+          },
+        ]
+      : []),
     {
       icon: Server,
       label: "Local Node",
@@ -231,6 +247,7 @@ export default function SellerSettings() {
               <Switch
                 size="$5"
                 checked={isOpen}
+                disabled={!canManageProfile}
                 onCheckedChange={handleToggleStore}
                 backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
               >
@@ -272,7 +289,13 @@ export default function SellerSettings() {
 
           {/* Settings Menu */}
           <Card padding="$2" bordered>
-            {settingsItems.map((item, index) => (
+            {settingsItems
+              .filter(
+                (item) =>
+                  !(item as { capability?: string }).capability ||
+                  myCaps.has((item as { capability?: string }).capability!),
+              )
+              .map((item, index) => (
               <YStack key={item.label}>
                 <TouchableOpacity
                   activeOpacity={0.7}
