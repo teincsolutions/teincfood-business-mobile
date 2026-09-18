@@ -28,13 +28,19 @@ import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { MessageButton } from "@/components/chat/MessageButton";
 import { useRiderProfileQuery } from "@teincfood/core";
 import { useLeaveBusinessMutation } from "@teincfood/core";
+import { useMyJoinRequestsQuery } from "@/hooks/useRiderProfile";
 
 export default function RiderBusinessesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: profile, isLoading, refetch } = useRiderProfileQuery();
+  const { data: joinRequests = [], refetch: refetchRequests } =
+    useMyJoinRequestsQuery(!!profile);
   const leaveMutation = useLeaveBusinessMutation();
   const businesses = profile?.businesses ?? [];
+  const pendingRequests = joinRequests.filter(
+    (r) => r.status === "pending",
+  );
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -254,8 +260,67 @@ export default function RiderBusinessesScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
         ListEmptyComponent={ListEmptyComponent}
+        ListHeaderComponent={
+          pendingRequests.length > 0 ? (
+            <YStack gap="$2" marginBottom="$3">
+              <Text
+                fontSize="$3"
+                fontWeight="700"
+                color="$colorSecondary"
+                fontFamily="$heading"
+              >
+                PENDING REQUESTS
+              </Text>
+              {pendingRequests.map((request) => (
+                <Card key={request.id} padding="$4" bordered>
+                  <XStack alignItems="center" justifyContent="space-between">
+                    <YStack flex={1} gap="$1" paddingRight="$3">
+                      <Text
+                        fontSize="$4"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                      >
+                        {request.business_name ?? "Fleet"}
+                      </Text>
+                      <Text
+                        fontSize="$3"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
+                        {request.business_number ?? ""}
+                      </Text>
+                    </YStack>
+                    <XStack
+                      paddingHorizontal="$2"
+                      paddingVertical="$1"
+                      borderRadius="$10"
+                      backgroundColor="$orangeMuted"
+                      borderWidth={1}
+                      borderColor="$orange"
+                    >
+                      <Text
+                        fontSize="$1"
+                        color="$orange"
+                        fontFamily="$body"
+                        fontWeight="600"
+                      >
+                        AWAITING REVIEW
+                      </Text>
+                    </XStack>
+                  </XStack>
+                </Card>
+              ))}
+            </YStack>
+          ) : null
+        }
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => {
+              refetch();
+              refetchRequests();
+            }}
+          />
         }
         contentContainerStyle={{
           paddingHorizontal: 16,

@@ -51,6 +51,20 @@ export async function submitRiderJoinRequest(data: Record<string, unknown>): Pro
   return api.post('/riders/join', data);
 }
 
+export interface MyJoinRequest {
+  id: string;
+  business_id: string;
+  business_name: string | null;
+  business_number: string | null;
+  status: string;
+  inserted_at: string;
+  responded_at: string | null;
+}
+
+export async function fetchMyJoinRequests(): Promise<{ data: MyJoinRequest[] }> {
+  return api.get<{ data: MyJoinRequest[] }>('/riders/join-requests');
+}
+
 // ─── Rider Location ───
 
 export async function updateRiderLocation(latitude: number, longitude: number): Promise<void> {

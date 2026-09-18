@@ -61,7 +61,7 @@ export default function CompleteProfileScreen() {
         selectedRole === "seller"
           ? "/(seller)/"
           : selectedRole === "rider"
-            ? "/(rider)/"
+            ? "/(auth)/join-fleet"
             : "/(fleet)/",
       );
     } catch (err: any) {
@@ -84,7 +84,7 @@ export default function CompleteProfileScreen() {
       selectedRole === "seller"
         ? "/(seller)/"
         : selectedRole === "rider"
-          ? "/(rider)/"
+          ? "/(auth)/join-fleet"
           : "/(fleet)/",
     );
   };
