@@ -103,11 +103,8 @@ function AppShell() {
 
   // Core-wide kill switch: fleet managers and riders are fully online.
   // Funnels through canBusinessSync — stops reference sync, drains, pulls.
-  // Guarded until core 0.9.3 (which exports the setter) is installed.
   useEffect(() => {
-    if (typeof setOfflineSyncEnabled === 'function') {
-      setOfflineSyncEnabled(sellerOfflineEnabled);
-    }
+    setOfflineSyncEnabled(sellerOfflineEnabled);
   }, [sellerOfflineEnabled]);
 
   // Bridge sync-engine reconciliation events to TanStack Query (seller only)
