@@ -1,120 +1,103 @@
 // @ts-nocheck
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform } from "react-native";
-import {
-  YStack,
-  XStack,
-  Text,
-  Card,
-  Select,
-  Adapt,
-  Sheet,
-  Form,
-  Label,
-  ScrollView,
-} from "tamagui";
+import { KeyboardAvoidingView, Platform, FlatList, Alert } from "react-native";
+import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
-import { validation } from "@teincfood/core";
-import { useFleetStore } from "@/stores/fleet.store";
-import { Mail, Phone, User, Car } from "@tamagui/lucide-icons";
+import { Mail, Phone, Clock, XCircle } from "@tamagui/lucide-icons";
+import {
+  useInviteRiderMutation,
+  useFleetInvitationsQuery,
+  useRevokeInvitationMutation,
+  extractApiErrorMessage,
+} from "@teincfood/core";
+import { toast } from "sonner-native";
 
+/**
+ * Invite Rider — POST /business/riders/invite {email, phone}.
+ * The rider receives a 6-digit code to redeem in Invitations.
+ * Pending invites below can be revoked.
+ */
 export default function AddRiderScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { addRider, vehicles } = useFleetStore();
 
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    vehicleId: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const inviteRider = useInviteRiderMutation();
+  const { data: invitationsData, refetch } = useFleetInvitationsQuery();
+  const revokeInvitation = useRevokeInvitationMutation();
 
-  const availableVehicles = vehicles.filter(
-    (v) => v.isActive && !v.assignedRiderId,
+  const invitations = invitationsData?.data ?? invitationsData ?? [];
+  const pending = (Array.isArray(invitations) ? invitations : []).filter(
+    (inv) => inv.status === "pending",
   );
 
-  const updateField = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear error when user starts typing
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: "" }));
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const goBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(fleet)/riders");
     }
   };
 
-  const validateForm = () => {
+  const handleInvite = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!form.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!form.email.trim()) {
-      newErrors.email = "Email is required";
-    }
-
-    if (!form.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInvite = async () => {
-    if (!validateForm()) {
+    if (!email.trim()) newErrors.email = "Email is required";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+    setErrors({});
 
-    setIsLoading(true);
+    inviteRider.mutate(
+      {
+        email: email.trim().toLowerCase(),
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast.success("Invitation sent to rider");
+          setEmail("");
+          setPhone("");
+          refetch();
+          goBack();
+        },
+        onError: (error: unknown) => {
+          console.debug("[InviteRider] invite error", error);
+          toast.error(extractApiErrorMessage(error as Error));
+        },
+      },
+    );
+  };
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const newRider = {
-        id: `rider_${Date.now()}`,
-        fleetId: "fleet_001",
-        riderId: `user_${Date.now()}`,
-        riderName: form.fullName.trim(),
-        riderEmail: form.email.trim().toLowerCase(),
-        riderPhone: form.phone.trim(),
-        vehicleId: form.vehicleId || undefined,
-        vehiclePlateNumber: form.vehicleId
-          ? vehicles.find((v) => v.id === form.vehicleId)?.plateNumber
-          : undefined,
-        vehicleType: form.vehicleId
-          ? vehicles.find((v) => v.id === form.vehicleId)?.vehicleType
-          : undefined,
-        status: "inactive",
-        totalDeliveries: 0,
-        totalEarnings: 0,
-        rating: 5.0,
-        joinedAt: new Date().toISOString(),
-      };
-
-      addRider(newRider);
-
-      // Send invitation email (simulated)
-      console.log("Invitation sent to:", form.email);
-
-      if (navigation.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/(fleet)/riders");
-      }
-    } catch (err: any) {
-      setErrors({
-        form: err?.message || "Failed to invite rider. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRevoke = (invitation) => {
+    Alert.alert(
+      "Revoke Invitation",
+      `Revoke the invitation sent to ${invitation.invited_email ?? invitation.phone ?? "this rider"}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Revoke",
+          style: "destructive",
+          onPress: () =>
+            revokeInvitation.mutate(invitation.id, {
+              onSuccess: () => {
+                toast.success("Invitation revoked");
+                refetch();
+              },
+              onError: (error: unknown) => {
+                console.debug("[InviteRider] revoke error", error);
+                toast.error(extractApiErrorMessage(error as Error));
+              },
+            }),
+        },
+      ],
+    );
   };
 
   return (
@@ -128,53 +111,44 @@ export default function AddRiderScreen() {
         paddingBottom={Math.max(insets.bottom + 20, 24)}
         paddingTop={Math.max(insets.top + 8, 24)}
       >
-        <XStack
-          paddingHorizontal="$4"
-          justify={"space-between"}
-          mb="$4"
-          alignItems="center"
-        >
+        <XStack paddingHorizontal="$4" mb="$4" alignItems="center">
           <BackButton />
         </XStack>
 
-        <ScrollView backgroundColor="$background" padding="$4">
-          <YStack
-            gap="$4"
-            $gtSm={{ padding: "$6", maxWidth: 600 }}
-            alignSelf="center"
-            width="100%"
-          >
-            <YStack gap="$2">
-              <Text
-                fontSize="$8"
-                fontWeight="bold"
-                fontFamily="$heading"
-                color="$color"
-                $gtSm={{ fontSize: "$10" }}
-              >
-                Invite Rider
-              </Text>
-              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                Send an invitation to a new rider to join your fleet
-              </Text>
-            </YStack>
-
-            <Form onSubmit={handleInvite} gap="$4">
-              <FormInput
-                label="Full Name"
-                placeholder="John Doe"
-                value={form.fullName}
-                onChangeText={(value) => updateField("fullName", value)}
-                icon={<User size={20} color="$colorMuted" />}
-                error={errors.fullName}
-                required
-              />
+        <FlatList
+          data={pending}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+          ListHeaderComponent={
+            <YStack gap="$4" marginBottom="$5">
+              <YStack gap="$2">
+                <Text
+                  fontSize="$8"
+                  fontWeight="bold"
+                  fontFamily="$heading"
+                  color="$color"
+                >
+                  Invite Rider
+                </Text>
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  The rider gets a 6-digit code to join your fleet. They can
+                  also request to join with your fleet business number.
+                </Text>
+              </YStack>
 
               <FormInput
                 label="Email"
                 placeholder="rider@example.com"
-                value={form.email}
-                onChangeText={(value) => updateField("email", value)}
+                value={email}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setErrors((p) => {
+                    const n = { ...p };
+                    delete n.email;
+                    return n;
+                  });
+                }}
                 icon={<Mail size={20} color="$colorMuted" />}
                 error={errors.email}
                 keyboardType="email-address"
@@ -183,156 +157,81 @@ export default function AddRiderScreen() {
               />
 
               <FormInput
-                label="Phone Number"
+                label="Phone Number (Optional)"
                 placeholder="+233 24 000 0000"
-                value={form.phone}
-                onChangeText={(value) => updateField("phone", value)}
+                value={phone}
+                onChangeText={setPhone}
                 icon={<Phone size={20} color="$colorMuted" />}
-                error={errors.phone}
                 keyboardType="phone-pad"
-                required
               />
 
-              <YStack gap="$2">
-                <Label
-                  htmlFor="vehicleId"
-                  fontSize="$4"
-                  fontWeight="500"
-                  fontFamily="$body"
-                  color="$color"
+              <Button
+                size="$5"
+                variant="primary"
+                width="100%"
+                onPress={handleInvite}
+                loading={inviteRider.isPending}
+              >
+                Send Invitation
+              </Button>
+
+              {pending.length > 0 ? (
+                <Text
+                  fontSize="$3"
+                  fontWeight="700"
+                  color="$colorSecondary"
+                  fontFamily="$heading"
+                  marginTop="$2"
                 >
-                  Assign Vehicle (Optional)
-                </Label>
-                <Select
-                  value={form.vehicleId}
-                  onValueChange={(value) => updateField("vehicleId", value)}
-                  disablePreventBodyScroll
-                >
-                  <Select.Trigger
-                    iconAfter={Car}
-                    borderRadius="$4"
-                    backgroundColor="$background"
-                  >
-                    <Select.Value placeholder="Select a vehicle" />
-                  </Select.Trigger>
-
-                  <Adapt when="maxSm" platform="touch">
-                    <Sheet
-                      native
-                      modal
-                      dismissOnSnapToBottom
-                      animation="medium"
-                    >
-                      <Sheet.Frame>
-                        <Sheet.ScrollView>
-                          <Adapt.Contents />
-                        </Sheet.ScrollView>
-                      </Sheet.Frame>
-                      <Sheet.Overlay
-                        bg="$shadowColor"
-                        animation="lazy"
-                        enterStyle={{ opacity: 0 }}
-                        exitStyle={{ opacity: 0 }}
-                      />
-                    </Sheet>
-                  </Adapt>
-
-                  <Select.Content>
-                    <Select.ScrollUpButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    >
-                      <Car size={20} />
-                    </Select.ScrollUpButton>
-
-                    <Select.Viewport
-                      minW={200}
-                      bg="$background"
-                      borderRadius="$4"
-                      borderWidth={1}
-                      borderColor="$borderColor"
-                    >
-                      <Select.Group>
-                        <Select.Label fontWeight="700">
-                          Available Vehicles
-                        </Select.Label>
-                        {availableVehicles.map((vehicle, i) => (
-                          <Select.Item
-                            key={vehicle.id}
-                            value={vehicle.id}
-                            index={i}
-                          >
-                            <Select.ItemText>
-                              {vehicle.plateNumber} - {vehicle.vehicleType}
-                            </Select.ItemText>
-                          </Select.Item>
-                        ))}
-                        {availableVehicles.length === 0 && (
-                          <Select.Item value="none" index={0}>
-                            <Select.ItemText>
-                              No vehicles available
-                            </Select.ItemText>
-                          </Select.Item>
-                        )}
-                      </Select.Group>
-                    </Select.Viewport>
-
-                    <Select.ScrollDownButton
-                      items="center"
-                      justify="center"
-                      position="relative"
-                      width="100%"
-                      height="$3"
-                    >
-                      <Car size={20} />
-                    </Select.ScrollDownButton>
-                  </Select.Content>
-                </Select>
-                <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
-                  You can assign a vehicle later if needed
+                  PENDING INVITATIONS
                 </Text>
-              </YStack>
-
-              {errors.form ? (
-                <Card padding="$3" backgroundColor="$red2" borderColor="$red6">
-                  <Text color="$red10" fontSize="$3" fontFamily="$body">
-                    {errors.form}
-                  </Text>
-                </Card>
               ) : null}
-
-              <YStack gap="$3" mt="$4">
-                <Button
-                  size="$5"
-                  variant="primary"
-                  width="100%"
-                  onPress={handleInvite}
-                  disabled={isLoading}
-                  opacity={isLoading ? 0.7 : 1}
-                >
-                  {isLoading ? "Sending Invitation..." : "Send Invitation"}
-                </Button>
-
+            </YStack>
+          }
+          renderItem={({ item }) => (
+            <Card bordered marginBottom="$3" padding="$4">
+              <XStack alignItems="center" justifyContent="space-between">
+                <YStack flex={1} gap="$1" paddingRight="$3">
+                  <XStack gap="$2" alignItems="center">
+                    <Clock size={14} color="$orange" />
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$heading"
+                      flexShrink={1}
+                    >
+                      {item.invited_email ?? item.phone ?? "Rider"}
+                    </Text>
+                  </XStack>
+                  <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                    {item.code ? `Code: ${item.code}` : "Code sent"}
+                  </Text>
+                </YStack>
                 <Button
                   variant="outline"
-                  width="100%"
-                  size="$5"
-                  onPress={() =>
-                    navigation.canGoBack()
-                      ? router.back()
-                      : router.replace("/(fleet)/riders")
+                  size="$3"
+                  icon={<XCircle size={16} />}
+                  loading={
+                    revokeInvitation.isPending &&
+                    revokeInvitation.variables === item.id
                   }
-                  disabled={isLoading}
+                  onPress={() => handleRevoke(item)}
                 >
-                  Cancel
+                  Revoke
                 </Button>
+              </XStack>
+            </Card>
+          )}
+          ListEmptyComponent={
+            <Card padding="$5" bordered>
+              <YStack alignItems="center" gap="$2">
+                <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+                  No pending invitations
+                </Text>
               </YStack>
-            </Form>
-          </YStack>
-        </ScrollView>
+            </Card>
+          }
+        />
       </YStack>
     </KeyboardAvoidingView>
   );
