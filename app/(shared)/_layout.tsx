@@ -1,13 +1,17 @@
 // @ts-nocheck
 
 import { Stack } from 'expo-router';
+import { useCapabilityGuard } from '@/components/auth/RequireCapability';
 
 /**
  * Shared Screens Layout
  * Contains notifications and profile screens accessible by both sellers and riders
  * Group folders (businesses/, wallet/) have their own _layout.tsx — parent only declares entry points
+ * Capability-sensitive shared routes (wallet, plans, operating hours) are
+ * guarded here since the seller layout never runs for this group.
  */
 export default function SharedLayout() {
+  useCapabilityGuard();
   return (
     <Stack
       screenOptions={{

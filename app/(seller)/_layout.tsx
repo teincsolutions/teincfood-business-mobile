@@ -7,11 +7,13 @@ import { useOfflineOrderHydration } from '@teincfood/core';
 import { routeCapabilities } from '@/constants/route-capabilities';
 import { toast } from 'sonner-native';
 
-const capabilityRouteMap: Record<string, string> = {};
-for (const [route, cap] of Object.entries(routeCapabilities)) {
-  const parts = route.split('/').filter(Boolean);
-  const key = parts[parts.length - 1];
-  capabilityRouteMap[key] = cap;
+function requiredCapabilityFor(segments: string[]): string | null {
+  const path = `/${segments.join('/')}`;
+  if (routeCapabilities[path]) return routeCapabilities[path];
+  const prefix = Object.keys(routeCapabilities)
+    .filter((route) => path.startsWith(`${route}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  return prefix ? routeCapabilities[prefix] : null;
 }
 
 export default function SellerLayout() {
@@ -40,8 +42,7 @@ export default function SellerLayout() {
   useEffect(() => {
     if (!membership?.capabilities || segments.length < 1) return;
 
-    const lastSegment = segments[segments.length - 1];
-    const requiredCap = capabilityRouteMap[lastSegment];
+    const requiredCap = requiredCapabilityFor(segments as unknown as string[]);
     if (!requiredCap) return;
 
     if (!membership.capabilities.includes(requiredCap)) {
