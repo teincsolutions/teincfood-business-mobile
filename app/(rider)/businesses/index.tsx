@@ -21,6 +21,7 @@ import {
   Map,
   X,
   Store,
+  UserPlus,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { BackButton, Button } from "@/components/ui";
@@ -29,6 +30,7 @@ import { MessageButton } from "@/components/chat/MessageButton";
 import { useRiderProfileQuery } from "@teincfood/core";
 import { useLeaveBusinessMutation } from "@teincfood/core";
 import { useMyJoinRequestsQuery } from "@/hooks/useRiderProfile";
+import { JoinBusinessSheet } from "@/components/rider/JoinBusinessSheet";
 
 export default function RiderBusinessesScreen() {
   const router = useRouter();
@@ -43,6 +45,7 @@ export default function RiderBusinessesScreen() {
   );
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   const handleOpenSheet = (business) => {
     setSelectedBusiness(business);
@@ -261,7 +264,16 @@ export default function RiderBusinessesScreen() {
         renderItem={renderBusiness}
         ListEmptyComponent={ListEmptyComponent}
         ListHeaderComponent={
-          pendingRequests.length > 0 ? (
+          <YStack marginBottom="$3" gap="$3">
+            <Button
+              variant="primary"
+              width="100%"
+              icon={<UserPlus size={20} />}
+              onPress={() => setJoinOpen(true)}
+            >
+              Join a Business
+            </Button>
+            {pendingRequests.length > 0 ? (
             <YStack gap="$2" marginBottom="$3">
               <Text
                 fontSize="$3"
@@ -311,7 +323,8 @@ export default function RiderBusinessesScreen() {
                 </Card>
               ))}
             </YStack>
-          ) : null
+          ) : null}
+          </YStack>
         }
         refreshControl={
           <RefreshControl
@@ -512,6 +525,13 @@ export default function RiderBusinessesScreen() {
           </ScrollView>
         </Sheet.Frame>
       </Sheet>
+
+      {/* Join a Business Sheet */}
+      <JoinBusinessSheet
+        open={joinOpen}
+        onOpenChange={setJoinOpen}
+        onRequested={() => refetchRequests()}
+      />
     </YStack>
   );
 }

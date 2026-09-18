@@ -4,6 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { TouchableOpacity, Dimensions } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import { Share } from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import { businessQrUrl } from "@/utils/business-qr";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import {
   YStack,
@@ -521,6 +524,49 @@ export default function BusinessDetailScreen() {
               </Card>
             </XStack>
           )}
+
+          {/* Business QR — one code for buyers (app/store link) and riders (join) */}
+          {!isEditing && business.business_number ? (
+            <Card bordered padding="$4">
+              <YStack gap="$3" alignItems="center">
+                <Text fontSize="$4" fontWeight="600" fontFamily="$heading">
+                  Business QR Code
+                </Text>
+                <QRCode
+                  value={businessQrUrl(business.business_number)}
+                  size={180}
+                  backgroundColor="white"
+                />
+                <Text
+                  fontSize="$2"
+                  color="$colorMuted"
+                  fontFamily="$body"
+                  textAlign="center"
+                >
+                  Buyers scan to open this business · Riders scan to request to join
+                </Text>
+                <XStack gap="$2">
+                  <Button
+                    variant="outline"
+                    onPress={() => {
+                      Clipboard.setStringAsync(businessQrUrl(business.business_number));
+                      toast.success("Link copied to clipboard");
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onPress={() => {
+                      void Share.share({ message: businessQrUrl(business.business_number) });
+                    }}
+                  >
+                    Share
+                  </Button>
+                </XStack>
+              </YStack>
+            </Card>
+          ) : null}
 
           {/* Business Details */}
           <Card bordered padding="$4">
