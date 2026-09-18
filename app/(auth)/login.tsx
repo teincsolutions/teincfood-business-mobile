@@ -23,7 +23,7 @@ import {
   Check,
 } from "@tamagui/lucide-icons";
 import { Button, FormInput, BackButton } from "@/components/ui";
-import { validateEmail, validatePassword } from "@teincfood/core";
+import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
   getCountryOption,
@@ -160,6 +160,25 @@ export default function LoginScreen() {
 
       goPostAuth();
     } catch (err: any) {
+      // Google/OIDC users who set a password later have an unverified email.
+      // Resend the code and send them to verify instead of dead-ending.
+      if (extractApiErrorCode(err) === "EMAIL_NOT_VERIFIED") {
+        const normalizedEmail = email.trim().toLowerCase();
+        try {
+          await authService.resendEmailOtp(normalizedEmail);
+        } catch (resendErr) {
+          console.debug("[Login] resend verification code failed", resendErr);
+        }
+        router.push({
+          pathname: "/(auth)/verification",
+          params: {
+            contactInfo: normalizedEmail,
+            type: "email_verification",
+            role: selectedRole,
+          },
+        });
+        return;
+      }
       setError(err?.message || "Failed to log in. Please try again.");
     }
   };
