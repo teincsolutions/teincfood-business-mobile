@@ -1,9 +1,7 @@
 import { Stack } from 'expo-router';
-import { useBusinessReferenceDataSync } from '@teincfood/core';
 
 export default function FleetLayout() {
-  // Keep the offline reference cache in sync while online.
-  useBusinessReferenceDataSync();
-
+  // Fleet managers are fully online: no offline reference-cache sync.
+  // (Seller offline machinery lives in app/(seller)/_layout.tsx only.)
   return <Stack screenOptions={{ headerShown: false }} />;
 }

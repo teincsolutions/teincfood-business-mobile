@@ -61,6 +61,14 @@ subscribeAuthCleanup();
 // Keep the splash screen visible while we load fonts
 SplashScreen.preventAutoHideAsync();
 
+function SellerOfflineMounts() {
+  // Bridge sync-engine reconciliation events to TanStack Query.
+  // Seller role only — fleet managers and riders are fully online and
+  // must not run any offline/sync machinery.
+  useSyncReconciliation();
+  return null;
+}
+
 function AppShell() {
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
@@ -88,18 +96,24 @@ function AppShell() {
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
 
-  // Bridge sync-engine reconciliation events to TanStack Query
-  useSyncReconciliation();
+  // Seller offline machinery (SQLite, LAN node, pending-queue drains) runs
+  // for the seller role only. Fleet managers and riders are fully online.
+  const role = useRoleStore((state) => state.role);
+  const sellerOfflineEnabled = role === 'seller';
+
+  // Bridge sync-engine reconciliation events to TanStack Query (seller only)
+  const sellerSyncMounts = sellerOfflineEnabled ? <SellerOfflineMounts /> : null;
 
   // OTA update check (production builds only) — prompts user when a new version is available
   useOTAUpdate();
 
-  // Initialize offline-first SQLite database
+  // Initialize offline-first SQLite database (seller role only)
   useEffect(() => {
+    if (!sellerOfflineEnabled) return;
     openSyncDatabase().catch((error) => {
       console.error('[SQLite] Failed to open sync database:', error);
     });
-  }, []);
+  }, [sellerOfflineEnabled]);
 
   // Initialize connectivity monitoring
   useEffect(() => {
@@ -107,12 +121,14 @@ function AppShell() {
     return unsubscribe;
   }, []);
 
-  // Initialize Local Node / LAN service
+  // Initialize Local Node / LAN service (seller role only — fleet and
+  // rider roles never start LAN discovery or the local node server)
   useEffect(() => {
+    if (!sellerOfflineEnabled) return;
     localNodeService.initialize().catch((error) => {
       console.error('[LocalNode] Failed to initialize:', error);
     });
-  }, []);
+  }, [sellerOfflineEnabled]);
 
   // Drain pending sync jobs when cloud connectivity returns (single source:
   // SQLite orders + sync_jobs FIFO). Legacy command-queue replay is retired.
@@ -125,6 +141,8 @@ function AppShell() {
         state.isOnline && !prevState.isOnline;
 
       if (becameReachable || cameOnline) {
+        // Seller offline machinery only — fleet/rider roles skip drains.
+        if (useRoleStore.getState().role !== 'seller') return;
         try {
           const { useBusinessStore } = require('../src/stores/business.store') as typeof import('../src/stores/business.store');
           const bid = useBusinessStore.getState().activeBusiness?.id;
@@ -281,8 +299,10 @@ function AppShell() {
         // server/client sockets. Reconnect/re-bind on return to the foreground:
         // clients force a fresh connect (iOS may have dropped the socket while
         // the lib still reports it connected) and the node re-binds if it is no
-        // longer listening.
-        localNodeService.reconnectNow();
+        // longer listening. Seller role only.
+        if (useRoleStore.getState().role === 'seller') {
+          localNodeService.reconnectNow();
+        }
         if (isBiometricEnabled) {
           setIsUnlocked(false);
         }
@@ -309,6 +329,7 @@ function AppShell() {
     <SafeAreaProvider>
       <Toaster position="top-center" />
       <BusinessesSync />
+      {sellerSyncMounts}
       <LocationGuard>
           <YStack flex={1}>
             <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
