@@ -23,6 +23,7 @@ import {
   useDeletePromoMutation,
 } from "@/hooks/useSubscription";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import type { SubscriptionPlan } from "@/services/subscription.service";
 
 type Tab = "plan" | "promos";
@@ -452,7 +453,7 @@ function PromoRow({
   deleting,
 }: {
   promo: Promo;
-  onDelete: () => void;
+  onDelete?: () => void;
   deleting: boolean;
 }) {
   const discount =
@@ -493,20 +494,23 @@ function PromoRow({
           {`Expires ${new Date(promo.expires_at).toLocaleDateString()}`}
         </Text>
       ) : null}
-      <Button
-        variant="outline"
-        loading={deleting}
-        disabled={deleting}
-        onPress={onDelete}
-      >
-        {deleting ? `Removing…` : `Remove`}
-      </Button>
+      {onDelete ? (
+        <Button
+          variant="outline"
+          loading={deleting}
+          disabled={deleting}
+          onPress={onDelete}
+        >
+          {deleting ? `Removing…` : `Remove`}
+        </Button>
+      ) : null}
     </Card>
   );
 }
 
 function PromosTab() {
   const canUsePromos = useHasFeature("seller.promo");
+  const canManagePromos = useHasCapability("promos_manage");
   const promosQuery = useBusinessPromosQuery();
   const createPromo = useCreatePromoMutation();
   const deletePromo = useDeletePromoMutation();
@@ -610,27 +614,35 @@ function PromosTab() {
             {`New promo code`}
           </Text>
         </XStack>
-        <FormInput
-          label={`Code`}
-          value={code}
-          onChangeText={setCode}
-          autoCapitalize={`characters`}
-          placeholder={`FESTIVE10`}
-        />
-        <FormInput
-          label={`Discount %`}
-          value={percent}
-          onChangeText={setPercent}
-          keyboardType={`numeric`}
-          placeholder={`10`}
-        />
-        <Button
-          loading={createPromo.isPending}
-          disabled={createPromo.isPending}
-          onPress={submit}
-        >
-          {createPromo.isPending ? `Creating…` : `Create promo`}
-        </Button>
+        {canManagePromos ? (
+          <>
+            <FormInput
+              label={`Code`}
+              value={code}
+              onChangeText={setCode}
+              autoCapitalize={`characters`}
+              placeholder={`FESTIVE10`}
+            />
+            <FormInput
+              label={`Discount %`}
+              value={percent}
+              onChangeText={setPercent}
+              keyboardType={`numeric`}
+              placeholder={`10`}
+            />
+            <Button
+              loading={createPromo.isPending}
+              disabled={createPromo.isPending}
+              onPress={submit}
+            >
+              {createPromo.isPending ? `Creating…` : `Create promo`}
+            </Button>
+          </>
+        ) : (
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            {`Only business managers can create promo codes.`}
+          </Text>
+        )}
       </Card>
       {promosQuery.isLoading ? (
         <YStack alignItems="center" padding="$4">
@@ -657,7 +669,7 @@ function PromosTab() {
             <PromoRow
               promo={item}
               deleting={deletePromo.isPending && deletingId === item.id}
-              onDelete={() => confirmDelete(item)}
+              onDelete={canManagePromos ? () => confirmDelete(item) : undefined}
             />
           )}
         />

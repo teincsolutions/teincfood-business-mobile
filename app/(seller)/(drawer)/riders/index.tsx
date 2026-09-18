@@ -36,6 +36,7 @@ import {
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 
 type Tab = "riders" | "requests";
 
@@ -65,6 +66,7 @@ export default function SellerRidersScreen() {
   const approveRequest = useApproveJoinRequestMutation();
   const rejectRequest = useRejectJoinRequestMutation();
   const inviteRider = useInviteRiderMutation();
+  const canManageRiders = useHasCapability("riders_manage");
 
   const [confirmAction, setConfirmAction] = useState<{
     type: "approve" | "reject";
@@ -215,24 +217,28 @@ export default function SellerRidersScreen() {
           </XStack>
 
           <XStack gap="$3">
-            <Button
-              size="$3"
-              backgroundColor="$green10"
-              icon={<Check size={14} />}
-              onPress={() => handleApproveRequest(request.id)}
-              disabled={isPending}
-            >
-              Approve
-            </Button>
-            <Button
-              size="$3"
-              backgroundColor="$red10"
-              icon={<X size={14} />}
-              onPress={() => handleRejectRequest(request.id)}
-              disabled={isPending}
-            >
-              Reject
-            </Button>
+            {canManageRiders ? (
+              <>
+                <Button
+                  size="$3"
+                  backgroundColor="$green10"
+                  icon={<Check size={14} />}
+                  onPress={() => handleApproveRequest(request.id)}
+                  disabled={isPending}
+                >
+                  Approve
+                </Button>
+                <Button
+                  size="$3"
+                  backgroundColor="$red10"
+                  icon={<X size={14} />}
+                  onPress={() => handleRejectRequest(request.id)}
+                  disabled={isPending}
+                >
+                  Reject
+                </Button>
+              </>
+            ) : null}
           </XStack>
         </YStack>
       </Card>
@@ -317,6 +323,7 @@ export default function SellerRidersScreen() {
               variant="outline"
               icon={<UserPlus size={18} />}
               onPress={() => setInviteSheetOpen(true)}
+              disabled={!canManageRiders}
             >
               Invite
             </Button>

@@ -16,9 +16,9 @@ import { useCachedImageUrl } from "@teincfood/core";
 interface MenuItemCardProps {
   item: MenuItem;
   onPress?: (item: MenuItem) => void;
-  onEdit: (item: MenuItem) => void;
-  onDelete: (item: MenuItem) => void;
-  onToggleAvailability: (id: string) => void;
+  onEdit?: (item: MenuItem) => void;
+  onDelete?: (item: MenuItem) => void;
+  onToggleAvailability?: (id: string) => void;
 }
 
 export function MenuItemCard({
@@ -198,73 +198,83 @@ export function MenuItemCard({
         <Separator marginVertical="$3" />
 
         {/* Actions row */}
-        <XStack justifyContent="space-between" alignItems="center">
+        {(onToggleAvailability || onEdit || onDelete) && (
+          <XStack justifyContent="space-between" alignItems="center">
           {/* Availability toggle */}
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onToggleAvailability(item.id);
-            }}
-            style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-          >
-            {item.is_available ? (
-              <Eye size={s.iconSize} color={theme.primary?.val || "#F97316"} />
-            ) : (
-              <EyeOff
-                size={s.iconSize}
-                color={theme.colorSecondary?.val || "#6b7280"}
-              />
-            )}
-            <Text
-              fontSize={s.textSm}
-              fontFamily="$body"
-              fontWeight="600"
-              color={item.is_available ? "$primary" : "$colorSecondary"}
+          {onToggleAvailability ? (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation?.();
+                onToggleAvailability(item.id);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
-              {item.is_available ? "Available" : "Unavailable"}
-            </Text>
-          </TouchableOpacity>
+              {item.is_available ? (
+                <Eye size={s.iconSize} color={theme.primary?.val || "#F97316"} />
+              ) : (
+                <EyeOff
+                  size={s.iconSize}
+                  color={theme.colorSecondary?.val || "#6b7280"}
+                />
+              )}
+              <Text
+                fontSize={s.textSm}
+                fontFamily="$body"
+                fontWeight="600"
+                color={item.is_available ? "$primary" : "$colorSecondary"}
+              >
+                {item.is_available ? "Available" : "Unavailable"}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <YStack />
+          )}
 
           <XStack gap="$2">
             {/* Edit */}
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation?.();
-                onEdit(item);
-              }}
-              style={{
-                width: s.btnSize,
-                height: s.btnSize,
-                borderRadius: s.btnSize / 2,
-                borderWidth: 1,
-                borderColor: theme.borderColor?.val || "#e5e7eb",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Edit3 size={s.iconSize} color={theme.color?.val} />
-            </TouchableOpacity>
+            {onEdit && (
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onEdit(item);
+                }}
+                style={{
+                  width: s.btnSize,
+                  height: s.btnSize,
+                  borderRadius: s.btnSize / 2,
+                  borderWidth: 1,
+                  borderColor: theme.borderColor?.val || "#e5e7eb",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Edit3 size={s.iconSize} color={theme.color?.val} />
+              </TouchableOpacity>
+            )}
 
             {/* Delete */}
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation?.();
-                onDelete(item);
-              }}
-              style={{
-                width: s.btnSize,
-                height: s.btnSize,
-                borderRadius: s.btnSize / 2,
-                borderWidth: 1,
-                borderColor: "#fca5a5",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Trash2 size={s.iconSize} color="#ef4444" />
-            </TouchableOpacity>
+            {onDelete && (
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onDelete(item);
+                }}
+                style={{
+                  width: s.btnSize,
+                  height: s.btnSize,
+                  borderRadius: s.btnSize / 2,
+                  borderWidth: 1,
+                  borderColor: "#fca5a5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Trash2 size={s.iconSize} color="#ef4444" />
+              </TouchableOpacity>
+            )}
           </XStack>
-        </XStack>
+          </XStack>
+        )}
       </Card>
     </TouchableOpacity>
   );

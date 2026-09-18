@@ -5,6 +5,7 @@ import { YStack, Text, Spinner } from "tamagui";
 import { toast } from "sonner-native";
 import { routeCapabilities } from "@/constants/route-capabilities";
 import { useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 
 /**
  * Route-level capability guard. Matches the full segment path against
@@ -16,9 +17,13 @@ export function useCapabilityGuard(fallback = "/(shared)/select-business") {
   const router = useRouter();
   const segments = useSegments();
   const { data: membership, isLoading } = useMyBusinessCapabilities();
+  const { activeBusinessId } = useActiveBusiness();
 
   useEffect(() => {
     if (isLoading || !membership?.capabilities || segments.length < 1) return;
+    // No active business (e.g. rider personal wallet): nothing business-scoped
+    // to protect here; backend enforces per request.
+    if (!activeBusinessId) return;
     const path = `/${segments.join("/")}`;
     const requiredCap =
       routeCapabilities[path] ??
@@ -31,7 +36,7 @@ export function useCapabilityGuard(fallback = "/(shared)/select-business") {
       toast.error("You don't have permission to access this screen");
       router.replace(fallback);
     }
-  }, [segments, membership, isLoading, router, fallback]);
+  }, [segments, membership, isLoading, activeBusinessId, router, fallback]);
 
   return { membership, isLoading };
 }

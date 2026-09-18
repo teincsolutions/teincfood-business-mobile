@@ -12,6 +12,7 @@ import { BackButton, Button } from "@/components/ui";
 import { useAllBalancesQuery, useBusinessWalletBalanceQuery } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { useReferenceData } from "@teincfood/core";
 
@@ -36,6 +37,9 @@ export default function WalletScreen() {
   const riderBalance = balances.find((b) => b.type === "rider");
 
   const isSellerOrFleet = role === "seller" || role === "fleet_manager";
+  const canFinanceRead = useHasCapability("finance_read");
+  const canManageBilling = useHasCapability("finance_billing_manage");
+  const showBusinessBalance = !isSellerOrFleet || canFinanceRead;
   const ent = useEntitlements();
   const entData = ent.data as Record<string, unknown> | undefined;
   const entEvaluation = ent.evaluation;
@@ -86,40 +90,51 @@ export default function WalletScreen() {
                       : "Rider"}
                   </Text>
                 </XStack>
-                <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-                  {isSellerOrFleet
-                    ? bizBalance
-                      ? formatMinor(bizBalance.amount_minor, bizBalance.currency)
-                      : "GHS 0.00"
-                    : riderBalance
-                      ? formatMinor(riderBalance.amount_minor, riderBalance.currency)
-                      : "GHS 0.00"}
-                </Text>
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Balance
-                </Text>
+                {showBusinessBalance ? (
+                  <>
+                    <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+                      {isSellerOrFleet
+                        ? bizBalance
+                          ? formatMinor(bizBalance.amount_minor, bizBalance.currency)
+                          : "GHS 0.00"
+                        : riderBalance
+                          ? formatMinor(riderBalance.amount_minor, riderBalance.currency)
+                          : "GHS 0.00"}
+                    </Text>
+                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                      Balance
+                    </Text>
+                  </>
+                ) : (
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    Business balances are visible to managers.
+                  </Text>
+                )}
               </YStack>
             </Card>
 
             {/* Quick actions */}
-            <Card padding="$4" bordered>
-              <YStack gap="$3">
-                <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
-                  Quick Actions
-                </Text>
-                <Separator />
-                <Button
-                  variant="outline"
-                  icon={<TrendingUp size={18} />}
-                  onPress={() => router.push("/(shared)/wallet/transactions")}
-                >
-                  Transactions
-                </Button>
-              </YStack>
-            </Card>
+            {(!isSellerOrFleet || canFinanceRead) && (
+              <Card padding="$4" bordered>
+                <YStack gap="$3">
+                  <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+                    Quick Actions
+                  </Text>
+                  <Separator />
+                  <Button
+                    variant="outline"
+                    icon={<TrendingUp size={18} />}
+                    onPress={() => router.push("/(shared)/wallet/transactions")}
+                  >
+                    Transactions
+                  </Button>
+                </YStack>
+              </Card>
+            )}
 
             {/* Billing / subscription */}
-            <Card padding="$4" bordered>
+            {canManageBilling && (
+              <Card padding="$4" bordered>
               <YStack gap="$2">
                 <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
                   Billing & Subscription
@@ -166,6 +181,7 @@ export default function WalletScreen() {
                 )}
               </YStack>
             </Card>
+            )}
           </ScrollView>
         )}
       </YStack>

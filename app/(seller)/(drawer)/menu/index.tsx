@@ -17,6 +17,7 @@ import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";
 import { CategoryPill } from "@/components/menu/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useBusinessStore } from "@/stores/business.store";
 import { uploadImage } from "@/services/upload.service";
 import {
@@ -54,6 +55,7 @@ export default function SellerMenu() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const canManageMenu = useHasCapability("menu_manage");
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
 
   // TanStack Query hooks — filters sent to backend, no client-side filtering
@@ -370,15 +372,17 @@ export default function SellerMenu() {
         options={{
           headerRight: () => (
             <XStack gap="$2" marginRight="$2">
-              <Button
-                variant="primary"
-                height="$8"
-                $lg={{ height: "$8" }}
-                onPress={openAdd}
-                icon={({ color, size }) => <Plus size={size} color={color} />}
-              >
-                New
-              </Button>
+              {canManageMenu && (
+                <Button
+                  variant="primary"
+                  height="$8"
+                  $lg={{ height: "$8" }}
+                  onPress={openAdd}
+                  icon={({ color, size }) => <Plus size={size} color={color} />}
+                >
+                  New
+                </Button>
+              )}
             </XStack>
           ),
         }}
@@ -417,9 +421,9 @@ export default function SellerMenu() {
             <MenuItemCard
               item={item}
               onPress={(item) => router.push(`/(shared)/menu/${item.id}`)}
-              onEdit={openEdit}
-              onDelete={setDeleteTarget}
-              onToggleAvailability={toggleAvailability}
+              onEdit={canManageMenu ? openEdit : undefined}
+              onDelete={canManageMenu ? setDeleteTarget : undefined}
+              onToggleAvailability={canManageMenu ? toggleAvailability : undefined}
             />
           </YStack>
         )}
@@ -436,15 +440,17 @@ export default function SellerMenu() {
             <Text color="$colorSecondary" fontFamily="$body" fontSize="$4">
               No items in this category
             </Text>
-            <Button
-              variant="outline"
-              height={44}
-              width="auto"
-              paddingHorizontal="$5"
-              onPress={openAdd}
-            >
-              Add First Item
-            </Button>
+            {canManageMenu && (
+              <Button
+                variant="outline"
+                height={44}
+                width="auto"
+                paddingHorizontal="$5"
+                onPress={openAdd}
+              >
+                Add First Item
+              </Button>
+            )}
           </YStack>
         }
         contentContainerStyle={{
@@ -507,7 +513,7 @@ export default function SellerMenu() {
         categorySheetOpen={categorySheetOpen}
         onCategorySheetOpenChange={setCategorySheetOpen}
         categories={allCategories}
-        onAddCategory={onAddCategory}
+        onAddCategory={canManageMenu ? onAddCategory : undefined}
         isAddingCategory={createCategoryMutation.isPending}
       />
 

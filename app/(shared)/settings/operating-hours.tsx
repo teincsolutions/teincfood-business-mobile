@@ -15,6 +15,7 @@ import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { upsertOperatingHours } from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage, referenceSyncService, setOperatingHoursLocal, useOperatingHours } from "@teincfood/core";
@@ -66,6 +67,7 @@ export default function OperatingHoursSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const canEdit = useHasCapability("business_profile_manage");
   const [loadingHours, setLoadingHours] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -198,11 +200,18 @@ export default function OperatingHoursSettings() {
           paddingHorizontal="$4"
           onPress={handleSave}
           loading={isSaving}
+          disabled={!canEdit}
           icon={<Save size={18} color="white" />}
         >
           Save
         </Button>
       </XStack>
+
+      {!canEdit && (
+        <XStack backgroundColor="$yellow2" padding="$3" gap="$2" alignItems="center" borderBottomWidth={1} borderBottomColor="$yellow6">
+          <Text color="$yellow10" fontSize="$3" fontWeight="600">Only business managers can change operating hours.</Text>
+        </XStack>
+      )}
 
       {saveStatus === "success" && (
         <XStack backgroundColor="$green2" padding="$3" gap="$2" alignItems="center" borderBottomWidth={1} borderBottomColor="$green6">
