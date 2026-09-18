@@ -21,6 +21,7 @@ import { setAppInstanceId } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
+import { useRoleStore } from "@/stores/role.store";
 import { localNodeService, initLocalNodeService, localNodeStore } from "@teincfood/core";
 import type { ReferenceLocalNodeFetcher } from "@teincfood/core";
 import { ZeroconfDiscovery } from "@/local-node/drivers/zeroconf-discovery";
@@ -485,9 +486,11 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       } catch {}
     } catch {}
     // 0.7.0: auto-lease device number per business (DD 01-99) for offline DD-RRR-CCC
+    // Seller role only — fleet managers and riders never queue offline orders.
     try {
       const ensureLeaseForBusiness = (bid: string | null | undefined) => {
         if (!bid) return;
+        if (useRoleStore.getState().role !== 'seller') return;
         import("@teincfood/core").then((m) => (m as any).ensureDeviceLease?.(bid).catch(() => {})).catch(() => {});
         // One-time janitor: drop cached menu rows that are not backend-shaped
         // MenuItems (older builds cached raw wire payloads and crashed readers).
