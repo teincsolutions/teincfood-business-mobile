@@ -154,6 +154,13 @@ module.exports = {
         },
       ],
       [
+        "expo-camera",
+        {
+          cameraPermission:
+            "$(PRODUCT_NAME) needs access to your camera to scan business QR codes.",
+        },
+      ],
+      [
         "expo-document-picker",
         {
           iCloudContainerEnvironment: "Production",
