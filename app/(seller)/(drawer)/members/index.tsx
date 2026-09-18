@@ -52,7 +52,7 @@ import {
   extractApiErrorMessage,
 } from "@teincfood/core";
 import { useBusinessRolesQuery } from "@teincfood/core";
-import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
 
 const ROLE_LABELS: Record<string, string> = {
   chief: "Chef",
@@ -88,6 +88,7 @@ export default function MembersScreen() {
   const members = response?.data ?? [];
   const roles = rolesData?.data ?? {};
   const canManageMembers = useHasCapability("business_members_manage");
+  const { isLoading: capsLoading } = useMyBusinessCapabilities();
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [inviteIdentifier, setInviteIdentifier] = useState("");
   const [inviteRole, setInviteRole] = useState("manager");
@@ -246,18 +247,27 @@ export default function MembersScreen() {
         }
         contentContainerStyle={{ padding: 16, gap: 12 }}
         ListHeaderComponent={
-          sentInvites.length === 0 ? null : (
-            <YStack gap="$2" marginBottom="$2">
-              <Text fontSize="$5" fontWeight="700">
-                {`Sent invitations (${sentInvites.length})`}
-              </Text>
-              {sentInvites.map((invite) => (
-                <YStack key={invite.id}>
-                  {renderSentInvite({ item: invite })}
-                </YStack>
-              ))}
-            </YStack>
-          )
+          <>
+            {!capsLoading && !canManageMembers && (
+              <Card padding="$3" bordered marginBottom="$2" backgroundColor="$yellow2">
+                <Text fontSize="$3" color="$yellow10">
+                  Only business managers can invite, remove, or manage invitations for this business.
+                </Text>
+              </Card>
+            )}
+            {sentInvites.length === 0 ? null : (
+              <YStack gap="$2" marginBottom="$2">
+                <Text fontSize="$5" fontWeight="700">
+                  {`Sent invitations (${sentInvites.length})`}
+                </Text>
+                {sentInvites.map((invite) => (
+                  <YStack key={invite.id}>
+                    {renderSentInvite({ item: invite })}
+                  </YStack>
+                ))}
+              </YStack>
+            )}
+          </>
         }
         ListEmptyComponent={
           <YStack
