@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useConnectivityStore } from '../src/stores/connectivity.store';
-import { openSyncDatabase, drainPending, syncReferenceDataOnReconnect, useSyncReconciliation, phoenixSocket } from '@teincfood/core';
+import { openSyncDatabase, drainPending, syncReferenceDataOnReconnect, useSyncReconciliation, phoenixSocket, setOfflineSyncEnabled } from '@teincfood/core';
 import { localNodeService } from '../src/local-node/service';
 
 // Global handler for unhandled errors — prevents the app from freezing
@@ -100,6 +100,15 @@ function AppShell() {
   // for the seller role only. Fleet managers and riders are fully online.
   const role = useRoleStore((state) => state.role);
   const sellerOfflineEnabled = role === 'seller';
+
+  // Core-wide kill switch: fleet managers and riders are fully online.
+  // Funnels through canBusinessSync — stops reference sync, drains, pulls.
+  // Guarded until core 0.9.3 (which exports the setter) is installed.
+  useEffect(() => {
+    if (typeof setOfflineSyncEnabled === 'function') {
+      setOfflineSyncEnabled(sellerOfflineEnabled);
+    }
+  }, [sellerOfflineEnabled]);
 
   // Bridge sync-engine reconciliation events to TanStack Query (seller only)
   const sellerSyncMounts = sellerOfflineEnabled ? <SellerOfflineMounts /> : null;
