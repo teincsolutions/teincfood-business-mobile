@@ -18,6 +18,7 @@ import type { HttpClient } from "@teincfood/core";
 import { setConnectivityState, setAuthProvider, setAuthRefreshProvider, setAuthTokensProvider, setAuthClearProvider } from "@teincfood/core";
 import { initDebugLogCapture } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
+import { ensureDeviceLease, purgeNonCanonicalMenuCache } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
@@ -491,10 +492,10 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
       const ensureLeaseForBusiness = (bid: string | null | undefined) => {
         if (!bid) return;
         if (useRoleStore.getState().role !== 'seller') return;
-        import("@teincfood/core").then((m) => (m as any).ensureDeviceLease?.(bid).catch(() => {})).catch(() => {});
+        ensureDeviceLease(bid).catch(() => {});
         // One-time janitor: drop cached menu rows that are not backend-shaped
         // MenuItems (older builds cached raw wire payloads and crashed readers).
-        import("@teincfood/core").then((m) => (m as any).purgeNonCanonicalMenuCache?.(bid).catch(() => {})).catch(() => {});
+        purgeNonCanonicalMenuCache(bid).catch(() => {});
       };
       const currentId: string | null = useBusinessStore.getState().activeBusiness?.id ?? null;
       if (currentId) ensureLeaseForBusiness(currentId);
