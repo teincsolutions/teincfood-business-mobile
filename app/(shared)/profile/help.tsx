@@ -52,7 +52,7 @@ export default function HelpSupport() {
     {
       question: "How do I become a rider?",
       answer:
-        "To become a rider, download the app, sign up as a rider, complete your profile with required documents (ID, driver's license, vehicle registration), and wait for verification. Once verified, you can start accepting deliveries.",
+        "To become a rider, download the app, sign up as a rider, complete your profile with required documents (Ghana Card or passport number, profile photo, driver's license), and wait for verification. Once verified, you can start accepting deliveries.",
     },
     {
       question: "How do I cancel an order?",

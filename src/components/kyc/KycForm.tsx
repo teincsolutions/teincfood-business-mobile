@@ -33,6 +33,7 @@ export interface KycFormProps {
     docPayload: Record<string, any>,
   ) => Promise<void>;
   uploadContext?: Record<string, string>;
+  globalFeedback?: string[];
 }
 
 export function KycForm({
@@ -43,6 +44,7 @@ export function KycForm({
   onDocumentsChange,
   onSubmitDoc,
   uploadContext,
+  globalFeedback,
 }: KycFormProps) {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -109,23 +111,26 @@ export function KycForm({
   const handleSubmitDoc = useCallback(
     async (docId: string) => {
       const doc = documents[docId];
-      if (!doc || !doc.uri) return;
+      const config = docConfigs.find((c) => c.id === docId);
+      if (!doc) return;
+      // National ID (and any fileOptional doc) may be submitted with no
+      // attachment — the ID number is what matters. All other docs require
+      // an uploaded file (S3 key in doc.uri).
+      if (!doc.uri && !config?.fileOptional) return;
 
       const fmt = (d: Date | undefined) =>
         d ? d.toISOString().split("T")[0] : "";
-      const payload: Record<string, any> = {
-        url: doc.uri,
-        issued_date:
-          fmt(doc.issuedDate) ||
-          doc.uploadedAt ||
-          new Date().toISOString().split("T")[0],
-        expiration_date:
-          fmt(doc.expirationDate) ||
-          new Date(Date.now() + 365 * 86400000).toISOString().split("T")[0],
-      };
+      const payload: Record<string, any> = {};
+      if (doc.uri) payload.url = doc.uri;
+      const issued = fmt(doc.issuedDate);
+      const expires = fmt(doc.expirationDate);
+      // Never fake dates: only send what staff actually entered. Admin
+      // review judges completeness.
+      if (issued) payload.issued_date = issued;
+      if (expires) payload.expiration_date = expires;
       if (doc.idNumber) payload.id_number = doc.idNumber;
       if (doc.idType) payload.id_type = doc.idType;
-      if (!doc.idNumber && !doc.idType) payload.document_id = doc.uri;
+      if (doc.uri && !doc.idNumber && !doc.idType) payload.document_id = doc.uri;
 
       try {
         await onSubmitDoc(docId, payload);
@@ -134,7 +139,7 @@ export function KycForm({
         toast.error(extractApiErrorMessage(e));
       }
     },
-    [documents, onSubmitDoc, updateDoc],
+    [documents, docConfigs, onSubmitDoc, updateDoc],
   );
 
   const handleUpload = useCallback(
@@ -191,6 +196,22 @@ export function KycForm({
         {subtitle}
       </Text>
 
+      {/* Admin feedback on rejection */}
+      {globalFeedback && globalFeedback.length > 0 && (
+        <Card padding="$4" bordered backgroundColor="$red2">
+          <YStack gap="$2">
+            <Text fontSize="$4" fontWeight="700" color="$red10">
+              Changes requested
+            </Text>
+            {globalFeedback.map((msg, i) => (
+              <Text key={i} fontSize="$3" color="$red10" fontFamily="$body">
+                • {msg}
+              </Text>
+            ))}
+          </YStack>
+        </Card>
+      )}
+
       {/* Progress */}
       <Card padding="$4" bordered>
         <YStack gap="$3">
@@ -230,6 +251,7 @@ export function KycForm({
                   config={config}
                   status={doc.status}
                   uploadedAt={doc.uploadedAt}
+                  uri={doc.uri}
                   previewUri={doc.previewUri}
                   fileName={doc.fileName}
                   rejectionReason={doc.rejectionReason}

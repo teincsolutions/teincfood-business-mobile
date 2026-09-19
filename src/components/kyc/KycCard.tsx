@@ -43,12 +43,17 @@ export interface KycDocConfig {
   hasIdType?: boolean;
   hasDates?: boolean;
   isProfilePhoto?: boolean;
+  /** Attachment optional (e.g. national ID) — ID number still required. */
+  fileOptional?: boolean;
+  /** Override the ID-type picker options (default: all three). */
+  idTypeOptions?: { value: string; label: string }[];
 }
 
 interface KycCardProps {
   config: KycDocConfig;
   status: DocStatus;
   uploadedAt?: string;
+  uri?: string;
   previewUri?: string;
   fileName?: string;
   rejectionReason?: string;
@@ -67,7 +72,7 @@ interface KycCardProps {
   onRemove: (docId: string) => void;
 }
 
-const ID_TYPES = [
+const DEFAULT_ID_TYPES = [
   { value: "ghana_card", label: "Ghana Card" },
   { value: "passport", label: "Passport" },
   { value: "drivers_license", label: "Driver's License" },
@@ -93,6 +98,7 @@ export function KycCard({
   config,
   status,
   uploadedAt,
+  uri,
   previewUri,
   fileName,
   rejectionReason,
@@ -113,16 +119,25 @@ export function KycCard({
   const theme = useTheme();
   const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const idTypeOptions = config.idTypeOptions || DEFAULT_ID_TYPES;
   const isImage = previewUri
     ? /\.(jpe?g|png|gif|webp|bmp)(\?|#|$)/i.test(previewUri)
     : false;
 
   const selectedLabel =
-    ID_TYPES.find((t) => t.value === idType)?.label || "Select ID Type";
+    idTypeOptions.find((t) => t.value === idType)?.label || "Select ID Type";
   const canUpload = status !== "verified";
   const displayFilename = fileName || "file";
+  const hasFile = !!(previewUri || uri);
+  // Save is enabled when the doc is actionable. File-optional docs (rider
+  // national ID) need ID type + number; everything else needs an upload.
   const canSubmit =
-    previewUri && status !== "pending" && status !== "verified" && !uploading;
+    status !== "pending" &&
+    status !== "verified" &&
+    !uploading &&
+    (config.fileOptional
+      ? !!(idType && idNumber?.trim())
+      : hasFile);
 
   return (
     <YStack gap="$2" paddingVertical="$2">
@@ -289,7 +304,7 @@ export function KycCard({
             {previewUri ? "Tap to change" : "Tap to add photo"}
           </Text>
         </YStack>
-      ) : previewUri && status !== "not_uploaded" && status !== "rejected" ? (
+      ) : previewUri && status !== "not_uploaded" ? (
         <YStack paddingLeft="$11" marginTop="$1">
           <YStack
             gap="$1"
@@ -348,6 +363,17 @@ export function KycCard({
       )}
 
       {/* Upload + Save buttons side by side — always visible until verified */}
+      {config.fileOptional && !hasFile && (
+        <Text
+          fontSize="$2"
+          color="$colorMuted"
+          paddingLeft="$11"
+          fontFamily="$body"
+        >
+          No photo needed — your ID number above is enough. Attachment is
+          optional.
+        </Text>
+      )}
       <XStack gap="$2" paddingLeft="$11" marginTop="$1">
         {!config.isProfilePhoto && (
           <Button
@@ -357,7 +383,7 @@ export function KycCard({
             onPress={() => setPickerOpen(true)}
             disabled={uploading || status === "verified"}
           >
-            Upload
+            {config.fileOptional ? "Attach (optional)" : "Upload"}
           </Button>
         )}
         <Button
@@ -365,7 +391,7 @@ export function KycCard({
           variant="primary"
           icon={<Upload size={14} />}
           onPress={() => onSubmitDoc(config.id)}
-          disabled={!previewUri || status === "verified" || uploading}
+          disabled={!canSubmit}
         >
           Save
         </Button>
@@ -513,7 +539,7 @@ export function KycCard({
             </Text>
           </YStack>
           <YStack px="$5" pb="$6" gap="$1">
-            {ID_TYPES.map((t, i) => (
+            {idTypeOptions.map((t, i) => (
               <YStack key={t.value}>
                 <XStack
                   py="$4"
@@ -534,7 +560,7 @@ export function KycCard({
                   </Text>
                   {idType === t.value && <Check size={18} color="$primary" />}
                 </XStack>
-                {i < ID_TYPES.length - 1 && <Separator />}
+                {i < idTypeOptions.length - 1 && <Separator />}
               </YStack>
             ))}
           </YStack>
