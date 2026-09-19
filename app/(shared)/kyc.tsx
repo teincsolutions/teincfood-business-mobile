@@ -13,6 +13,7 @@ import {
 } from "@/components/kyc/KycForm";
 import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
+import { getItem, setItem } from "@/utils/storage";
 import {
   useUserKycQuery,
   useBusinessKycQuery,
@@ -59,14 +60,20 @@ const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
     {
       id: "national_id",
       name: "National ID",
-      description: "Government-issued ID",
+      description:
+        "Enter your Ghana Card or passport number below. Do not photograph your Ghana Card — attachment is optional.",
       required: true,
       hasIdType: true,
       hasIdNumber: true,
-      hasDates: true,
+      hasDates: false,
+      fileOptional: true,
+      idTypeOptions: [
+        { value: "ghana_card", label: "Ghana Card" },
+        { value: "passport", label: "Passport" },
+      ],
     },
     {
-      id: "drivers_license",
+      id: "driver_license",
       name: "Driver's License",
       description: "Valid driving license",
       required: true,
@@ -75,6 +82,49 @@ const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
     },
   ],
 };
+
+// Unsaved per-requirement drafts, keyed by owner + flow. Survives app restarts;
+// cleared per document on successful submit.
+type KycDraftDoc = {
+  uri?: string;
+  fileName?: string;
+  previewUri?: string;
+  idType?: string;
+  idNumber?: string;
+  issuedDate?: string;
+  expirationDate?: string;
+  uploadedAt?: string;
+};
+
+function draftKeyFor(owner: string, flow: string) {
+  return `kyc-draft:${owner}:${flow}`;
+}
+
+function parseFeedback(notes: unknown): {
+  perDoc: Record<string, string>;
+  global: string[];
+} {
+  if (!notes || typeof notes !== "string")
+    return { perDoc: {}, global: [] };
+  try {
+    const parsed = JSON.parse(notes);
+    if (Array.isArray(parsed)) {
+      const perDoc: Record<string, string> = {};
+      const global: string[] = [];
+      for (const item of parsed) {
+        const message =
+          item && typeof item.message === "string" ? item.message.trim() : "";
+        if (!message) continue;
+        if (item.doc) perDoc[String(item.doc)] = message;
+        else global.push(message);
+      }
+      return { perDoc, global };
+    }
+  } catch {
+    // Plain-text legacy notes
+  }
+  return { perDoc: {}, global: [notes] };
+}
 
 function buildInitialDocs(
   configs: KycDocConfig[],
@@ -119,10 +169,60 @@ export default function KycScreen() {
     () => buildInitialDocs(configs),
   );
 
-  // Sync fetched KYC data into form state
+  const ownerKey =
+    type === "business" && id ? `biz:${id}` : `user:${userId || "unknown"}`;
+  const draftKey = draftKeyFor(ownerKey, docType);
+
+  const readDraft = (): Record<string, KycDraftDoc> =>
+    getItem<Record<string, KycDraftDoc>>(draftKey) ?? {};
+
+  const writeDraft = (docs: Record<string, KycDocumentState>) => {
+    const draft: Record<string, KycDraftDoc> = {};
+    for (const [docId, d] of Object.entries(docs)) {
+      // Server is the source of truth once submitted — only keep drafts for
+      // docs that still need action (unsaved work or rejected resubmits).
+      if (d.status !== "verified" && d.status !== "pending") {
+        draft[docId] = {
+          uri: d.uri,
+          fileName: d.fileName,
+          previewUri: d.previewUri,
+          idType: d.idType,
+          idNumber: d.idNumber,
+          issuedDate: d.issuedDate?.toISOString(),
+          expirationDate: d.expirationDate?.toISOString(),
+          uploadedAt: d.uploadedAt,
+        };
+      }
+    }
+    setItem(draftKey, draft);
+  };
+
+  const persistDocuments = (docs: Record<string, KycDocumentState>) => {
+    setDocuments(docs);
+    writeDraft(docs);
+  };
+
+  const clearDocDraft = (docId: string) => {
+    const draft = readDraft();
+    if (draft[docId]) {
+      delete draft[docId];
+      setItem(draftKey, draft);
+    }
+  };
+
+  // Sync fetched KYC data into form state, overlaying unsaved drafts and
+  // admin feedback (per-document rejection reasons).
+  const [feedback, setFeedback] = useState<{ perDoc: Record<string, string>; global: string[] }>({
+    perDoc: {},
+    global: [],
+  });
   useEffect(() => {
     if (!kycData) return;
     const existing = kycData.kyc_documents || {};
+    const parsed = parseFeedback(
+      (kycData as Record<string, any>).notes ?? (kycData as Record<string, any>).kyc_notes,
+    );
+    setFeedback(parsed);
     if (Object.keys(existing).length === 0) return;
     const overallStatus = kycData.kyc_status || "pending";
     const docStatus =
@@ -131,6 +231,7 @@ export default function KycScreen() {
         : overallStatus === "rejected"
           ? "rejected"
           : "pending";
+    const draft = readDraft();
     const merged = { ...buildInitialDocs(configs) };
     for (const [docId, docData] of Object.entries(existing)) {
       const d = docData as Record<string, any>;
@@ -145,14 +246,66 @@ export default function KycScreen() {
           expirationDate: d.expiration_date
             ? new Date(d.expiration_date)
             : undefined,
+          rejectionReason: parsed.perDoc[docId],
         };
       }
+    }
+    // Overlay unsaved drafts onto docs that still need action (never over
+    // server-confirmed pending/verified docs). Status is left untouched —
+    // a draft never marks a doc submitted.
+    for (const [docId, d] of Object.entries(draft)) {
+      const current = merged[docId];
+      if (!current || current.status === "pending" || current.status === "verified")
+        continue;
+      merged[docId] = {
+        ...current,
+        uri: d.uri ?? current.uri,
+        fileName: d.fileName ?? current.fileName,
+        previewUri: d.previewUri ?? current.previewUri,
+        idType: d.idType ?? current.idType,
+        idNumber: d.idNumber ?? current.idNumber,
+        issuedDate: d.issuedDate ? new Date(d.issuedDate) : current.issuedDate,
+        expirationDate: d.expirationDate
+          ? new Date(d.expirationDate)
+          : current.expirationDate,
+        uploadedAt: d.uploadedAt ?? current.uploadedAt,
+      };
     }
     setDocuments(merged);
   }, [kycData]);
 
   const submitUserMutation = useSubmitUserKycMutation();
   const submitBizMutation = useSubmitBusinessKycMutation();
+  const completeKyc = useAuthStore((s) => s.completeKyc);
+
+  // Fresh users (no server records yet): restore drafts onto the blank form
+  // so unsaved work survives app restarts.
+  useEffect(() => {
+    if (loading || kycData) return;
+    const draft = readDraft();
+    if (Object.keys(draft).length === 0) return;
+    setDocuments((prev) => {
+      const next = { ...prev };
+      for (const [docId, d] of Object.entries(draft)) {
+        if (!next[docId]) continue;
+        next[docId] = {
+          ...next[docId],
+          uri: d.uri ?? next[docId].uri,
+          fileName: d.fileName ?? next[docId].fileName,
+          previewUri: d.previewUri ?? next[docId].previewUri,
+          idType: d.idType ?? next[docId].idType,
+          idNumber: d.idNumber ?? next[docId].idNumber,
+          issuedDate: d.issuedDate ? new Date(d.issuedDate) : next[docId].issuedDate,
+          expirationDate: d.expirationDate
+            ? new Date(d.expirationDate)
+            : next[docId].expirationDate,
+          uploadedAt: d.uploadedAt ?? next[docId].uploadedAt,
+        };
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const handleSubmitDoc = async (
     docId: string,
@@ -176,6 +329,13 @@ export default function KycScreen() {
       queryKey:
         type === "business" ? ["kyc", "business", id] : ["kyc", "user", userId],
     });
+    // Submitted docs live on the server now — drop their drafts, and refresh
+    // profile/banner state so home reflects the new kyc_status immediately.
+    clearDocDraft(docId);
+    if (type !== "business") {
+      completeKyc();
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    }
     toast.success(`${docId.replace(/_/g, " ")} submitted for review`);
   };
 
@@ -224,9 +384,12 @@ export default function KycScreen() {
               subtitle={subtitle}
               docConfigs={configs}
               documents={documents}
-              onDocumentsChange={setDocuments}
+              onDocumentsChange={persistDocuments}
               onSubmitDoc={handleSubmitDoc}
               uploadContext={uploadContext}
+              globalFeedback={
+                kycData?.kyc_status === "rejected" ? feedback.global : []
+              }
             />
           )}
         </YStack>
