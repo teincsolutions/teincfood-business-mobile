@@ -112,6 +112,7 @@ import {
 } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
+import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FlatList } from "react-native-gesture-handler";
 import { Button } from "@/components/ui";
 
@@ -810,6 +811,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const [lastCompletedOrderId, setLastCompletedOrderId] = useState<
     string | null
   >(null);
+  const [showClosedDialog, setShowClosedDialog] = useState(false);
+  const router = useRouter();
   const paymentFlow = usePOSPaymentFlow();
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
@@ -827,6 +830,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     !businessOpen.isLoading &&
     businessOpen.data &&
     !businessOpen.data.open;
+  // Hard-block copy for the closed dialog — reason-aware so staff know
+  // whether to flip the store toggle or fix operating hours.
+  const closedDialogDescription =
+    businessOpen.data?.reason === "manually_closed"
+      ? "This store is manually closed. No new orders can be placed until it is reopened."
+      : businessOpen.data?.reason === "no_hours_configured"
+        ? "Operating hours are not set yet. Configure them to start accepting orders."
+        : "This store is outside its operating hours. No new orders can be placed right now.";
 
   // Server-parity local pricing (offline/no-preview fallback):
   // mirrors backend calculate_pos_pricing so inclusive taxes stay embedded in
@@ -903,6 +914,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   }, [isCloudReachable, checkoutForm.pos_payment_method, updateCheckoutForm]);
 
   const executePlaceOrder = useCallback(() => {
+    // Re-check after the cash sheet: hours may have flipped while it was open.
+    if (isBusinessClosed) {
+      setShowClosedDialog(true);
+      return;
+    }
     const { autoPrint } = usePrinterStore.getState();
 
     const subtotalMinor =
@@ -998,14 +1014,12 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               timestamp: new Date().toISOString(),
             }),
           );
-          // Lib hours-guard rejections are coded — surface them to staff.
+          // Lib hours-guard rejections are coded — hard-block with a dialog
+          // that routes staff to operating hours (covers stale-cache races
+          // where the online check passed but the guard rejected after).
           const code = (error as { code?: string })?.code;
           if (code === "BUSINESS_CLOSED" || code === "HOURS_NOT_SYNCED") {
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "Business is currently closed",
-            );
+            setShowClosedDialog(true);
           } else {
             toast.error(
               error instanceof Error ? error.message : "Failed to place order",
@@ -1015,6 +1029,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       },
     );
   }, [
+    isBusinessClosed,
     items,
     checkoutForm,
     createOrder,
@@ -1025,11 +1040,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
   const handlePlaceOrder = useCallback(() => {
     if (isBusinessClosed) {
-      toast.error(
-        businessOpen.data?.reason === "no_hours_configured"
-          ? "Operating hours not set yet. Please configure them in Settings."
-          : "Business is currently closed",
-      );
+      setShowClosedDialog(true);
       return;
     }
     if (
@@ -1047,6 +1058,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       executePlaceOrder();
     }
   }, [
+    isBusinessClosed,
     checkoutForm.pos_payment_method,
     isCloudReachable,
     executePlaceOrder,
@@ -1478,6 +1490,19 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         orderNumber={lastOrderNumber}
         amountMinor={total}
         onClose={paymentFlow.reset}
+      />
+
+      <AppAlertDialog
+        open={showClosedDialog}
+        onOpenChange={setShowClosedDialog}
+        title="Business Closed"
+        description={closedDialogDescription}
+        confirmText="View Operating Hours"
+        cancelText="Close"
+        onConfirm={() => {
+          setShowClosedDialog(false);
+          router.push("/(shared)/settings/operating-hours");
+        }}
       />
     </YStack>
   );
