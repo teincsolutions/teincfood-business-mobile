@@ -18,6 +18,7 @@ import { useFilterStore } from "@/stores/filter.store";
 import { CategoryPill } from "@/components/menu/CategoryPill";
 import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { usePlanLimit } from "@/hooks/usePlanLimit";
 import { useBusinessStore } from "@/stores/business.store";
 import { uploadImage } from "@/services/upload.service";
 import {
@@ -85,6 +86,12 @@ export default function SellerMenu() {
   const toggleMutation = useToggleAvailabilityMutation();
   const createCategoryMutation = useCreateMenuCategoryMutation();
 
+  // Plan gate (menu cap) for the add sheet.
+  const { limit: menuLimit, atCap: atMenuCap } = usePlanLimit(
+    "limits.menu_items",
+    (data ?? []).length,
+  );
+
   const onAddCategory = useCallback(
     (name: string) => {
       const trimmed = name.trim();
@@ -124,6 +131,12 @@ export default function SellerMenu() {
 
   // ─── Open add sheet ────────────────────────────────────────────
   const openAdd = () => {
+    // Plan gate: block obviously over-limit creates before the request.
+    // Unknown limit => allow (backend 402 is authoritative).
+    if (atMenuCap) {
+      toast.error(`Menu limit reached (${menuLimit} items on your plan). Upgrade to add more.`);
+      return;
+    }
     setEditingItem(null);
     setForm({ ...EMPTY_FORM });
     setVariantLabel("");

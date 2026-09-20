@@ -12,6 +12,11 @@ export const API_BASE_URL =
 export const WS_BASE_URL =
   process.env.EXPO_PUBLIC_WS_URL ?? "ws://localhost:4000";
 
+/** Entitlement HMAC secret — verifies the cached subscription envelope.
+ * Must match backend ENTITLEMENT_HMAC_SECRET. */
+export const ENTITLEMENT_HMAC_SECRET =
+  process.env.EXPO_PUBLIC_ENTITLEMENT_SECRET ?? null;
+
 /** App metadata */
 export const APP_NAME = "Teinc Food Business";
 export const APP_VERSION = "1.0.0";

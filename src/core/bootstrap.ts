@@ -12,6 +12,7 @@
 import { openDatabaseAsync } from "expo-sqlite";
 import { mmkvStorage } from "@/utils/storage";
 import { createTeincCore } from "@teincfood/core";
+import { setEntitlementSecret } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
@@ -48,7 +49,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
-import { API_BASE_URL, WS_BASE_URL } from "@/utils/constants";
+import { API_BASE_URL, WS_BASE_URL, ENTITLEMENT_HMAC_SECRET } from "@/utils/constants";
 import { api } from "@/services/api";
 import { getAppInstanceId } from "@/services/devices.service";
 import { useConnectivityStore } from "@/stores/connectivity.store";
@@ -428,6 +429,16 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     });
     try {
       syncConnectivityBridge();
+    } catch {}
+    // Provision the entitlement HMAC secret once: the core auto-guard
+    // verifies the cached subscription envelope against it (fail-closed
+    // once proof exists; backend 402 remains the final authority).
+    try {
+      setEntitlementSecret(
+        ENTITLEMENT_HMAC_SECRET && ENTITLEMENT_HMAC_SECRET.length > 0
+          ? ENTITLEMENT_HMAC_SECRET
+          : null,
+      );
     } catch {}
     try {
       syncBusinessBridge();
