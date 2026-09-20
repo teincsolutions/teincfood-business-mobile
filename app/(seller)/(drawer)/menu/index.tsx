@@ -107,7 +107,9 @@ export default function SellerMenu() {
   const allCategories = categoriesRes?.data ?? [];
   const filterCategories = [{ id: "", name: "All" } as any, ...allCategories];
 
-  // Auto-open edit sheet when navigating back from detail screen
+  // Auto-open edit sheet when navigating back from detail screen.
+  // The param is consumed (cleared) on open so background refetches cannot
+  // reopen the sheet after save/close, and a stale id cannot linger.
   const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
   useEffect(() => {
     if (editParam && data) {
@@ -115,7 +117,9 @@ export default function SellerMenu() {
       if (item) {
         openEdit(item);
       }
+      router.setParams({ edit: undefined });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editParam, data]);
 
   // ─── Open add sheet ────────────────────────────────────────────
@@ -130,8 +134,12 @@ export default function SellerMenu() {
   };
 
   // ─── Open edit sheet ───────────────────────────────────────────
+  // Variant prices are absolute (backend model): the API nested
+  // `price.amountMinor` is the full size price, never a delta. Fall back to
+  // the base price when a record predates the nested shape.
   const openEdit = (item: MenuItem) => {
     setEditingItem(item);
+    const baseMinor = item.basePrice?.amountMinor ?? 0;
     setForm({
       name: item.name,
       description: item.description || "",
@@ -141,12 +149,12 @@ export default function SellerMenu() {
       variants: (item.variants || []).map((v: any) => ({
         id: v.id,
         name: v.name,
-        price_adjustment: v.price?.amountMinor || 0,
+        price_minor: v.price?.amountMinor ?? baseMinor,
       })),
       extras: (item.extras || []).map((e: any) => ({
         id: e.id,
         name: e.name,
-        price_minor: e.amountMinor || 0,
+        price_minor: e.amountMinor ?? e.price?.amountMinor ?? 0,
       })),
       is_available: item.is_available,
       image_url: item.image_url || "",
@@ -182,7 +190,7 @@ export default function SellerMenu() {
     const variantInputs = form.variants.map((v: any) => ({
       id: isUuid(v.id),
       name: v.name,
-      price_adjustment: v.price_adjustment,
+      price: v.price_minor,
     }));
     const extraInputs = form.extras.map((e: any) => ({
       id: isUuid(e.id),
@@ -273,9 +281,13 @@ export default function SellerMenu() {
   };
 
   // ─── Toggle availability ───────────────────────────────────────
+  // Sends the full record (backend upserts variants/extras, deleting rows
+  // absent from the list), so variant prices must be absolute — the same
+  // shape openEdit produces. Guards partial cached records (null basePrice
+  // on older menus) instead of crashing.
   const toggleAvailability = (id: string) => {
     const item = (data ?? []).find((i: any) => i.id === id);
-    if (!item || !businessId) return;
+    if (!item || !businessId || item.basePrice?.amountMinor == null) return;
     const { cacheRecord } = buildMenuItemEnvelope({
       id: item.id,
       businessId,
@@ -288,12 +300,12 @@ export default function SellerMenu() {
       variants: (item.variants ?? []).map((v: any) => ({
         id: v.id,
         name: v.name,
-        price_adjustment: v.price.amountMinor - item.basePrice.amountMinor,
+        price: v.price?.amountMinor ?? item.basePrice.amountMinor,
       })),
       extras: (item.extras ?? []).map((e: any) => ({
         id: e.id,
         name: e.name,
-        price_minor: e.amountMinor,
+        price_minor: e.amountMinor ?? e.price?.amountMinor ?? 0,
       })),
       available: !item.is_available,
       imageUrl: item.image_url,
@@ -335,7 +347,7 @@ export default function SellerMenu() {
         {
           id: Date.now().toString(),
           name: label,
-          price_adjustment: toMinor(price),
+          price_minor: toMinor(price),
         },
       ],
     }));
