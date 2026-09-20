@@ -484,7 +484,7 @@ export function MenuFormSheet({
                         justifyContent="center"
                       >
                         <Text fontFamily="$body" fontSize="$3" color="$color">
-                          {v.name} — {formatPrice(v.price_adjustment / 100)}
+                          {`${v.name} — ${formatPrice(v.price_minor / 100)}`}
                         </Text>
                       </YStack>
                       <TouchableOpacity onPress={() => onRemoveVariant(v.id)}>
