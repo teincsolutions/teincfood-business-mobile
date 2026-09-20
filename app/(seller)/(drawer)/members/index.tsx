@@ -53,6 +53,7 @@ import {
 } from "@teincfood/core";
 import { useBusinessRolesQuery } from "@teincfood/core";
 import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import { usePlanLimit } from "@/hooks/usePlanLimit";
 
 const ROLE_LABELS: Record<string, string> = {
   chief: "Chef",
@@ -103,10 +104,21 @@ export default function MembersScreen() {
     (sentInvitesQuery.data as any)?.data ??
     (Array.isArray(sentInvitesQuery.data) ? (sentInvitesQuery.data as any) : []);
 
+  // Plan gate (backend counts active members + pending invitations).
+  const { limit: memberLimit, atCap: atMemberCap } = usePlanLimit(
+    "limits.members",
+    members.length + sentInvites.length,
+  );
+
   const handleInvite = () => {
     if (inviteMember.isPending) return;
     const identifier = inviteIdentifier.trim();
     if (!identifier) return;
+    // Plan gate mirrors the backend (active members + pending invites).
+    if (atMemberCap) {
+      toast.error(`Member limit reached (${memberLimit} on your plan). Upgrade to invite more.`);
+      return;
+    }
     const data: Record<string, string> = { role: inviteRole };
     if (identifier.includes("@")) {
       data.email = identifier;
