@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { YStack, XStack, Text } from "tamagui";
+import { stageStatuses } from "@teincfood/core";
 import {
   ClipboardList,
   Package,
@@ -58,6 +59,9 @@ export function DeliveryTimeline({ currentStep, status }: DeliveryTimelineProps)
     );
   }
 
+  const stepKeys = STEPS.map((s) => s.key);
+  const stages = stageStatuses(status ?? "", stepKeys);
+
   return (
     <YStack gap="$2">
       <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
@@ -65,8 +69,9 @@ export function DeliveryTimeline({ currentStep, status }: DeliveryTimelineProps)
       </Text>
       <YStack>
         {STEPS.map((step, i) => {
-          const completed = currentStep >= 0 && i <= currentStep;
-          const current = i === currentStep;
+          const state = stages[i]?.state ?? "upcoming";
+          const completed = state === "done" || state === "current";
+          const current = state === "current";
           const StepIcon = step.icon;
 
           return (

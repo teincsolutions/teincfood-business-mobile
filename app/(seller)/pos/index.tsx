@@ -824,7 +824,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   );
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
-  const businessOpen = useBusinessOpenNow(activeBusiness?.id);
+  const businessOpen = useBusinessOpenNow(activeBusiness?.id, true, "pos");
   const isBusinessClosed =
     !!activeBusiness?.id &&
     !businessOpen.isLoading &&
