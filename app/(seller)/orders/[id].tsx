@@ -10,8 +10,7 @@ import {
   useMedia,
   ScrollView,
 } from "tamagui";
-import { Linking, Modal } from "react-native";
-import { WebView } from "react-native-webview";
+import { Linking } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -48,7 +47,8 @@ import {
   useAssignRiderMutation,
 } from "@/hooks/kiosk.hooks";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
-import { printService } from "@/services/print.service";
+import { ReceiptPreviewSheet } from "@/components/orders/ReceiptPreviewSheet";
+import { usePrintReceiptMutation } from "@/hooks/useReceiptPreview";
 import { isDeliveryOrder } from "@teincfood/core";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -112,10 +112,8 @@ export default function OrderDetails() {
     orderId: string;
     riderId: string;
   } | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<{ html: string } | null>(
-    null,
-  );
-  const [printing, setPrinting] = useState(false);
+  const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
+  const printMutation = usePrintReceiptMutation();
 
   const order = data?.data;
   const showDialog = (
@@ -128,32 +126,20 @@ export default function OrderDetails() {
     setDialogOpen(true);
   };
 
-  const handlePreview = async () => {
+  const handlePreview = () => {
     if (!order) {
       toast.error("Order not loaded");
       return;
     }
-    try {
-      // Offline-first core template — no network, works for DD-RRR-CCC queued orders
-      const html = printService.generateLocalReceipt(order, "html");
-      setReceiptPreview({ html });
-    } catch (err) {
-      console.debug("[ReceiptPreview] Failed", err);
-      toast.error("Failed to generate receipt preview");
-    }
+    setReceiptPreviewOpen(true);
   };
 
-  const handlePrint = async () => {
-    if (printing) return;
-    setPrinting(true);
-    try {
-      await printService.printOrderReceipt(order!.id);
-    } catch (err) {
-      console.debug("[Print] Failed", err);
-      toast.error("Print failed — check backend logs");
-    } finally {
-      setPrinting(false);
+  const handlePrint = () => {
+    if (!order) {
+      toast.error("Order not loaded");
+      return;
     }
+    printMutation.mutate(order);
   };
 
   if (isLoading) {
@@ -550,9 +536,9 @@ export default function OrderDetails() {
                 height={40}
                 icon={<Printer size={16} />}
                 onPress={handlePrint}
-                disabled={printing}
+                disabled={printMutation.isPending}
               >
-                {printing ? "Printing..." : "Print Receipt"}
+                {printMutation.isPending ? "Printing..." : "Print Receipt"}
               </Button>
             </XStack>
 
@@ -724,50 +710,12 @@ export default function OrderDetails() {
         </YStack>
       </ScrollView>
 
-      {/* Receipt Preview Modal */}
-      <Modal
-        visible={receiptPreview !== null}
-        animationType="slide"
-        onRequestClose={() => setReceiptPreview(null)}
-      >
-        <YStack
-          flex={1}
-          paddingTop={insets.top + 8}
-          backgroundColor="$background"
-        >
-          <XStack
-            padding="$4"
-            alignItems="center"
-            gap="$3"
-            borderBottomWidth={1}
-            borderBottomColor="$borderColor"
-          >
-            <BackButton onPress={() => setReceiptPreview(null)} />
-            <Text fontSize="$6" fontWeight="bold" flex={1}>
-              Receipt Preview
-            </Text>
-            <Button
-              variant="outline"
-              height={40}
-              icon={<Printer size={16} />}
-              onPress={() => {
-                setReceiptPreview(null);
-                handlePrint();
-              }}
-            >
-              Print
-            </Button>
-          </XStack>
-          {receiptPreview && (
-            <WebView
-              source={{ html: receiptPreview.html }}
-              style={{ flex: 1 }}
-              originWhitelist={["*"]}
-              scalesPageToFit
-            />
-          )}
-        </YStack>
-      </Modal>
+      {/* Receipt Preview Sheet (80mm thermal twin, live order vs golden sample) */}
+      <ReceiptPreviewSheet
+        open={receiptPreviewOpen}
+        onOpenChange={setReceiptPreviewOpen}
+        order={order}
+      />
 
       <RiderSelectionSheet
         visible={showRiderSheet}

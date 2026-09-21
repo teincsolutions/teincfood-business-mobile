@@ -113,6 +113,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { ReceiptPreviewSheet } from "@/components/orders/ReceiptPreviewSheet";
 import { FlatList } from "react-native-gesture-handler";
 import { Button } from "@/components/ui";
 
@@ -2116,6 +2117,16 @@ function TodayTab() {
   const confirmCashPayment = useConfirmCashPaymentMutation();
   const confirmHandover = useConfirmHandoverMutation();
   const { openFor: openRiderSheet, sheet: riderSheet } = useRiderAssign();
+  const [previewOrder, setPreviewOrder] = useState<SellerOrder | null>(null);
+  const previewSheet = (
+    <ReceiptPreviewSheet
+      open={previewOrder !== null}
+      onOpenChange={(open) => {
+        if (!open) setPreviewOrder(null);
+      }}
+      order={previewOrder}
+    />
+  );
 
   const allTodayOrders = useMemo(() => orders ?? [], [orders]);
 
@@ -2154,7 +2165,7 @@ function TodayTab() {
   const COL_DELIVERY_TODAY = 110;
   const COL_TIME_TODAY = 100;
   const COL_TOTAL_TODAY = 100;
-  const COL_ACTIONS_TODAY = 220;
+  const COL_ACTIONS_TODAY = 264;
   const tableTotalToday =
     COL_ORDER_TODAY +
     COL_CUSTOMER_TODAY +
@@ -2321,6 +2332,7 @@ function TodayTab() {
         <Text fontSize="$3" fontWeight="700" color="$primary" width={COL_TOTAL_TODAY} textAlign="right">{formatPriceFromMinor(item.total_minor)}</Text>
         <XStack width={COL_ACTIONS_TODAY} justifyContent="flex-end" gap="$1" alignItems="center">
           <Button size="$2" variant="outline" height={36} width={36} padding={0} icon={<Eye size={14} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)} />
+          <Button size="$2" variant="outline" height={36} width={36} padding={0} icon={<FileText size={14} />} onPress={() => setPreviewOrder(item)} />
           <Button size="$2" variant="outline" height={36} width={36} padding={0} icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
           {action && (
             <Button size="$2" backgroundColor="$primary" borderRadius="$2" height={36} paddingHorizontal="$3" onPress={handleAction}>
@@ -2425,6 +2437,7 @@ function TodayTab() {
         </ScrollView>
       </YStack>
       {riderSheet}
+      {previewSheet}
       </>
     );
   }
@@ -2562,6 +2575,7 @@ function TodayTab() {
                 <Separator marginVertical="$1" borderColor="$borderColor" />
                 <XStack gap="$2" flexWrap="wrap" justifyContent="flex-end">
                   <Button size="$2" variant="outline" icon={<Eye size={14} />} onPress={() => router.push(`/(seller)/orders/${item.id}`)} />
+                  <Button size="$2" variant="outline" icon={<FileText size={14} />} onPress={() => setPreviewOrder(item)} />
                   <Button size="$2" variant="outline" icon={<Printer size={14} />} onPress={() => printService.printOrderReceipt(item.id)} />
                   {action && (
                     <Button size="$2" backgroundColor="$primary" borderRadius="$2" onPress={handleAction}>
@@ -2586,6 +2600,7 @@ function TodayTab() {
       removeClippedSubviews
     />
     {riderSheet}
+    {previewSheet}
     </>
   );
 }
