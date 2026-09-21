@@ -17,6 +17,17 @@ export const WS_BASE_URL =
 export const ENTITLEMENT_HMAC_SECRET =
   process.env.EXPO_PUBLIC_ENTITLEMENT_SECRET ?? null;
 
+/** Company footer info for receipts (Powered-by block). Empty values fall
+ * back to the shared template defaults in core. */
+export const COMPANY_INFO = {
+  name: process.env.EXPO_PUBLIC_COMPANY_NAME ?? "",
+  brand: process.env.EXPO_PUBLIC_COMPANY_BRAND ?? "",
+  address: process.env.EXPO_PUBLIC_COMPANY_ADDRESS ?? "",
+  website: process.env.EXPO_PUBLIC_COMPANY_WEBSITE ?? "",
+  supportEmail: process.env.EXPO_PUBLIC_COMPANY_SUPPORT_EMAIL ?? "",
+  phone: process.env.EXPO_PUBLIC_COMPANY_PHONE ?? "",
+};
+
 /** App metadata */
 export const APP_NAME = "Teinc Food Business";
 export const APP_VERSION = "1.0.0";
