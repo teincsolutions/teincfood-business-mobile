@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { usePrinterStore, type PrinterConfig } from "@/stores/printer.store";
+import { SampleReceiptPreview } from "@/components/settings/SampleReceiptPreview";
 import { printService } from "@/services/print.service";
 import { toast } from "sonner-native";
 import Zeroconf from 'react-native-zeroconf';
@@ -258,6 +259,19 @@ export default function PrinterSettings() {
           <Button variant="outline" icon={<Plus size={18} />} onPress={() => setAddSheetOpen(true)}>
             Add Printer Manually
           </Button>
+
+          {/* Sample Receipt */}
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <YStack gap="$1">
+                <Text fontSize="$5" fontWeight="bold">Sample receipt</Text>
+                <Text fontSize="$3" color="$colorMuted">
+                  Preview of an 80mm thermal receipt with a sample order.
+                </Text>
+              </YStack>
+              <SampleReceiptPreview />
+            </YStack>
+          </Card>
 
           {/* Info */}
           <Card padding="$4" bordered backgroundColor="$blue2">
