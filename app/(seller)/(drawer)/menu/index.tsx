@@ -10,6 +10,7 @@ import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import {
   buildMenuItemEnvelope,
+  imageUrlForUpdateWire,
   validateMenuItemInput,
 } from "@teincfood/core";
 import { Button } from "@/components/ui";
@@ -241,8 +242,18 @@ export default function SellerMenu() {
 
     if (editingItem) {
       const { wire, cacheRecord } = buildEnvelope(editingItem.id);
+      // Preserve the server key: omit image_url unless a fresh upload
+      // happened (null clears a removed/poisoned photo).
+      const updateImage = imageUrlForUpdateWire({
+        freshKey: form.image_key || null,
+        loadedUrl: form.image_url || null,
+        hadImage: Boolean(editingItem.image_url),
+      });
+      const updateWire: Record<string, unknown> = { ...wire };
+      if (updateImage === undefined) delete updateWire.image_url;
+      else updateWire.image_url = updateImage;
       updateMutation.mutate(
-        { id: editingItem.id, payload: { ...wire, cacheRecord } },
+        { id: editingItem.id, payload: { ...updateWire, cacheRecord } },
         {
           onSuccess: () => setSheetOpen(false),
           onError: (err: any) => {
