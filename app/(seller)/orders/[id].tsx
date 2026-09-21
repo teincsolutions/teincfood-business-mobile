@@ -710,7 +710,7 @@ export default function OrderDetails() {
         </YStack>
       </ScrollView>
 
-      {/* Receipt Preview Sheet (80mm thermal twin, live order vs golden sample) */}
+      {/* Receipt Preview Sheet (80mm thermal, live order) */}
       <ReceiptPreviewSheet
         open={receiptPreviewOpen}
         onOpenChange={setReceiptPreviewOpen}

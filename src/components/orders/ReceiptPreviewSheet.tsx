@@ -1,17 +1,13 @@
 // @ts-nocheck
-import { useState } from "react";
 import { Sheet, YStack, XStack, Text } from "tamagui";
 import { WebView } from "react-native-webview";
 import { Printer, X } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui/Button";
 import type { SellerOrder } from "@teincfood/core";
 import {
-  GOLDEN_SAMPLE_ORDER,
   usePrintReceiptMutation,
   useReceiptPreviewHtml,
 } from "@/hooks/useReceiptPreview";
-
-type PreviewMode = "live" | "sample";
 
 interface ReceiptPreviewSheetProps {
   open: boolean;
@@ -27,20 +23,15 @@ export function ReceiptPreviewSheet({
   onOpenChange,
   order,
 }: ReceiptPreviewSheetProps) {
-  const [mode, setMode] = useState<PreviewMode>("live");
   const printMutation = usePrintReceiptMutation();
-
-  const effectiveMode: PreviewMode = order ? mode : "sample";
-  const activeOrder: SellerOrder | null =
-    effectiveMode === "live" ? order : GOLDEN_SAMPLE_ORDER;
-  const html = useReceiptPreviewHtml(activeOrder);
-  const subtitle = activeOrder
-    ? `80mm thermal receipt for order ${activeOrder.order_number}`
+  const html = useReceiptPreviewHtml(order);
+  const subtitle = order
+    ? `80mm thermal receipt for order ${order.order_number}`
     : "80mm thermal receipt";
 
   const handlePrint = () => {
-    if (activeOrder) {
-      printMutation.mutate(activeOrder);
+    if (order) {
+      printMutation.mutate(order);
     }
   };
 
@@ -79,26 +70,6 @@ export function ReceiptPreviewSheet({
             icon={<X size={18} />}
             onPress={() => onOpenChange(false)}
           />
-        </XStack>
-
-        <XStack gap="$2">
-          <Button
-            flex={1}
-            variant={effectiveMode === "live" ? "primary" : "outline"}
-            height={44}
-            disabled={!order}
-            onPress={() => setMode("live")}
-          >
-            Live Order
-          </Button>
-          <Button
-            flex={1}
-            variant={effectiveMode === "sample" ? "primary" : "outline"}
-            height={44}
-            onPress={() => setMode("sample")}
-          >
-            Golden Sample
-          </Button>
         </XStack>
 
         <YStack flex={1} alignItems="center" justifyContent="center">
