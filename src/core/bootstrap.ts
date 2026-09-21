@@ -13,6 +13,7 @@ import { openDatabaseAsync } from "expo-sqlite";
 import { mmkvStorage } from "@/utils/storage";
 import { createTeincCore } from "@teincfood/core";
 import { setEntitlementSecret } from "@teincfood/core";
+import { setCompanyInfo } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
@@ -49,7 +50,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
-import { API_BASE_URL, WS_BASE_URL, ENTITLEMENT_HMAC_SECRET } from "@/utils/constants";
+import { API_BASE_URL, WS_BASE_URL, ENTITLEMENT_HMAC_SECRET, COMPANY_INFO } from "@/utils/constants";
 import { api } from "@/services/api";
 import { getAppInstanceId } from "@/services/devices.service";
 import { useConnectivityStore } from "@/stores/connectivity.store";
@@ -439,6 +440,10 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
           ? ENTITLEMENT_HMAC_SECRET
           : null,
       );
+    } catch {}
+    // Company footer for receipts (empty values keep template defaults).
+    try {
+      setCompanyInfo(COMPANY_INFO);
     } catch {}
     try {
       syncBusinessBridge();
