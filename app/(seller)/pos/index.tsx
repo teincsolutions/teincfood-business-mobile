@@ -57,6 +57,7 @@ import {
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
 import { useBusinessTaxRulesQuery } from "@teincfood/core";
+import { buildItemSnapshots } from "@teincfood/core";
 import { calculatePricing } from "@teincfood/core";
 import {
   useCreatePOSOrderMutation,
@@ -935,17 +936,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           ? i.selected_addons.map((a) => a.addon_id)
           : undefined,
     }));
-    const itemSnapshots = items.map((i) => ({
-      menu_item_id: i.menu_item.id,
-      name: i.menu_item.name,
-      quantity: i.quantity,
-      unit_price_minor: i.unit_price_minor,
-      variant_name: i.selected_variant?.name,
-      addons: i.selected_addons.map((a) => ({
-        name: a.name,
-        price_minor: a.price_minor,
-      })),
-    }));
+    // Canonical sale-time snapshots (core contract): variant + addon
+    // names are embedded so history never re-resolves the menu.
+    const itemSnapshots = buildItemSnapshots(items as never);
 
     console.debug(
       "[POS] Checkout initiated",
