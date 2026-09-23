@@ -3,6 +3,7 @@ import messaging from '@react-native-firebase/messaging';
 import { devicesService } from '@/services/devices.service';
 import { mmkvStorage } from '@/utils/storage';
 import { registerBackgroundPushHandler, registerForegroundPushHandler } from '@/services/background-push-handler.service';
+import { trackEvent } from '@/utils/observability';
 
 let currentToken: string | null = null;
 let refreshUnsubscribe: (() => void) | undefined;
@@ -33,6 +34,7 @@ async function registerToken(token: string): Promise<void> {
     console.log('[PushToken] Backend registration response:', JSON.stringify(response));
     currentToken = token;
     setStoredTokenHash(token);
+    trackEvent('device.push_token.registered');
     if (response?.data?.id) {
       mmkvStorage.set(REGISTERED_TOKEN_ID_KEY, response.data.id);
     }

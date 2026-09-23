@@ -10,6 +10,7 @@ import type { AuthUser } from '@teincfood/core';
 import type { User } from '@/types/user.model';
 import { extractApiErrorMessage } from '@teincfood/core';
 import { register, cleanup, unregister } from '@/hooks/usePushTokenRegistration';
+import { trackEvent } from '@/utils/observability';
 
 export interface AuthError {
   code?: string;
@@ -80,6 +81,9 @@ export function useAuth() {
     const response = await loginMutation.mutateAsync({
       email: email.trim(),
       password,
+    }).catch((error: unknown) => {
+      trackEvent('auth.login.failed', { method: 'password' });
+      throw error;
     });
 
     await unregister();
@@ -89,6 +93,7 @@ export function useAuth() {
       response.access_token,
       response.refresh_token
     );
+    trackEvent('auth.login.success', { method: 'password' });
 
     register();
     navigatePostAuth();
@@ -124,6 +129,7 @@ export function useAuth() {
         response.access_token,
         response.refresh_token
       );
+      trackEvent('auth.signup.success', { method: 'password' });
       register();
       navigatePostAuth();
     }
@@ -148,6 +154,7 @@ export function useAuth() {
       response.access_token,
       response.refresh_token
     );
+    trackEvent('auth.login.success', { method: 'otp' });
     register();
     navigatePostAuth();
   }, [setAuthAction, navigatePostAuth]);
@@ -172,6 +179,7 @@ export function useAuth() {
       response.access_token,
       response.refresh_token
     );
+    trackEvent('auth.login.success', { method: provider });
     register();
     navigatePostAuth();
   }, [hasLocation, hasSeenOnboarding, setAuthAction, router, navigatePostAuth]);
@@ -181,6 +189,7 @@ export function useAuth() {
     cleanup();
     await unregister();
     clearAuthAction();
+    trackEvent('auth.logout');
     router.replace('/(auth)/login');
   }, [logoutMutation, clearAuthAction, router]);
 
