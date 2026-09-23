@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { eventsService } from '@teincfood/core';
 import { paymentService } from '@/services/payment.service';
+import { trackEvent } from '@/utils/observability';
 
 export type POSPaymentState = 'idle' | 'initiating' | 'awaiting_confirmation' | 'success' | 'failed';
 
@@ -49,6 +50,7 @@ export function usePOSPaymentFlow() {
       const payload = (event.payload ?? event) as any;
       if (matches(payload) && !completedRef.current) {
         completedRef.current = true;
+        trackEvent('payment.completed', { order_id: String(currentOrderId) });
         setState('success');
       }
     };
@@ -56,6 +58,7 @@ export function usePOSPaymentFlow() {
     const onFailed = (event: Record<string, unknown>) => {
       const payload = (event.payload ?? event) as any;
       if (matches(payload)) {
+        trackEvent('payment.failed', { order_id: String(currentOrderId) });
         setState('failed');
         setErrorMsg('Payment was declined or cancelled');
       }
@@ -84,6 +87,7 @@ export function usePOSPaymentFlow() {
     setCurrentOrderId(orderId);
     setPaymentRef(null);
     setErrorMsg(null);
+    trackEvent('payment.started', { order_id: orderId, amount_minor: amountMinor });
 
     const doVerify = (ref: string) =>
       paymentService.verifyPayment({

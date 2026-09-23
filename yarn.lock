@@ -2053,6 +2053,11 @@
   resolved "https://registry.npmjs.org/@notifee/react-native/-/react-native-9.1.8.tgz"
   integrity sha512-Az/dueoPerJsbbjRxu8a558wKY+gONUrfoy3Hs++5OqbeMsR0dYe6P+4oN6twrLFyzAhEA1tEoZRvQTFDRmvQg==
 
+"@opentelemetry/api@^1.9.0":
+  version "1.9.1"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-1.9.1.tgz#c1b0346de336ba55af2d5a7970882037baedec05"
+  integrity sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==
+
 "@pkgr/core@^0.1.0":
   version "0.1.2"
   resolved "https://registry.npmjs.org/@pkgr/core/-/core-0.1.2.tgz"
@@ -3791,6 +3796,13 @@
   integrity sha512-Ot9/zy9RRDmj8kpSrPuVFVODimb3k+Vxlav5W2p3vfmsLtyHeQAZDTvjP1wdsK16fVqjboO7WidA0ZkAFYCMMA==
   dependencies:
     "@tanstack/query-async-storage-persister" "^5.102.8"
+
+"@teincfood/observability@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@teincfood/observability/-/observability-0.1.0.tgz#fff4f443e72054e3363e6c7bb884b37ae0f82107"
+  integrity sha512-v6TwVV+GdSZ9VeQmY5X3eS4s9WLu7KL9fyjwHZmnv3i0dmjMYNkYJgeMu/zIJ/vBNmKEVJu4vrj6Dwt5IkJt+g==
+  dependencies:
+    "@opentelemetry/api" "^1.9.0"
 
 "@teincfood/rn-notifications@^0.2.0":
   version "0.2.0"

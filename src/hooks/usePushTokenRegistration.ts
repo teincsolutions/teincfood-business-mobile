@@ -33,6 +33,10 @@ async function registerToken(token: string): Promise<void> {
     console.log('[PushToken] Backend registration response:', JSON.stringify(response));
     currentToken = token;
     setStoredTokenHash(token);
+    try {
+      const { trackEvent } = await import('@/utils/observability');
+      trackEvent('device.push_token.registered');
+    } catch {}
     if (response?.data?.id) {
       mmkvStorage.set(REGISTERED_TOKEN_ID_KEY, response.data.id);
     }
