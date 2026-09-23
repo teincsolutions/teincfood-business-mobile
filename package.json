@@ -43,6 +43,7 @@
     "@tanstack/react-query-persist-client": "^5.101.2",
     "@teincfood/chat-client": "0.1.12",
     "@teincfood/core": "0.9.14",
+    "@teincfood/observability": "^0.1.0",
     "@teincfood/rn-notifications": "^0.2.0",
     "axios": "^1.14.0",
     "babel-preset-expo": "^55.0.14-canary-20260328-bdc6273",
