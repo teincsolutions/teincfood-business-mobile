@@ -54,6 +54,10 @@ import { api } from '../src/services/api';
 import { AlertProvider } from '../src/contexts/AlertContext';
 import { AlertContainer } from '../src/contexts/AlertContainer';
 import { useOTAUpdate } from '../src/hooks/useOTAUpdate';
+import { ensureObservability, useScreenTracking } from '../src/utils/observability';
+
+// Fire-and-forget telemetry bootstrap (idempotent, never breaks startup).
+ensureObservability();
 
 // Subscribe to auth changes to disconnect WebSocket on logout
 subscribeAuthCleanup();
@@ -70,6 +74,7 @@ function SellerOfflineMounts() {
 }
 
 function AppShell() {
+  useScreenTracking();
   const [fontsLoaded, fontError] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,

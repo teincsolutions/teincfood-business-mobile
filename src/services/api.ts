@@ -7,6 +7,7 @@ import axios, {
 } from "axios";
 import { API_BASE_URL } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth.store";
+import { getObservability } from "@teincfood/observability";
 import {
   extractFromResponseBody,
   recordAttempt,
@@ -36,8 +37,7 @@ axiosInstance.interceptors.request.use(
     const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-    try { recordAttempt("rest_attempt", `${config.method?.toUpperCase()} ${config.url ?? ""}`); } catch {}
+    }    try { recordAttempt("rest_attempt", `${config.method?.toUpperCase()} ${config.url ?? ""}`); } catch {}
     console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
       data: config.data,
       params: config.params,
@@ -51,10 +51,47 @@ axiosInstance.interceptors.request.use(
   (error: unknown) => Promise.reject(error),
 );
 
+// Observability request hook LAST so it runs first (axios request
+// interceptors are LIFO): creates the api.request span + traceparent.
+// Safe before init.
+axiosInstance.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    try {
+      const out = getObservability()
+        ?.axiosInterceptors()
+        .request(config as never) as unknown;
+      return (out ?? config) as InternalAxiosRequestConfig;
+    } catch {
+      return config;
+    }
+  },
+  (error: unknown) => Promise.reject(error),
+);
+
 // Response interceptor: session lifecycle is owned by @teincfood/core.
 // This layer only attaches tokens, normalizes errors, and delegates
 // classification (isAccessExpired/isSessionDead) + recovery
 // (refreshSession/clearAuth) to core. No local refresh state.
+axiosInstance.interceptors.response.use(
+  (response: AxiosResponse) => {
+    try {
+      getObservability()
+        ?.axiosInterceptors()
+        .response(response as never);
+    } catch {}
+    return response;
+  },
+  async (error: unknown) => {
+    try {
+      const ax = getObservability()?.axiosInterceptors();
+      if (ax) await ax.responseError(error as never);
+    } catch {}
+    return Promise.reject(error);
+  },
+);
+
+// Unwrap + session recovery (observability FIRST so spans see the real
+// response before unwrapping; responseError above rethrows into this handler).
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response.data,
   async (error: AxiosError) => {
