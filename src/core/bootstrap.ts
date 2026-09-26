@@ -67,8 +67,9 @@ import * as deliverySrv from "@/services/delivery.service";
 import * as dashboardSrv from "@/services/seller-dashboard.service";
 import * as analyticsSrv from "@/services/seller-analytics.service";
 import * as placesSrv from "@/services/places.service";
-import { setNotifyHandlers } from "@teincfood/core";
+import { setNotifyHandlers, setSyncFailureReporter } from "@teincfood/core";
 import { toast } from "sonner-native";
+import { getObservability } from "@/utils/observability";
 import * as desktopImageCache from "@teincfood/core";
 import type { SQLiteDatabase } from "expo-sqlite";
 
@@ -296,6 +297,35 @@ function wireServiceAdapters(): void {
       fetchVehicleTypes: riderSrv.fetchVehicleTypes,
     });
     setNotifyHandlers({ success: (m) => toast.success(m), error: (m) => toast.error(m) });
+    // Forward sync failures to observability so the device/app/user behind a
+    // stuck command is visible for monitoring and field fixes.
+    setSyncFailureReporter((report) => {
+      try {
+        const obs = getObservability();
+        if (!obs) return;
+        const attrs = {
+          phase: report.phase,
+          business_id: report.business_id,
+          user_id: report.user_id,
+          device_id: report.device_id,
+          command_type: report.command_type,
+          command_id: report.command_id,
+          entity_id: report.entity_id,
+          status: report.status,
+          code: report.code,
+          message: report.message,
+          attempts: report.attempts,
+          terminal: report.terminal,
+        };
+        obs.event("sync.command.failed", attrs as never);
+        if (report.terminal) {
+          obs.captureException(
+            new Error(report.message ?? "sync command failed"),
+            attrs as never,
+          );
+        }
+      } catch {}
+    });
     Object.assign(coreDeliveryService as Record<string, unknown>, {
       fetchBusinessDeliveries: deliverySrv.fetchBusinessDeliveries,
       fetchDeliveryDetail: deliverySrv.fetchDeliveryDetail,
