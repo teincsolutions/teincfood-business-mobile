@@ -6,6 +6,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { API_BASE_URL } from "@/utils/constants";
+import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
 import { getObservability } from "@teincfood/observability";
 import {
@@ -17,6 +18,11 @@ import {
   hasAuthRetrySkip,
   refreshSession,
   clearAuth,
+  noteRateLimited,
+  extractRetryAfterMs,
+  isRateLimited,
+  getRateLimitWaitMs,
+  shouldReportRateLimit,
 } from "@teincfood/core";
 
 /**
@@ -30,6 +36,37 @@ const axiosInstance: AxiosInstance = axios.create({
   },
   timeout: 30000,
 });
+
+// Global 429 back-pressure gate: while the server has throttled us, fail
+// network requests fast with a synthesized 429 instead of piling on. Background
+// sync auto-resumes once the cooldown clears.
+axiosInstance.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    if (isRateLimited()) {
+      const waitMs = getRateLimitWaitMs();
+      const err = new Error("Server is busy — please try again shortly") as Error & {
+        status?: number;
+        response?: unknown;
+        isRateLimited?: boolean;
+      };
+      err.status = 429;
+      err.isRateLimited = true;
+      err.response = {
+        status: 429,
+        data: {
+          error: {
+            code: "RATE_LIMIT_EXCEEDED",
+            message: err.message,
+            retry_after_seconds: Math.ceil(waitMs / 1000),
+          },
+        },
+      };
+      return Promise.reject(err);
+    }
+    return config;
+  },
+  (error: unknown) => Promise.reject(error),
+);
 
 // Request interceptor: attach auth token
 axiosInstance.interceptors.request.use(
@@ -117,6 +154,18 @@ axiosInstance.interceptors.response.use(
           responseData,
         ),
       );
+
+    // 429: open the global cooldown so background sync pauses, and tell the
+    // user once per window instead of failing silently.
+    if (status === 429) {
+      noteRateLimited(extractRetryAfterMs(error));
+      if (shouldReportRateLimit()) {
+        try {
+          toast.error("Server is busy — retrying automatically");
+        } catch {}
+      }
+      return rejectAsApiError();
+    }
 
     // Core-owned refresh calls must never recurse into session handling —
     // their own 401 rejects immediately for core to classify.
