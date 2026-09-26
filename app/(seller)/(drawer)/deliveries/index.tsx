@@ -19,6 +19,7 @@ import {
   Search,
   ExternalLink,
   Navigation2,
+  CalendarDays,
 } from "@tamagui/lucide-icons";
 import {
   FlatList,
@@ -41,7 +42,26 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { formatPriceFromMinor } from "@teincfood/core";
+import { TamaguiDateInput } from "@/components/ui/TamaguiDateInput";
+import {
+  formatPriceFromMinor,
+  formatDateTime,
+  resolveDateRange,
+  DATE_PRESET_LABELS,
+} from "@teincfood/core";
+
+const DELIVERY_ORDER_TYPES = [
+  { key: "", label: "All types" },
+  { key: "takeout", label: "Takeout" },
+  { key: "delivery", label: "Delivery" },
+  { key: "dine_in", label: "Dine-in" },
+];
+
+const DELIVERY_PAYMENT_FILTERS = [
+  { key: "", label: "All" },
+  { key: "paid", label: "Paid" },
+  { key: "unpaid", label: "Unpaid" },
+];
 
 const DELIVERY_FILTERS = [
   { key: "all", label: "All", color: "$gray9" },
@@ -84,11 +104,22 @@ export default function SellerDeliveries() {
   const setSearchQuery = useFilterStore((s) => s.setDeliveriesSearchQuery);
   const activeFilter = useFilterStore((s) => s.deliveriesActiveFilter);
   const setActiveFilter = useFilterStore((s) => s.setDeliveriesActiveFilter);
+  const datePreset = useFilterStore((s) => s.deliveriesDatePreset);
+  const setDatePreset = useFilterStore((s) => s.setDeliveriesDatePreset);
+  const dateFrom = useFilterStore((s) => s.deliveriesDateFrom);
+  const setDateFrom = useFilterStore((s) => s.setDeliveriesDateFrom);
+  const dateTo = useFilterStore((s) => s.deliveriesDateTo);
+  const setDateTo = useFilterStore((s) => s.setDeliveriesDateTo);
+  const orderType = useFilterStore((s) => s.deliveriesOrderType);
+  const setOrderType = useFilterStore((s) => s.setDeliveriesOrderType);
+  const paymentStatus = useFilterStore((s) => s.deliveriesPaymentStatus);
+  const setPaymentStatus = useFilterStore((s) => s.setDeliveriesPaymentStatus);
   const filterHydrated = useFilterStore((s) => s.isHydrated);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitFilter = useRef(false);
   const [showRiderSheet, setShowRiderSheet] = useState(false);
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [handoverTarget, setHandoverTarget] = useState<string | null>(null);
   const [changeRiderTarget, setChangeRiderTarget] = useState<string | null>(
@@ -97,10 +128,35 @@ export default function SellerDeliveries() {
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
 
-  const backendFilters = {
-    status: activeFilter !== "all" ? activeFilter : undefined,
-    search: debouncedSearch || undefined,
-  };
+  const backendFilters = useMemo(() => {
+    const range = resolveDateRange(datePreset, dateFrom, dateTo);
+    return {
+      status: activeFilter !== "all" ? activeFilter : undefined,
+      search: debouncedSearch || undefined,
+      order_type: orderType || undefined,
+      is_paid: paymentStatus || undefined,
+      date_from: range.date_from,
+      date_to: range.date_to,
+    };
+  }, [activeFilter, debouncedSearch, orderType, paymentStatus, datePreset, dateFrom, dateTo]);
+
+  const filtersActive =
+    activeFilter !== "all" ||
+    !!orderType ||
+    !!paymentStatus ||
+    !!debouncedSearch ||
+    datePreset !== "all";
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setDebouncedSearch("");
+    setActiveFilter("all");
+    setDatePreset("all");
+    setDateFrom("");
+    setDateTo("");
+    setOrderType("");
+    setPaymentStatus("");
+  }, [setSearchQuery, setActiveFilter, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
 
   const {
     data: deliveries,
@@ -228,6 +284,13 @@ export default function SellerDeliveries() {
             </YStack>
             <Text fontSize="$5" fontWeight="bold" color="$primary">
               {formatPriceFromMinor(order.total_minor, order.currency)}
+            </Text>
+          </XStack>
+
+          <XStack gap="$2" alignItems="center">
+            <CalendarDays size={14} color="$colorMuted" />
+            <Text fontSize="$3" color="$colorMuted">
+              {formatDateTime(d.inserted_at || order.inserted_at)}
             </Text>
           </XStack>
 
@@ -569,6 +632,19 @@ export default function SellerDeliveries() {
               placeholderTextColor="#999"
             />
           </XStack>
+          <Button
+            height={40}
+            paddingHorizontal="$3"
+            borderWidth={1}
+            borderColor={filtersActive ? "$primary" : "$borderColor"}
+            borderRadius="$3"
+            backgroundColor={filtersActive ? "$primary" : "$background"}
+            onPress={() => setMoreFiltersOpen((v) => !v)}
+          >
+            <Text fontFamily="$body" fontWeight="600" fontSize="$3" color="$color">
+              Filters{filtersActive ? " •" : ""}
+            </Text>
+          </Button>
         </XStack>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -598,6 +674,111 @@ export default function SellerDeliveries() {
             })}
           </XStack>
         </ScrollView>
+
+        {/* Date presets */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <XStack gap="$2">
+            {DATE_PRESET_LABELS.map((preset) => {
+              const active = datePreset === preset.key;
+              return (
+                <Pressable
+                  key={preset.key}
+                  onPress={() => {
+                    setDatePreset(preset.key);
+                    if (preset.key !== "custom") {
+                      setDateFrom("");
+                      setDateTo("");
+                    }
+                  }}
+                >
+                  <XStack
+                    px="$3"
+                    py="$1.5"
+                    borderRadius="$3"
+                    borderWidth={1}
+                    borderColor={active ? "$primary" : "$borderColor"}
+                    backgroundColor={active ? "$primary" : "$background"}
+                    gap="$1.5"
+                    alignItems="center"
+                  >
+                    <CalendarDays size={14} color={active ? "white" : "$colorMuted"} />
+                    <Text fontSize="$3" fontWeight="600" color={active ? "white" : "$color"}>
+                      {preset.label}
+                    </Text>
+                  </XStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+        </ScrollView>
+
+        {moreFiltersOpen && (
+          <YStack gap="$3" paddingVertical="$2">
+            {datePreset === "custom" && (
+              <YStack gap="$2">
+                <Text fontSize="$3" color="$colorMuted">From</Text>
+                <TamaguiDateInput
+                  value={dateFrom ? new Date(`${dateFrom}T00:00:00`) : undefined}
+                  onChange={(d) => setDateFrom(d.toISOString().split("T")[0])}
+                  placeholder="Start date"
+                />
+                <Text fontSize="$3" color="$colorMuted">To</Text>
+                <TamaguiDateInput
+                  value={dateTo ? new Date(`${dateTo}T00:00:00`) : undefined}
+                  onChange={(d) => setDateTo(d.toISOString().split("T")[0])}
+                  placeholder="End date"
+                />
+              </YStack>
+            )}
+            <Text fontSize="$4" fontWeight="600" color="$colorMuted">Order Type</Text>
+            <XStack gap="$2" flexWrap="wrap">
+              {DELIVERY_ORDER_TYPES.map((t) => {
+                const active = orderType === t.key;
+                return (
+                  <Pressable key={t.key || "all"} onPress={() => setOrderType(t.key)}>
+                    <XStack
+                      px="$3"
+                      py="$2"
+                      borderRadius="$3"
+                      borderWidth={1}
+                      borderColor={active ? "$primary" : "$borderColor"}
+                      backgroundColor={active ? "$primary" : "$background"}
+                    >
+                      <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
+                        {t.label}
+                      </Text>
+                    </XStack>
+                  </Pressable>
+                );
+              })}
+            </XStack>
+            <Text fontSize="$4" fontWeight="600" color="$colorMuted">Payment</Text>
+            <XStack gap="$2" flexWrap="wrap">
+              {DELIVERY_PAYMENT_FILTERS.map((p) => {
+                const active = paymentStatus === p.key;
+                return (
+                  <Pressable key={p.key || "all"} onPress={() => setPaymentStatus(p.key)}>
+                    <XStack
+                      px="$3"
+                      py="$2"
+                      borderRadius="$3"
+                      borderWidth={1}
+                      borderColor={active ? "$primary" : "$borderColor"}
+                      backgroundColor={active ? "$primary" : "$background"}
+                    >
+                      <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
+                        {p.label}
+                      </Text>
+                    </XStack>
+                  </Pressable>
+                );
+              })}
+            </XStack>
+            <Button variant="outline" onPress={resetFilters}>
+              Clear All
+            </Button>
+          </YStack>
+        )}
       </YStack>
 
       {isTablet ? (
@@ -677,15 +858,11 @@ export default function SellerDeliveries() {
                   ? "No deliveries match your search"
                   : "No deliveries for the selected filter"}
               </Text>
-              {(debouncedSearch || activeFilter !== "all") && (
+              {filtersActive && (
                 <Button
                   variant="outline"
                   marginTop="$3"
-                  onPress={() => {
-                    setSearchQuery("");
-                    setDebouncedSearch("");
-                    setActiveFilter("all");
-                  }}
+                  onPress={resetFilters}
                 >
                   Reset Filters
                 </Button>

@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Clock,
   Package,
+  CalendarDays,
 } from "@tamagui/lucide-icons";
 import { FlatList, Pressable, RefreshControl, TextInput, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,10 +37,29 @@ import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";
 import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { TamaguiDateInput } from "@/components/ui/TamaguiDateInput";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@teincfood/core";
-import { formatPriceFromMinor } from "@teincfood/core";
+import {
+  formatPriceFromMinor,
+  formatDateTime,
+  resolveDateRange,
+  DATE_PRESET_LABELS,
+} from "@teincfood/core";
 import { getCustomerDisplay, isCancellable, cancelLabelFor, CANCELLABLE_STATUSES } from "@teincfood/core";
+
+const ORDER_TYPE_FILTERS = [
+  { key: "", label: "All types" },
+  { key: "takeout", label: "Takeout" },
+  { key: "delivery", label: "Delivery" },
+  { key: "dine_in", label: "Dine-in" },
+];
+
+const PAYMENT_FILTERS = [
+  { key: "", label: "All" },
+  { key: "paid", label: "Paid" },
+  { key: "unpaid", label: "Unpaid" },
+];
 
 const FILTER_CHIPS = [
   { key: "pending", label: "Pending", color: "$warning" },
@@ -115,6 +135,16 @@ export default function SellerOrders() {
   const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
   const activeChips = useFilterStore((s) => s.ordersActiveChips);
   const setActiveChips = useFilterStore((s) => s.setOrdersActiveChips);
+  const datePreset = useFilterStore((s) => s.ordersDatePreset);
+  const setDatePreset = useFilterStore((s) => s.setOrdersDatePreset);
+  const dateFrom = useFilterStore((s) => s.ordersDateFrom);
+  const setDateFrom = useFilterStore((s) => s.setOrdersDateFrom);
+  const dateTo = useFilterStore((s) => s.ordersDateTo);
+  const setDateTo = useFilterStore((s) => s.setOrdersDateTo);
+  const orderType = useFilterStore((s) => s.ordersOrderType);
+  const setOrderType = useFilterStore((s) => s.setOrdersOrderType);
+  const paymentStatus = useFilterStore((s) => s.ordersPaymentStatus);
+  const setPaymentStatus = useFilterStore((s) => s.setOrdersPaymentStatus);
   const filterHydrated = useFilterStore((s) => s.isHydrated);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,6 +153,17 @@ export default function SellerOrders() {
   const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setDebouncedSearch("");
+    setActiveChips([]);
+    setDatePreset("all");
+    setDateFrom("");
+    setDateTo("");
+    setOrderType("");
+    setPaymentStatus("");
+  }, [setSearchQuery, setActiveChips, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -152,32 +193,44 @@ export default function SellerOrders() {
     };
   }, [searchQuery]);
 
-  // Initialize persistent filters once hydration is complete
+  // Restore persisted search once hydration completes. No default status
+  // filters: the list starts unfiltered (all orders) on every install.
   useEffect(() => {
     if (!filterHydrated) return;
     if (hasInitFilter.current) return;
     hasInitFilter.current = true;
-    if (activeChips.length === 0) {
-      setActiveChips(
-        isTablet
-          ? [...DEFAULT_CHIPS]
-          : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
-      );
-    }
     if (searchQuery) {
       setDebouncedSearch(searchQuery);
     }
   }, [filterHydrated]);
 
   const filterParams = useMemo(() => {
-    const params: { status?: string; q?: string } = {};
-    const chips = activeChips;
-    if (chips.length > 0 && chips.length < DEFAULT_CHIPS.length) {
-      params.status = chips.join(",");
+    const params: {
+      status?: string;
+      q?: string;
+      order_type?: string;
+      is_paid?: string;
+      date_from?: string;
+      date_to?: string;
+    } = {};
+    if (activeChips.length > 0 && activeChips.length < DEFAULT_CHIPS.length) {
+      params.status = activeChips.join(",");
     }
     if (debouncedSearch) params.q = debouncedSearch;
+    if (orderType) params.order_type = orderType;
+    if (paymentStatus) params.is_paid = paymentStatus;
+    const range = resolveDateRange(datePreset, dateFrom, dateTo);
+    if (range.date_from) params.date_from = range.date_from;
+    if (range.date_to) params.date_to = range.date_to;
     return params;
-  }, [activeChips, debouncedSearch]);
+  }, [activeChips, debouncedSearch, orderType, paymentStatus, datePreset, dateFrom, dateTo]);
+
+  const filtersActive =
+    activeChips.length > 0 ||
+    !!orderType ||
+    !!paymentStatus ||
+    !!debouncedSearch ||
+    datePreset !== "all";
 
   const {
     data,
@@ -251,6 +304,12 @@ export default function SellerOrders() {
           <Text fontSize="$4">{getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]).name}</Text>
           <Text fontSize="$5" fontWeight="bold" color="$primary">
             {formatPriceFromMinor(item.total_minor, item.currency)}
+          </Text>
+        </XStack>
+        <XStack gap="$2" alignItems="center">
+          <CalendarDays size={14} color="$colorMuted" />
+          <Text fontSize="$3" color="$colorMuted">
+            {formatDateTime(item.inserted_at)}
           </Text>
         </XStack>
         <Separator />
@@ -506,20 +565,18 @@ export default function SellerOrders() {
             height={40}
             paddingHorizontal="$3"
             borderWidth={1}
-            borderColor={activeChips.length > 0 ? "$primary" : "$borderColor"}
+            borderColor={filtersActive ? "$primary" : "$borderColor"}
             borderRadius="$3"
-            backgroundColor={
-              activeChips.length > 0 ? "$primary" : "$background"
-            }
+            backgroundColor={filtersActive ? "$primary" : "$background"}
             onPress={() => setFilterSheetOpen(true)}
           >
             <Text
               fontFamily="$body"
               fontWeight="600"
               fontSize="$3"
-              color={activeChips.length > 0 ? "$color" : "$color"}
+              color={filtersActive ? "$color" : "$color"}
             >
-              Filters
+              Filters{filtersActive ? " •" : ""}
             </Text>
           </Button>
         </XStack>
@@ -547,6 +604,43 @@ export default function SellerOrders() {
                       {chip.label}
                     </Text>
                   </YStack>
+                </Pressable>
+              );
+            })}
+          </XStack>
+        </ScrollView>
+
+        {/* Date presets */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <XStack gap="$2">
+            {DATE_PRESET_LABELS.map((preset) => {
+              const active = datePreset === preset.key;
+              return (
+                <Pressable
+                  key={preset.key}
+                  onPress={() => {
+                    setDatePreset(preset.key);
+                    if (preset.key !== "custom") {
+                      setDateFrom("");
+                      setDateTo("");
+                    }
+                  }}
+                >
+                  <XStack
+                    px="$3"
+                    py="$1.5"
+                    borderRadius="$3"
+                    borderWidth={1}
+                    borderColor={active ? "$primary" : "$borderColor"}
+                    backgroundColor={active ? "$primary" : "$background"}
+                    gap="$1.5"
+                    alignItems="center"
+                  >
+                    <CalendarDays size={14} color={active ? "white" : "$colorMuted"} />
+                    <Text fontSize="$3" fontWeight="600" color={active ? "white" : "$color"}>
+                      {preset.label}
+                    </Text>
+                  </XStack>
                 </Pressable>
               );
             })}
@@ -641,13 +735,7 @@ export default function SellerOrders() {
                   variant="outline"
                   marginTop="$3"
                   onPress={() => {
-                    setSearchQuery("");
-                    setDebouncedSearch("");
-                    setActiveChips(
-                      isTablet
-                        ? [...DEFAULT_CHIPS]
-                        : ["pending", "awaiting_payment", "accepted", "preparing", "ready"],
-                    );
+                    resetFilters();
                   }}
                 >
                   Reset Filters
@@ -667,7 +755,7 @@ export default function SellerOrders() {
         modal
         open={filterSheetOpen}
         onOpenChange={setFilterSheetOpen}
-        snapPoints={[60]}
+        snapPoints={[70]}
         dismissOnSnapToBottom
         zIndex={200_000}
       >
@@ -686,6 +774,7 @@ export default function SellerOrders() {
           {...(isTablet ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <ScrollView showsVerticalScrollIndicator={false}>
           <YStack gap="$4">
             <XStack justifyContent="space-between" alignItems="center">
               <Text fontSize="$5" fontWeight="bold">
@@ -723,11 +812,118 @@ export default function SellerOrders() {
                 );
               })}
             </YStack>
+
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
+                Date
+              </Text>
+              <XStack gap="$2" flexWrap="wrap">
+                {DATE_PRESET_LABELS.map((preset) => {
+                  const active = datePreset === preset.key;
+                  return (
+                    <Pressable
+                      key={preset.key}
+                      onPress={() => {
+                        setDatePreset(preset.key);
+                        if (preset.key !== "custom") {
+                          setDateFrom("");
+                          setDateTo("");
+                        }
+                      }}
+                    >
+                      <XStack
+                        px="$3"
+                        py="$2"
+                        borderRadius="$3"
+                        borderWidth={1}
+                        borderColor={active ? "$primary" : "$borderColor"}
+                        backgroundColor={active ? "$primary" : "$background"}
+                      >
+                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
+                          {preset.label}
+                        </Text>
+                      </XStack>
+                    </Pressable>
+                  );
+                })}
+              </XStack>
+              {datePreset === "custom" && (
+                <YStack gap="$2">
+                  <Text fontSize="$3" color="$colorMuted">From</Text>
+                  <TamaguiDateInput
+                    value={dateFrom ? new Date(`${dateFrom}T00:00:00`) : undefined}
+                    onChange={(d) => setDateFrom(d.toISOString().split("T")[0])}
+                    placeholder="Start date"
+                  />
+                  <Text fontSize="$3" color="$colorMuted">To</Text>
+                  <TamaguiDateInput
+                    value={dateTo ? new Date(`${dateTo}T00:00:00`) : undefined}
+                    onChange={(d) => setDateTo(d.toISOString().split("T")[0])}
+                    placeholder="End date"
+                  />
+                </YStack>
+              )}
+            </YStack>
+
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
+                Order Type
+              </Text>
+              <XStack gap="$2" flexWrap="wrap">
+                {ORDER_TYPE_FILTERS.map((t) => {
+                  const active = orderType === t.key;
+                  return (
+                    <Pressable key={t.key || "all"} onPress={() => setOrderType(t.key)}>
+                      <XStack
+                        px="$3"
+                        py="$2"
+                        borderRadius="$3"
+                        borderWidth={1}
+                        borderColor={active ? "$primary" : "$borderColor"}
+                        backgroundColor={active ? "$primary" : "$background"}
+                      >
+                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
+                          {t.label}
+                        </Text>
+                      </XStack>
+                    </Pressable>
+                  );
+                })}
+              </XStack>
+            </YStack>
+
+            <YStack gap="$2">
+              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
+                Payment
+              </Text>
+              <XStack gap="$2" flexWrap="wrap">
+                {PAYMENT_FILTERS.map((p) => {
+                  const active = paymentStatus === p.key;
+                  return (
+                    <Pressable key={p.key || "all"} onPress={() => setPaymentStatus(p.key)}>
+                      <XStack
+                        px="$3"
+                        py="$2"
+                        borderRadius="$3"
+                        borderWidth={1}
+                        borderColor={active ? "$primary" : "$borderColor"}
+                        backgroundColor={active ? "$primary" : "$background"}
+                      >
+                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
+                          {p.label}
+                        </Text>
+                      </XStack>
+                    </Pressable>
+                  );
+                })}
+              </XStack>
+            </YStack>
+
             <XStack gap="$3" marginTop="$2">
               <Button
                 flex={1}
                 variant="outline"
-                onPress={() => setActiveChips([])}
+                onPress={resetFilters}
               >
                 Clear All
               </Button>
@@ -736,6 +932,7 @@ export default function SellerOrders() {
               </Button>
             </XStack>
           </YStack>
+          </ScrollView>
         </Sheet.Frame>
       </Sheet>
 
