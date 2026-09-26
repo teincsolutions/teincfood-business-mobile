@@ -5,6 +5,7 @@ import { useMyBusinessCapabilities } from '@/hooks/useMyBusinessCapabilities';
 import { useBusinessReferenceDataSync } from '@teincfood/core';
 import { useOfflineOrderHydration } from '@teincfood/core';
 import { routeCapabilities } from '@/constants/route-capabilities';
+import { StartupReadinessGate } from '@/components/StartupReadinessGate';
 import { toast } from 'sonner-native';
 
 function requiredCapabilityFor(segments: string[]): string | null {
@@ -51,5 +52,9 @@ export default function SellerLayout() {
     }
   }, [segments, membership]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <StartupReadinessGate>
+      <Stack screenOptions={{ headerShown: false }} />
+    </StartupReadinessGate>
+  );
 }
