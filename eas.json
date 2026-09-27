@@ -35,6 +35,13 @@
         "track": "internal",
         "releaseStatus": "draft"
       }
+    },
+    "preview": {
+      "ios": {},
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
     }
   }
 }
