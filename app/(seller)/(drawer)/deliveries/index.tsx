@@ -15,7 +15,6 @@ import {
   Truck,
   MapPin,
   Bike,
-  X,
   Search,
   ExternalLink,
   Navigation2,
@@ -23,7 +22,6 @@ import {
 } from "@tamagui/lucide-icons";
 import {
   FlatList,
-  Pressable,
   RefreshControl,
   TextInput,
   ActivityIndicator,
@@ -42,12 +40,11 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { TamaguiDateInput } from "@/components/ui/TamaguiDateInput";
+import { FilterSheet } from "@/components/filters/FilterSheet";
 import {
   formatPriceFromMinor,
   formatDateTime,
   resolveDateRange,
-  DATE_PRESET_LABELS,
 } from "@teincfood/core";
 
 const DELIVERY_ORDER_TYPES = [
@@ -63,17 +60,6 @@ const DELIVERY_PAYMENT_FILTERS = [
   { key: "unpaid", label: "Unpaid" },
 ];
 
-const DELIVERY_FILTERS = [
-  { key: "all", label: "All", color: "$gray9" },
-  {
-    key: "assigned,picked_up,en_route,arrived",
-    label: "Active",
-    color: "$color.blue",
-  },
-  { key: "delivered", label: "Delivered", color: "$color.gray600" },
-  { key: "failed,returned_to_merchant", label: "Failed", color: "$color.red" },
-];
-
 const STATUS_COLORS = {
   assigned: "$color.orange",
   picked_up: "$color.blue",
@@ -83,6 +69,20 @@ const STATUS_COLORS = {
   failed: "$color.red",
   returned_to_merchant: "$color.orange",
 };
+
+const DELIVERY_STATUS_OPTIONS = [
+  { key: "assigned", label: "Assigned", color: STATUS_COLORS.assigned },
+  { key: "picked_up", label: "Picked Up", color: STATUS_COLORS.picked_up },
+  { key: "en_route", label: "En Route", color: STATUS_COLORS.en_route },
+  { key: "arrived", label: "Arrived", color: STATUS_COLORS.arrived },
+  { key: "delivered", label: "Delivered", color: STATUS_COLORS.delivered },
+  { key: "failed", label: "Failed", color: STATUS_COLORS.failed },
+  {
+    key: "returned_to_merchant",
+    label: "Returned to Merchant",
+    color: STATUS_COLORS.returned_to_merchant,
+  },
+];
 
 function timeSince(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -102,8 +102,8 @@ export default function SellerDeliveries() {
   const [containerWidth, setContainerWidth] = useState(0);
   const searchQuery = useFilterStore((s) => s.deliveriesSearchQuery);
   const setSearchQuery = useFilterStore((s) => s.setDeliveriesSearchQuery);
-  const activeFilter = useFilterStore((s) => s.deliveriesActiveFilter);
-  const setActiveFilter = useFilterStore((s) => s.setDeliveriesActiveFilter);
+  const activeChips = useFilterStore((s) => s.deliveriesActiveChips);
+  const setActiveChips = useFilterStore((s) => s.setDeliveriesActiveChips);
   const datePreset = useFilterStore((s) => s.deliveriesDatePreset);
   const setDatePreset = useFilterStore((s) => s.setDeliveriesDatePreset);
   const dateFrom = useFilterStore((s) => s.deliveriesDateFrom);
@@ -119,7 +119,7 @@ export default function SellerDeliveries() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitFilter = useRef(false);
   const [showRiderSheet, setShowRiderSheet] = useState(false);
-  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [handoverTarget, setHandoverTarget] = useState<string | null>(null);
   const [changeRiderTarget, setChangeRiderTarget] = useState<string | null>(
@@ -131,17 +131,17 @@ export default function SellerDeliveries() {
   const backendFilters = useMemo(() => {
     const range = resolveDateRange(datePreset, dateFrom, dateTo);
     return {
-      status: activeFilter !== "all" ? activeFilter : undefined,
+      status: activeChips.length > 0 ? activeChips.join(",") : undefined,
       search: debouncedSearch || undefined,
       order_type: orderType || undefined,
       is_paid: paymentStatus || undefined,
       date_from: range.date_from,
       date_to: range.date_to,
     };
-  }, [activeFilter, debouncedSearch, orderType, paymentStatus, datePreset, dateFrom, dateTo]);
+  }, [activeChips, debouncedSearch, orderType, paymentStatus, datePreset, dateFrom, dateTo]);
 
   const filtersActive =
-    activeFilter !== "all" ||
+    activeChips.length > 0 ||
     !!orderType ||
     !!paymentStatus ||
     !!debouncedSearch ||
@@ -150,13 +150,24 @@ export default function SellerDeliveries() {
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setDebouncedSearch("");
-    setActiveFilter("all");
+    setActiveChips([]);
     setDatePreset("all");
     setDateFrom("");
     setDateTo("");
     setOrderType("");
     setPaymentStatus("");
-  }, [setSearchQuery, setActiveFilter, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
+  }, [setSearchQuery, setActiveChips, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
+
+  const toggleStatus = useCallback(
+    (key: string) => {
+      setActiveChips(
+        activeChips.includes(key)
+          ? activeChips.filter((k) => k !== key)
+          : [...activeChips, key],
+      );
+    },
+    [activeChips, setActiveChips],
+  );
 
   const {
     data: deliveries,
@@ -611,6 +622,7 @@ export default function SellerDeliveries() {
       backgroundColor="$background"
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
     >
+      {/* Search + Filters */}
       <YStack padding="$4" gap="$3" paddingBottom="$2">
         <XStack gap="$2" alignItems="center">
           <XStack
@@ -639,146 +651,18 @@ export default function SellerDeliveries() {
             borderColor={filtersActive ? "$primary" : "$borderColor"}
             borderRadius="$3"
             backgroundColor={filtersActive ? "$primary" : "$background"}
-            onPress={() => setMoreFiltersOpen((v) => !v)}
+            onPress={() => setFilterSheetOpen(true)}
           >
-            <Text fontFamily="$body" fontWeight="600" fontSize="$3" color="$color">
+            <Text
+              fontFamily="$body"
+              fontWeight="600"
+              fontSize="$3"
+              color={filtersActive ? "white" : "$color"}
+            >
               Filters{filtersActive ? " •" : ""}
             </Text>
           </Button>
         </XStack>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <XStack gap="$2" paddingVertical="$1">
-            {DELIVERY_FILTERS.map((f) => {
-              const active = activeFilter === f.key;
-              return (
-                <Pressable key={f.key} onPress={() => setActiveFilter(f.key)}>
-                  <YStack
-                    px="$3"
-                    py="$2"
-                    borderRadius="$4"
-                    borderWidth={1}
-                    borderColor={active ? f.color : "$borderColor"}
-                    backgroundColor={active ? f.color : "$background"}
-                  >
-                    <Text
-                      fontSize="$3"
-                      fontWeight="600"
-                      color={active ? "$color" : "$color"}
-                    >
-                      {f.label}
-                    </Text>
-                  </YStack>
-                </Pressable>
-              );
-            })}
-          </XStack>
-        </ScrollView>
-
-        {/* Date presets */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <XStack gap="$2">
-            {DATE_PRESET_LABELS.map((preset) => {
-              const active = datePreset === preset.key;
-              return (
-                <Pressable
-                  key={preset.key}
-                  onPress={() => {
-                    setDatePreset(preset.key);
-                    if (preset.key !== "custom") {
-                      setDateFrom("");
-                      setDateTo("");
-                    }
-                  }}
-                >
-                  <XStack
-                    px="$3"
-                    py="$1.5"
-                    borderRadius="$3"
-                    borderWidth={1}
-                    borderColor={active ? "$primary" : "$borderColor"}
-                    backgroundColor={active ? "$primary" : "$background"}
-                    gap="$1.5"
-                    alignItems="center"
-                  >
-                    <CalendarDays size={14} color={active ? "white" : "$colorMuted"} />
-                    <Text fontSize="$3" fontWeight="600" color={active ? "white" : "$color"}>
-                      {preset.label}
-                    </Text>
-                  </XStack>
-                </Pressable>
-              );
-            })}
-          </XStack>
-        </ScrollView>
-
-        {moreFiltersOpen && (
-          <YStack gap="$3" paddingVertical="$2">
-            {datePreset === "custom" && (
-              <YStack gap="$2">
-                <Text fontSize="$3" color="$colorMuted">From</Text>
-                <TamaguiDateInput
-                  value={dateFrom ? new Date(`${dateFrom}T00:00:00`) : undefined}
-                  onChange={(d) => setDateFrom(d.toISOString().split("T")[0])}
-                  placeholder="Start date"
-                />
-                <Text fontSize="$3" color="$colorMuted">To</Text>
-                <TamaguiDateInput
-                  value={dateTo ? new Date(`${dateTo}T00:00:00`) : undefined}
-                  onChange={(d) => setDateTo(d.toISOString().split("T")[0])}
-                  placeholder="End date"
-                />
-              </YStack>
-            )}
-            <Text fontSize="$4" fontWeight="600" color="$colorMuted">Order Type</Text>
-            <XStack gap="$2" flexWrap="wrap">
-              {DELIVERY_ORDER_TYPES.map((t) => {
-                const active = orderType === t.key;
-                return (
-                  <Pressable key={t.key || "all"} onPress={() => setOrderType(t.key)}>
-                    <XStack
-                      px="$3"
-                      py="$2"
-                      borderRadius="$3"
-                      borderWidth={1}
-                      borderColor={active ? "$primary" : "$borderColor"}
-                      backgroundColor={active ? "$primary" : "$background"}
-                    >
-                      <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
-                        {t.label}
-                      </Text>
-                    </XStack>
-                  </Pressable>
-                );
-              })}
-            </XStack>
-            <Text fontSize="$4" fontWeight="600" color="$colorMuted">Payment</Text>
-            <XStack gap="$2" flexWrap="wrap">
-              {DELIVERY_PAYMENT_FILTERS.map((p) => {
-                const active = paymentStatus === p.key;
-                return (
-                  <Pressable key={p.key || "all"} onPress={() => setPaymentStatus(p.key)}>
-                    <XStack
-                      px="$3"
-                      py="$2"
-                      borderRadius="$3"
-                      borderWidth={1}
-                      borderColor={active ? "$primary" : "$borderColor"}
-                      backgroundColor={active ? "$primary" : "$background"}
-                    >
-                      <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
-                        {p.label}
-                      </Text>
-                    </XStack>
-                  </Pressable>
-                );
-              })}
-            </XStack>
-            <Button variant="outline" onPress={resetFilters}>
-              Clear All
-            </Button>
-          </YStack>
-        )}
       </YStack>
 
       {isTablet ? (
@@ -914,6 +798,28 @@ export default function SellerDeliveries() {
             setShowRiderSheet(true);
           }
         }}
+      />
+
+      <FilterSheet
+        open={filterSheetOpen}
+        onOpenChange={setFilterSheetOpen}
+        title="Filter Deliveries"
+        statusOptions={DELIVERY_STATUS_OPTIONS}
+        activeStatus={activeChips}
+        onToggleStatus={toggleStatus}
+        datePreset={datePreset}
+        onDatePresetChange={setDatePreset}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        orderType={orderType}
+        orderTypeOptions={DELIVERY_ORDER_TYPES}
+        onOrderTypeChange={setOrderType}
+        paymentStatus={paymentStatus}
+        paymentOptions={DELIVERY_PAYMENT_FILTERS}
+        onPaymentStatusChange={setPaymentStatus}
+        onClear={resetFilters}
       />
     </YStack>
   );

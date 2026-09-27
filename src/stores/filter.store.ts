@@ -11,6 +11,7 @@ interface FilterState {
   ordersOrderType: string;
   ordersPaymentStatus: string;
   deliveriesActiveFilter: string;
+  deliveriesActiveChips: string[];
   deliveriesSearchQuery: string;
   deliveriesDatePreset: string;
   deliveriesDateFrom: string;
@@ -27,6 +28,7 @@ interface FilterState {
   setOrdersOrderType: (v: string) => void;
   setOrdersPaymentStatus: (v: string) => void;
   setDeliveriesActiveFilter: (f: string) => void;
+  setDeliveriesActiveChips: (chips: string[]) => void;
   setDeliveriesSearchQuery: (q: string) => void;
   setDeliveriesDatePreset: (v: string) => void;
   setDeliveriesDateFrom: (v: string) => void;
@@ -46,6 +48,7 @@ const DEFAULTS = {
   ordersOrderType: "",
   ordersPaymentStatus: "",
   deliveriesActiveFilter: "all",
+  deliveriesActiveChips: [] as string[],
   deliveriesSearchQuery: "",
   deliveriesDatePreset: "all",
   deliveriesDateFrom: "",
@@ -68,6 +71,7 @@ export const useFilterStore = create<FilterState>()(
       setOrdersOrderType: (v) => set({ ordersOrderType: v }),
       setOrdersPaymentStatus: (v) => set({ ordersPaymentStatus: v }),
       setDeliveriesActiveFilter: (f) => set({ deliveriesActiveFilter: f }),
+      setDeliveriesActiveChips: (chips) => set({ deliveriesActiveChips: chips }),
       setDeliveriesSearchQuery: (q) => set({ deliveriesSearchQuery: q }),
       setDeliveriesDatePreset: (v) => set({ deliveriesDatePreset: v }),
       setDeliveriesDateFrom: (v) => set({ deliveriesDateFrom: v }),
@@ -100,6 +104,7 @@ export const useFilterStore = create<FilterState>()(
         ordersOrderType: state.ordersOrderType,
         ordersPaymentStatus: state.ordersPaymentStatus,
         deliveriesActiveFilter: state.deliveriesActiveFilter,
+        deliveriesActiveChips: state.deliveriesActiveChips,
         deliveriesSearchQuery: state.deliveriesSearchQuery,
         deliveriesDatePreset: state.deliveriesDatePreset,
         deliveriesDateFrom: state.deliveriesDateFrom,

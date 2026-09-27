@@ -8,22 +8,19 @@ import {
   Button,
   XStack,
   Separator,
-  Spinner,
-  Sheet,
   ScrollView,
   Tooltip,
 } from "tamagui";
 import {
   FileText,
   Printer,
-  X,
   Search,
   ExternalLink,
   Clock,
   Package,
   CalendarDays,
 } from "@tamagui/lucide-icons";
-import { FlatList, Pressable, RefreshControl, TextInput, ActivityIndicator } from "react-native";
+import { FlatList, RefreshControl, TextInput, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -37,14 +34,13 @@ import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";
 import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
-import { TamaguiDateInput } from "@/components/ui/TamaguiDateInput";
+import { FilterSheet } from "@/components/filters/FilterSheet";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@teincfood/core";
 import {
   formatPriceFromMinor,
   formatDateTime,
   resolveDateRange,
-  DATE_PRESET_LABELS,
 } from "@teincfood/core";
 import { getCustomerDisplay, isCancellable, cancelLabelFor, CANCELLABLE_STATUSES } from "@teincfood/core";
 
@@ -89,6 +85,12 @@ const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
 const CHIP_COLORS: Record<string, string> = Object.fromEntries(
   Object.entries(STATUS_BADGE).map(([k, v]) => [k, v.bg]),
 ) as Record<string, string>;
+
+const ORDER_STATUS_OPTIONS = FILTER_CHIPS.map((c) => ({
+  key: c.key,
+  label: c.label,
+  color: CHIP_COLORS[c.key],
+}));
 
 const DEFAULT_CHIPS = [
   "pending",
@@ -539,7 +541,7 @@ export default function SellerOrders() {
       backgroundColor="$background"
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
     >
-      {/* Search + Filter chips */}
+      {/* Search + Filters */}
       <YStack padding="$4" gap="$3" paddingBottom="$2">
         <XStack gap="$2" alignItems="center">
           <XStack
@@ -574,78 +576,12 @@ export default function SellerOrders() {
               fontFamily="$body"
               fontWeight="600"
               fontSize="$3"
-              color={filtersActive ? "$color" : "$color"}
+              color={filtersActive ? "white" : "$color"}
             >
               Filters{filtersActive ? " •" : ""}
             </Text>
           </Button>
         </XStack>
-
-        {/* Filter chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <XStack gap="$2" paddingVertical="$1">
-            {FILTER_CHIPS.map((chip) => {
-              const active = activeChips.includes(chip.key);
-              return (
-                <Pressable key={chip.key} onPress={() => toggleChip(chip.key)}>
-                  <YStack
-                    px="$3"
-                    py="$2"
-                    borderRadius="$4"
-                    borderWidth={1}
-                    borderColor={active ? chip.color : "$borderColor"}
-                    backgroundColor={active ? chip.color : "$background"}
-                  >
-                    <Text
-                      fontSize="$3"
-                      fontWeight="600"
-                      color={active ? (STATUS_BADGE[chip.key]?.color ?? "white") : "$color"}
-                    >
-                      {chip.label}
-                    </Text>
-                  </YStack>
-                </Pressable>
-              );
-            })}
-          </XStack>
-        </ScrollView>
-
-        {/* Date presets */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <XStack gap="$2">
-            {DATE_PRESET_LABELS.map((preset) => {
-              const active = datePreset === preset.key;
-              return (
-                <Pressable
-                  key={preset.key}
-                  onPress={() => {
-                    setDatePreset(preset.key);
-                    if (preset.key !== "custom") {
-                      setDateFrom("");
-                      setDateTo("");
-                    }
-                  }}
-                >
-                  <XStack
-                    px="$3"
-                    py="$1.5"
-                    borderRadius="$3"
-                    borderWidth={1}
-                    borderColor={active ? "$primary" : "$borderColor"}
-                    backgroundColor={active ? "$primary" : "$background"}
-                    gap="$1.5"
-                    alignItems="center"
-                  >
-                    <CalendarDays size={14} color={active ? "white" : "$colorMuted"} />
-                    <Text fontSize="$3" fontWeight="600" color={active ? "white" : "$color"}>
-                      {preset.label}
-                    </Text>
-                  </XStack>
-                </Pressable>
-              );
-            })}
-          </XStack>
-        </ScrollView>
       </YStack>
 
       {/* Order list */}
@@ -751,190 +687,27 @@ export default function SellerOrders() {
       )}
 
       {/* Filter Sheet */}
-      <Sheet
-        modal
+      <FilterSheet
         open={filterSheetOpen}
         onOpenChange={setFilterSheetOpen}
-        snapPoints={[70]}
-        dismissOnSnapToBottom
-        zIndex={200_000}
-      >
-        <Sheet.Overlay
-          animation="lazy"
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-          backgroundColor="rgba(0,0,0,0.5)"
-        />
-        <Sheet.Frame
-          backgroundColor="$background"
-          borderTopLeftRadius="$6"
-          borderTopRightRadius="$6"
-          padding="$4"
-          paddingBottom={insets.bottom + 16}
-          {...(isTablet ? { maxWidth: 600, alignSelf: "center" } : {})}
-        >
-          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
-          <ScrollView showsVerticalScrollIndicator={false}>
-          <YStack gap="$4">
-            <XStack justifyContent="space-between" alignItems="center">
-              <Text fontSize="$5" fontWeight="bold">
-                Filter Orders
-              </Text>
-              <Pressable onPress={() => setFilterSheetOpen(false)}>
-                <X size={24} color="$color" />
-              </Pressable>
-            </XStack>
-            <YStack gap="$3">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
-                Order Status
-              </Text>
-              {FILTER_CHIPS.map((chip) => {
-                const active = activeChips.includes(chip.key);
-                return (
-                  <Pressable
-                    key={chip.key}
-                    onPress={() => toggleChip(chip.key)}
-                  >
-                    <XStack
-                      p="$3"
-                      borderWidth={1}
-                      borderColor={active ? chip.color : "$borderColor"}
-                      borderRadius="$3"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      backgroundColor={active ? chip.color : "$background"}
-                    >
-                      <Text fontWeight="500" color={active ? (STATUS_BADGE[chip.key]?.color ?? "white") : "$color"}>
-                        {chip.label}
-                      </Text>
-                    </XStack>
-                  </Pressable>
-                );
-              })}
-            </YStack>
-
-            <YStack gap="$2">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
-                Date
-              </Text>
-              <XStack gap="$2" flexWrap="wrap">
-                {DATE_PRESET_LABELS.map((preset) => {
-                  const active = datePreset === preset.key;
-                  return (
-                    <Pressable
-                      key={preset.key}
-                      onPress={() => {
-                        setDatePreset(preset.key);
-                        if (preset.key !== "custom") {
-                          setDateFrom("");
-                          setDateTo("");
-                        }
-                      }}
-                    >
-                      <XStack
-                        px="$3"
-                        py="$2"
-                        borderRadius="$3"
-                        borderWidth={1}
-                        borderColor={active ? "$primary" : "$borderColor"}
-                        backgroundColor={active ? "$primary" : "$background"}
-                      >
-                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
-                          {preset.label}
-                        </Text>
-                      </XStack>
-                    </Pressable>
-                  );
-                })}
-              </XStack>
-              {datePreset === "custom" && (
-                <YStack gap="$2">
-                  <Text fontSize="$3" color="$colorMuted">From</Text>
-                  <TamaguiDateInput
-                    value={dateFrom ? new Date(`${dateFrom}T00:00:00`) : undefined}
-                    onChange={(d) => setDateFrom(d.toISOString().split("T")[0])}
-                    placeholder="Start date"
-                  />
-                  <Text fontSize="$3" color="$colorMuted">To</Text>
-                  <TamaguiDateInput
-                    value={dateTo ? new Date(`${dateTo}T00:00:00`) : undefined}
-                    onChange={(d) => setDateTo(d.toISOString().split("T")[0])}
-                    placeholder="End date"
-                  />
-                </YStack>
-              )}
-            </YStack>
-
-            <YStack gap="$2">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
-                Order Type
-              </Text>
-              <XStack gap="$2" flexWrap="wrap">
-                {ORDER_TYPE_FILTERS.map((t) => {
-                  const active = orderType === t.key;
-                  return (
-                    <Pressable key={t.key || "all"} onPress={() => setOrderType(t.key)}>
-                      <XStack
-                        px="$3"
-                        py="$2"
-                        borderRadius="$3"
-                        borderWidth={1}
-                        borderColor={active ? "$primary" : "$borderColor"}
-                        backgroundColor={active ? "$primary" : "$background"}
-                      >
-                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
-                          {t.label}
-                        </Text>
-                      </XStack>
-                    </Pressable>
-                  );
-                })}
-              </XStack>
-            </YStack>
-
-            <YStack gap="$2">
-              <Text fontSize="$4" fontWeight="600" color="$colorMuted">
-                Payment
-              </Text>
-              <XStack gap="$2" flexWrap="wrap">
-                {PAYMENT_FILTERS.map((p) => {
-                  const active = paymentStatus === p.key;
-                  return (
-                    <Pressable key={p.key || "all"} onPress={() => setPaymentStatus(p.key)}>
-                      <XStack
-                        px="$3"
-                        py="$2"
-                        borderRadius="$3"
-                        borderWidth={1}
-                        borderColor={active ? "$primary" : "$borderColor"}
-                        backgroundColor={active ? "$primary" : "$background"}
-                      >
-                        <Text fontWeight="600" fontSize="$3" color={active ? "white" : "$color"}>
-                          {p.label}
-                        </Text>
-                      </XStack>
-                    </Pressable>
-                  );
-                })}
-              </XStack>
-            </YStack>
-
-            <XStack gap="$3" marginTop="$2">
-              <Button
-                flex={1}
-                variant="outline"
-                onPress={resetFilters}
-              >
-                Clear All
-              </Button>
-              <Button flex={1} onPress={() => setFilterSheetOpen(false)}>
-                Apply
-              </Button>
-            </XStack>
-          </YStack>
-          </ScrollView>
-        </Sheet.Frame>
-      </Sheet>
+        title="Filter Orders"
+        statusOptions={ORDER_STATUS_OPTIONS}
+        activeStatus={activeChips}
+        onToggleStatus={toggleChip}
+        datePreset={datePreset}
+        onDatePresetChange={setDatePreset}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        orderType={orderType}
+        orderTypeOptions={ORDER_TYPE_FILTERS}
+        onOrderTypeChange={setOrderType}
+        paymentStatus={paymentStatus}
+        paymentOptions={PAYMENT_FILTERS}
+        onPaymentStatusChange={setPaymentStatus}
+        onClear={resetFilters}
+      />
 
       {/* Cancel Confirmation */}
       <AppAlertDialog
