@@ -28,6 +28,7 @@
       .sub { font-size: 20px; color: var(--muted); }
       header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 32px; border-bottom: 1px solid var(--line); }
       .brand-name { font-size: 22px; font-weight: 800; }
+      .header-logo { height: 40px; width: auto; max-width: 150px; object-fit: contain; }
       .chip { background: var(--sunken); color: var(--muted); font-size: 15px; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
       .items { flex: 1; overflow-y: auto; padding: 8px 32px; }
       .item { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
@@ -61,12 +62,17 @@
         });
       }
       var METHOD = { cash: "Cash", mobile_money: "Mobile Money", card: "Card", split: "Split payment", other: "Payment" };
+      var APP_LOGO = "file:///android_asset/app-logo.png";
 
       function logoOrName(branding) {
-        if (branding && branding.logoUrl) {
-          return '<img class="logo" src="' + esc(branding.logoUrl) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'wordmark\',textContent:\'' + esc((branding && branding.name) || "TeincFood").replace(/'/g, "") + '\'}))" />';
-        }
-        return '<div class="wordmark">' + esc((branding && branding.name) || "TeincFood") + "</div>";
+        var name = (branding && branding.name) || "TeincFood";
+        var wordmarkFallback =
+          "this.replaceWith(Object.assign(document.createElement('div'),{className:'wordmark',textContent:'" +
+          String(name).replace(/'/g, "") +
+          "'}))";
+        // Business logo when uploaded, else the bundled app logo.
+        var src = (branding && branding.logoUrl) ? branding.logoUrl : APP_LOGO;
+        return '<img class="logo" src="' + esc(src) + '" alt="" onerror="' + wordmarkFallback + '" />';
       }
 
       function renderIdle(model) {
@@ -96,8 +102,11 @@
           payment = '<div class="payment-bar">' + esc(label) + "</div>";
         }
 
-        var header = '<header><div><div class="brand-name">' + esc((model.branding && model.branding.name) || "Your order") + "</div>" +
-          (model.customerName ? '<div class="sub" style="font-size:15px">' + esc(model.customerName) + "</div>" : "") + "</div>" +
+        var logoSrc = (model.branding && model.branding.logoUrl) ? model.branding.logoUrl : APP_LOGO;
+        var header = '<header><div style="display:flex;align-items:center;gap:14px;min-width:0">' +
+          '<img class="header-logo" src="' + esc(logoSrc) + '" alt="" onerror="this.style.display=\'none\'" />' +
+          '<div style="min-width:0"><div class="brand-name">' + esc((model.branding && model.branding.name) || "Your order") + "</div>" +
+          (model.customerName ? '<div class="sub" style="font-size:15px">' + esc(model.customerName) + "</div>" : "") + "</div></div>" +
           (model.orderType ? '<span class="chip">' + esc(String(model.orderType).replace(/_/g, " ")) + "</span>" : "") + "</header>";
 
         return header + '<div class="items">' + items + "</div>" + payment + "<footer>" +
