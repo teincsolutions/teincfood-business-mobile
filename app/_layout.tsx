@@ -55,6 +55,7 @@ import { AlertProvider } from '../src/contexts/AlertContext';
 import { AlertContainer } from '../src/contexts/AlertContainer';
 import { useOTAUpdate } from '../src/hooks/useOTAUpdate';
 import { ensureObservability, useScreenTracking } from '../src/utils/observability';
+import { CustomerDisplayController } from '../src/customer-display/CustomerDisplayController';
 
 // Fire-and-forget telemetry bootstrap (idempotent, never breaks startup).
 ensureObservability();
@@ -341,6 +342,7 @@ function AppShell() {
       <Toaster position="top-center" />
       <BusinessesSync />
       {sellerSyncMounts}
+      <CustomerDisplayController />
       <LocationGuard>
           <YStack flex={1}>
             <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />

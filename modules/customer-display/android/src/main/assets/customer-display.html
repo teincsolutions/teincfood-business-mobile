@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Customer Display</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #111827;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --sunken: #f3f4f6;
+        --brand: #f97316;
+        --success: #16a34a;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      #root { height: 100%; display: flex; flex-direction: column; }
+      .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; gap: 16px; }
+      .logo { max-height: 112px; max-width: 70%; object-fit: contain; }
+      .wordmark { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; }
+      .sub { font-size: 20px; color: var(--muted); }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 32px; border-bottom: 1px solid var(--line); }
+      .brand-name { font-size: 22px; font-weight: 800; }
+      .chip { background: var(--sunken); color: var(--muted); font-size: 15px; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
+      .items { flex: 1; overflow-y: auto; padding: 8px 32px; }
+      .item { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+      .qty { flex: 0 0 auto; min-width: 34px; height: 34px; border-radius: 9px; background: var(--sunken); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; }
+      .item-main { flex: 1; min-width: 0; }
+      .item-name { font-size: 19px; font-weight: 600; }
+      .item-addons { font-size: 14px; color: var(--muted); }
+      .item-total { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .payment-bar { display: flex; align-items: center; gap: 12px; padding: 14px 32px; border-top: 1px solid var(--line); color: var(--brand); background: rgba(249,115,22,0.06); font-size: 19px; font-weight: 700; }
+      footer { border-top: 1px solid var(--line); padding: 18px 32px; }
+      .row { display: flex; justify-content: space-between; font-size: 18px; color: var(--muted); }
+      .row.discount { color: var(--success); }
+      .total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+      .total .label { font-size: 26px; font-weight: 800; }
+      .total .value { font-size: 40px; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; }
+      .check { width: 96px; height: 96px; border-radius: 999px; background: rgba(22,163,74,0.12); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 56px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      var SYMBOLS = { GHS: "GH\u20B5", NGN: "\u20A6", USD: "$", EUR: "\u20AC", GBP: "\u00A3", KES: "KSh", ZAR: "R" };
+      function money(minor, currency) {
+        var sym = SYMBOLS[currency] || (currency ? currency + " " : "");
+        var v = (Number(minor || 0) / 100).toFixed(2);
+        return sym + v;
+      }
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+        });
+      }
+      var METHOD = { cash: "Cash", mobile_money: "Mobile Money", card: "Card", split: "Split payment", other: "Payment" };
+
+      function logoOrName(branding) {
+        if (branding && branding.logoUrl) {
+          return '<img class="logo" src="' + esc(branding.logoUrl) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'wordmark\',textContent:\'' + esc((branding && branding.name) || "TeincFood").replace(/'/g, "") + '\'}))" />';
+        }
+        return '<div class="wordmark">' + esc((branding && branding.name) || "TeincFood") + "</div>";
+      }
+
+      function renderIdle(model) {
+        return '<div class="center">' + logoOrName(model.branding) + '<div class="sub">Welcome \u2014 your order will appear here.</div></div>';
+      }
+
+      function renderOrder(model) {
+        var items = (model.items || []).map(function (it) {
+          var addons = (it.addons && it.addons.length) ? '<div class="item-addons">+' + esc(it.addons.join(", ")) + "</div>" : "";
+          var variant = it.variant ? ' <span style="color:var(--muted);font-weight:400">\u00B7 ' + esc(it.variant) + "</span>" : "";
+          return (
+            '<div class="item"><div class="qty">' + it.quantity + '</div><div class="item-main"><div class="item-name">' +
+            esc(it.name) + variant + "</div>" + addons + '</div><div class="item-total">' +
+            money(it.lineTotalMinor, model.currency) + "</div></div>"
+          );
+        }).join("");
+
+        var taxRows = (model.taxLines || []).map(function (t) {
+          return '<div class="row"><span>' + esc(t.name) + (t.inclusive ? " (included)" : "") + '</span><span>' + money(t.amountMinor, model.currency) + "</span></div>";
+        }).join("");
+        var discount = model.discountMinor > 0 ? '<div class="row discount"><span>Discount</span><span>\u2212' + money(model.discountMinor, model.currency) + "</span></div>" : "";
+
+        var payment = "";
+        if (model.payment) {
+          var status = model.payment.status;
+          var label = status === "paid" ? "Payment received" : status === "processing" ? "Processing " + (METHOD[model.payment.method] || "payment") + "\u2026" : "Pay by " + (METHOD[model.payment.method] || "payment");
+          payment = '<div class="payment-bar">' + esc(label) + "</div>";
+        }
+
+        var header = '<header><div><div class="brand-name">' + esc((model.branding && model.branding.name) || "Your order") + "</div>" +
+          (model.customerName ? '<div class="sub" style="font-size:15px">' + esc(model.customerName) + "</div>" : "") + "</div>" +
+          (model.orderType ? '<span class="chip">' + esc(String(model.orderType).replace(/_/g, " ")) + "</span>" : "") + "</header>";
+
+        return header + '<div class="items">' + items + "</div>" + payment + "<footer>" +
+          '<div class="row"><span>Subtotal</span><span>' + money(model.subtotalMinor, model.currency) + "</span></div>" +
+          taxRows + discount +
+          '<div class="total"><span class="label">Total</span><span class="value">' + money(model.totalMinor, model.currency) + "</span></div>" +
+          "</footer>";
+      }
+
+      function renderConfirmation(model) {
+        var c = model.confirmation || {};
+        return '<div class="center"><div class="check">\u2713</div><div class="wordmark">Thank you!</div>' +
+          (c.orderNumber ? '<div class="sub">Order ' + esc(c.orderNumber) + "</div>" : "") +
+          (c.totalMinor != null ? '<div style="font-size:40px;font-weight:800">' + money(c.totalMinor, c.currency || model.currency) + "</div>" : "") +
+          '<div class="sub" style="font-size:15px">Please wait while we prepare your order.</div></div>';
+      }
+
+      window.renderModel = function (model) {
+        if (!model) return;
+        var root = document.getElementById("root");
+        if (model.phase === "confirmation" && model.confirmation) {
+          root.innerHTML = renderConfirmation(model);
+        } else if (model.phase === "idle" || !model.items || model.items.length === 0) {
+          root.innerHTML = renderIdle(model);
+        } else {
+          root.innerHTML = renderOrder(model);
+        }
+      };
+
+      // Idle until the first model arrives.
+      window.renderModel({ phase: "idle", branding: null, items: [], currency: "GHS" });
+    </script>
+  </body>
+</html>

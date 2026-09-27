@@ -5,12 +5,17 @@ import { zustandStorage } from "@/utils/storage";
 interface DisplayStore {
   calloutDisplayEnabled: boolean;
   kitchenDisplayEnabled: boolean;
+  /** Customer-facing secondary display (dual-screen POS). */
+  customerDisplayEnabled: boolean;
   toggleCalloutDisplay: () => void;
   enableCalloutDisplay: () => void;
   disableCalloutDisplay: () => void;
   toggleKitchenDisplay: () => void;
   enableKitchenDisplay: () => void;
   disableKitchenDisplay: () => void;
+  toggleCustomerDisplay: () => void;
+  enableCustomerDisplay: () => void;
+  disableCustomerDisplay: () => void;
 }
 
 export const useDisplayStore = create<DisplayStore>()(
@@ -18,6 +23,7 @@ export const useDisplayStore = create<DisplayStore>()(
     (set) => ({
       calloutDisplayEnabled: false,
       kitchenDisplayEnabled: false,
+      customerDisplayEnabled: false,
       toggleCalloutDisplay: () =>
         set((state) => ({
           calloutDisplayEnabled: !state.calloutDisplayEnabled,
@@ -30,6 +36,12 @@ export const useDisplayStore = create<DisplayStore>()(
         })),
       enableKitchenDisplay: () => set({ kitchenDisplayEnabled: true }),
       disableKitchenDisplay: () => set({ kitchenDisplayEnabled: false }),
+      toggleCustomerDisplay: () =>
+        set((state) => ({
+          customerDisplayEnabled: !state.customerDisplayEnabled,
+        })),
+      enableCustomerDisplay: () => set({ customerDisplayEnabled: true }),
+      disableCustomerDisplay: () => set({ customerDisplayEnabled: false }),
     }),
     {
       name: "Teinc Food-display-settings",

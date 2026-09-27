@@ -33,6 +33,7 @@ import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
 import { useDisplayStore } from "@/stores/display.store";
+import { useCustomerDisplayCapabilities } from "@/customer-display/CustomerDisplayController";
 import {
   useNotificationPreferencesQuery,
   useUpdateNotificationPreferencesMutation,
@@ -64,6 +65,8 @@ export default function SellerSettings() {
 
   const calloutEnabled = useDisplayStore((s) => s.calloutDisplayEnabled);
   const kitchenEnabled = useDisplayStore((s) => s.kitchenDisplayEnabled);
+  const customerDisplayEnabled = useDisplayStore((s) => s.customerDisplayEnabled);
+  const customerDisplayCaps = useCustomerDisplayCapabilities();
 
   const handleToggleCallout = (enabled: boolean) => {
     if (enabled) {
@@ -78,6 +81,15 @@ export default function SellerSettings() {
       useDisplayStore.getState().enableKitchenDisplay();
     } else {
       useDisplayStore.getState().disableKitchenDisplay();
+    }
+  };
+
+  const handleToggleCustomerDisplay = (enabled: boolean) => {
+    if (enabled && !customerDisplayCaps?.supported) return;
+    if (enabled) {
+      useDisplayStore.getState().enableCustomerDisplay();
+    } else {
+      useDisplayStore.getState().disableCustomerDisplay();
     }
   };
 
@@ -425,6 +437,57 @@ export default function SellerSettings() {
                   checked={kitchenEnabled}
                   onCheckedChange={handleToggleKitchen}
                   backgroundColor={kitchenEnabled ? "$blue9" : "$gray600"}
+                >
+                  <Switch.Thumb animation="quick" backgroundColor="$white" />
+                </Switch>
+              </XStack>
+
+              <Separator />
+
+              {/* Customer Display — dual-screen POS (Android secondary display) */}
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                gap="$3"
+              >
+                <YStack flex={1}>
+                  <XStack gap="$2" alignItems="center">
+                    <Monitor size={18} color="$colorSecondary" />
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$body"
+                      color="$color"
+                    >
+                      Customer Display
+                    </Text>
+                  </XStack>
+                  <Text
+                    color="$colorSecondary"
+                    fontSize="$3"
+                    fontFamily="$body"
+                    marginLeft={26}
+                  >
+                    {customerDisplayCaps?.supported
+                      ? "Show the order and totals to the customer on a second display"
+                      : customerDisplayCaps?.reason ??
+                        "Checking for a second display…"}
+                  </Text>
+                </YStack>
+                <Switch
+                  size="$5"
+                  disabled={!customerDisplayCaps?.supported}
+                  checked={
+                    customerDisplayEnabled &&
+                    (customerDisplayCaps?.supported ?? false)
+                  }
+                  onCheckedChange={handleToggleCustomerDisplay}
+                  backgroundColor={
+                    customerDisplayEnabled && customerDisplayCaps?.supported
+                      ? "$green9"
+                      : "$gray600"
+                  }
+                  opacity={customerDisplayCaps?.supported ? 1 : 0.5}
                 >
                   <Switch.Thumb animation="quick" backgroundColor="$white" />
                 </Switch>

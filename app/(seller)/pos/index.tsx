@@ -73,6 +73,7 @@ import {
   useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
+import { useCustomerDisplayStore } from "@/stores/customer-display.store";
 import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { useConnectivityStore } from "@/stores/connectivity.store";
@@ -992,10 +993,19 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             if (autoPrint) {
               printService.printOrderReceipt(orderId);
             }
+            useCustomerDisplayStore.getState().showConfirmation({
+              orderNumber: response.order_number,
+              totalMinor: response.total_minor ?? total,
+              currency:
+                (useBusinessStore.getState().activeBusiness as unknown as {
+                  currency?: string;
+                })?.currency ?? "GHS",
+            });
           } else {
             if (autoPrint) {
               setLastCompletedOrderId(orderId);
             }
+            useCustomerDisplayStore.getState().setPaymentStatus("processing");
             paymentFlow.startCheckout(orderId, total);
           }
         },
@@ -1075,6 +1085,32 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       setLastCompletedOrderId(null);
     }
   }, [paymentFlow.state]);
+
+  // ── Customer display (secondary screen) ──
+  useEffect(() => {
+    useCustomerDisplayStore
+      .getState()
+      .beginPayment(checkoutForm.pos_payment_method as never);
+    return () => useCustomerDisplayStore.getState().reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const s = paymentFlow.state;
+    const currency = (activeBusiness as unknown as { currency?: string })
+      ?.currency ?? "GHS";
+    if (s === "awaiting_confirmation") {
+      useCustomerDisplayStore.getState().setPaymentStatus("processing");
+    } else if (s === "failed") {
+      useCustomerDisplayStore.getState().setPaymentStatus("failed");
+    } else if (s === "success" && lastOrderNumber) {
+      useCustomerDisplayStore.getState().showConfirmation({
+        orderNumber: lastOrderNumber,
+        totalMinor: total,
+        currency,
+      });
+    }
+  }, [paymentFlow.state, lastOrderNumber, total, activeBusiness]);
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -1244,8 +1280,12 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     onPress={
                       pm.disabled
                         ? undefined
-                        : () =>
-                            updateCheckoutForm({ pos_payment_method: pm.key })
+                        : () => {
+                            updateCheckoutForm({ pos_payment_method: pm.key });
+                            useCustomerDisplayStore
+                              .getState()
+                              .beginPayment(pm.key as never);
+                          }
                     }
                   >
                     <YStack
