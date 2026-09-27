@@ -321,7 +321,7 @@ export default function SellerOrders() {
             variant="outline"
             height={40}
             icon={<ExternalLink size={14} />}
-            onPress={() => router.push({ pathname: "/(seller)/orders/[id]", params: { id: item.id } } as any)}
+            onPress={() => router.push(`/(seller)/orders/${item.id}`)}
           >
             View
           </Button>
@@ -436,7 +436,7 @@ export default function SellerOrders() {
           height={40}
           paddingHorizontal="$3"
           icon={<ExternalLink size={16} />}
-          onPress={() => router.push({ pathname: "/(seller)/orders/[id]", params: { id: item.id } } as any)}
+          onPress={() => router.push(`/(seller)/orders/${item.id}`)}
         >
           View
         </Button>
