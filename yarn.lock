@@ -3797,10 +3797,10 @@
   dependencies:
     "@tanstack/query-async-storage-persister" "^5.102.8"
 
-"@teincfood/observability@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@teincfood/observability/-/observability-0.1.0.tgz#fff4f443e72054e3363e6c7bb884b37ae0f82107"
-  integrity sha512-v6TwVV+GdSZ9VeQmY5X3eS4s9WLu7KL9fyjwHZmnv3i0dmjMYNkYJgeMu/zIJ/vBNmKEVJu4vrj6Dwt5IkJt+g==
+"@teincfood/observability@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@teincfood/observability/-/observability-0.1.1.tgz#2f81444e86589b67fd1dac9f810452b8e72f0072"
+  integrity sha512-udOJ+kcdwogQZ7O0uZnd2OAlUUjiRY6Cnnl4UPV7di4emlHRfpr2DFAfQAiXK3A7YDei81j6x7jkh9Ezz1ksKA==
   dependencies:
     "@opentelemetry/api" "^1.9.0"
 

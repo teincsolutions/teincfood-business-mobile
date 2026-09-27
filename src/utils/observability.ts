@@ -24,7 +24,15 @@ export function ensureObservability(): void {
   void initObservability({
     app: "teincfood-business",
     appVersion: appVersion ?? "1.0.0",
-    env: __DEV__ ? "development" : "production",
+    env:
+      process.env.EXPO_PUBLIC_APP_ENV === "development" ||
+      process.env.EXPO_PUBLIC_APP_ENV === "testing" ||
+      process.env.EXPO_PUBLIC_APP_ENV === "staging"
+        ? (process.env.EXPO_PUBLIC_APP_ENV as
+            | "development"
+            | "testing"
+            | "staging")
+        : "production",
     ...(process.env.EXPO_PUBLIC_TELEMETRY_URL
       ? { endpoint: process.env.EXPO_PUBLIC_TELEMETRY_URL }
       : {}),
