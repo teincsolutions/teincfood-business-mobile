@@ -3,7 +3,7 @@ node_modules/
 yarn-error.log
 
 # Expo environment variables
-.env*
+.env.*
 !.env.example
 
 # Expo temp and build folders
