@@ -1,4 +1,3 @@
-// @ts-nocheck — core exports land with @teincfood/core 0.9.21 (pending publish)
 import { create } from "zustand";
 import type {
   CustomerDisplayConfirmation,

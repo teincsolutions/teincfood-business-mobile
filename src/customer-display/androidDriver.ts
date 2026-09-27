@@ -1,6 +1,9 @@
-// @ts-nocheck
 import { Platform } from "react-native";
-import type { CustomerDisplayDriver, CustomerDisplayModel } from "@teincfood/core";
+import type {
+  CustomerDisplayDriver,
+  CustomerDisplayModel,
+  CustomerDisplayCapabilities,
+} from "@teincfood/core";
 import {
   CustomerDisplayNative,
   addDisplayChangedListener,
@@ -61,9 +64,15 @@ class AndroidCustomerDisplayDriver implements CustomerDisplayDriver {
   }
 
   onCapabilitiesChanged(
-    cb: (caps: { supported: boolean; displays: number; reason?: string }) => void,
+    cb: (caps: CustomerDisplayCapabilities) => void,
   ): () => void {
-    return addDisplayChangedListener(cb);
+    return addDisplayChangedListener((caps) =>
+      cb({
+        supported: caps.supported,
+        displays: caps.displays,
+        reason: caps.reason ?? undefined,
+      }),
+    );
   }
 }
 

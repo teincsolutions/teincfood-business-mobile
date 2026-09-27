@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { useEffect, useRef, useState } from "react";
+import type { CustomerDisplayCapabilities } from "@teincfood/core";
 import { useDisplayStore } from "@/stores/display.store";
 import { useCustomerDisplayStore } from "@/stores/customer-display.store";
 import { useCustomerDisplayModel } from "./useCustomerDisplayModel";
@@ -9,11 +9,7 @@ const CONFIRMATION_DISMISS_MS = 6000;
 
 /** Live secondary-display capabilities for the settings UI (mobile). */
 export function useCustomerDisplayCapabilities() {
-  const [caps, setCaps] = useState<{
-    supported: boolean;
-    displays: number;
-    reason?: string;
-  } | null>(null);
+  const [caps, setCaps] = useState<CustomerDisplayCapabilities | null>(null);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
@@ -32,11 +28,7 @@ export function useCustomerDisplayCapabilities() {
  */
 export function CustomerDisplayController() {
   const enabled = useDisplayStore((s) => s.customerDisplayEnabled);
-  const [caps, setCaps] = useState<{
-    supported: boolean;
-    displays: number;
-    reason?: string;
-  } | null>(null);
+  const [caps, setCaps] = useState<CustomerDisplayCapabilities | null>(null);
   const openedRef = useRef(false);
 
   useEffect(() => {

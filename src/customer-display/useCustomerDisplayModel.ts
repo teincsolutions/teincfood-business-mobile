@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from "react";
 import {
   buildCustomerDisplayModel,
@@ -50,7 +49,8 @@ export function useCustomerDisplayModel(): CustomerDisplayModel {
     try {
       return calculatePricing({
         items,
-        taxRules: (taxRules as { data?: unknown[] } | undefined)?.data ?? [],
+        taxRules: ((taxRules as { data?: unknown[] } | undefined)?.data ??
+          []) as import("@teincfood/core").TaxRule[],
         currency_code: currency,
       });
     } catch {
