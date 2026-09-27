@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.hardware.display.DisplayManager
 import android.view.Display
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import org.json.JSONObject
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
@@ -92,6 +93,12 @@ class CustomerDisplayModule : Module() {
           setBackgroundColor(Color.WHITE)
           settings.javaScriptEnabled = true
           settings.domStorageEnabled = true
+          webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+              // Re-render any model pushed before the page finished loading.
+              lastModelJson?.let { render(it) }
+            }
+          }
           loadUrl("file:///android_asset/customer-display.html")
         }
         webView = wv
