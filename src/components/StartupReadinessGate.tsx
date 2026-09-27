@@ -6,14 +6,22 @@ import { Button } from "@/components/ui/Button";
 import { routeCapabilities } from "@/constants/route-capabilities";
 
 /**
- * Surfaces that need the full offline reference cache to function. Settings /
- * business management stay reachable even when readiness is false, so an
- * operator can configure operating hours offline and recover.
+ * Surfaces that need the full offline reference cache to function. This is a
+ * POS/order-*creation* precondition (device lease + menu/tax/hours/entitlement)
+ * — it must never block read-only order browsing/detail, which works fine from
+ * the local read-model even without a lease. Settings / business management
+ * stay reachable even when readiness is false, so an operator can configure
+ * operating hours offline and recover.
  */
-const ORDER_SURFACE_CAPABILITIES = new Set(["orders_create", "orders_read"]);
+const ORDER_SURFACE_CAPABILITIES = new Set(["orders_create"]);
+
+/** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
+function normalizeSegments(segments: string[]): string[] {
+  return segments.filter((s) => !(s.startsWith("(") && s.endsWith(")")));
+}
 
 function requiredCapabilityFor(segments: string[]): string | null {
-  const path = `/${segments.join("/")}`;
+  const path = `/${normalizeSegments(segments).join("/")}`;
   if (routeCapabilities[path]) return routeCapabilities[path];
   const prefix = Object.keys(routeCapabilities)
     .filter((route) => path.startsWith(`${route}/`))

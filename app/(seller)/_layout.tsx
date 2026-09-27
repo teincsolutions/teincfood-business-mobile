@@ -8,8 +8,13 @@ import { routeCapabilities } from '@/constants/route-capabilities';
 import { StartupReadinessGate } from '@/components/StartupReadinessGate';
 import { toast } from 'sonner-native';
 
+/** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
+function normalizeSegments(segments: string[]): string[] {
+  return segments.filter((s) => !(s.startsWith('(') && s.endsWith(')')));
+}
+
 function requiredCapabilityFor(segments: string[]): string | null {
-  const path = `/${segments.join('/')}`;
+  const path = `/${normalizeSegments(segments).join('/')}`;
   if (routeCapabilities[path]) return routeCapabilities[path];
   const prefix = Object.keys(routeCapabilities)
     .filter((route) => path.startsWith(`${route}/`))
