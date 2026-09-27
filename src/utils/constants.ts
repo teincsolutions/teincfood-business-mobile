@@ -30,7 +30,9 @@ export const COMPANY_INFO = {
 
 /** App metadata */
 export const APP_NAME = "Teinc Food Business";
-export const APP_VERSION = "1.0.0";
+// Source from the Expo config so the UI + telemetry app_version always match
+// the shipped app instead of a hardcoded string.
+export const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
 /** Async storage keys */
 export const STORAGE_KEYS = {
