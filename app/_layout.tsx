@@ -155,6 +155,9 @@ function AppShell() {
       if (becameReachable || cameOnline) {
         // Seller offline machinery only — fleet/rider roles skip drains.
         if (useRoleStore.getState().role !== 'seller') return;
+        // No session → nothing business-scoped to sync. Prevents reference
+        // sync from firing on the login screen after a cold start.
+        if (!useAuthStore.getState().accessToken) return;
         try {
           const { useBusinessStore } = require('../src/stores/business.store') as typeof import('../src/stores/business.store');
           const bid = useBusinessStore.getState().activeBusiness?.id;
