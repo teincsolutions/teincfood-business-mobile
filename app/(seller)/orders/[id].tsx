@@ -81,8 +81,15 @@ function formatDate(iso: string) {
   });
 }
 
-export default function OrderDetails() {
-  const { id } = useLocalSearchParams();
+export default function OrderDetails({
+  orderId: orderIdProp,
+  embedded = false,
+}: {
+  orderId?: string;
+  embedded?: boolean;
+} = {}) {
+  const params = useLocalSearchParams();
+  const id = orderIdProp ?? (params.id as string);
   const router = useRouter();
   const media = useMedia();
   const insets = useSafeAreaInsets();
@@ -180,8 +187,8 @@ export default function OrderDetails() {
   return (
     <YStack
       flex={1}
-      paddingTop={Math.max(insets.top + 8, 24)}
-      paddingBottom={insets.bottom + 16}
+      paddingTop={embedded ? 0 : Math.max(insets.top + 8, 24)}
+      paddingBottom={embedded ? 0 : insets.bottom + 16}
       backgroundColor="$background"
     >
       {/* Header */}
@@ -192,7 +199,7 @@ export default function OrderDetails() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <BackButton />
+        {embedded ? null : <BackButton />}
         <YStack flex={1}>
           <Text fontSize="$6" fontWeight="bold">
             Order Details
@@ -220,7 +227,9 @@ export default function OrderDetails() {
 
       <ScrollView
         {...(media.md || media.lg
-          ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+          ? embedded
+            ? {}
+            : { maxWidth: 600, alignSelf: "center", width: "100%" }
           : {})}
       >
         <YStack padding="$4" gap="$4">

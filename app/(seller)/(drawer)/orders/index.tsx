@@ -20,9 +20,10 @@ import {
   Package,
   CalendarDays,
 } from "@tamagui/lucide-icons";
-import { FlatList, RefreshControl, TextInput, ActivityIndicator } from "react-native";
+import { FlatList, RefreshControl, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import OrderDetails from "../../orders/[id]";
 import {
   useSellerOrdersQuery,
   useCancelOrderMutation,
@@ -155,6 +156,7 @@ export default function SellerOrders() {
   const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const resetFilters = useCallback(() => {
     setSearchQuery("");
@@ -246,6 +248,16 @@ export default function SellerOrders() {
   useOrderRealtimeUpdates(SELLER_KEYS.all);
 
   const allOrders = data || [];
+
+  // Tablet master-detail: keep a selection so the right pane always shows a
+  // detail. Default to the newest order once the list loads.
+  useEffect(() => {
+    if (!isTablet) return;
+    setSelectedOrderId((prev) => {
+      if (prev && allOrders.some((o) => o.id === prev)) return prev;
+      return allOrders[0]?.id ?? null;
+    });
+  }, [isTablet, allOrders]);
 
   const availWidth = containerWidth || width;
   const remaining = Math.max(300, availWidth - FIXED_TOTAL - 48);
@@ -351,8 +363,14 @@ export default function SellerOrders() {
   // ── Tablet: table row ──
   const renderTabletRow = ({ item }: { item: SellerOrder }) => {
     const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
+    const isSelected = selectedOrderId === item.id;
     return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => setSelectedOrderId(item.id)}
+    >
     <XStack
+      backgroundColor={isSelected ? "$backgroundSoft" : "$background"}
       borderBottomWidth={1}
       borderBottomColor="$borderColor"
       paddingVertical="$4"
@@ -436,7 +454,7 @@ export default function SellerOrders() {
           height={40}
           paddingHorizontal="$3"
           icon={<ExternalLink size={16} />}
-          onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+          onPress={() => setSelectedOrderId(item.id)}
         >
           View
         </Button>
@@ -460,6 +478,7 @@ export default function SellerOrders() {
         )}
       </XStack>
     </XStack>
+    </TouchableOpacity>
     );
   };
 
@@ -535,13 +554,7 @@ export default function SellerOrders() {
     </XStack>
   );
 
-  return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
-      {/* Search + Filters */}
+  const searchAndFilters = (
       <YStack padding="$4" gap="$3" paddingBottom="$2">
         <XStack gap="$2" alignItems="center">
           <XStack
@@ -582,10 +595,10 @@ export default function SellerOrders() {
             </Text>
           </Button>
         </XStack>
-      </YStack>
+    </YStack>
+  );
 
-      {/* Order list */}
-      {isTablet ? (
+  const listBody = isTablet ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
@@ -684,6 +697,39 @@ export default function SellerOrders() {
           maxToRenderPerBatch={10}
           removeClippedSubviews
         />
+      );
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      {isTablet ? (
+        <XStack flex={1}>
+          <YStack
+            flex={1.7}
+            borderRightWidth={1}
+            borderRightColor="$borderColor"
+            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+          >
+            {searchAndFilters}
+            {listBody}
+          </YStack>
+          <YStack flex={1} backgroundColor="$backgroundSoft">
+            {selectedOrderId ? (
+              <OrderDetails orderId={selectedOrderId} embedded />
+            ) : (
+              <YStack flex={1} alignItems="center" justifyContent="center" gap="$3" padding="$6">
+                <Package size={40} color="$colorMuted" />
+                <Text color="$colorMuted" fontSize="$4" textAlign="center">
+                  Select an order to view its details
+                </Text>
+              </YStack>
+            )}
+          </YStack>
+        </XStack>
+      ) : (
+        <>
+          {searchAndFilters}
+          {listBody}
+        </>
       )}
 
       {/* Filter Sheet */}

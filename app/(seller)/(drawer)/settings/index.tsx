@@ -24,6 +24,8 @@ import {
   ChefHat,
   Server,
   Crown,
+  Bell,
+  AlertTriangle,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -42,6 +44,7 @@ import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import { useResponsive } from "@/utils/responsive";
 
 /**
  * Seller Settings Screen
@@ -58,6 +61,12 @@ export default function SellerSettings() {
   const myCaps = new Set(membership?.capabilities ?? []);
   const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [activeSection, setActiveSection] = useState("store");
+
+  // Two-pane master-detail on tablet landscape (iPad/Android tablet) — the
+  // settings list becomes a left rail and the selected section fills the pane.
+  const { isTablet, isLandscape, width } = useResponsive();
+  const isMasterDetail = isTablet && isLandscape && width >= 900;
 
   const { data: prefsRes } = useNotificationPreferencesQuery();
   const updatePrefs = useUpdateNotificationPreferencesMutation();
@@ -223,6 +232,395 @@ export default function SellerSettings() {
     },
   ];
 
+  const visibleLinkItems = settingsItems.filter(
+    (item) =>
+      !(item as { capability?: string }).capability ||
+      myCaps.has((item as { capability?: string }).capability!),
+  );
+
+  const openLinkItem = (item: (typeof settingsItems)[number]) => {
+    if (item.onPress) item.onPress();
+    else router.push(item.route);
+  };
+
+  const storeStatusCard = (
+    <Card padding="$4" bordered>
+      <XStack justifyContent="space-between" alignItems="center" gap="$3">
+        <YStack flex={1}>
+          <Text
+            fontSize="$4"
+            fontWeight="700"
+            fontFamily="$body"
+            color="$color.white"
+          >
+            Store Status
+          </Text>
+          <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
+            {isOpen
+              ? "Your store is open and accepting orders"
+              : "Your store is closed"}
+          </Text>
+        </YStack>
+        <Switch
+          size="$5"
+          checked={isOpen}
+          disabled={!canManageProfile}
+          onCheckedChange={handleToggleStore}
+          backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
+        >
+          <Switch.Thumb animation="quick" backgroundColor="$white" />
+        </Switch>
+      </XStack>
+    </Card>
+  );
+
+  const notificationsCard = (
+    <Card padding="$4" bordered>
+      <XStack justifyContent="space-between" alignItems="center" gap="$3">
+        <YStack flex={1}>
+          <Text
+            fontSize="$4"
+            fontWeight="700"
+            fontFamily="$body"
+            color="$color.white"
+          >
+            Order Notifications
+          </Text>
+          <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
+            Receive alerts for new orders and updates
+          </Text>
+        </YStack>
+        <Switch
+          size="$5"
+          checked={notificationsEnabled}
+          disabled={updatePrefs.isPending}
+          onCheckedChange={handleToggleNotifications}
+          backgroundColor={
+            notificationsEnabled ? "$color.orange" : "$color.gray600"
+          }
+        >
+          <Switch.Thumb animation="quick" backgroundColor="$white" />
+        </Switch>
+        {updatePrefs.isPending && <Spinner size="small" />}
+      </XStack>
+    </Card>
+  );
+
+  const linkListCard = (
+    <Card padding="$2" bordered>
+      {visibleLinkItems.map((item, index) => (
+        <YStack key={item.label}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => openLinkItem(item)}
+            style={{ paddingHorizontal: 12, paddingVertical: 14 }}
+          >
+            <XStack alignItems="center" gap="$3">
+              <YStack
+                width={40}
+                height={40}
+                borderRadius={10}
+                backgroundColor="$backgroundSoft"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <item.icon size={20} color="$colorSecondary" />
+              </YStack>
+              <YStack flex={1}>
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$body"
+                  color="$color"
+                >
+                  {item.label}
+                </Text>
+                <Text
+                  fontSize="$2"
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                >
+                  {item.description}
+                </Text>
+              </YStack>
+              <ChevronRight size={16} color="$colorSecondary" />
+            </XStack>
+          </TouchableOpacity>
+          {index < visibleLinkItems.length - 1 && (
+            <Separator marginHorizontal="$3" />
+          )}
+        </YStack>
+      ))}
+    </Card>
+  );
+
+  const displaySettingsCard = (
+    <Card padding="$4" bordered>
+      <YStack gap="$4">
+        <Text
+          fontSize="$3"
+          fontWeight="700"
+          fontFamily="$body"
+          color="$colorSecondary"
+          textTransform="uppercase"
+          letterSpacing={0.5}
+        >
+          Display Settings
+        </Text>
+
+        <XStack justifyContent="space-between" alignItems="center" gap="$3">
+          <YStack flex={1}>
+            <XStack gap="$2" alignItems="center">
+              <Monitor size={18} color="$colorSecondary" />
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$body"
+                color="$color"
+              >
+                Callout Display
+              </Text>
+            </XStack>
+            <Text
+              color="$colorSecondary"
+              fontSize="$3"
+              fontFamily="$body"
+              marginLeft={26}
+            >
+              Customer order status screen for wall-mounted display
+            </Text>
+          </YStack>
+          <Switch
+            size="$5"
+            checked={calloutEnabled}
+            onCheckedChange={handleToggleCallout}
+            backgroundColor={calloutEnabled ? "$orange9" : "$gray600"}
+          >
+            <Switch.Thumb animation="quick" backgroundColor="$white" />
+          </Switch>
+        </XStack>
+
+        <Separator />
+
+        <XStack justifyContent="space-between" alignItems="center" gap="$3">
+          <YStack flex={1}>
+            <XStack gap="$2" alignItems="center">
+              <ChefHat size={18} color="$colorSecondary" />
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$body"
+                color="$color"
+              >
+                Kitchen Display
+              </Text>
+            </XStack>
+            <Text
+              color="$colorSecondary"
+              fontSize="$3"
+              fontFamily="$body"
+              marginLeft={26}
+            >
+              Order preparation pipeline for kitchen staff
+            </Text>
+          </YStack>
+          <Switch
+            size="$5"
+            checked={kitchenEnabled}
+            onCheckedChange={handleToggleKitchen}
+            backgroundColor={kitchenEnabled ? "$blue9" : "$gray600"}
+          >
+            <Switch.Thumb animation="quick" backgroundColor="$white" />
+          </Switch>
+        </XStack>
+
+        <Separator />
+
+        {/* Customer Display — dual-screen POS (Android secondary display) */}
+        <XStack justifyContent="space-between" alignItems="center" gap="$3">
+          <YStack flex={1}>
+            <XStack gap="$2" alignItems="center">
+              <Monitor size={18} color="$colorSecondary" />
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$body"
+                color="$color"
+              >
+                Customer Display
+              </Text>
+            </XStack>
+            <Text
+              color="$colorSecondary"
+              fontSize="$3"
+              fontFamily="$body"
+              marginLeft={26}
+            >
+              {customerDisplayCaps?.supported
+                ? "Show the order and totals to the customer on a second display"
+                : customerDisplayCaps?.reason ?? "Checking for a second display…"}
+            </Text>
+          </YStack>
+          <Switch
+            size="$5"
+            disabled={!customerDisplayCaps?.supported}
+            checked={
+              customerDisplayEnabled && (customerDisplayCaps?.supported ?? false)
+            }
+            onCheckedChange={handleToggleCustomerDisplay}
+            backgroundColor={
+              customerDisplayEnabled && customerDisplayCaps?.supported
+                ? "$green9"
+                : "$gray600"
+            }
+            opacity={customerDisplayCaps?.supported ? 1 : 0.5}
+          >
+            <Switch.Thumb animation="quick" backgroundColor="$white" />
+          </Switch>
+        </XStack>
+      </YStack>
+    </Card>
+  );
+
+  const dangerZoneCard = (
+    <Card padding="$4" bordered borderColor="$error">
+      <YStack gap="$3">
+        <Text
+          fontSize="$3"
+          fontWeight="700"
+          fontFamily="$body"
+          color="$red600"
+          textTransform="uppercase"
+          letterSpacing={0.5}
+        >
+          Danger Zone
+        </Text>
+        <Button
+          variant="danger"
+          width="100%"
+          onPress={() => setShowCloseDialog(true)}
+        >
+          Close Store Temporarily
+        </Button>
+      </YStack>
+    </Card>
+  );
+
+  // Ordered sections for the tablet master-detail rail. Inline sections render
+  // in the detail pane; link sections navigate (and act as rows in the rail).
+  const sections = [
+    { key: "store", label: "Store Status", icon: Building, element: storeStatusCard },
+    { key: "notifications", label: "Order Notifications", icon: Bell, element: notificationsCard },
+    { key: "display", label: "Display Settings", icon: Monitor, element: displaySettingsCard },
+    ...visibleLinkItems.map((item) => ({
+      key: item.label,
+      label: item.label,
+      icon: item.icon,
+      element: null,
+      item,
+    })),
+    { key: "danger", label: "Danger Zone", icon: AlertTriangle, element: dangerZoneCard },
+  ];
+
+  if (isMasterDetail) {
+    const active = sections.find((s) => s.key === activeSection) ?? sections[0];
+
+    return (
+      <YStack flex={1} backgroundColor="$background">
+        <XStack flex={1}>
+          <ScrollView
+            width={320}
+            borderRightWidth={1}
+            borderRightColor="$borderColor"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text
+              paddingHorizontal="$4"
+              paddingTop="$4"
+              paddingBottom="$2"
+              fontSize="$3"
+              fontWeight="700"
+              fontFamily="$body"
+              color="$colorSecondary"
+              textTransform="uppercase"
+              letterSpacing={0.5}
+            >
+              Settings
+            </Text>
+            <YStack padding="$2" gap="$1">
+              {sections.map((section) => {
+                const isActive = section.key === active.key;
+                const isLink = Boolean((section as { item?: unknown }).item);
+                return (
+                  <TouchableOpacity
+                    key={section.key}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (isLink) {
+                        openLinkItem((section as { item: (typeof settingsItems)[number] }).item);
+                      } else {
+                        setActiveSection(section.key);
+                      }
+                    }}
+                  >
+                    <XStack
+                      alignItems="center"
+                      gap="$3"
+                      paddingHorizontal="$3"
+                      paddingVertical="$3"
+                      borderRadius={10}
+                      backgroundColor={isActive ? "$backgroundSoft" : "transparent"}
+                    >
+                      <section.icon
+                        size={20}
+                        color={isActive ? "$color" : "$colorSecondary"}
+                      />
+                      <Text
+                        flex={1}
+                        fontSize="$4"
+                        fontWeight={isActive ? "700" : "500"}
+                        fontFamily="$body"
+                        color="$color"
+                      >
+                        {section.label}
+                      </Text>
+                      {isLink ? (
+                        <ChevronRight size={16} color="$colorSecondary" />
+                      ) : null}
+                    </XStack>
+                  </TouchableOpacity>
+                );
+              })}
+            </YStack>
+          </ScrollView>
+
+          <ScrollView flex={1} showsVerticalScrollIndicator={false}>
+            <YStack
+              padding="$4"
+              gap="$4"
+              paddingBottom={insets.bottom + 24}
+              maxWidth={720}
+              alignSelf="center"
+              width="100%"
+            >
+              {active.element}
+            </YStack>
+          </ScrollView>
+        </XStack>
+
+        <AppAlertDialog
+          open={showCloseDialog}
+          onOpenChange={setShowCloseDialog}
+          title="Close Store"
+          description="This will temporarily close your store and stop accepting new orders. You can reopen at any time."
+          confirmText="CLOSE STORE"
+          isDestructive
+          onConfirm={handleCloseStore}
+        />
+      </YStack>
+    );
+  }
+
   return (
     <YStack
       flex={1}
@@ -238,285 +636,11 @@ export default function SellerSettings() {
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >
-          {/* Store Status */}
-          <Card padding="$4" bordered>
-            <XStack justifyContent="space-between" alignItems="center" gap="$3">
-              <YStack flex={1}>
-                <Text
-                  fontSize="$4"
-                  fontWeight="700"
-                  fontFamily="$body"
-                  color="$color.white"
-                >
-                  Store Status
-                </Text>
-                <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
-                  {isOpen
-                    ? "Your store is open and accepting orders"
-                    : "Your store is closed"}
-                </Text>
-              </YStack>
-              <Switch
-                size="$5"
-                checked={isOpen}
-                disabled={!canManageProfile}
-                onCheckedChange={handleToggleStore}
-                backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
-              >
-                <Switch.Thumb animation="quick" backgroundColor="$white" />
-              </Switch>
-            </XStack>
-          </Card>
-
-          {/* Notifications */}
-          <Card padding="$4" bordered>
-            <XStack justifyContent="space-between" alignItems="center" gap="$3">
-              <YStack flex={1}>
-                <Text
-                  fontSize="$4"
-                  fontWeight="700"
-                  fontFamily="$body"
-                  color="$color.white"
-                >
-                  Order Notifications
-                </Text>
-                <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
-                  Receive alerts for new orders and updates
-                </Text>
-              </YStack>
-              <Switch
-                size="$5"
-                checked={notificationsEnabled}
-                disabled={updatePrefs.isPending}
-                onCheckedChange={handleToggleNotifications}
-                backgroundColor={
-                  notificationsEnabled ? "$color.orange" : "$color.gray600"
-                }
-              >
-                <Switch.Thumb animation="quick" backgroundColor="$white" />
-              </Switch>
-              {updatePrefs.isPending && <Spinner size="small" />}
-            </XStack>
-          </Card>
-
-          {/* Settings Menu */}
-          <Card padding="$2" bordered>
-            {settingsItems
-              .filter(
-                (item) =>
-                  !(item as { capability?: string }).capability ||
-                  myCaps.has((item as { capability?: string }).capability!),
-              )
-              .map((item, index) => (
-              <YStack key={item.label}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() =>
-                    item.onPress ? item.onPress() : router.push(item.route)
-                  }
-                  style={{ paddingHorizontal: 12, paddingVertical: 14 }}
-                >
-                  <XStack alignItems="center" gap="$3">
-                    <YStack
-                      width={40}
-                      height={40}
-                      borderRadius={10}
-                      backgroundColor="$backgroundSoft"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <item.icon size={20} color="$colorSecondary" />
-                    </YStack>
-                    <YStack flex={1}>
-                      <Text
-                        fontSize="$4"
-                        fontWeight="700"
-                        fontFamily="$body"
-                        color="$color"
-                      >
-                        {item.label}
-                      </Text>
-                      <Text
-                        fontSize="$2"
-                        color="$colorSecondary"
-                        fontFamily="$body"
-                      >
-                        {item.description}
-                      </Text>
-                    </YStack>
-                    <ChevronRight size={16} color="$colorSecondary" />
-                  </XStack>
-                </TouchableOpacity>
-                {index < settingsItems.length - 1 && (
-                  <Separator marginHorizontal="$3" />
-                )}
-              </YStack>
-            ))}
-          </Card>
-
-          {/* Display Settings */}
-          <Card padding="$4" bordered>
-            <YStack gap="$4">
-              <Text
-                fontSize="$3"
-                fontWeight="700"
-                fontFamily="$body"
-                color="$colorSecondary"
-                textTransform="uppercase"
-                letterSpacing={0.5}
-              >
-                Display Settings
-              </Text>
-
-              <XStack
-                justifyContent="space-between"
-                alignItems="center"
-                gap="$3"
-              >
-                <YStack flex={1}>
-                  <XStack gap="$2" alignItems="center">
-                    <Monitor size={18} color="$colorSecondary" />
-                    <Text
-                      fontSize="$4"
-                      fontWeight="700"
-                      fontFamily="$body"
-                      color="$color"
-                    >
-                      Callout Display
-                    </Text>
-                  </XStack>
-                  <Text
-                    color="$colorSecondary"
-                    fontSize="$3"
-                    fontFamily="$body"
-                    marginLeft={26}
-                  >
-                    Customer order status screen for wall-mounted display
-                  </Text>
-                </YStack>
-                <Switch
-                  size="$5"
-                  checked={calloutEnabled}
-                  onCheckedChange={handleToggleCallout}
-                  backgroundColor={calloutEnabled ? "$orange9" : "$gray600"}
-                >
-                  <Switch.Thumb animation="quick" backgroundColor="$white" />
-                </Switch>
-              </XStack>
-
-              <Separator />
-
-              <XStack
-                justifyContent="space-between"
-                alignItems="center"
-                gap="$3"
-              >
-                <YStack flex={1}>
-                  <XStack gap="$2" alignItems="center">
-                    <ChefHat size={18} color="$colorSecondary" />
-                    <Text
-                      fontSize="$4"
-                      fontWeight="700"
-                      fontFamily="$body"
-                      color="$color"
-                    >
-                      Kitchen Display
-                    </Text>
-                  </XStack>
-                  <Text
-                    color="$colorSecondary"
-                    fontSize="$3"
-                    fontFamily="$body"
-                    marginLeft={26}
-                  >
-                    Order preparation pipeline for kitchen staff
-                  </Text>
-                </YStack>
-                <Switch
-                  size="$5"
-                  checked={kitchenEnabled}
-                  onCheckedChange={handleToggleKitchen}
-                  backgroundColor={kitchenEnabled ? "$blue9" : "$gray600"}
-                >
-                  <Switch.Thumb animation="quick" backgroundColor="$white" />
-                </Switch>
-              </XStack>
-
-              <Separator />
-
-              {/* Customer Display — dual-screen POS (Android secondary display) */}
-              <XStack
-                justifyContent="space-between"
-                alignItems="center"
-                gap="$3"
-              >
-                <YStack flex={1}>
-                  <XStack gap="$2" alignItems="center">
-                    <Monitor size={18} color="$colorSecondary" />
-                    <Text
-                      fontSize="$4"
-                      fontWeight="700"
-                      fontFamily="$body"
-                      color="$color"
-                    >
-                      Customer Display
-                    </Text>
-                  </XStack>
-                  <Text
-                    color="$colorSecondary"
-                    fontSize="$3"
-                    fontFamily="$body"
-                    marginLeft={26}
-                  >
-                    {customerDisplayCaps?.supported
-                      ? "Show the order and totals to the customer on a second display"
-                      : customerDisplayCaps?.reason ??
-                        "Checking for a second display…"}
-                  </Text>
-                </YStack>
-                <Switch
-                  size="$5"
-                  disabled={!customerDisplayCaps?.supported}
-                  checked={
-                    customerDisplayEnabled &&
-                    (customerDisplayCaps?.supported ?? false)
-                  }
-                  onCheckedChange={handleToggleCustomerDisplay}
-                  backgroundColor={
-                    customerDisplayEnabled && customerDisplayCaps?.supported
-                      ? "$green9"
-                      : "$gray600"
-                  }
-                  opacity={customerDisplayCaps?.supported ? 1 : 0.5}
-                >
-                  <Switch.Thumb animation="quick" backgroundColor="$white" />
-                </Switch>
-              </XStack>
-            </YStack>
-          </Card>
-
-          {/* Danger Zone */}
-          <Card padding="$4" bordered borderColor="$error">
-            <YStack gap="$3">
-              <Text
-                fontSize="$3"
-                fontWeight="700"
-                fontFamily="$body"
-                color="$red600"
-                textTransform="uppercase"
-                letterSpacing={0.5}
-              >
-                Danger Zone
-              </Text>
-              <Button
-                variant="danger"
-                width="100%"
-                onPress={() => setShowCloseDialog(true)}
-              >
-                Close Store Temporarily
-              </Button>
-            </YStack>
-          </Card>
+          {storeStatusCard}
+          {notificationsCard}
+          {linkListCard}
+          {displaySettingsCard}
+          {dangerZoneCard}
         </YStack>
       </ScrollView>
 

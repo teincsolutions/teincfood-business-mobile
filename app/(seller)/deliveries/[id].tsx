@@ -38,10 +38,17 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.05,
 };
 
-export default function SellerDeliveryDetail() {
+export default function SellerDeliveryDetail({
+  deliveryId: deliveryIdProp,
+  embedded = false,
+}: {
+  deliveryId?: string;
+  embedded?: boolean;
+} = {}) {
   const router = useRouter();
   const media = useMedia();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = deliveryIdProp ?? (params.id as string);
   const insets = useSafeAreaInsets();
 
   const { data: response, isLoading, refetch, isRefetching } = useDeliveryDetailQuery(id as string);
@@ -78,10 +85,10 @@ export default function SellerDeliveryDetail() {
     : DEFAULT_REGION;
 
   return (
-    <YStack flex={1} paddingTop={Math.max(insets.top + 8, 24)} paddingBottom={insets.bottom + 16} backgroundColor="$background">
+    <YStack flex={1} paddingTop={embedded ? 0 : Math.max(insets.top + 8, 24)} paddingBottom={embedded ? 0 : insets.bottom + 16} backgroundColor="$background">
       {/* Header */}
       <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
-        <BackButton />
+        {embedded ? null : <BackButton />}
         <YStack flex={1}>
           <Text fontSize="$6" fontWeight="bold">Delivery</Text>
           <Text fontSize="$3" color="$colorMuted">{delivery.order_number || delivery.id}</Text>
@@ -101,7 +108,7 @@ export default function SellerDeliveryDetail() {
       <ScrollView
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
-        <YStack padding="$4" gap="$4" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+        <YStack padding="$4" gap="$4" {...(media.md || media.lg ? (embedded ? {} : { maxWidth: 600, alignSelf: "center", width: "100%" }) : {})}>
           {/* Map */}
           {hasCoords && (
             <Card padding="$0" bordered overflow="hidden" height={200}>

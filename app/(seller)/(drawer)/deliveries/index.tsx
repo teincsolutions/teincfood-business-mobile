@@ -25,9 +25,11 @@ import {
   RefreshControl,
   TextInput,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useRouter } from "expo-router";
+import SellerDeliveryDetail from "../../deliveries/[id]";
 import { useBusinessDeliveriesQuery } from "@teincfood/core";
 import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { SELLER_KEYS } from "@/hooks/seller.hooks";
@@ -121,6 +123,7 @@ export default function SellerDeliveries() {
   const [showRiderSheet, setShowRiderSheet] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
   const [handoverTarget, setHandoverTarget] = useState<string | null>(null);
   const [changeRiderTarget, setChangeRiderTarget] = useState<string | null>(
     null,
@@ -234,6 +237,16 @@ export default function SellerDeliveries() {
   };
 
   const allDeliveries = deliveries || [];
+
+  // Tablet master-detail: keep a selection so the right pane always shows a
+  // detail. Default to the newest delivery once the list loads.
+  useEffect(() => {
+    if (!isTablet) return;
+    setSelectedDeliveryId((prev) => {
+      if (prev && allDeliveries.some((d) => d.id === prev)) return prev;
+      return allDeliveries[0]?.id ?? null;
+    });
+  }, [isTablet, allDeliveries]);
 
   const availWidth = containerWidth || width;
   const remaining = Math.max(280, availWidth - COL_ACTIONS - 48);
@@ -404,8 +417,11 @@ export default function SellerDeliveries() {
     const order = d.order || {};
     const rider = d.rider;
 
+    const isSelected = selectedDeliveryId === d.id;
     return (
+      <TouchableOpacity activeOpacity={0.7} onPress={() => setSelectedDeliveryId(d.id)}>
       <XStack
+        backgroundColor={isSelected ? "$backgroundSoft" : "$background"}
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
         paddingVertical="$3"
@@ -534,7 +550,7 @@ export default function SellerDeliveries() {
               paddingHorizontal="$3"
               height={36}
               icon={<Navigation2 size={14} />}
-              onPress={() => router.push(`/(seller)/deliveries/${d.id}`)}
+              onPress={() => setSelectedDeliveryId(d.id)}
             >
               Track
             </Button>
@@ -545,13 +561,14 @@ export default function SellerDeliveries() {
               paddingHorizontal="$3"
               height={36}
               icon={<ExternalLink size={14} />}
-              onPress={() => router.push(`/(seller)/deliveries/${d.id}`)}
+              onPress={() => setSelectedDeliveryId(d.id)}
             >
               View
             </Button>
           )}
         </XStack>
       </XStack>
+      </TouchableOpacity>
     );
   };
 
@@ -616,13 +633,7 @@ export default function SellerDeliveries() {
     </XStack>
   );
 
-  return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
-      {/* Search + Filters */}
+  const searchAndFilters = (
       <YStack padding="$4" gap="$3" paddingBottom="$2">
         <XStack gap="$2" alignItems="center">
           <XStack
@@ -663,9 +674,10 @@ export default function SellerDeliveries() {
             </Text>
           </Button>
         </XStack>
-      </YStack>
+    </YStack>
+  );
 
-      {isTablet ? (
+  const listBody = isTablet ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator
@@ -758,6 +770,39 @@ export default function SellerDeliveries() {
           maxToRenderPerBatch={10}
           removeClippedSubviews
         />
+      );
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      {isTablet ? (
+        <XStack flex={1}>
+          <YStack
+            flex={1.7}
+            borderRightWidth={1}
+            borderRightColor="$borderColor"
+            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+          >
+            {searchAndFilters}
+            {listBody}
+          </YStack>
+          <YStack flex={1} backgroundColor="$backgroundSoft">
+            {selectedDeliveryId ? (
+              <SellerDeliveryDetail deliveryId={selectedDeliveryId} embedded />
+            ) : (
+              <YStack flex={1} alignItems="center" justifyContent="center" gap="$3" padding="$6">
+                <Truck size={40} color="$colorMuted" />
+                <Text color="$colorMuted" fontSize="$4" textAlign="center">
+                  Select a delivery to view its details
+                </Text>
+              </YStack>
+            )}
+          </YStack>
+        </XStack>
+      ) : (
+        <>
+          {searchAndFilters}
+          {listBody}
+        </>
       )}
 
       <RiderSelectionSheet
