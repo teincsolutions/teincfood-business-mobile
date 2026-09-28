@@ -4,10 +4,9 @@
  * resolves HTML through `useReceiptPreviewHtml` (hooks → services layering).
  */
 // @ts-nocheck
-import { YStack, Text } from "tamagui";
-import { WebView } from "react-native-webview";
+import { YStack } from "tamagui";
 import type { OrderItemAddon, SellerOrder } from "@teincfood/core";
-import { useReceiptPreviewHtml } from "@/hooks/useReceiptPreview";
+import { ReceiptView, RECEIPT_WIDTH } from "@/components/orders/ReceiptView";
 
 const SAMPLE_ISO = "2026-09-21T14:00:00.000Z";
 const SAMPLE_PAID_ISO = "2026-09-21T14:05:00.000Z";
@@ -101,12 +100,7 @@ const SAMPLE_RECEIPT_ORDER: SellerOrder = {
   inserted_at: SAMPLE_ISO,
 };
 
-/** 80mm thermal paper width at 96dpi (~302px). */
-const RECEIPT_WIDTH = 304;
-
 export function SampleReceiptPreview() {
-  const html = useReceiptPreviewHtml(SAMPLE_RECEIPT_ORDER);
-
   return (
     <YStack alignItems="center" justifyContent="center">
       <YStack
@@ -118,19 +112,7 @@ export function SampleReceiptPreview() {
         backgroundColor="white"
         overflow="hidden"
       >
-        {html ? (
-          <WebView
-            source={{ html }}
-            style={{ flex: 1, width: "100%", backgroundColor: "#ffffff" }}
-            originWhitelist={["*"]}
-          />
-        ) : (
-          <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
-            <Text fontSize="$4" color="$colorMuted" textAlign="center">
-              Sample receipt unavailable
-            </Text>
-          </YStack>
-        )}
+        <ReceiptView order={SAMPLE_RECEIPT_ORDER} />
       </YStack>
     </YStack>
   );

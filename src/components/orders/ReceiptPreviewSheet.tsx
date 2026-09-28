@@ -1,13 +1,10 @@
 // @ts-nocheck
 import { Sheet, YStack, XStack, Text } from "tamagui";
-import { WebView } from "react-native-webview";
 import { Printer, X } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui/Button";
 import type { SellerOrder } from "@teincfood/core";
-import {
-  usePrintReceiptMutation,
-  useReceiptPreviewHtml,
-} from "@/hooks/useReceiptPreview";
+import { usePrintReceiptMutation } from "@/hooks/useReceiptPreview";
+import { ReceiptView, RECEIPT_WIDTH } from "@/components/orders/ReceiptView";
 
 interface ReceiptPreviewSheetProps {
   open: boolean;
@@ -15,16 +12,12 @@ interface ReceiptPreviewSheetProps {
   order: SellerOrder | null;
 }
 
-/** 80mm thermal paper width at 96dpi (~302px). */
-const RECEIPT_WIDTH = 304;
-
 export function ReceiptPreviewSheet({
   open,
   onOpenChange,
   order,
 }: ReceiptPreviewSheetProps) {
   const printMutation = usePrintReceiptMutation();
-  const html = useReceiptPreviewHtml(order);
   const subtitle = order
     ? `80mm thermal receipt for order ${order.order_number}`
     : "80mm thermal receipt";
@@ -83,19 +76,7 @@ export function ReceiptPreviewSheet({
             backgroundColor="white"
             overflow="hidden"
           >
-            {html ? (
-              <WebView
-                source={{ html }}
-                style={{ flex: 1, width: "100%", backgroundColor: "#ffffff" }}
-                originWhitelist={["*"]}
-              />
-            ) : (
-              <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
-                <Text fontSize="$4" color="$colorMuted" textAlign="center">
-                  {`Receipt unavailable for order ${order?.order_number ?? ""}`}
-                </Text>
-              </YStack>
-            )}
+            <ReceiptView order={order} />
           </YStack>
         </YStack>
 
