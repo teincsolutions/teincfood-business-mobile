@@ -45,4 +45,13 @@ export const profileService = {
   async verifyPhoneChange(code: string): Promise<any> {
     return api.post('/users/me/phone/verify', { code });
   },
+
+  /**
+   * Permanently delete the authenticated user's account.
+   * Backend (DELETE /users/me/delete) anonymizes PII, marks status :deleted
+   * and revokes all sessions. Responds 204 with no body.
+   */
+  async deleteAccount(): Promise<void> {
+    await api.delete('/users/me/delete');
+  },
 };

@@ -15,10 +15,12 @@ import {
   Lock,
   Phone,
   Globe,
+  Trash2,
 } from "@tamagui/lucide-icons";
-import { BackButton } from "@/components/ui";
+import { BackButton, AppAlertDialog } from "@/components/ui";
 import { useSecurityStore } from "@/stores/security.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { useProfileQuery } from "@/hooks/useProfile";
 import PasswordScreen from "./change-password";
 import ChangeEmailScreen from "./change-email";
@@ -41,6 +43,21 @@ export default function SecurityScreen() {
   const passwordSheetRef = useRef<BottomSheetModal>(null);
   const emailSheetRef = useRef<BottomSheetModal>(null);
   const phoneSheetRef = useRef<BottomSheetModal>(null);
+
+  const { deleteAccount, isDeletingAccount } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handleDeleteAccount = useCallback(async () => {
+    // Guard against repeated taps while the request is in flight.
+    if (isDeletingAccount) return;
+    try {
+      await deleteAccount();
+      toast.success("Your account has been permanently deleted");
+    } catch {
+      // Session is untouched on failure — user stays signed in.
+      toast.error("Could not delete your account. Please try again.");
+    }
+  }, [deleteAccount, isDeletingAccount]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -221,8 +238,44 @@ export default function SecurityScreen() {
               </XStack>
             </YStack>
           </YStack>
+          {/* Danger Zone */}
+          <YStack gap="$2">
+            <Text fontSize="$3" fontWeight="700" fontFamily="$heading" color="$colorSecondary" textTransform="uppercase">
+              Danger Zone
+            </Text>
+            <YStack backgroundColor="$backgroundStrong" borderRadius="$5" overflow="hidden">
+              <XStack
+                alignItems="center" padding="$4" gap="$3"
+                onPress={() => setDeleteDialogOpen(true)}
+                pressStyle={{ opacity: 0.7 }}
+              >
+                <YStack backgroundColor="rgba(239,68,68,0.1)" padding="$2" borderRadius="$3">
+                  <Trash2 size={20} color="$error" />
+                </YStack>
+                <YStack flex={1}>
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$error">Delete Account</Text>
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    Permanently remove your account
+                  </Text>
+                </YStack>
+                <ChevronRight size={20} color="$colorSecondary" />
+              </XStack>
+            </YStack>
+          </YStack>
         </YStack>
       </ScrollView>
+
+      <AppAlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Account?"
+        description="This permanently deletes your account, profile and saved data. This cannot be undone."
+        confirmText="Delete Account"
+        cancelText="Keep Account"
+        isDestructive
+        icon={Trash2}
+        onConfirm={handleDeleteAccount}
+      />
 
       {/* Password Sheet */}
       <BottomSheetModal

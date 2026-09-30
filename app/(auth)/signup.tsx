@@ -14,8 +14,9 @@ import {
   ScrollView,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronDown, Check, Apple, Facebook } from "@tamagui/lucide-icons";
-import { BackButton, Button, FormInput } from "@/components/ui";
+import { ChevronDown, Check, Facebook } from "@tamagui/lucide-icons";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { BackButton, Button, FormInput, AppleSignInButton } from "@/components/ui";
 import { validateEmail, validatePassword } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
@@ -448,6 +449,13 @@ export default function SignupScreen() {
               Or continue with
             </Text>
 
+            <AppleSignInButton
+              type={
+                AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+              }
+              onPress={() => handleOIDCLogin("apple")}
+            />
+
             <XStack jc="center" items="center" gap="$4">
               <Button
                 variant="social"
@@ -456,14 +464,6 @@ export default function SignupScreen() {
                 borderColor="$borderColor"
                 icon={<Facebook size={24} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
-              />
-              <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
-                icon={<Apple size={24} color="$color" />}
-                onPress={() => handleOIDCLogin("apple")}
               />
               <Button
                 variant="social"

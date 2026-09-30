@@ -16,13 +16,12 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  Apple,
   Facebook,
   Chrome,
   ChevronDown,
   Check,
 } from "@tamagui/lucide-icons";
-import { Button, FormInput, BackButton } from "@/components/ui";
+import { Button, FormInput, BackButton, AppleSignInButton } from "@/components/ui";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
@@ -413,6 +412,8 @@ export default function LoginScreen() {
               Or continue with
             </Text>
 
+            <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
+
             <XStack jc="center" items="center" gap="$4">
               <Button
                 variant="social"
@@ -421,14 +422,6 @@ export default function LoginScreen() {
                 borderColor="$borderColor"
                 icon={<Facebook size={isTablet ? 24 : 20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
-              />
-              <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
-                icon={<Apple size={isTablet ? 24 : 20} color="$color" />}
-                onPress={() => handleOIDCLogin("apple")}
               />
               <Button
                 variant="social"

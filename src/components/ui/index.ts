@@ -11,6 +11,7 @@ import { Badge } from './Badge';
 import { ScreenContainer } from './ScreenContainer';
 import { ServiceStatusBanner } from './ServiceStatusBanner';
 import { TamaguiDateInput } from './TamaguiDateInput';
+import { AppleSignInButton } from './AppleSignInButton';
 
 export { 
   Button, 
@@ -29,4 +30,5 @@ export {
   ScreenContainer,
   ServiceStatusBanner,
   TamaguiDateInput,
+  AppleSignInButton,
 };

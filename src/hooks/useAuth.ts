@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useLocationStore } from '@/stores/location.store';
 import { useOnboardingStore } from '@/stores/onboarding.store';
 import { authService, LoginRequest, RegisterRequest, RegisterResponse } from '@/services/auth.service';
+import { profileService } from '@/services/profile.service';
 import type { AuthApiResponse } from '@/services/auth.service';
 import type { AuthUser } from '@teincfood/core';
 import type { User } from '@/types/user.model';
@@ -49,6 +50,13 @@ export function useAuth() {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: authService.logout,
+  });
+
+  const deleteAccountMutation = useMutation<void, Error, void>({
+    mutationFn: profileService.deleteAccount,
+    onError: (error: Error) => {
+      console.debug('[useAuth] deleteAccount failed', error);
+    },
   });
 
   const refreshSessionMutation = useMutation({
@@ -193,6 +201,22 @@ export function useAuth() {
     router.replace('/(auth)/login');
   }, [logoutMutation, clearAuthAction, router]);
 
+  /**
+   * Permanently delete the authenticated account. The backend call runs
+   * first; only on success is the local session torn down exactly like
+   * logout (push cleanup + role/business/query clear + back to login). A
+   * failed request leaves the session untouched. The deletion endpoint
+   * already revoked server sessions, so no /auth/logout call is needed.
+   */
+  const deleteAccount = useCallback(async () => {
+    await deleteAccountMutation.mutateAsync();
+    cleanup();
+    await unregister();
+    clearAuthAction();
+    trackEvent('auth.account_deleted');
+    router.replace('/(auth)/login');
+  }, [deleteAccountMutation, clearAuthAction, router]);
+
   const refreshSessionFn = useCallback(async () => {
     if (!refreshToken) {
       throw new Error('No refresh token available');
@@ -223,6 +247,8 @@ export function useAuth() {
     verifyOtp: verifyOtpFn,
     loginWithOAuth,
     logout,
+    deleteAccount,
+    isDeletingAccount: deleteAccountMutation.isPending,
     refreshSession: refreshSessionFn,
   };
 }
