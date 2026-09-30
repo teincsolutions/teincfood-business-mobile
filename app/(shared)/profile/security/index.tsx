@@ -236,27 +236,19 @@ export default function SecurityScreen() {
                 </YStack>
                 <ChevronRight size={20} color="$colorSecondary" />
               </XStack>
-            </YStack>
-          </YStack>
-          {/* Danger Zone */}
-          <YStack gap="$2">
-            <Text fontSize="$3" fontWeight="700" fontFamily="$heading" color="$colorSecondary" textTransform="uppercase">
-              Danger Zone
-            </Text>
-            <YStack backgroundColor="$backgroundStrong" borderRadius="$5" overflow="hidden">
+
+              <Separator borderColor="$borderColor" marginLeft={60} />
+
               <XStack
                 alignItems="center" padding="$4" gap="$3"
                 onPress={() => setDeleteDialogOpen(true)}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(239,68,68,0.1)" padding="$2" borderRadius="$3">
-                  <Trash2 size={20} color="$error" />
+                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                  <Trash2 size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
-                  <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$error">Delete Account</Text>
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                    Permanently remove your account
-                  </Text>
+                  <Text fontSize="$4" fontWeight="600" fontFamily="$body" color="$color">Delete Account</Text>
                 </YStack>
                 <ChevronRight size={20} color="$colorSecondary" />
               </XStack>
