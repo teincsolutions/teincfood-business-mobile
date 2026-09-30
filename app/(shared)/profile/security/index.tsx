@@ -205,17 +205,12 @@ export default function SecurityScreen() {
                     void handleBiometricToggle();
                   }}
                   disabled={biometricLoading}
-                  width={51}
-                  height={31}
-                  padding={2}
                   borderWidth={0}
                   backgroundColor={isBiometricEnabled ? "$primary" : "$borderColor"}
                 >
                   <Switch.Thumb
                     animation="quick"
                     backgroundColor="$white"
-                    width={27}
-                    height={27}
                   />
                 </Switch>
               </XStack>
