@@ -121,7 +121,7 @@ export default function SecurityScreen() {
                 onPress={() => emailSheetRef.current?.present()}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Mail size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
@@ -140,7 +140,7 @@ export default function SecurityScreen() {
                 onPress={() => phoneSheetRef.current?.present()}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Phone size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
@@ -159,7 +159,7 @@ export default function SecurityScreen() {
                 onPress={() => passwordSheetRef.current?.present()}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Lock size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
@@ -183,7 +183,7 @@ export default function SecurityScreen() {
                 alignItems="center" paddingVertical="$4" paddingHorizontal="$4" justifyContent="space-between"
               >
                 <XStack gap="$3" alignItems="center" flex={1}>
-                  <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                  <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                     <Fingerprint size={20} color="$primary" />
                   </YStack>
                   <YStack gap="$1" flex={1}>
@@ -194,7 +194,7 @@ export default function SecurityScreen() {
                 <Switch
                   value={isBiometricEnabled}
                   onValueChange={handleBiometricToggle}
-                  trackColor={{ true: "#FF9633", false: "#E0E0E0" }}
+                  trackColor={{ true: theme.primary.val, false: theme.borderColor.val }}
                   disabled={biometricLoading}
                 />
               </XStack>
@@ -212,7 +212,7 @@ export default function SecurityScreen() {
                 onPress={() => router.push("/(shared)/profile/privacy-policy")}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Shield size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
@@ -228,7 +228,7 @@ export default function SecurityScreen() {
                 onPress={() => router.push("/(shared)/profile/terms")}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Globe size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
@@ -244,7 +244,7 @@ export default function SecurityScreen() {
                 onPress={() => setDeleteDialogOpen(true)}
                 pressStyle={{ opacity: 0.7 }}
               >
-                <YStack backgroundColor="rgba(255,145,0,0.1)" padding="$2" borderRadius="$3">
+                <YStack backgroundColor="$primaryMuted" padding="$2" borderRadius="$3">
                   <Trash2 size={20} color="$primary" />
                 </YStack>
                 <YStack flex={1}>
