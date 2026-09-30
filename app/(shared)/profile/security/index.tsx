@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { useState, useRef, useCallback } from "react";
-import { ScrollView, Switch } from "react-native";
-import { YStack, XStack, Text, Separator, useTheme } from "tamagui";
+import { YStack, XStack, Text, Separator, useTheme, ScrollView, Switch } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -25,6 +24,7 @@ import { useProfileQuery } from "@/hooks/useProfile";
 import PasswordScreen from "./change-password";
 import ChangeEmailScreen from "./change-email";
 import ChangePhoneScreen from "./change-phone";
+import DeleteAccountScreen from "./delete-account";
 
 const SNAP_POINTS = ["50%", "85%"];
 
@@ -43,21 +43,29 @@ export default function SecurityScreen() {
   const passwordSheetRef = useRef<BottomSheetModal>(null);
   const emailSheetRef = useRef<BottomSheetModal>(null);
   const phoneSheetRef = useRef<BottomSheetModal>(null);
+  const deleteSheetRef = useRef<BottomSheetModal>(null);
 
   const { deleteAccount, isDeletingAccount } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const handleDeleteAccount = useCallback(async () => {
-    // Guard against repeated taps while the request is in flight.
+  const handleDeleteConfirm = useCallback(async () => {
+    // Password-set accounts verify first via the sheet; social-only accounts
+    // delete straight from this dialog (the backend enforces the same rule).
+    if (hasPassword) {
+      setDeleteDialogOpen(false);
+      deleteSheetRef.current?.present();
+      return;
+    }
     if (isDeletingAccount) return;
     try {
       await deleteAccount();
       toast.success("Your account has been permanently deleted");
     } catch {
       // Session is untouched on failure — user stays signed in.
+      setDeleteDialogOpen(false);
       toast.error("Could not delete your account. Please try again.");
     }
-  }, [deleteAccount, isDeletingAccount]);
+  }, [deleteAccount, hasPassword, isDeletingAccount]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -192,11 +200,24 @@ export default function SecurityScreen() {
                   </YStack>
                 </XStack>
                 <Switch
-                  value={isBiometricEnabled}
-                  onValueChange={handleBiometricToggle}
-                  trackColor={{ true: theme.primary.val, false: theme.borderColor.val }}
+                  checked={isBiometricEnabled}
+                  onCheckedChange={() => {
+                    void handleBiometricToggle();
+                  }}
                   disabled={biometricLoading}
-                />
+                  width={51}
+                  height={31}
+                  padding={2}
+                  borderWidth={0}
+                  backgroundColor={isBiometricEnabled ? "$primary" : "$borderColor"}
+                >
+                  <Switch.Thumb
+                    animation="quick"
+                    backgroundColor="$white"
+                    width={27}
+                    height={27}
+                  />
+                </Switch>
               </XStack>
             </YStack>
           </YStack>
@@ -266,7 +287,9 @@ export default function SecurityScreen() {
         cancelText="Keep Account"
         isDestructive
         icon={Trash2}
-        onConfirm={handleDeleteAccount}
+        keepOpenOnConfirm
+        confirmLoading={isDeletingAccount}
+        onConfirm={handleDeleteConfirm}
       />
 
       {/* Password Sheet */}
@@ -314,6 +337,23 @@ export default function SecurityScreen() {
           <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">Change Phone Number</Text>
         </XStack>
         <ChangePhoneScreen onClose={() => phoneSheetRef.current?.dismiss()} />
+      </BottomSheetModal>
+
+      {/* Delete Account (password verification sheet) */}
+      <BottomSheetModal
+        ref={deleteSheetRef}
+        snapPoints={SNAP_POINTS}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: theme.background.val }}
+        handleIndicatorStyle={{ backgroundColor: theme.colorSecondary.val }}
+      >
+        <XStack paddingHorizontal="$5" paddingBottom="$3">
+          <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+            Delete Account
+          </Text>
+        </XStack>
+        <DeleteAccountScreen onClose={() => deleteSheetRef.current?.dismiss()} />
       </BottomSheetModal>
     </YStack>
   );

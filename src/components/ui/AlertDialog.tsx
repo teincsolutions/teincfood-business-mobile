@@ -13,6 +13,10 @@ interface AppAlertDialogProps {
   onCancel?: () => void;
   icon?: LucideIcon;
   isDestructive?: boolean;
+  /** Shows a spinner + disables the dialog's own confirm button while pending. */
+  confirmLoading?: boolean;
+  /** Keeps the dialog open after confirm (caller closes it, e.g. after async work). */
+  keepOpenOnConfirm?: boolean;
 }
 
 export function AppAlertDialog({
@@ -26,7 +30,15 @@ export function AppAlertDialog({
   onCancel,
   icon: Icon,
   isDestructive = false,
+  confirmLoading = false,
+  keepOpenOnConfirm = false,
 }: AppAlertDialogProps) {
+  const handleConfirm = () => {
+    onConfirm();
+    if (!keepOpenOnConfirm) {
+      onOpenChange(false);
+    }
+  };
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
@@ -112,19 +124,19 @@ export function AppAlertDialog({
                 {cancelText}
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
-              <Button
-                flex={1}
-                height={50}
-                color="$white"
-                backgroundColor={isDestructive ? "$red" : "$primary"}
-                onPress={onConfirm}
-                fontFamily="$body"
-                fontWeight="700"
-              >
-                {confirmText}
-              </Button>
-            </AlertDialog.Action>
+            <Button
+              flex={1}
+              height={50}
+              color="$white"
+              backgroundColor={isDestructive ? "$red" : "$primary"}
+              onPress={handleConfirm}
+              loading={confirmLoading}
+              disabled={confirmLoading}
+              fontFamily="$body"
+              fontWeight="700"
+            >
+              {confirmText}
+            </Button>
           </XStack>
         </AlertDialog.Content>
       </AlertDialog.Portal>

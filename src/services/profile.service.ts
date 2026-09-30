@@ -49,9 +49,10 @@ export const profileService = {
   /**
    * Permanently delete the authenticated user's account.
    * Backend (DELETE /users/me/delete) anonymizes PII, marks status :deleted
-   * and revokes all sessions. Responds 204 with no body.
+   * and revokes all sessions. Responds 204 with no body. Accounts with a
+   * password set must supply `currentPassword` for verification.
    */
-  async deleteAccount(): Promise<void> {
-    await api.delete('/users/me/delete');
+  async deleteAccount(currentPassword?: string): Promise<void> {
+    await api.delete('/users/me/delete', currentPassword ? { current_password: currentPassword } : undefined);
   },
 };

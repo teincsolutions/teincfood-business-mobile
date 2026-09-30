@@ -52,8 +52,8 @@ export function useAuth() {
     mutationFn: authService.logout,
   });
 
-  const deleteAccountMutation = useMutation<void, Error, void>({
-    mutationFn: profileService.deleteAccount,
+  const deleteAccountMutation = useMutation<void, Error, string | undefined>({
+    mutationFn: (password) => profileService.deleteAccount(password),
     onError: (error: Error) => {
       console.debug('[useAuth] deleteAccount failed', error);
     },
@@ -207,9 +207,10 @@ export function useAuth() {
    * logout (push cleanup + role/business/query clear + back to login). A
    * failed request leaves the session untouched. The deletion endpoint
    * already revoked server sessions, so no /auth/logout call is needed.
+   * Pass `currentPassword` when the account has one set (verified server-side).
    */
-  const deleteAccount = useCallback(async () => {
-    await deleteAccountMutation.mutateAsync();
+  const deleteAccount = useCallback(async (currentPassword?: string) => {
+    await deleteAccountMutation.mutateAsync(currentPassword);
     cleanup();
     await unregister();
     clearAuthAction();
