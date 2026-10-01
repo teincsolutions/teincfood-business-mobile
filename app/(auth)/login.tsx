@@ -412,9 +412,8 @@ export default function LoginScreen() {
               Or continue with
             </Text>
 
-            <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
-
-            <XStack jc="center" items="center" gap="$4">
+            <XStack jc="center" items="stretch" gap="$4">
+              <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
               <Button
                 variant="social"
                 backgroundColor="$backgroundStrong"

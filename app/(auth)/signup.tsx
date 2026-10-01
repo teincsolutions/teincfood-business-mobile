@@ -449,14 +449,13 @@ export default function SignupScreen() {
               Or continue with
             </Text>
 
-            <AppleSignInButton
-              type={
-                AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
-              }
-              onPress={() => handleOIDCLogin("apple")}
-            />
-
-            <XStack jc="center" items="center" gap="$4">
+            <XStack jc="center" items="stretch" gap="$4">
+              <AppleSignInButton
+                type={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                }
+                onPress={() => handleOIDCLogin("apple")}
+              />
               <Button
                 variant="social"
                 backgroundColor="$backgroundStrong"
