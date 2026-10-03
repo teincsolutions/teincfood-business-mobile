@@ -449,7 +449,7 @@ export default function SignupScreen() {
               Or continue with
             </Text>
 
-            <XStack jc="center" items="stretch" gap="$4">
+            <YStack gap="$3" width="100%">
               <AppleSignInButton
                 type={
                   AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
@@ -457,28 +457,28 @@ export default function SignupScreen() {
                 onPress={() => handleOIDCLogin("apple")}
               />
               <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
-                icon={<Facebook size={24} color="#1877F2" />}
+                variant="outline"
+                width="100%"
+                icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
-              />
+              >
+                Continue with Facebook
+              </Button>
               <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
+                variant="outline"
+                width="100%"
                 icon={
                   <Image
                     objectFit="contain"
-                    height={24}
+                    height={20}
                     src={require("assets/icons/icons8-google-100.png")}
                   />
                 }
                 onPress={() => handleOIDCLogin("google")}
-              />
-            </XStack>
+              >
+                Continue with Google
+              </Button>
+            </YStack>
 
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?

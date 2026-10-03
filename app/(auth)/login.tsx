@@ -412,31 +412,31 @@ export default function LoginScreen() {
               Or continue with
             </Text>
 
-            <XStack jc="center" items="stretch" gap="$4">
+            <YStack gap="$3" width="100%">
               <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
               <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
-                icon={<Facebook size={isTablet ? 24 : 20} color="#1877F2" />}
+                variant="outline"
+                width="100%"
+                icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
-              />
+              >
+                Continue with Facebook
+              </Button>
               <Button
-                variant="social"
-                backgroundColor="$backgroundStrong"
-                borderWidth={1}
-                borderColor="$borderColor"
+                variant="outline"
+                width="100%"
                 icon={
                   <Image
                     objectFit="contain"
-                    height={isTablet ? 24 : 20}
+                    height={20}
                     src={require("assets/icons/icons8-google-100.png")}
                   />
                 }
                 onPress={() => handleOIDCLogin("google")}
-              />
-            </XStack>
+              >
+                Continue with Google
+              </Button>
+            </YStack>
           </YStack>
 
           <YStack pt="$6" gap="$3" pb="$2">
