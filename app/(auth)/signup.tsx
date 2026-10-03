@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronDown, Check, Facebook } from "@tamagui/lucide-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { BackButton, Button, FormInput, AppleSignInButton } from "@/components/ui";
-import { validateEmail, validatePassword } from "@teincfood/core";
+import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
   getDialCodeFromCountry,
@@ -217,8 +217,12 @@ export default function SignupScreen() {
 
       setAuth({ ...response.user, role: selectedRole }, response.access_token, response.refresh_token);
       goPostAuth();
-    } catch {
-      setError(`Failed to sign in with ${provider}`);
+    } catch (err: any) {
+      if (extractApiErrorCode(err) === "ACCOUNT_DELETED") {
+        setError("This account has been deleted.");
+      } else {
+        setError(`Failed to sign in with ${provider}`);
+      }
     }
   };
 

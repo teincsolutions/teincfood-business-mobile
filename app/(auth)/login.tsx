@@ -211,8 +211,14 @@ export default function LoginScreen() {
         response.refresh_token,
       );
       goPostAuth();
-    } catch {
-      setError(`Failed to sign in with ${provider}`);
+    } catch (err: any) {
+      // Deleted accounts are rejected server-side with no session minted —
+      // say so plainly instead of a generic failure.
+      if (extractApiErrorCode(err) === "ACCOUNT_DELETED") {
+        setError("This account has been deleted.");
+      } else {
+        setError(`Failed to sign in with ${provider}`);
+      }
     }
   };
 
