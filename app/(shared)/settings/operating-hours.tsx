@@ -18,8 +18,9 @@ import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { upsertOperatingHours } from "@/services/business.service";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage, referenceSyncService, setOperatingHoursLocal, useOperatingHours } from "@teincfood/core";
+import { extractApiErrorMessage, referenceSyncService, setOperatingHoursLocal, useOperatingHours, useIsEffectivelyOnline } from "@teincfood/core";
 import type { OperatingHoursEntry } from "@teincfood/core";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -66,8 +67,10 @@ const defaultSchedule: Record<number, DaySchedule> = {
 export default function OperatingHoursSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
   const canEdit = useHasCapability("business_profile_manage");
+  const online = useIsEffectivelyOnline();
   const [loadingHours, setLoadingHours] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -78,7 +81,8 @@ export default function OperatingHoursSettings() {
   const { data: localHours, isLoading } = useOperatingHours(activeBusinessId, !!activeBusinessId);
 
   useEffect(() => {
-    if (!isLoading && localHours) {
+    if (isLoading) return;
+    if (localHours) {
       const merged = { ...defaultSchedule };
       for (const entry of localHours) {
         if (entry.day_of_week !== undefined) {
@@ -90,10 +94,8 @@ export default function OperatingHoursSettings() {
         }
       }
       setSchedule(merged);
-      setLoadingHours(false);
-    } else if (!activeBusinessId) {
-      setLoadingHours(false);
     }
+    setLoadingHours(false);
   }, [localHours, isLoading, activeBusinessId]);
 
   const toggleDay = (dayIndex: number) => {
@@ -124,47 +126,71 @@ export default function OperatingHoursSettings() {
   };
 
   const handleSave = async () => {
+    if (!canEdit) {
+      toast.error("Only business managers can change operating hours.");
+      return;
+    }
+    if (!activeBusinessId) {
+      toast.error("No business selected. Please select a business first.");
+      return;
+    }
+    const invalidDay = Object.entries(schedule).find(
+      ([, s]) => s.isOpen && (!s.openTime || !s.closeTime),
+    );
+    if (invalidDay) {
+      const dayIndex = parseInt(invalidDay[0], 10);
+      const dayLabel = DAYS[dayIndex]?.label || "Unknown";
+      toast.error(`${dayLabel} is open but has no time set. Please tap the time to set it.`);
+      return;
+    }
+
+    const hours: OperatingHoursEntry[] = Object.entries(schedule).map(([dayIndexStr, s]) => {
+      const dayIndex = parseInt(dayIndexStr, 10);
+      return {
+        day_of_week: dayIndex,
+        open_time: s.isOpen && s.openTime ? `${s.openTime}:00` : null,
+        close_time: s.isOpen && s.closeTime ? `${s.closeTime}:00` : null,
+        is_closed: !s.isOpen,
+      };
+    });
+
     setIsSaving(true);
     setSaveStatus("idle");
     try {
-      if (!activeBusinessId) {
-        toast.error("No business selected. Please select a business first.");
-        return;
-      }
-      const invalidDay = Object.entries(schedule).find(
-        ([, s]) => s.isOpen && (!s.openTime || !s.closeTime),
-      );
-      if (invalidDay) {
-        const dayIndex = parseInt(invalidDay[0], 10);
-        const dayLabel = DAYS[dayIndex]?.label || "Unknown";
-        toast.error(`${dayLabel} is open but has no time set. Please tap the time to set it.`);
+      // Local-first: the SQLite cache drives open/closed checks and a queued
+      // reference job pushes the edit to the server once connectivity returns.
+      await setOperatingHoursLocal(activeBusinessId, hours);
+      await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+
+      if (!online) {
+        setSaveStatus("success");
+        toast.success("Saved on this device — will sync when back online.");
         setIsSaving(false);
         return;
       }
 
-      const hours: OperatingHoursEntry[] = Object.entries(schedule).map(([dayIndexStr, s]) => {
-        const dayIndex = parseInt(dayIndexStr, 10);
-        return {
-          day_of_week: dayIndex,
-          open_time: s.isOpen && s.openTime ? `${s.openTime}:00` : null,
-          close_time: s.isOpen && s.closeTime ? `${s.closeTime}:00` : null,
-          is_closed: !s.isOpen,
-        };
-      });
-      // Write to local reference cache first (offline-first)
-      await setOperatingHoursLocal(activeBusinessId, hours);
-      // Then try network sync
       try {
         await upsertOperatingHours(activeBusinessId, hours);
-        // Sync reference data to update local cache immediately
         try { await referenceSyncService.sync({ businessId: activeBusinessId, keys: ["operating-hours"] }); } catch {}
+        await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+        setSaveStatus("success");
+        toast.success("Operating hours saved successfully!");
+        setTimeout(() => router.back(), 1500);
       } catch (networkError) {
-        // Network failed but local save succeeded - will sync when online
         console.warn("[OperatingHours] Network sync failed, saved locally:", networkError);
+        const status = (networkError as { status?: unknown })?.status;
+        if (typeof status === "number" && status >= 400 && status < 500) {
+          // The server rejected the edit (validation / permission) — restore
+          // server truth so the cache doesn't keep hours that were refused.
+          try { await referenceSyncService.sync({ businessId: activeBusinessId, keys: ["operating-hours"] }); } catch {}
+          await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+          setSaveStatus("error");
+          toast.error(extractApiErrorMessage(networkError));
+        } else {
+          setSaveStatus("success");
+          toast.success("Saved on this device — will sync when back online.");
+        }
       }
-      setSaveStatus("success");
-      toast.success("Operating hours saved successfully!");
-      setTimeout(() => router.back(), 1500);
     } catch (e) {
       setSaveStatus("error");
       toast.error(extractApiErrorMessage(e));
@@ -293,7 +319,7 @@ export default function OperatingHoursSettings() {
               </YStack>
             </Card>
 
-            <Button variant="primary" width="100%" onPress={handleSave} loading={isSaving}>
+            <Button variant="primary" width="100%" onPress={handleSave} loading={isSaving} disabled={!canEdit}>
               Save Changes
             </Button>
           </YStack>

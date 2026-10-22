@@ -29,7 +29,7 @@ import {
   ListOrdered,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
@@ -60,9 +60,41 @@ export default function SellerSettings() {
   const canManageTax = useHasCapability("tax_rules_manage");
   const { data: membership } = useMyBusinessCapabilities();
   const myCaps = new Set(membership?.capabilities ?? []);
-  const [isOpen, setIsOpen] = useState(activeBusiness?.manuallyClosed !== true);
+  const [isOpen, setIsOpen] = useState(
+    activeBusiness?.manually_closed !== undefined
+      ? !activeBusiness.manually_closed
+      : activeBusiness?.is_open !== false,
+  );
+  const [isTogglingStore, setIsTogglingStore] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [activeSection, setActiveSection] = useState("store");
+
+  // The switch must follow the persisted business, not a one-shot initial
+  // value: a stale/absent field used to leave it stuck "on" after every
+  // remount (toggle appeared to reverse when reopening Settings).
+  const storeOpen =
+    activeBusiness?.manually_closed !== undefined
+      ? !activeBusiness.manually_closed
+      : activeBusiness?.is_open !== false;
+
+  useEffect(() => {
+    if (!isTogglingStore) setIsOpen(storeOpen);
+  }, [storeOpen, isTogglingStore]);
+
+  const applyStoreStatus = (updated?: {
+    is_open?: boolean;
+    manually_closed?: boolean;
+  }) => {
+    const current = useBusinessStore.getState().activeBusiness;
+    if (!current || !updated) return;
+    useBusinessStore.getState().setActiveBusiness({
+      ...current,
+      ...(updated.is_open !== undefined ? { is_open: updated.is_open } : {}),
+      ...(updated.manually_closed !== undefined
+        ? { manually_closed: updated.manually_closed }
+        : {}),
+    });
+  };
 
   // Two-pane master-detail on tablet landscape (iPad/Android tablet) — the
   // settings list becomes a left rail and the selected section fills the pane.
@@ -108,27 +140,41 @@ export default function SellerSettings() {
   };
 
   const handleToggleStore = async (open: boolean) => {
-    if (!activeBusiness?.id) return;
+    if (!activeBusiness?.id || !canManageProfile) return;
     const previous = isOpen;
     setIsOpen(open);
+    setIsTogglingStore(true);
     try {
-      await businessService.toggleBusinessOpen(activeBusiness.id);
+      const result = await businessService.toggleBusinessOpen(
+        activeBusiness.id,
+      );
+      // Persist the server's new state so every screen (and the next mount of
+      // this one) sees it instead of the pre-toggle business snapshot.
+      applyStoreStatus(result?.data);
     } catch (e) {
       setIsOpen(previous);
       toast.error(extractApiErrorMessage(e));
+    } finally {
+      setIsTogglingStore(false);
     }
   };
 
   const handleCloseStore = async () => {
-    if (!activeBusiness?.id) return;
+    if (!activeBusiness?.id || !canManageProfile) return;
     const previous = isOpen;
     setIsOpen(false);
     setShowCloseDialog(false);
+    setIsTogglingStore(true);
     try {
-      await businessService.toggleBusinessOpen(activeBusiness.id);
+      const result = await businessService.toggleBusinessOpen(
+        activeBusiness.id,
+      );
+      applyStoreStatus(result?.data);
     } catch (e) {
       setIsOpen(previous);
       toast.error(extractApiErrorMessage(e));
+    } finally {
+      setIsTogglingStore(false);
     }
   };
 

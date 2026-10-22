@@ -47,7 +47,6 @@ import {
   useRemoveMemberMutation,
   useBusinessMemberInvitationsQuery,
   useRevokeMemberInvitationMutation,
-  useDeleteMemberInvitationMutation,
   useResendMemberInvitationMutation,
   extractApiErrorMessage,
 } from "@teincfood/core";
@@ -83,7 +82,6 @@ export default function MembersScreen() {
   const removeMember = useRemoveMemberMutation();
   const sentInvitesQuery = useBusinessMemberInvitationsQuery();
   const revokeInvite = useRevokeMemberInvitationMutation();
-  const deleteInvite = useDeleteMemberInvitationMutation();
   const resendInvite = useResendMemberInvitationMutation();
 
   const members = response?.data ?? [];
@@ -98,11 +96,13 @@ export default function MembersScreen() {
   const [removingMember, setRemovingMember] = useState(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<any>(null);
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
-  const sentInvites: any[] =
+  // Only actionable (pending) invitations are listed. Revoked/expired/accepted
+  // rows used to linger here and looked like duplicate invitations.
+  const sentInvites: any[] = (
     (sentInvitesQuery.data as any)?.data ??
-    (Array.isArray(sentInvitesQuery.data) ? (sentInvitesQuery.data as any) : []);
+    (Array.isArray(sentInvitesQuery.data) ? (sentInvitesQuery.data as any) : [])
+  ).filter((inv: any) => inv.status === "pending");
 
   // Plan gate (backend counts active members + pending invitations).
   const { limit: memberLimit, atCap: atMemberCap } = usePlanLimit(
@@ -160,15 +160,8 @@ export default function MembersScreen() {
     setRevokeTarget(null);
   };
 
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    deleteInvite.mutate(deleteTarget.id);
-    setDeleteTarget(null);
-  };
-
   const renderSentInvite = ({ item }: { item: any }) => {
     const contact = item.invited_email || item.invited_phone || "—";
-    const isPending = item.status === "pending";
     return (
       <Card padding="$3" bordered>
         <XStack alignItems="center" gap="$3">
@@ -177,10 +170,10 @@ export default function MembersScreen() {
               {contact}
             </Text>
             <Text fontSize="$2" color="$colorMuted">
-              {`${ROLE_LABELS[item.role] || item.role} • ${item.status}${item.expires_at ? ` • expires ${new Date(item.expires_at).toLocaleDateString()}` : ""}`}
+              {`${ROLE_LABELS[item.role] || item.role} • pending${item.expires_at ? ` • expires ${new Date(item.expires_at).toLocaleDateString()}` : ""}`}
             </Text>
           </YStack>
-          {isPending && canManageMembers && (
+          {canManageMembers && (
             <XStack gap="$2">
               <Button
                 size="$2"
@@ -198,20 +191,9 @@ export default function MembersScreen() {
                 disabled={revokeInvite.isPending}
                 onPress={() => setRevokeTarget(item)}
               >
-                Revoke
+                Cancel
               </Button>
             </XStack>
-          )}
-          {!isPending && item.status !== "accepted" && canManageMembers && (
-            <Button
-              size="$2"
-              variant="dangerOutline"
-              loading={deleteInvite.isPending}
-              disabled={deleteInvite.isPending}
-              onPress={() => setDeleteTarget(item)}
-            >
-              Delete
-            </Button>
           )}
         </XStack>
       </Card>
@@ -552,26 +534,15 @@ export default function MembersScreen() {
         onConfirm={handleRemove}
       />
 
-      {/* Revoke Confirmation */}
+      {/* Cancel invite confirmation */}
       <AppAlertDialog
         open={revokeTarget !== null}
         onOpenChange={() => setRevokeTarget(null)}
-        title="Revoke invitation"
-        description={`Cancel the pending invitation to ${revokeTarget?.invited_email || revokeTarget?.invited_phone || "this person"}?`}
-        confirmText="Revoke"
+        title="Cancel invitation"
+        description={`Cancel the pending invitation to ${revokeTarget?.invited_email || revokeTarget?.invited_phone || "this person"}? The invite link stops working and the invitation is removed from this list.`}
+        confirmText="Cancel invite"
         isDestructive
         onConfirm={handleConfirmRevoke}
-      />
-
-      {/* Delete Confirmation */}
-      <AppAlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={() => setDeleteTarget(null)}
-        title="Delete invitation"
-        description="Remove this invitation record? This cannot be undone."
-        confirmText="Delete"
-        isDestructive
-        onConfirm={handleConfirmDelete}
       />
     </YStack>
   );

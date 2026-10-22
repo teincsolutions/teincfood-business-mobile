@@ -61,6 +61,10 @@ export interface Business {
   rating: number;
   reviewCount: number;
   totalOrders: number;
+  /** Backend-computed open flag (operating hours + manual close). */
+  is_open?: boolean;
+  /** Seller-facing manual open/close toggle (backend `manually_closed`). */
+  manually_closed?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -78,7 +78,14 @@ export default function SellerDashboard() {
       const result = await businessService.toggleBusinessOpen(activeBusiness.id);
       const updated = result?.data;
       if (updated?.is_open !== undefined) {
-        useBusinessStore.getState().setActiveBusiness(updated);
+        // The toggle endpoint returns a partial business — merge it, never
+        // replace the active business (that dropped currency, address, …).
+        const current = useBusinessStore.getState().activeBusiness;
+        useBusinessStore.getState().setActiveBusiness({
+          ...(current ?? {}),
+          is_open: updated.is_open,
+          manually_closed: updated.manually_closed,
+        });
       }
     } catch (e) {
       toast.error(extractApiErrorMessage(e));
