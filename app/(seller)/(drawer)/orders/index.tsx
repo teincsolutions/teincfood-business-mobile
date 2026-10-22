@@ -27,9 +27,7 @@ import OrderDetails from "../../orders/[id]";
 import {
   useSellerOrdersQuery,
   useCancelOrderMutation,
-  SELLER_KEYS,
 } from "@/hooks/seller.hooks";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
 import { useTheme } from "tamagui";
@@ -244,8 +242,6 @@ export default function SellerOrders() {
   } = useSellerOrdersQuery(true, filterParams);
   const cancelOrder = useCancelOrderMutation();
   const canReject = useHasCapability('orders_reject');
-
-  useOrderRealtimeUpdates(SELLER_KEYS.all);
 
   const allOrders = data || [];
 

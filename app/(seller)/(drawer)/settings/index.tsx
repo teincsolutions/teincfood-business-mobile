@@ -26,6 +26,7 @@ import {
   Crown,
   Bell,
   AlertTriangle,
+  ListOrdered,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState } from "react";
@@ -199,6 +200,12 @@ export default function SellerSettings() {
             label: "Payment Settings",
             description: "Bank account, payout schedule",
             route: "/(seller)/settings/payment-settings",
+          },
+          {
+            icon: ListOrdered,
+            label: "Order Flow",
+            description: "Terminal order steps",
+            route: "/(seller)/settings/order-flow",
           },
         ]
       : []),

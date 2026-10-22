@@ -41,7 +41,6 @@ import {
   useCompletePickupMutation,
   useConfirmHandoverMutation,
 } from "@/hooks/seller.hooks";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
 import {
   useAvailableRidersQuery,
   useAssignRiderMutation,
@@ -95,8 +94,6 @@ export default function OrderDetails({
   const insets = useSafeAreaInsets();
 
   // Live order updates for this specific order
-  useOrderRealtimeUpdates(["seller"]);
-
   const { data, isLoading, error } = useSellerOrderQuery(id as string);
   const acceptMutation = useAcceptOrderMutation();
   const rejectMutation = useRejectOrderMutation();

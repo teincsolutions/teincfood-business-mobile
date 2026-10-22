@@ -31,8 +31,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useRouter } from "expo-router";
 import SellerDeliveryDetail from "../../deliveries/[id]";
 import { useBusinessDeliveriesQuery } from "@teincfood/core";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
-import { SELLER_KEYS } from "@/hooks/seller.hooks";
 import { useResponsive } from "@/utils/responsive";
 import { useFilterStore } from "@/stores/filter.store";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
@@ -184,8 +182,6 @@ export default function SellerDeliveries() {
   const { data: riders } = useAvailableRidersQuery(showRiderSheet);
   const assignRider = useAssignRiderMutation();
   const confirmHandover = useConfirmHandoverMutation();
-
-  useOrderRealtimeUpdates(SELLER_KEYS.all);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);

@@ -20,7 +20,7 @@ import {
   LogOut,
   ChefHat,
 } from "@tamagui/lucide-icons";
-import { usePOSOrdersQuery, POS_KEYS } from "@teincfood/core";
+import { usePOSOrdersQuery } from "@teincfood/core";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useResponsive } from "@/utils/responsive";
 import {
@@ -33,7 +33,6 @@ import {
 import { useConfirmHandoverMutation, useCompletePickupMutation } from "@/hooks/seller.hooks";
 import { useDisplayStore } from "@/stores/display.store";
 import { useSecurityStore } from "@/stores/security.store";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
 import {
   PendingOrderCard,
   PreparingOrderCard,
@@ -144,8 +143,6 @@ export default function KitchenDisplay() {
   } | null>(null);
 
   useKeepAwake();
-  useOrderRealtimeUpdates(POS_KEYS.all);
-
   const { isLandscape, width } = useResponsive();
   const isTabletLandscape = width >= 768 && isLandscape;
 

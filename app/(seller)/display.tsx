@@ -19,12 +19,11 @@ import {
   CheckCircle,
   LogOut,
 } from "@tamagui/lucide-icons";
-import { usePOSOrdersQuery, POS_KEYS } from "@teincfood/core";
+import { usePOSOrdersQuery } from "@teincfood/core";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useDisplayStore } from "@/stores/display.store";
 import { useResponsive } from "@/utils/responsive";
 import { useSecurityStore } from "@/stores/security.store";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { CalloutCard } from "@/components/pos/CalloutCard";
 
 function LiveClock() {
@@ -95,8 +94,6 @@ export default function CalloutDisplay() {
   const [exiting, setExiting] = useState(false);
 
   useKeepAwake();
-  useOrderRealtimeUpdates(POS_KEYS.all);
-
   const { isLandscape, width } = useResponsive();
   const isTabletLandscape = width >= 768 && isLandscape;
 

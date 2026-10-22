@@ -63,7 +63,6 @@ import {
   useCreatePOSOrderMutation,
   usePOSOrdersQuery,
   usePOSOrderPreviewQuery,
-  POS_KEYS,
   useBusinessOpenNow,
 } from "@teincfood/core";
 import {
@@ -86,7 +85,6 @@ import {
   useConfirmCashPaymentMutation,
 } from "@/hooks/seller.hooks";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
-import { useOrderRealtimeUpdates } from "@teincfood/core";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
 import type {
@@ -127,8 +125,6 @@ export default function POSTerminal() {
   const insets = useSafeAreaInsets();
 
   useKeepAwake();
-  useOrderRealtimeUpdates(POS_KEYS.all);
-
   const handleExit = useCallback(async () => {
     if (!isBiometricEnabled) {
       deactivateKeepAwake();
