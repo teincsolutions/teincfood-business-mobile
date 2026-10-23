@@ -41,7 +41,10 @@ export default function SellerDashboard() {
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
-  const isStoreOpen = activeBusiness?.is_open !== false;
+  // The toggle reflects the seller's manual pause, not the (automatic)
+  // outside-hours state, so it does not flip off on its own at closing time.
+  const isManuallyClosed = activeBusiness?.manually_closed === true;
+  const isStoreOpen = !isManuallyClosed;
 
   // Fetch business KYC status (fresh every mount)
   const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
@@ -186,7 +189,13 @@ export default function SellerDashboard() {
             )}
           </YStack>
           <XStack gap="$2" alignItems="center">
-            <Text fontSize="$3">Store {isStoreOpen ? "Open" : "Closed"}</Text>
+            <Text fontSize="$3">
+              {isManuallyClosed
+                ? "Online ordering paused"
+                : isStoreOpen
+                  ? "Online ordering on"
+                  : "Outside business hours"}
+            </Text>
             <Switch
               size="$8"
               checked={isStoreOpen}

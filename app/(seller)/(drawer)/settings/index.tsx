@@ -306,12 +306,15 @@ export default function SellerSettings() {
             fontFamily="$body"
             color="$color.white"
           >
-            Store Status
+            Online Ordering
           </Text>
           <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
             {isOpen
-              ? "Your store is open and accepting orders"
-              : "Your store is closed"}
+              ? "Online ordering is on — buyers can place orders"
+              : "Online ordering is paused — buyers cannot place orders"}
+          </Text>
+          <Text color="$colorSecondary" fontSize="$2" fontFamily="$body" marginTop="$1">
+            Pausing only stops new online orders. Walk-in POS orders still work during business hours.
           </Text>
         </YStack>
         <Switch
@@ -553,7 +556,7 @@ export default function SellerSettings() {
           width="100%"
           onPress={() => setShowCloseDialog(true)}
         >
-          Close Store Temporarily
+          Pause Online Ordering
         </Button>
       </YStack>
     </Card>
@@ -562,7 +565,7 @@ export default function SellerSettings() {
   // Ordered sections for the tablet master-detail rail. Inline sections render
   // in the detail pane; link sections navigate (and act as rows in the rail).
   const sections = [
-    { key: "store", label: "Store Status", icon: Building, element: storeStatusCard },
+    { key: "store", label: "Online Ordering", icon: Building, element: storeStatusCard },
     { key: "notifications", label: "Order Notifications", icon: Bell, element: notificationsCard },
     { key: "display", label: "Display Settings", icon: Monitor, element: displaySettingsCard },
     ...visibleLinkItems.map((item) => ({
