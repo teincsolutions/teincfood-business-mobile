@@ -1,19 +1,39 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { contentService } from "@/services/content.service";
+import { contentService, type ContentAudience } from "@/services/content.service";
+import { useRoleStore } from "@/stores/role.store";
 import type { PageResponse } from "@/types/content.types";
 
-export function useContent(slug: string, locale: string = "en") {
-  return useQuery<PageResponse, Error>({
-    queryKey: ["content", slug, locale],
-    queryFn: () => contentService.getPage(slug, locale),
-    staleTime: 30 * 60 * 1000,
-  });
+/**
+ * The audience this app shows content for. The business app serves three
+ * roles, and each of them gets its own legal pages and help centre.
+ */
+export function useContentAudience(): ContentAudience {
+  const role = useRoleStore((state) => state.role);
+
+  return useMemo(() => {
+    switch (role) {
+      case "rider":
+        return "rider";
+      case "fleet_manager":
+        return "fleet";
+      default:
+        return "seller";
+    }
+  }, [role]);
 }
 
-export function useFaqs(locale: string = "en", category?: string) {
-  return useQuery<PageResponse, Error>({
-    queryKey: ["faqs", locale, category],
-    queryFn: () => contentService.getFaqs(locale, category),
+export function useContent(
+  slug: string,
+  locale: string = "en",
+  audience?: string
+) {
+  const roleAudience = useContentAudience();
+  const scoped = audience ?? roleAudience;
+
+  return useQuery<PageResponse | null, Error>({
+    queryKey: ["content", slug, locale, scoped],
+    queryFn: () => contentService.getPage(slug, locale, scoped),
     staleTime: 30 * 60 * 1000,
   });
 }

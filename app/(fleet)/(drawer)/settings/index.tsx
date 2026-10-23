@@ -15,6 +15,7 @@ import {
   Save,
   MailOpen,
   Crown,
+  FileText,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
@@ -81,6 +82,18 @@ export default function FleetSettingsScreen() {
       title: "Help & Support",
       description: "Get help and contact support",
       onPress: () => router.push("/(shared)/profile/help"),
+    },
+    {
+      icon: FileText,
+      title: "Terms of Service",
+      description: "The terms that govern your use of the platform",
+      onPress: () => router.push("/(shared)/profile/terms"),
+    },
+    {
+      icon: Shield,
+      title: "Privacy Policy",
+      description: "How we handle your information",
+      onPress: () => router.push("/(shared)/profile/privacy-policy"),
     },
   ];
 

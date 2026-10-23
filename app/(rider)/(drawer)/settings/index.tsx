@@ -11,6 +11,8 @@ import {
   Clock,
   FileText,
   MailOpen,
+  HelpCircle,
+  Shield,
 } from "@tamagui/lucide-icons";
 import { toast } from "sonner-native";
 import {
@@ -73,6 +75,24 @@ export default function RiderSettings() {
       label: "KYC Documents",
       description: `Status: ${profile?.kyc_status || "pending"}`,
       route: "/(shared)/kyc?type=user&role=rider",
+    },
+    {
+      icon: HelpCircle,
+      label: "Help & Support",
+      description: "Answers for riders and live chat support",
+      route: "/(shared)/profile/help",
+    },
+    {
+      icon: FileText,
+      label: "Terms of Service",
+      description: "The terms that govern your use of the platform",
+      route: "/(shared)/profile/terms",
+    },
+    {
+      icon: Shield,
+      label: "Privacy Policy",
+      description: "How we handle your information",
+      route: "/(shared)/profile/privacy-policy",
     },
   ];
 
