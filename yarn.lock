@@ -3785,10 +3785,10 @@
   dependencies:
     "@tanstack/query-core" "5.101.2"
 
-"@teincfood/chat-client@0.1.20":
-  version "0.1.20"
-  resolved "https://registry.yarnpkg.com/@teincfood/chat-client/-/chat-client-0.1.20.tgz#5a8d1718dd80cddc996167dadfc4957ddce5a6b3"
-  integrity sha512-188bPHhRcN9BlNVZCDjARvje5CLENpEeubq6+eIAvXC4WodK9fov6gct6QrZJkkUNKUCZrQJTtHq2NBOlDDLDQ==
+"@teincfood/chat-client@0.1.21":
+  version "0.1.21"
+  resolved "https://registry.yarnpkg.com/@teincfood/chat-client/-/chat-client-0.1.21.tgz#4164dc5ee283598e45ea8b11643beefa423366bb"
+  integrity sha512-HJY+fb5LvKGjsxXfSTrcnuf58l30pV6DLwEGL7WgSvgRU/dP6rD2LbkddZ5uMkt2aZQn9O1JiQpuna90kIp25A==
 
 "@teincfood/core@^0.9.26":
   version "0.9.26"
