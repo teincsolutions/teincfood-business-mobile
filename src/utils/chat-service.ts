@@ -13,6 +13,7 @@ export function getChatClient(): ChatClient {
       baseUrl: API_BASE_URL,
       wsUrl: WS_BASE_URL,
       storage: createMMKVStorageAdapter(mmkvStorage),
+      surface: "business-mobile",
       onTokenExpired: async (): Promise<AuthTokens | null> => {
         const { refreshToken } = useAuthStore.getState();
         if (!refreshToken) return null;
