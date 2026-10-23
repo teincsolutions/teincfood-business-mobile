@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Crown, TicketPercent } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { toast } from "sonner-native";
-import type { Promo } from "@teincfood/core";
+import { useIsEffectivelyOnline, type Promo } from "@teincfood/core";
 import {
   useSubscriptionPlansQuery,
   useMySubscriptionQuery,
@@ -328,6 +328,7 @@ function PlanTab() {
   const plansQuery = useSubscriptionPlansQuery();
   const subQuery = useMySubscriptionQuery();
   const update = useUpdateSubscriptionMutation();
+  const online = useIsEffectivelyOnline();
   const [selecting, setSelecting] = useState<string | null>(null);
   const [yearly, setYearly] = useState(false);
 
@@ -350,6 +351,16 @@ function PlanTab() {
 
   const isLoading = plansQuery.isLoading || subQuery.isLoading;
   const isError = plansQuery.isError || subQuery.isError;
+
+  if (!online && plans.length === 0) {
+    return (
+      <YStack gap="$2" alignItems="center" padding="$4">
+        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+          {`You're offline. Plan and billing details need a connection — your current plan keeps working.`}
+        </Text>
+      </YStack>
+    );
+  }
 
   if (isLoading) {
     return (

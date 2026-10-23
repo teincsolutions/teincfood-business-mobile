@@ -49,7 +49,10 @@ export function RequireCapability({
   fallback?: string;
 }) {
   const { membership, isLoading } = useCapabilityGuard(fallback);
-  if (isLoading || !membership?.capabilities) {
+  // Only block while the first capability resolution is in flight. Offline
+  // (no cached membership) resolves to `isLoading === false`; blocking there
+  // would leave the user on a spinner forever. The backend still enforces.
+  if (isLoading && !membership?.capabilities) {
     return (
       <YStack flex={1} alignItems="center" justifyContent="center">
         <Spinner size="large" />

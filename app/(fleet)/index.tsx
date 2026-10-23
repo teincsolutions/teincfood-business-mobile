@@ -2,21 +2,23 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { YStack, Spinner, Text } from 'tamagui';
-import { useBusinessesQuery } from '@/hooks/useBusinessesQuery';
 import { useBusinessStore } from '@/stores/business.store';
 
 export default function FleetIndex() {
-  const { isFetched } = useBusinessesQuery();
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const hydrated = useBusinessStore((s) => s.isHydrated);
 
   useEffect(() => {
-    if (!isFetched) return;
-    if (activeBusiness) {
-      router.replace('/(fleet)/(drawer)/dashboard');
-    } else {
-      router.replace('/(shared)/select-business');
-    }
-  }, [isFetched, activeBusiness]);
+    // Offline-first: route from the persisted store, never from a network
+    // fetch. Fleet surfaces are online-only, but boot routing itself must not
+    // depend on /businesses/me resolving.
+    if (!hydrated) return;
+    router.replace(
+      activeBusiness
+        ? '/(fleet)/(drawer)/dashboard'
+        : '/(shared)/select-business',
+    );
+  }, [hydrated, activeBusiness]);
 
   return (
     <YStack flex={1} alignItems="center" justifyContent="center" backgroundColor="$background">

@@ -216,16 +216,21 @@ export default function SplashScreen() {
         }
       }
 
-      // Prefetch businesses — splash stays visible until data is ready
+      // Refresh businesses in the background. The persisted query cache and
+      // the business store already hold what the shell needs, so the splash
+      // must never wait on the network — poor connectivity used to strand it
+      // on "Loading your businesses...".
       setStatusMessage("Loading your businesses...");
-      await queryClient.prefetchQuery({
-        queryKey: BUSINESSES_QUERY_KEY,
-        queryFn: async () => {
-          const res = await businessService.fetchMyBusinesses();
-          return res.data || [];
-        },
-        staleTime: 1000 * 60 * 5,
-      });
+      void queryClient
+        .prefetchQuery({
+          queryKey: BUSINESSES_QUERY_KEY,
+          queryFn: async () => {
+            const res = await businessService.fetchMyBusinesses();
+            return res.data || [];
+          },
+          staleTime: 1000 * 60 * 5,
+        })
+        .catch(() => {});
 
       // Navigate to role's home
       register();

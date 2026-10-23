@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { referenceSyncService } from "@teincfood/core";
+import { referenceSyncService, useIsEffectivelyOnline } from "@teincfood/core";
 import type { Promo } from "@teincfood/core";
 import * as subscriptionService from "@/services/subscription.service";
 import * as businessService from "@/services/business.service";
@@ -20,6 +20,7 @@ export function usePlanAudience(): string {
 export function useSubscriptionPlansQuery() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const audience = usePlanAudience();
+  const online = useIsEffectivelyOnline();
   return useQuery({
     queryKey: [...PLANS_KEY, audience],
     queryFn: async () => {
@@ -28,16 +29,19 @@ export function useSubscriptionPlansQuery() {
       const mine = plans.filter((p) => (!p.business_type ? true : p.business_type === audience));
       return mine.length > 0 ? mine : plans;
     },
-    enabled: !!businessId,
+    // Never fire while the cloud is unreachable — the request would hang and
+    // leave the screen spinning. Cached plans still render from persistence.
+    enabled: !!businessId && online,
   });
 }
 
 export function useMySubscriptionQuery() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const online = useIsEffectivelyOnline();
   return useQuery({
     queryKey: subscriptionKey(businessId),
     queryFn: () => subscriptionService.fetchMySubscription(businessId!),
-    enabled: !!businessId,
+    enabled: !!businessId && online,
   });
 }
 
@@ -73,13 +77,14 @@ export function useUpdateSubscriptionMutation() {
 
 export function useBusinessPromosQuery() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const online = useIsEffectivelyOnline();
   return useQuery({
     queryKey: promosKey(businessId),
     queryFn: async (): Promise<Promo[]> => {
       const res = await businessService.fetchBusinessPromos(businessId!);
       return res.data ?? [];
     },
-    enabled: !!businessId,
+    enabled: !!businessId && online,
   });
 }
 
