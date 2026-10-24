@@ -1,5 +1,6 @@
 import { ChatClient, createMMKVStorageAdapter } from '@teincfood/chat-client';
 import type { AuthTokens } from '@teincfood/chat-client';
+import { AppState } from 'react-native';
 import { mmkvStorage } from './storage';
 import { API_BASE_URL, WS_BASE_URL } from './constants';
 import { useAuthStore } from '@/stores/auth.store';
@@ -76,6 +77,27 @@ function teardownChatEventBridge(): void {
   _bridgeUnsubs = null
 }
 
+let _appStateSub: { remove: () => void } | null = null;
+
+/**
+ * Recover the realtime connection when the app returns to the foreground.
+ * Mobile OSes suspend sockets while backgrounded; without this the client
+ * keeps a dead socket and new messages are silently queued forever.
+ */
+function setupChatResumeHandlers(): void {
+  if (_appStateSub) return;
+  _appStateSub = AppState.addEventListener("change", (state) => {
+    if (state === "active") {
+      void getChatClient().resume(true).catch(() => {});
+    }
+  });
+}
+
+function teardownChatResumeHandlers(): void {
+  _appStateSub?.remove();
+  _appStateSub = null;
+}
+
 export async function connectChatClient(userId: string, accessToken: string, refreshToken?: string): Promise<ChatClient> {
   const c = getChatClient();
   c.setCurrentUserId(userId);
@@ -84,10 +106,12 @@ export async function connectChatClient(userId: string, accessToken: string, ref
     refresh_token: refreshToken ?? accessToken,
   });
   setupChatEventBridge();
+  setupChatResumeHandlers();
   return c;
 }
 
 export function disconnectChatClient(): void {
+  teardownChatResumeHandlers();
   teardownChatEventBridge();
   _client?.stop();
 }
