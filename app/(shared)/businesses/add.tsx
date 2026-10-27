@@ -19,7 +19,7 @@ import { Building, MapPin, Phone, Mail, Check, Search } from "@tamagui/lucide-ic
 import { placesService, type PlaceSuggestion, type PlaceDetails } from "@/services/places.service";
 import * as businessService from '@/services/business.service';
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
-import { validateEmail } from "@teincfood/core";
+import { validateEmail, extractApiErrorMessage } from "@teincfood/core";
 
 export default function AddBusinessScreen() {
   const router = useRouter();
@@ -176,8 +176,34 @@ export default function AddBusinessScreen() {
       setActiveBusiness(newBusiness as any);
       router.replace(dashboardRoute);
     } catch (err: any) {
+      console.debug("[AddBusiness] create error", err);
+      const details = err?.data?.error?.details;
+      if (details && typeof details === "object") {
+        const fieldMap: Record<string, string> = {
+          name: "name",
+          phone: "phone",
+          email: "email",
+          latitude: "address",
+          longitude: "address",
+          address_street: "address",
+          address_city: "address",
+          address_region: "address",
+          address_country: "address",
+          address_full: "address",
+        };
+        const mapped: Record<string, string> = {};
+        for (const [field, messages] of Object.entries(details)) {
+          const key = fieldMap[field] || field;
+          const list = Array.isArray(messages) ? messages : [messages];
+          if (list[0]) mapped[key] = String(list[0]);
+        }
+        if (Object.keys(mapped).length > 0) {
+          setErrors(mapped);
+          return;
+        }
+      }
       setErrors({
-        form: err?.message || "Failed to add business. Please try again.",
+        form: extractApiErrorMessage(err),
       });
     } finally {
       setIsLoading(false);
