@@ -93,7 +93,6 @@ function AppShell() {
   const authHydrated = useAuthStore((state) => state.isHydrated);
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
-  const refreshToken = useAuthStore((state) => state.refreshToken);
   const onboardingHydrated = useOnboardingStore((state) => state.isHydrated);
   const locationHydrated = useLocationStore((state) => state.isHydrated);
   const roleHydrated = useRoleStore((state) => state.isHydrated);
@@ -180,14 +179,19 @@ function AppShell() {
     return unsubscribe;
   }, []);
 
-  // Connect ChatClient WebSocket for real-time messaging
+  // Connect ChatClient WebSocket for real-time messaging. Keyed on the
+  // authenticated user (not the token) so a token rotation doesn't restart
+  // the client and wipe its conversation handlers. The lib refreshes the
+  // socket token itself through onTokenExpired.
   useEffect(() => {
-    if (isAuthenticated && user?.id && accessToken) {
-      connectChatClient(user.id, accessToken, refreshToken ?? undefined).catch(console.error);
-    } else {
+    if (!isAuthenticated || !user?.id) {
       disconnectChatClient();
+      return;
     }
-  }, [isAuthenticated, user?.id, accessToken, refreshToken]);
+    const { accessToken: token, refreshToken: refresh } = useAuthStore.getState();
+    if (!token) return;
+    connectChatClient(user.id, token, refresh ?? undefined).catch(console.error);
+  }, [isAuthenticated, user?.id]);
 
   // Build notification action buttons based on action type
   const notificationActions = useCallback(
