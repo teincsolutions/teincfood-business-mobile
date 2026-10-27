@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useRef } from "react";
-import { ScrollView, KeyboardAvoidingView, Platform, FlatList, TouchableOpacity } from "react-native";
+import { FlatList, TouchableOpacity } from "react-native";
 import {
   YStack,
   XStack,
@@ -10,20 +10,20 @@ import {
   Label,
   Spinner,
 } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
 import { FormInput, Button, BackButton, Input } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
-import { Building, MapPin, Phone, Mail, Navigation, Check, Search } from "@tamagui/lucide-icons";
+import { Building, MapPin, Phone, Mail, Check, Search } from "@tamagui/lucide-icons";
 import { placesService, type PlaceSuggestion, type PlaceDetails } from "@/services/places.service";
 import * as businessService from '@/services/business.service';
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
+import { validateEmail } from "@teincfood/core";
 
 export default function AddBusinessScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const { addBusiness, setActiveBusiness } = useBusinessStore();
   const role = useRoleStore((s) => s.role);
   const businessType = role === 'fleet_manager' ? 'delivery_provider' : 'merchant';
@@ -115,6 +115,9 @@ export default function AddBusinessScreen() {
       newErrors.address = "Selected location is missing coordinates — try a different address or use current location";
     }
     if (!form.phone.trim()) newErrors.phone = "Phone number is required";
+    if (form.email.trim() && !validateEmail(form.email.trim()).valid) {
+      newErrors.email = "Enter a valid email address";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -130,7 +133,7 @@ export default function AddBusinessScreen() {
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim() || undefined,
-          business_type: businessType,
+          type: businessType,
           address_street: selectedPlace.street || selectedPlace.formattedAddress,
           address_city: selectedPlace.city || "",
           address_region: selectedPlace.region || "",
@@ -182,42 +185,23 @@ export default function AddBusinessScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={{ flex: 1 }}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom + 20, 24),
-        }}
-      >
-        <YStack
-          padding="$4"
-          paddingTop={Math.max(insets.top + 8, 16)}
-          gap="$4"
-          $gtSm={{ padding: "$6", maxWidth: 600 }}
-          alignSelf="center"
-          width="100%"
-        >
-          <XStack gap="$2" alignItems="center">
-            <BackButton />
-            <YStack gap="$1" flex={1}>
-              <Text
-                fontSize="$8"
-                fontWeight="bold"
-                fontFamily="$heading"
-                color="$color"
-                $gtSm={{ fontSize: "$10" }}
-              >
-                Add Business
-              </Text>
-              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                Add a new business location to your account
-              </Text>
-            </YStack>
-          </XStack>
+    <FormScreen>
+      <XStack gap="$2" alignItems="center">
+        <BackButton />
+        <YStack gap="$1" flex={1}>
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Add Business
+          </Text>
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+            Add a new business location to your account
+          </Text>
+        </YStack>
+      </XStack>
 
           <Form onSubmit={handleAddBusiness} gap="$4">
             <FormInput
@@ -268,6 +252,7 @@ export default function AddBusinessScreen() {
                 onPress={handleUseCurrentLocation}
                 disabled={isLocating}
                 opacity={isLocating ? 0.7 : 1}
+                alignSelf="flex-start"
               >
                 {isLocating ? "Getting location..." : "Use Current Location"}
               </Button>
@@ -349,6 +334,7 @@ export default function AddBusinessScreen() {
               value={form.phone}
               onChangeText={(value) => updateField("phone", value)}
               icon={<Phone size={20} color="$colorMuted" />}
+              error={errors.phone}
               required
             />
 
@@ -360,6 +346,7 @@ export default function AddBusinessScreen() {
               value={form.email}
               onChangeText={(value) => updateField("email", value)}
               icon={<Mail size={20} color="$colorMuted" />}
+              error={errors.email}
             />
 
             {errors.form ? (
@@ -370,8 +357,9 @@ export default function AddBusinessScreen() {
               </Card>
             ) : null}
 
-            <YStack gap="$3" mt="$4">
+            <FormActions>
               <Button
+                variant="primary"
                 size="$5"
                 onPress={handleAddBusiness}
                 disabled={isLoading}
@@ -392,10 +380,8 @@ export default function AddBusinessScreen() {
               >
                 Cancel
               </Button>
-            </YStack>
+            </FormActions>
           </Form>
-        </YStack>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 }

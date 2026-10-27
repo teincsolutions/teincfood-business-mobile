@@ -22,6 +22,7 @@ import {
   Check,
 } from "@tamagui/lucide-icons";
 import { Button, FormInput, BackButton, AppleSignInButton } from "@/components/ui";
+import { FormActions } from "@/components/layout";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
@@ -37,7 +38,6 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
-import { useResponsive } from "@/utils/responsive";
 import { useRoleStore } from "@/stores/role.store";
 
 type LoginMethod = "phone" | "email";
@@ -225,14 +225,12 @@ export default function LoginScreen() {
   const isPrimaryLoading =
     method === "phone" ? isSendingCode : loginMutation.isPending;
 
-  const { isTablet } = useResponsive();
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <YStack mb="$4" paddingHorizontal="$8" width="100%">
+      <YStack mb="$4" paddingHorizontal="$8" width="100%" maxWidth={600} alignSelf="center">
         {router.canDismiss() && <BackButton />}
       </YStack>
 
@@ -242,7 +240,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           width="100%"
-          maxW={"$media.sm"}
+          maxWidth={600}
           paddingHorizontal={"$8"}
           paddingTop={Math.max(insets.top, 24)}
           paddingBottom={Math.max(insets.bottom + 20, 24)}
@@ -405,24 +403,24 @@ export default function LoginScreen() {
           )}
 
           <YStack mt="$7" mb="$4" gap="$4" items="center">
-            <Button
-              variant="primary"
-              width="100%"
-              loading={isPrimaryLoading}
-              onPress={method === "phone" ? handleSendCode : handleEmailLogin}
-            >
-              {method === "phone" ? "SEND CODE" : "LOG IN"}
-            </Button>
+            <FormActions marginTop="$0">
+              <Button
+                variant="primary"
+                loading={isPrimaryLoading}
+                onPress={method === "phone" ? handleSendCode : handleEmailLogin}
+              >
+                {method === "phone" ? "SEND CODE" : "LOG IN"}
+              </Button>
+            </FormActions>
 
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Or continue with
             </Text>
 
-            <YStack gap="$3" width="100%">
+            <FormActions marginTop="$0">
               <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
               <Button
                 variant="outline"
-                width="100%"
                 icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               >
@@ -430,7 +428,6 @@ export default function LoginScreen() {
               </Button>
               <Button
                 variant="outline"
-                width="100%"
                 icon={
                   <Image
                     objectFit="contain"
@@ -442,25 +439,26 @@ export default function LoginScreen() {
               >
                 Continue with Google
               </Button>
-            </YStack>
+            </FormActions>
           </YStack>
 
           <YStack pt="$6" gap="$3" pb="$2">
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               New to Teinc Food Business?
             </Text>
-            <Button
-              variant="outline"
-              width="100%"
-              onPress={() =>
-                router.push({
-                  pathname: "/(auth)/signup",
-                  params: { role: selectedRole },
-                })
-              }
-            >
-              CREATE ACCOUNT
-            </Button>
+            <FormActions marginTop="$0">
+              <Button
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(auth)/signup",
+                    params: { role: selectedRole },
+                  })
+                }
+              >
+                CREATE ACCOUNT
+              </Button>
+            </FormActions>
             <Button
               variant="ghost"
               height={40}

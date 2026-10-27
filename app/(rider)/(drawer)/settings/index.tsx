@@ -97,8 +97,8 @@ export default function RiderSettings() {
   ];
 
   return (
-    <YStack flex={1} backgroundColor="$background">
-      <ScrollView>
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
+      <ScrollView style={{ width: "100%", maxWidth: 960 }}>
         <YStack padding="$4" gap="$4">
           <Text fontSize="$6" fontWeight="bold">
             Settings

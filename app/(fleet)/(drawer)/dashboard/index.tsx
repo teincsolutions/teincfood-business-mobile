@@ -1,8 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Users,
   Car,
@@ -17,13 +15,13 @@ import { useFleetDashboardQuery, useFleetRidersQuery } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { ServiceStatusBanner, Button } from "@/components/ui";
+import { ResponsiveScreen } from "@/components/layout";
 import { useRouter } from "expo-router";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
 import { formatPriceFromMinor } from "@teincfood/core";
 
 export default function FleetDashboardScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const { businesses } = useBusinessStore();
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
@@ -42,13 +40,8 @@ export default function FleetDashboardScreen() {
   const totalVehicles = dashboard?.total_vehicles ?? 0;
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingBottom: Math.max(insets.bottom + 20, 24),
-      }}
-    >
-      <YStack padding="$4" gap="$4">
+    <ResponsiveScreen preset="wide">
+      <YStack gap="$4">
         <ServiceStatusBanner
           kyc_status={bizKycStatus}
           kycRoute={bannerRoute}
@@ -299,7 +292,10 @@ export default function FleetDashboardScreen() {
                 >
                   No riders yet. Add your first rider to get started.
                 </Text>
-                <Button onPress={() => router.push("/(fleet)/riders/add")}>
+                <Button
+                  variant="primary"
+                  onPress={() => router.push("/(fleet)/riders/add")}
+                >
                   Add Rider
                 </Button>
               </YStack>
@@ -350,6 +346,6 @@ export default function FleetDashboardScreen() {
           </YStack>
         )}
       </YStack>
-    </ScrollView>
+    </ResponsiveScreen>
   );
 }

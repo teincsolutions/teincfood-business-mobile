@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import {
   YStack,
   XStack,
@@ -14,9 +14,9 @@ import {
   ScrollView,
   Input as TamaguiInput,
 } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { useAddVehicleMutation, useFleetRidersQuery } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
@@ -32,7 +32,6 @@ import {
 
 export default function AddVehicleScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const addVehicleMutation = useAddVehicleMutation();
   const { data: ridersRes } = useFleetRidersQuery();
   const riders = ridersRes?.data ?? [];
@@ -91,47 +90,29 @@ export default function AddVehicleScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        paddingTop={Math.max(insets.top + 8, 24)}
-      >
-        <XStack mb="$4" paddingHorizontal="$4" justifyContent="space-between" alignItems="center">
-          <BackButton />
-          <Button
-            variant="primary"
-            height="$10"
-            $lg={{ height: "$10" }}
-            paddingHorizontal="$4"
-            onPress={handleAddVehicle}
-            loading={isLoading}
-          >
-            Save
-          </Button>
-        </XStack>
-        <ScrollView
-          backgroundColor="$background"
-          paddingBottom={Math.max(insets.bottom + 24, 24)}
+    <>
+      <FormScreen>
+      <XStack justifyContent="space-between" alignItems="center">
+        <BackButton />
+        <Button
+          variant="primary"
+          height="$10"
+          paddingHorizontal="$4"
+          onPress={handleAddVehicle}
+          loading={isLoading}
         >
-          <YStack
-            padding="$4"
-            gap="$4"
-            $gtSm={{ padding: "$6", maxWidth: 600 }}
-            alignSelf="center"
-            width="100%"
-          >
-            <YStack gap="$2">
-              <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color" $gtSm={{ fontSize: "$10" }}>
-                Add Vehicle
-              </Text>
-              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                Add a new vehicle to your fleet
-              </Text>
-            </YStack>
+          Save
+        </Button>
+      </XStack>
+
+      <YStack gap="$2">
+        <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          Add Vehicle
+        </Text>
+        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+          Add a new vehicle to your fleet
+        </Text>
+      </YStack>
 
             <Form onSubmit={handleAddVehicle} gap="$4">
               <YStack gap="$2">
@@ -263,7 +244,7 @@ export default function AddVehicleScreen() {
                 </XStack>
               </YStack>
 
-              <XStack gap="$3" $gtSm={{ gap: "$4" }}>
+              <XStack gap="$4">
                 <YStack flex={1} gap="$2">
                   <Label fontSize="$4" fontWeight="500" fontFamily="$body" color="$color">
                     Color
@@ -307,24 +288,21 @@ export default function AddVehicleScreen() {
                 </Card>
               ) : null}
 
-              <YStack gap="$3" mt="$4">
+              <FormActions marginTop="$4">
                 <Button
                   variant="primary"
-                  width="100%"
                   onPress={handleAddVehicle}
                   disabled={isLoading}
                   opacity={isLoading ? 0.7 : 1}
                 >
                   {isLoading ? "Adding Vehicle..." : "Add Vehicle"}
                 </Button>
-                <Button variant="outline" width="100%" onPress={() => router.back()} disabled={isLoading}>
+                <Button variant="outline" onPress={() => router.back()} disabled={isLoading}>
                   Cancel
                 </Button>
-              </YStack>
+              </FormActions>
             </Form>
-          </YStack>
-        </ScrollView>
-      </YStack>
+      </FormScreen>
 
       {/* Rider picker sheet */}
       <Sheet
@@ -381,6 +359,6 @@ export default function AddVehicleScreen() {
           </ScrollView>
         </Sheet.Frame>
       </Sheet>
-    </KeyboardAvoidingView>
+    </>
   );
 }

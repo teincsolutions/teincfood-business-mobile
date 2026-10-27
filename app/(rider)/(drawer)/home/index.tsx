@@ -17,7 +17,7 @@ import {
   UserPlus,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
@@ -92,9 +92,11 @@ export default function RiderHome() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
       {/* Fixed Header */}
       <XStack
+        width="100%"
+        maxWidth={960}
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
         paddingBottom="$3"
@@ -149,6 +151,7 @@ export default function RiderHome() {
       </XStack>
 
       <ScrollView
+        style={{ width: "100%", maxWidth: 960 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />

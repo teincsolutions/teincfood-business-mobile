@@ -1,12 +1,11 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { Pressable } from "react-native";
 import { Save, Check } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import {
   useVehicleInfoQuery,
   useCreateVehicleMutation,
@@ -23,7 +22,6 @@ const VEHICLE_TYPES: { value: string; label: string }[] = [
 
 export default function VehicleInfo() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const { data: vehicleInfo } = useVehicleInfoQuery();
   const vehicle = vehicleInfo?.data;
@@ -107,11 +105,8 @@ export default function VehicleInfo() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <FormScreen>
       <XStack
-        paddingHorizontal="$4"
-        paddingTop={insets.top + 12}
-        paddingBottom="$3"
         justifyContent="space-between"
         alignItems="center"
         backgroundColor="$background"
@@ -122,7 +117,6 @@ export default function VehicleInfo() {
         </Text>
         <Button
           height="$10"
-          $lg={{ height: "$10" }}
           variant="primary"
           onPress={handleSave}
           disabled={createVehicle.isPending}
@@ -131,16 +125,7 @@ export default function VehicleInfo() {
         </Button>
       </XStack>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : undefined}
-        style={{ flex: 1 }}
-      >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
+        <YStack gap="$4">
           {/* Vehicle Type */}
           <Card padding="$4" bordered>
             <YStack gap="$2">
@@ -256,20 +241,19 @@ export default function VehicleInfo() {
           </Card>
 
           {/* Save Button */}
-          <Button
-            size="$5"
-            width="100%"
-            variant="primary"
-            icon={<Save size={18} />}
-            onPress={handleSave}
-            disabled={createVehicle.isPending}
-            opacity={createVehicle.isPending ? 0.7 : 1}
-          >
-            {createVehicle.isPending ? "Saving..." : "Save Changes"}
-          </Button>
+          <FormActions marginTop="$2">
+            <Button
+              size="$5"
+              variant="primary"
+              icon={<Save size={18} />}
+              onPress={handleSave}
+              disabled={createVehicle.isPending}
+              opacity={createVehicle.isPending ? 0.7 : 1}
+            >
+              {createVehicle.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </FormActions>
         </YStack>
-      </ScrollView>
-      </KeyboardAvoidingView>
-    </YStack>
+    </FormScreen>
   );
 }

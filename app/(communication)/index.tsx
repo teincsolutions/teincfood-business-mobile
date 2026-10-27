@@ -14,6 +14,7 @@ import {
   SizableText,
 } from "tamagui";
 import { Badge } from "@/components/ui";
+import { LAYOUT_WIDTHS } from "@/components/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare, Building2, User } from "@tamagui/lucide-icons";
 import { BackButton } from "@/components/ui";
@@ -304,112 +305,119 @@ export default function InboxScreen() {
 
   return (
     <YStack flex={1} bg="$background" pt={Math.max(insets.top, 50)}>
-      {/* Header */}
-      <XStack ai="center" px="$5" pb="$3" gap="$3">
-        <BackButton />
-        <Text
-          fontSize="$6"
-          fontWeight="800"
-          fontFamily="$heading"
-          color="$color"
-          flex={1}
-        >
-          Messages
-        </Text>
-      </XStack>
+      <YStack
+        flex={1}
+        width="100%"
+        maxWidth={LAYOUT_WIDTHS.wide}
+        alignSelf="center"
+      >
+        {/* Header */}
+        <XStack ai="center" px="$5" pb="$3" gap="$3">
+          <BackButton />
+          <Text
+            fontSize="$6"
+            fontWeight="800"
+            fontFamily="$heading"
+            color="$color"
+            flex={1}
+          >
+            Messages
+          </Text>
+        </XStack>
 
-      {/* Tabs — Tamagui component */}
-      <XStack px="$5" pb="$3">
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as TabKey)}
-          orientation="horizontal"
-          flexDirection="column"
-          width="100%"
-          br="$4"
-        >
-          <Tabs.List aria-label="Message tabs" gap="$2">
-            {canShowBusinessTab && (
+        {/* Tabs — Tamagui component */}
+        <XStack px="$5" pb="$3">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as TabKey)}
+            orientation="horizontal"
+            flexDirection="column"
+            width="100%"
+            br="$4"
+          >
+            <Tabs.List aria-label="Message tabs" gap="$2">
+              {canShowBusinessTab && (
+                <Tabs.Tab
+                  flex={1}
+                  value="business"
+                  activeStyle={{ bg: "$primary" }}
+                >
+                  <XStack ai="center" jc="center" gap="$2">
+                    <Building2
+                      size={16}
+                      color={tab === "business" ? "$color" : "$colorSecondary"}
+                    />
+                    <SizableText
+                      fontFamily="$body"
+                      textAlign="center"
+                      color={tab === "business" ? "$color" : "$colorSecondary"}
+                      size="$3"
+                    >
+                      Business
+                    </SizableText>
+                  </XStack>
+                </Tabs.Tab>
+              )}
               <Tabs.Tab
                 flex={1}
-                value="business"
+                value="personal"
                 activeStyle={{ bg: "$primary" }}
               >
                 <XStack ai="center" jc="center" gap="$2">
-                  <Building2
+                  <User
                     size={16}
-                    color={tab === "business" ? "$color" : "$colorSecondary"}
+                    color={tab === "personal" ? "$color" : "$colorSecondary"}
                   />
                   <SizableText
                     fontFamily="$body"
                     textAlign="center"
-                    color={tab === "business" ? "$color" : "$colorSecondary"}
+                    color={tab === "personal" ? "$color" : "$colorSecondary"}
                     size="$3"
                   >
-                    Business
+                    Personal
                   </SizableText>
                 </XStack>
               </Tabs.Tab>
-            )}
-            <Tabs.Tab
-              flex={1}
-              value="personal"
-              activeStyle={{ bg: "$primary" }}
-            >
-              <XStack ai="center" jc="center" gap="$2">
-                <User
-                  size={16}
-                  color={tab === "personal" ? "$color" : "$colorSecondary"}
-                />
-                <SizableText
-                  fontFamily="$body"
-                  textAlign="center"
-                  color={tab === "personal" ? "$color" : "$colorSecondary"}
-                  size="$3"
-                >
-                  Personal
-                </SizableText>
-              </XStack>
-            </Tabs.Tab>
-          </Tabs.List>
-        </Tabs>
-      </XStack>
-
-      {/* Search */}
-      <XStack gap="$2" px="$5" alignItems="center">
-        <XStack
-          flex={1}
-          alignItems="center"
-          backgroundColor="$backgroundSoft"
-          borderRadius="$3"
-          paddingHorizontal="$3"
-          borderWidth={1}
-          borderColor="$borderColor"
-          height={40}
-        >
-          <Search size={16} color="$colorMuted" />
-          <TextInput
-            style={{ flex: 1, paddingLeft: 8, fontSize: 14, color: "#000" }}
-            onChangeText={setSearch}
-            value={search}
-            placeholder="Search contacts..."
-            placeholderTextColor="#999"
-          />
+            </Tabs.List>
+          </Tabs>
         </XStack>
-      </XStack>
 
-      {/* Contact List */}
-      <FlatList
-        data={contacts}
-        keyExtractor={(item: any) => item.id}
-        renderItem={renderContact}
-        contentContainerStyle={{ paddingHorizontal: 20 }}
-        ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderFooter}
-        initialNumToRender={10}
-        windowSize={5}
-        maxToRenderPerBatch={10}
-      />
+        {/* Search */}
+        <XStack gap="$2" px="$5" alignItems="center">
+          <XStack
+            flex={1}
+            alignItems="center"
+            backgroundColor="$backgroundSoft"
+            borderRadius="$3"
+            paddingHorizontal="$3"
+            borderWidth={1}
+            borderColor="$borderColor"
+            height={40}
+          >
+            <Search size={16} color="$colorMuted" />
+            <TextInput
+              style={{ flex: 1, paddingLeft: 8, fontSize: 14, color: "#000" }}
+              onChangeText={setSearch}
+              value={search}
+              placeholder="Search contacts..."
+              placeholderTextColor="#999"
+            />
+          </XStack>
+        </XStack>
+
+        {/* Contact List */}
+        <FlatList
+          data={contacts}
+          keyExtractor={(item: any) => item.id}
+          renderItem={renderContact}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderFooter}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+        />
+      </YStack>
     </YStack>
   );
 }

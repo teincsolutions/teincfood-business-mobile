@@ -698,6 +698,9 @@ export default function PlansScreen() {
       flex={1}
       backgroundColor="$background"
       paddingTop={Math.max(insets.top + 8, 16)}
+      width="100%"
+      maxWidth={600}
+      alignSelf="center"
     >
       <XStack padding="$4" gap="$2" alignItems="center">
         <BackButton />

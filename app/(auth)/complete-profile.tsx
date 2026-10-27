@@ -1,10 +1,9 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { KeyboardAvoidingView, Platform } from "react-native";
-import { YStack, Text, ScrollView } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton, Button, FormInput } from "@/components/ui";
+import { YStack, Text } from "tamagui";
+import { Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { validateEmail } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
@@ -12,7 +11,6 @@ import { useUpdateProfileMutation } from "@/hooks/useProfile";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { role } = useLocalSearchParams<{ role?: string }>();
   const storedRole = useRoleStore((s) => s.role);
   const user = useAuthStore((s) => s.user);
@@ -90,47 +88,43 @@ export default function CompleteProfileScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <YStack paddingTop={Math.max(insets.top, 24)} paddingBottom={Math.max(insets.bottom + 20, 24)} flex={1} bg="$background" items="center">
-        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" width="100%" maxW="$media.sm" paddingHorizontal="$8">
-          <YStack mb="$7" gap="$3">
-            <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">Complete Profile</Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
-              Add your name and email to continue.
-            </Text>
-          </YStack>
-
-          <YStack gap="$4">
-            <FormInput
-              label="Full Name"
-              placeholder="John Doe"
-              value={fullName}
-              onChangeText={(v) => { setFullName(v); setErrors((p) => { const n = { ...p }; delete n.fullName; return n; }); }}
-              error={errors.fullName}
-              required
-            />
-            <FormInput
-              label="Email"
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={(v) => { setEmail(v); setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
-              error={errors.email}
-              required
-            />
-          </YStack>
-
-          <YStack mt="$7" gap="$4">
-            <Button variant="primary" width="100%" loading={updateMutation.isPending} onPress={handleSubmit}>
-              CONTINUE
-            </Button>
-            <Button variant="outline" width="100%" onPress={handleSkip}>
-              SKIP FOR NOW
-            </Button>
-          </YStack>
-        </ScrollView>
+    <FormScreen>
+      <YStack mb="$7" gap="$3">
+        <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">Complete Profile</Text>
+        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
+          Add your name and email to continue.
+        </Text>
       </YStack>
-    </KeyboardAvoidingView>
+
+      <YStack gap="$4">
+        <FormInput
+          label="Full Name"
+          placeholder="John Doe"
+          value={fullName}
+          onChangeText={(v) => { setFullName(v); setErrors((p) => { const n = { ...p }; delete n.fullName; return n; }); }}
+          error={errors.fullName}
+          required
+        />
+        <FormInput
+          label="Email"
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={(v) => { setEmail(v); setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
+          error={errors.email}
+          required
+        />
+      </YStack>
+
+      <FormActions marginTop="$7">
+        <Button variant="primary" loading={updateMutation.isPending} onPress={handleSubmit}>
+          CONTINUE
+        </Button>
+        <Button variant="outline" onPress={handleSkip}>
+          SKIP FOR NOW
+        </Button>
+      </FormActions>
+    </FormScreen>
   );
 }

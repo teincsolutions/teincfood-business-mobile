@@ -22,6 +22,7 @@ import {
   useClaimOrderMutation,
 } from "@teincfood/core";
 import { useRiderDeliveryRealtimeUpdates } from '@/hooks/useRiderDeliveryRealtimeUpdates';
+import { useResponsive } from '@/utils/responsive';
 
 type FilterOption = 'all' | 'active' | 'completed';
 
@@ -54,7 +55,8 @@ export default function RiderDeliveries() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const media = useMedia();
-  const columns = media.md ? 2 : 1;
+  const { isTablet } = useResponsive();
+  const columns = isTablet ? 2 : 1;
 
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
@@ -401,7 +403,7 @@ export default function RiderDeliveries() {
   );
 
   const TabBar = () => (
-    <XStack paddingHorizontal="$4" backgroundColor="$background">
+    <XStack paddingHorizontal="$4" backgroundColor="$background" width="100%" maxWidth={960}>
       <TabButton
         label={`Available${availableOrders.length > 0 ? ` (${availableOrders.length})` : ''}`}
         isActive={tab === 'available'}
@@ -419,6 +421,9 @@ export default function RiderDeliveries() {
     <YStack>
       {/* Header with drawer menu */}
       <XStack
+        width="100%"
+        maxWidth={960}
+        alignSelf="center"
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
         paddingBottom="$3"
@@ -447,7 +452,7 @@ export default function RiderDeliveries() {
   const renderItem = tab === 'available' ? renderAvailableOrder : renderDelivery;
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
       {/* Fixed header outside FlatList */}
       <ListHeaderComponent />
       <TabBar />
@@ -463,7 +468,9 @@ export default function RiderDeliveries() {
           ListEmptyComponent={ListEmptyComponent}
           ListFooterComponent={ListFooterComponent}
           columnWrapperStyle={columns > 1 ? { paddingHorizontal: 8 } : undefined}
+          style={{ width: "100%", maxWidth: 960 }}
           contentContainerStyle={{
+            width: "100%",
             paddingHorizontal: columns > 1 ? 8 : 0,
             paddingTop: 16,
             paddingBottom: insets.bottom + 16,
@@ -482,7 +489,7 @@ export default function RiderDeliveries() {
         />
       ) : (
         /* My Deliveries tab — search + filter + paginated list */
-        <YStack flex={1}>
+        <YStack flex={1} width="100%" maxWidth={960}>
           {/* Search bar + filter */}
           <XStack paddingHorizontal="$4" paddingTop="$3" paddingBottom="$3" gap="$2" alignItems="center">
             <YStack flex={1} position="relative">
@@ -508,7 +515,9 @@ export default function RiderDeliveries() {
             ListEmptyComponent={ListEmptyComponent}
             ListFooterComponent={ListFooterComponent}
             columnWrapperStyle={columns > 1 ? { paddingHorizontal: 8 } : undefined}
+            style={{ width: "100%" }}
             contentContainerStyle={{
+              width: "100%",
               paddingHorizontal: columns > 1 ? 8 : 16,
               paddingBottom: insets.bottom + 16,
               flexGrow: 1,

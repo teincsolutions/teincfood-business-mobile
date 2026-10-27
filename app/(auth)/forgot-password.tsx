@@ -1,15 +1,14 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Input } from "tamagui";
-import { Mail, ArrowLeft } from "@tamagui/lucide-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { YStack, XStack, Text } from "tamagui";
+import { Mail } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { useForgotPasswordMutation } from "@/hooks/usePasswordRecovery";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -33,15 +32,8 @@ export default function ForgotPasswordScreen() {
 
   if (success) {
     return (
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        items="center"
-        paddingHorizontal="$6"
-        paddingTop={Math.max(insets.top + 20, 50)}
-        paddingBottom="$6"
-      >
-        <YStack flex={1} items="center" width="100%" gap="$6">
+      <FormScreen centered>
+        <YStack alignItems="center" gap="$6">
           <YStack
             width={80}
             height={80}
@@ -70,99 +62,94 @@ export default function ForgotPasswordScreen() {
               textAlign="center"
               paddingHorizontal="$4"
             >
-              We've sent a password reset link to {email}
+              We&apos;ve sent a password reset link to {email}
             </Text>
           </YStack>
+        </YStack>
 
+        <FormActions>
           <Button
             variant="primary"
             height={56}
-            width="100%"
             onPress={() => router.back()}
           >
             Back to Login
           </Button>
-        </YStack>
-      </YStack>
+        </FormActions>
+      </FormScreen>
     );
   }
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      paddingHorizontal="$8"
-      paddingTop={Math.max(insets.top, 50)}
-      paddingBottom="$6"
-    >
-      <YStack width="100%" maxW={"$media.sm"} gap="$6">
-        <YStack marginBottom="$6">
-          <BackButton />
+    <FormScreen>
+      <BackButton />
+
+      <YStack gap="$6">
+        <YStack gap="$3">
+          <Text
+            fontSize="$8"
+            fontWeight="800"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Forgot Password?
+          </Text>
+          <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+            Enter your email address and we&apos;ll send you a link to reset
+            your password.
+          </Text>
         </YStack>
 
-        <YStack gap="$6">
-          <YStack gap="$3">
-            <Text
-              fontSize="$8"
-              fontWeight="800"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Forgot Password?
-            </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              Enter your email address and we'll send you a link to reset your
-              password.
-            </Text>
-          </YStack>
+        <YStack gap="$4">
+          <FormInput
+            label="Email Address"
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError("");
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={error}
+            required
+          />
 
-          <YStack gap="$4">
-            <FormInput
-              label="Email Address"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setError("");
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={error}
-              required
-            />
-
+          <FormActions marginTop="$0">
             <Button
               variant="primary"
               onPress={handleResetPassword}
               disabled={forgotPasswordMutation.isPending}
             >
-              {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
+              {forgotPasswordMutation.isPending
+                ? "Sending..."
+                : "Send Reset Link"}
             </Button>
-          </YStack>
+          </FormActions>
+        </YStack>
 
-          <YStack
-            justifyContent="flex-end"
-            alignItems="center"
-            paddingBottom="$6"
-          >
-            <XStack gap="$2" alignItems="center">
-              <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                Remember your password?
+        <YStack
+          justifyContent="flex-end"
+          alignItems="center"
+          paddingBottom="$6"
+        >
+          <XStack gap="$2" alignItems="center">
+            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+              Remember your password?
+            </Text>
+            <Button variant="ghost" onPress={() => router.back()}>
+              <Text
+                fontSize="$4"
+                color="$primary"
+                fontWeight="600"
+                fontFamily="$body"
+              >
+                Sign In
               </Text>
-              <Button variant="ghost" onPress={() => router.back()}>
-                <Text
-                  fontSize="$4"
-                  color="$primary"
-                  fontWeight="600"
-                  fontFamily="$body"
-                >
-                  Sign In
-                </Text>
-              </Button>
-            </XStack>
-          </YStack>
+            </Button>
+          </XStack>
         </YStack>
       </YStack>
-    </YStack>
+    </FormScreen>
   );
 }

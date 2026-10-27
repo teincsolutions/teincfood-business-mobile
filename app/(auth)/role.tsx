@@ -5,7 +5,8 @@ import { Image } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
-import { Store, Truck, Users, ChevronRight } from "@tamagui/lucide-icons";
+import { FormActions } from "@/components/layout";
+import { Store, Users, ChevronRight } from "@tamagui/lucide-icons";
 import { useRoleStore } from "@/stores/role.store";
 
 export default function RoleScreen() {
@@ -39,7 +40,7 @@ export default function RoleScreen() {
       paddingBottom={Math.max(insets.bottom + 20, 28)}
       gap="$6"
     >
-      <YStack width="100%" maxW={"$media.sm"} gap="$6">
+      <YStack width="100%" maxWidth={600} gap="$6">
         {/* Back button — only shown when navigated from login/signup */}
         {from && (
           <YStack>
@@ -194,24 +195,24 @@ export default function RoleScreen() {
         </YStack>
 
         <YStack mt="$4" gap="$8">
-          <Button
-            variant="primary"
-            width={"100%"}
-            onPress={handleLogin}
-            disabled={!selectedRole}
-            opacity={selectedRole ? 1 : 0.5}
-          >
-            LOG IN
-          </Button>
-          <Button
-            variant="outline"
-            width={"100%"}
-            onPress={handleSignup}
-            disabled={!selectedRole}
-            opacity={selectedRole ? 1 : 0.5}
-          >
-            CREATE ACCOUNT
-          </Button>
+          <FormActions marginTop="$0">
+            <Button
+              variant="primary"
+              onPress={handleLogin}
+              disabled={!selectedRole}
+              opacity={selectedRole ? 1 : 0.5}
+            >
+              LOG IN
+            </Button>
+            <Button
+              variant="outline"
+              onPress={handleSignup}
+              disabled={!selectedRole}
+              opacity={selectedRole ? 1 : 0.5}
+            >
+              CREATE ACCOUNT
+            </Button>
+          </FormActions>
         </YStack>
       </YStack>
     </YStack>

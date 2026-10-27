@@ -1,11 +1,10 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { UserRound } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import {
   useRiderProfileQuery,
   extractApiErrorMessage,
@@ -22,7 +21,6 @@ import { toast } from "sonner-native";
  */
 export default function RiderProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const { data: profileData, isLoading } = useRiderProfileQuery();
   const profile = profileData ?? null;
@@ -83,15 +81,10 @@ export default function RiderProfileScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <YStack flex={1} backgroundColor="$background">
+    <FormScreen>
+      <YStack gap="$4">
         <XStack
-          paddingHorizontal="$4"
-          paddingTop={insets.top + 12}
-          paddingBottom="$3"
+          paddingBottom="$1"
           alignItems="center"
           gap="$3"
         >
@@ -101,12 +94,7 @@ export default function RiderProfileScreen() {
           </Text>
         </XStack>
 
-        <ScrollView
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <YStack paddingHorizontal="$4" paddingBottom="$8" gap="$4">
+        <YStack gap="$4">
             {profile ? (
               <Card padding="$4" bordered backgroundColor="$backgroundSoft">
                 <XStack gap="$3" alignItems="center">
@@ -176,18 +164,18 @@ export default function RiderProfileScreen() {
               required
             />
 
-            <Button
-              variant="primary"
-              width="100%"
-              loading={saving}
-              disabled={isLoading}
-              onPress={handleSave}
-            >
-              {profile ? "SAVE CHANGES" : "CREATE PROFILE"}
-            </Button>
-          </YStack>
-        </ScrollView>
+            <FormActions marginTop="$2">
+              <Button
+                variant="primary"
+                loading={saving}
+                disabled={isLoading}
+                onPress={handleSave}
+              >
+                {profile ? "SAVE CHANGES" : "CREATE PROFILE"}
+              </Button>
+            </FormActions>
+        </YStack>
       </YStack>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 }

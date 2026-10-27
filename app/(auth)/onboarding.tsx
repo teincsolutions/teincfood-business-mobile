@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Image } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui";
+import { FormActions } from "@/components/layout";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 
 const SLIDES = [
@@ -114,6 +115,8 @@ export default function OnboardingScreen() {
 
               <YStack
                 width="100%"
+                maxWidth={720}
+                alignSelf="center"
                 paddingHorizontal="$6"
                 paddingTop="$6"
                 items="center"
@@ -148,36 +151,38 @@ export default function OnboardingScreen() {
           paddingBottom={Math.max(insets.bottom + 14, 22)}
           gap="$4"
         >
-          <XStack jc="center" gap="$2">
-            {SLIDES.map((_, index) => (
-              <YStack
-                key={index}
-                h={8}
-                w={activeIndex === index ? 24 : 8}
-                bg={activeIndex === index ? "$primary" : "$colorDisabled"}
-                br={4}
-                animation="bouncy"
-              />
-            ))}
-          </XStack>
+          <YStack width="100%" maxWidth={600} alignSelf="center" gap="$4">
+            <XStack jc="center" gap="$2">
+              {SLIDES.map((_, index) => (
+                <YStack
+                  key={index}
+                  h={8}
+                  w={activeIndex === index ? 24 : 8}
+                  bg={activeIndex === index ? "$primary" : "$colorDisabled"}
+                  br={4}
+                  animation="bouncy"
+                />
+              ))}
+            </XStack>
 
-          <Button variant="primary" width="100%" onPress={handleNext}>
-            {activeIndex === SLIDES.length - 1 ? "GET STARTED" : "NEXT"}
-          </Button>
-
-          <Button
-            variant="ghost"
-            width="100%"
-            backgroundColor="transparent"
-            onPress={() => {
-              completeOnboarding();
-              router.push("/(auth)/location");
-            }}
-          >
-            <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">
-              Skip
-            </Text>
-          </Button>
+            <FormActions marginTop="$0">
+              <Button variant="primary" onPress={handleNext}>
+                {activeIndex === SLIDES.length - 1 ? "GET STARTED" : "NEXT"}
+              </Button>
+              <Button
+                variant="ghost"
+                backgroundColor="transparent"
+                onPress={() => {
+                  completeOnboarding();
+                  router.push("/(auth)/location");
+                }}
+              >
+                <Text fontFamily="$body" color="$colorSecondary" fontWeight="600">
+                  Skip
+                </Text>
+              </Button>
+            </FormActions>
+          </YStack>
         </YStack>
       </>
     </YStack>

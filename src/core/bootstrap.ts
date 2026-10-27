@@ -17,7 +17,7 @@ import { setCompanyInfo } from "@teincfood/core";
 import type { SqliteDriver } from "@teincfood/core";
 import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
-import { setConnectivityState, setAuthProvider, setAuthRefreshProvider, setAuthTokensProvider, setAuthClearProvider } from "@teincfood/core";
+import { setConnectivityState, getConnectivityState, subscribeConnectivity, setAuthProvider, setAuthRefreshProvider, setAuthTokensProvider, setAuthClearProvider } from "@teincfood/core";
 import { initDebugLogCapture } from "@teincfood/core";
 import { setAppInstanceId } from "@teincfood/core";
 import { ensureDeviceLease, purgeNonCanonicalMenuCache } from "@teincfood/core";
@@ -375,16 +375,26 @@ function wireServiceAdapters(): void {
 
 function syncConnectivityBridge(): void {
   try {
-    const state = useConnectivityStore.getState();
-    setConnectivityState({ isOnline: state.isOnline, isCloudReachable: state.isCloudReachable });
+    // The app owns `isOnline` (NetInfo); core's health probe is the sole owner
+    // of `isCloudReachable`. Pushing the store's cloud verdict here would let
+    // the app probe and the core probe clobber each other on boot transients.
+    setConnectivityState({ isOnline: useConnectivityStore.getState().isOnline });
     const subscribe = (useConnectivityStore as unknown as {
       subscribe: (fn: (s: { isOnline: boolean; isCloudReachable: "reachable" | "unreachable" | "unknown" }) => void) => () => void;
     }).subscribe;
     if (typeof subscribe === "function") {
-      subscribe((s) =>
-        setConnectivityState({ isOnline: s.isOnline, isCloudReachable: s.isCloudReachable }),
-      );
+      subscribe((s) => setConnectivityState({ isOnline: s.isOnline }));
     }
+    // Mirror core's authoritative connectivity back into the store so app
+    // surfaces (diagnostics, POS, order flow) see the same verdict as the
+    // online-only gates.
+    subscribeConnectivity(() => {
+      const c = getConnectivityState();
+      useConnectivityStore.setState({
+        isOnline: c.isOnline,
+        isCloudReachable: c.isCloudReachable,
+      });
+    });
   } catch {}
 }
 

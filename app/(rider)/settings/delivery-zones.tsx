@@ -17,7 +17,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
 import { BackButton, Button } from "@/components/ui";
 import {
@@ -120,9 +120,11 @@ export default function DeliveryZones() {
   const keyExtractor = useCallback((item: DeliveryZone) => item.id, []);
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
       {/* Header */}
       <XStack
+        width="100%"
+        maxWidth={960}
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
         paddingBottom="$3"
@@ -147,7 +149,7 @@ export default function DeliveryZones() {
         </Button>
       </XStack>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ width: "100%", maxWidth: 960 }} showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
           {/* Summary Card */}
           <Card padding="$4" bordered backgroundColor="$blue2">
@@ -321,6 +323,8 @@ export default function DeliveryZones() {
           <Button
             variant="primary"
             width="100%"
+            maxWidth={360}
+            alignSelf="center"
             icon={<Save size={18} />}
             onPress={handleSave}
           >

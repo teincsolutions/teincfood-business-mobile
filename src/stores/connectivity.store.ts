@@ -16,7 +16,7 @@ import NetInfo, {
   type NetInfoStateType,
   type NetInfoSubscription,
 } from "@react-native-community/netinfo";
-import { recordAttempt, syncLogger } from "@teincfood/core";
+import { probeCloudHealth, recordAttempt, syncLogger } from "@teincfood/core";
 import { API_BASE_URL } from "@/utils/constants";
 
 export type CloudReachability = "unknown" | "reachable" | "unreachable";
@@ -59,8 +59,15 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
   details: null,
 
   setNetworkState: (state) => {
-    const isOnline = netInfoStateToOnline(state);
+    const netOnline = netInfoStateToOnline(state);
+    const regainedNetwork = netOnline && !lastNetOnline;
+    lastNetOnline = netOnline;
     const wasOnline = useConnectivityStore.getState().isOnline;
+    // NetInfo can false-negative (iOS simulator/VPN). While the cloud is
+    // known reachable, trust that over the interface verdict; the probe below
+    // re-verifies and the gate falls back to offline if the cloud is lost.
+    const isOnline =
+      netOnline || useConnectivityStore.getState().isCloudReachable === "reachable";
     set({
       isOnline,
       connectionType: state.type,
@@ -77,9 +84,10 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
         ? (state.details as { isConnectionExpensive?: boolean }).isConnectionExpensive
         : null,
     });
-    // Network (re)gained with unknown cloud state: probe now so the first
-    // user command doesn't pay a timeout discovering the backend is down.
-    if (isOnline && !wasOnline) {
+    // Probe on every online/offline transition and whenever NetInfo reports
+    // no network. Regain settles the cloud state; loss is verified because a
+    // successful probe is proof the app can still reach the backend.
+    if (!netOnline || regainedNetwork || isOnline !== wasOnline) {
       void probeCloud();
     }
   },
@@ -135,6 +143,12 @@ export const useConnectivityStore = create<ConnectivityState>()((set) => {
 /** Backend health probe timeout. Short: settling cloud state must never block UX. */
 const PROBE_TIMEOUT_MS = 4_000;
 
+/** In-flight health probe shared by boot, NetInfo transitions and diagnostics. */
+let probeInFlight: Promise<boolean> | null = null;
+/** Last raw NetInfo verdict, used to detect a regain even when the effective
+ * `isOnline` stayed true because the cloud was reachable. */
+let lastNetOnline = true;
+
 function healthUrl(): string {
   try {
     // Backend serves health at /api/health (router scope "/api"), not under /api/v1.
@@ -145,12 +159,23 @@ function healthUrl(): string {
 }
 
 /**
- * Probe the cloud and settle `isCloudReachable` (zustand + core via bridge).
- * No-auth GET /api/health with a short timeout. Called at boot, on network
- * regain, and after the unreachable cooldown — so the engine never pays a
- * full command timeout just to discover the backend is down.
+ * Prove the app can reach the backend and correct `isOnline` when NetInfo
+ * false-negatives. Core's health probe is the sole owner of
+ * `isCloudReachable` (mirrored back into this store by the bootstrap bridge);
+ * this probe never writes that flag itself.
+ *
+ * Single-flight: concurrent callers (boot + NetInfo transitions) share one
+ * request instead of stacking probes.
  */
-export async function probeCloud(): Promise<boolean> {
+export function probeCloud(): Promise<boolean> {
+  if (probeInFlight) return probeInFlight;
+  probeInFlight = runCloudProbe().finally(() => {
+    probeInFlight = null;
+  });
+  return probeInFlight;
+}
+
+async function runCloudProbe(): Promise<boolean> {
   const url = healthUrl();
   const started = Date.now();
   recordAttempt("probe", "probeCloud");
@@ -162,13 +187,21 @@ export async function probeCloud(): Promise<boolean> {
     const elapsed = Date.now() - started;
     if (res.ok) {
       syncLogger.debug("ConnectivityStore", "probeCloud reachable", { url, elapsed });
-      useConnectivityStore.getState().setCloudReachable("reachable");
+      // A successful round-trip proves a usable network path. NetInfo can
+      // false-negative (iOS simulator/VPN), so trust the probe: leaving
+      // isOnline false makes every online-only gate reject commands even
+      // though the backend is reachable.
+      useConnectivityStore.setState({ isOnline: true });
+      // Let the single-owner core probe settle isCloudReachable now; its
+      // verdict is mirrored back into this store.
+      void probeCloudHealth();
       return true;
     }
     syncLogger.debug("ConnectivityStore", "probeCloud HTTP non-2xx", { url, elapsed, status: res.status });
   } catch (error) {
     syncLogger.debug("ConnectivityStore", "probeCloud failed", { url, error: String(error) });
   }
-  useConnectivityStore.getState().setCloudReachable("unreachable");
+  // A single failed probe is not evidence the cloud is down; core's health
+  // probe owns isCloudReachable and will settle it.
   return false;
 }

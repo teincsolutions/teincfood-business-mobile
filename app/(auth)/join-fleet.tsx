@@ -1,11 +1,10 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { KeyboardAvoidingView, Platform } from "react-native";
-import { YStack, Text, ScrollView, Card } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { YStack, Text, Card } from "tamagui";
 import { CheckCircle2 } from "@tamagui/lucide-icons";
-import { BackButton, Button, FormInput } from "@/components/ui";
+import { Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import {
   useRiderProfileQuery,
   extractApiErrorMessage,
@@ -23,7 +22,6 @@ import { toast } from "sonner-native";
  */
 export default function JoinFleetScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const { data: profileData, isLoading: profileLoading } =
     useRiderProfileQuery();
@@ -90,44 +88,26 @@ export default function JoinFleetScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <YStack
-        paddingTop={Math.max(insets.top, 24)}
-        paddingBottom={Math.max(insets.bottom + 20, 24)}
-        flex={1}
-        bg="$background"
-        items="center"
-      >
-        <ScrollView
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          width="100%"
-          maxW="$media.sm"
-          paddingHorizontal="$8"
+    <FormScreen>
+      <YStack mb="$7" gap="$3">
+        <Text
+          fontSize={30}
+          fontWeight="800"
+          fontFamily="$heading"
+          color="$color"
         >
-          <YStack mb="$7" gap="$3">
-            <Text
-              fontSize={30}
-              fontWeight="800"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Work for a Fleet?
-            </Text>
-            <Text
-              fontSize="$4"
-              color="$colorSecondary"
-              fontFamily="$body"
-              lineHeight={22}
-            >
-              Enter your fleet&apos;s business number to request to join. Your
-              fleet manager will review and approve it.
-            </Text>
-          </YStack>
+          Work for a Fleet?
+        </Text>
+        <Text
+          fontSize="$4"
+          color="$colorSecondary"
+          fontFamily="$body"
+          lineHeight={22}
+        >
+          Enter your fleet&apos;s business number to request to join. Your
+          fleet manager will review and approve it.
+        </Text>
+      </YStack>
 
           {requested ? (
             <YStack gap="$4">
@@ -153,9 +133,11 @@ export default function JoinFleetScreen() {
                   </Text>
                 </YStack>
               </Card>
-              <Button variant="primary" width="100%" onPress={goHome}>
-                CONTINUE
-              </Button>
+              <FormActions>
+                <Button variant="primary" onPress={goHome}>
+                  CONTINUE
+                </Button>
+              </FormActions>
             </YStack>
           ) : (
             <YStack gap="$4">
@@ -193,14 +175,15 @@ export default function JoinFleetScreen() {
                     error={errors.licenseNumber}
                     required
                   />
-                  <Button
-                    variant="secondary"
-                    width="100%"
-                    loading={createProfile.isPending}
-                    onPress={handleCreateProfile}
-                  >
-                    CREATE RIDER PROFILE
-                  </Button>
+                  <FormActions>
+                    <Button
+                      variant="secondary"
+                      loading={createProfile.isPending}
+                      onPress={handleCreateProfile}
+                    >
+                      CREATE RIDER PROFILE
+                    </Button>
+                  </FormActions>
                 </YStack>
               ) : null}
 
@@ -222,24 +205,25 @@ export default function JoinFleetScreen() {
                     error={errors.businessNumber}
                     required
                   />
-                  <Button
-                    variant="primary"
-                    width="100%"
-                    loading={joinRequest.isPending}
-                    onPress={handleSubmitRequest}
-                  >
-                    SEND JOIN REQUEST
-                  </Button>
+                  <FormActions>
+                    <Button
+                      variant="primary"
+                      loading={joinRequest.isPending}
+                      onPress={handleSubmitRequest}
+                    >
+                      SEND JOIN REQUEST
+                    </Button>
+                  </FormActions>
                 </YStack>
               ) : null}
 
-              <Button variant="outline" width="100%" onPress={goHome}>
-                SKIP FOR NOW
-              </Button>
+              <FormActions>
+                <Button variant="outline" onPress={goHome}>
+                  SKIP FOR NOW
+                </Button>
+              </FormActions>
             </YStack>
           )}
-        </ScrollView>
-      </YStack>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 }

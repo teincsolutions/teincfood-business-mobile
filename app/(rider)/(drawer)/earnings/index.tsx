@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList } from "react-native";
-import { YStack, XStack, Text, Card, Separator } from "tamagui";
+import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DollarSign,
@@ -221,7 +221,7 @@ export default function RiderEarningsScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
       <FlatList
         data={transactionsData}
         keyExtractor={(item) => item.id}
@@ -229,7 +229,9 @@ export default function RiderEarningsScreen() {
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
+        style={{ width: "100%", maxWidth: 960 }}
         contentContainerStyle={{
+          width: "100%",
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
         initialNumToRender={10}

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { FlatList } from "react-native";
-import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
+import { YStack, XStack, Text, Card, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DollarSign,
@@ -21,12 +21,15 @@ export default function FleetEarningsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: dashboardData } = useFleetDashboardQuery();
-  const { data: ridersData = [] } = useFleetRidersQuery();
+  const { data: dashboardRes } = useFleetDashboardQuery();
+  const { data: ridersRes } = useFleetRidersQuery();
 
-  const todayEarningsMinor = dashboardData?.today_earnings_minor ?? 0;
-  const todayDeliveries = dashboardData?.today_deliveries ?? 0;
-  const totalRiders = dashboardData?.total_riders ?? 0;
+  const dashboard = dashboardRes?.data ?? null;
+  const ridersData = ridersRes?.data ?? [];
+
+  const todayEarningsMinor = dashboard?.today_earnings_minor ?? 0;
+  const todayDeliveries = dashboard?.today_deliveries ?? 0;
+  const totalRiders = dashboard?.total_riders ?? (ridersData.length || 0);
 
   const topRiders = [...ridersData]
     .sort((a, b) => (b.total_earnings_minor ?? 0) - (a.total_earnings_minor ?? 0))
@@ -162,14 +165,16 @@ export default function FleetEarningsScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} alignItems="center">
       <FlatList
         data={topRiders}
         keyExtractor={(item) => item.id}
         renderItem={renderRiderItem}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
+        style={{ width: "100%", maxWidth: 960 }}
         contentContainerStyle={{
+          width: "100%",
           paddingBottom: Math.max(insets.bottom + 20, 24),
         }}
         initialNumToRender={10}

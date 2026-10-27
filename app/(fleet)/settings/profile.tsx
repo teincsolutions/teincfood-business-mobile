@@ -1,14 +1,12 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Building, Phone, Mail, Hash, FileText } from "@tamagui/lucide-icons";
+import { Building, Phone } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { useFleetStore } from "@/stores/fleet.store";
 
 export default function FleetProfileScreen() {
-  const insets = useSafeAreaInsets();
   const { fleet, updateFleet } = useFleetStore();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,13 +64,10 @@ export default function FleetProfileScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 20, 24) }}
-    >
-      <YStack padding="$4" gap="$4">
+    <FormScreen>
+      <YStack gap="$4">
         {/* Header */}
-        <XStack alignItems="center" gap="$3" paddingTop={Math.max(insets.top, 12)}>
+        <XStack alignItems="center" gap="$3">
           <BackButton />
           <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
             Fleet Profile
@@ -183,16 +178,17 @@ export default function FleetProfileScreen() {
           </YStack>
         </Card>
 
-        <Button
-          variant="primary"
-          width="100%"
-          onPress={handleSave}
-          loading={isSaving}
-          disabled={isSaving}
-        >
-          Save Changes
-        </Button>
+        <FormActions>
+          <Button
+            variant="primary"
+            onPress={handleSave}
+            loading={isSaving}
+            disabled={isSaving}
+          >
+            Save Changes
+          </Button>
+        </FormActions>
       </YStack>
-    </ScrollView>
+    </FormScreen>
   );
 }

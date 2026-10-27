@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card, Button, Separator, Sheet, ScrollView, Avatar } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Sheet, ScrollView, Avatar } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building,
@@ -12,7 +12,7 @@ import {
   Store,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
-import { BackButton } from "@/components/ui";
+import { BackButton, Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { useQuery } from "@tanstack/react-query";
 import * as businessService from "@/services/business.service";
@@ -143,7 +143,7 @@ export default function FleetBusinessesScreen() {
         <Text fontSize="$4" color="$colorSecondary" textAlign="center" fontFamily="$body">
           Add your first business to get started
         </Text>
-        <Button onPress={() => router.push("/(shared)/businesses/add" as any)}>
+        <Button variant="primary" onPress={() => router.push("/(shared)/businesses/add" as any)}>
           Add Business
         </Button>
       </YStack>
@@ -151,8 +151,8 @@ export default function FleetBusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)}>
-      <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)} alignItems="center">
+      <YStack width="100%" maxWidth={960} gap="$1" paddingHorizontal="$4" paddingBottom="$4">
         <XStack gap="$2" alignItems="center">
           <BackButton />
           <YStack gap="$1" flex={1}>
@@ -173,6 +173,7 @@ export default function FleetBusinessesScreen() {
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} />
         }
+        style={{ width: "100%", maxWidth: 960 }}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),

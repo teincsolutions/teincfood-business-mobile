@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronDown, Check, Facebook } from "@tamagui/lucide-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { BackButton, Button, FormInput, AppleSignInButton } from "@/components/ui";
+import { FormActions } from "@/components/layout";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
   PHONE_COUNTRIES,
@@ -238,7 +239,7 @@ export default function SignupScreen() {
         bg="$background"
         items="center"
       >
-        <YStack mb="$4" paddingHorizontal="$8" width="100%">
+        <YStack mb="$4" paddingHorizontal="$8" width="100%" maxWidth={600} alignSelf="center">
           {router.canDismiss() && <BackButton />}
         </YStack>
 
@@ -247,7 +248,7 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           width="100%"
-          maxW={"$media.sm"}
+          maxWidth={600}
           paddingHorizontal={"$8"}
         >
           <YStack mb="$7" gap="$3">
@@ -440,20 +441,21 @@ export default function SignupScreen() {
           )}
 
           <YStack mt="$7" gap="$4">
-            <Button
-              variant="primary"
-              width="100%"
-              loading={isLoading}
-              onPress={method === "phone" ? handleSendCode : handleEmailSignup}
-            >
-              {method === "phone" ? "SEND CODE" : "CREATE ACCOUNT"}
-            </Button>
+            <FormActions marginTop="$0">
+              <Button
+                variant="primary"
+                loading={isLoading}
+                onPress={method === "phone" ? handleSendCode : handleEmailSignup}
+              >
+                {method === "phone" ? "SEND CODE" : "CREATE ACCOUNT"}
+              </Button>
+            </FormActions>
 
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Or continue with
             </Text>
 
-            <YStack gap="$3" width="100%">
+            <FormActions marginTop="$0">
               <AppleSignInButton
                 type={
                   AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
@@ -462,7 +464,6 @@ export default function SignupScreen() {
               />
               <Button
                 variant="outline"
-                width="100%"
                 icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               >
@@ -470,7 +471,6 @@ export default function SignupScreen() {
               </Button>
               <Button
                 variant="outline"
-                width="100%"
                 icon={
                   <Image
                     objectFit="contain"
@@ -482,23 +482,24 @@ export default function SignupScreen() {
               >
                 Continue with Google
               </Button>
-            </YStack>
+            </FormActions>
 
             <Text ta="center" color="$colorSecondary" fontFamily="$body">
               Already have an account?
             </Text>
-            <Button
-              variant="outline"
-              width="100%"
-              onPress={() =>
-                router.push({
-                  pathname: "/(auth)/login",
-                  params: { role: selectedRole },
-                })
-              }
-            >
-              LOG IN
-            </Button>
+            <FormActions marginTop="$0">
+              <Button
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(auth)/login",
+                    params: { role: selectedRole },
+                  })
+                }
+              >
+                LOG IN
+              </Button>
+            </FormActions>
             <Button
               variant="ghost"
               height={40}

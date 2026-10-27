@@ -5,6 +5,7 @@ import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useNavigation } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
+import { FormActions } from "@/components/layout";
 import { Mail, Phone, Clock, XCircle } from "@tamagui/lucide-icons";
 import {
   useInviteRiderMutation,
@@ -110,8 +111,9 @@ export default function AddRiderScreen() {
         backgroundColor="$background"
         paddingBottom={Math.max(insets.bottom + 20, 24)}
         paddingTop={Math.max(insets.top + 8, 24)}
+        alignItems="center"
       >
-        <XStack paddingHorizontal="$4" mb="$4" alignItems="center">
+        <XStack width="100%" maxWidth={600} paddingHorizontal="$4" mb="$4" alignItems="center">
           <BackButton />
         </XStack>
 
@@ -119,6 +121,7 @@ export default function AddRiderScreen() {
           data={pending}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
+          style={{ width: "100%", maxWidth: 600 }}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           ListHeaderComponent={
             <YStack gap="$4" marginBottom="$5">
@@ -165,15 +168,16 @@ export default function AddRiderScreen() {
                 keyboardType="phone-pad"
               />
 
-              <Button
-                size="$5"
-                variant="primary"
-                width="100%"
-                onPress={handleInvite}
-                loading={inviteRider.isPending}
-              >
-                Send Invitation
-              </Button>
+              <FormActions>
+                <Button
+                  size="$5"
+                  variant="primary"
+                  onPress={handleInvite}
+                  loading={inviteRider.isPending}
+                >
+                  Send Invitation
+                </Button>
+              </FormActions>
 
               {pending.length > 0 ? (
                 <Text

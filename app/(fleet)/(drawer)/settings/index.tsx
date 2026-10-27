@@ -1,8 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
 import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Settings,
   Building,
@@ -20,11 +18,11 @@ import {
 import { useFleetStore } from "@/stores/fleet.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "expo-router";
-import { BackButton, FormInput, Button, Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
+import { ResponsiveScreen } from "@/components/layout";
 
 export default function FleetSettingsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const { fleet, updateFleet } = useFleetStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -98,13 +96,8 @@ export default function FleetSettingsScreen() {
   ];
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        paddingBottom: Math.max(insets.bottom + 20, 24),
-      }}
-    >
-      <YStack padding="$4" gap="$4">
+    <ResponsiveScreen preset="wide">
+      <YStack gap="$4">
         {/* Header */}
         <YStack gap="$2">
           <Text
@@ -344,6 +337,6 @@ export default function FleetSettingsScreen() {
           </Text>
         </YStack>
       </YStack>
-    </ScrollView>
+    </ResponsiveScreen>
   );
 }

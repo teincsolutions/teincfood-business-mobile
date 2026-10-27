@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { YStack, XStack, Text } from "tamagui";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
+import { FormActions, FormScreen } from "@/components/layout";
 import { OTPInput } from "@/components/ui/OTPInput";
 import {
   useVerifyOtpMutation,
@@ -14,14 +14,12 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { extractApiErrorMessage } from "@teincfood/core";
-import { KeyboardAvoidingView } from "react-native";
 
 const OTP_LENGTH = 4;
 const RESEND_DELAY_SEC = 60;
 
 export default function VerificationScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const {
     contactInfo = "",
     type,
@@ -148,103 +146,91 @@ export default function VerificationScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <YStack
-        flex={1}
-        bg="$background"
-        items="center"
-        paddingHorizontal="$5"
-        paddingTop={Math.max(insets.top, 24)}
-        paddingBottom={Math.max(insets.bottom + 12, 20)}
-      >
-        <YStack width="100%" maxWidth={640} flex={1}>
-          <YStack mb="$4">
-            <BackButton />
-          </YStack>
-
-          <YStack mb="$8" ai="center">
-            <Text
-              fontSize={30}
-              fontWeight="800"
-              fontFamily="$heading"
-              color="$color"
-              ta="center"
-            >
-              Verification
-            </Text>
-            <Text
-              fontSize="$4"
-              color="$colorSecondary"
-              fontFamily="$body"
-              mt="$2"
-              lineHeight={22}
-              ta="center"
-            >
-              We have sent a code to your{" "}
-              {isEmailVerification ? "email" : "phone"}
-            </Text>
-            <Text
-              fontSize="$4"
-              fontWeight="600"
-              color="$color"
-              fontFamily="$body"
-              mt="$3"
-            >
-              {formattedContactInfo}
-            </Text>
-          </YStack>
-
-          <OTPInput
-            length={OTP_LENGTH}
-            value={otp}
-            onChange={setOtp}
-            onComplete={handleVerify}
-          />
-
-          {error ? (
-            <YStack mt="$5" items="center">
-              <Text color="$error" fontSize="$3">
-                {error}
-              </Text>
-            </YStack>
-          ) : null}
-
-          <YStack mt="$10">
-            <Button
-              variant="primary"
-              width={"100%"}
-              loading={
-                verifyEmailMutation.isPending ||
-                verifyOtpMutation.isPending ||
-                requestOtpMutation.isPending
-              }
-              onPress={() => handleVerify()}
-            >
-              VERIFY
-            </Button>
-          </YStack>
-
-          <XStack jc="center" mt="$6" gap="$2">
-            <Text color="$colorSecondary" fontFamily="$body">
-              Didn't receive code?
-            </Text>
-            {timeLeft > 0 ? (
-              <Text color="$colorSecondary" fontWeight="600" fontFamily="$body">
-                Resend in {timeLeft}s
-              </Text>
-            ) : (
-              <Text
-                color="$primary"
-                fontWeight="800"
-                fontFamily="$body"
-                onPress={handleResend}
-              >
-                Resend
-              </Text>
-            )}
-          </XStack>
-        </YStack>
+    <FormScreen>
+      <YStack>
+        <BackButton />
       </YStack>
-    </KeyboardAvoidingView>
+
+      <YStack mb="$8" ai="center">
+        <Text
+          fontSize={30}
+          fontWeight="800"
+          fontFamily="$heading"
+          color="$color"
+          ta="center"
+        >
+          Verification
+        </Text>
+        <Text
+          fontSize="$4"
+          color="$colorSecondary"
+          fontFamily="$body"
+          mt="$2"
+          lineHeight={22}
+          ta="center"
+        >
+          We have sent a code to your{" "}
+          {isEmailVerification ? "email" : "phone"}
+        </Text>
+        <Text
+          fontSize="$4"
+          fontWeight="600"
+          color="$color"
+          fontFamily="$body"
+          mt="$3"
+        >
+          {formattedContactInfo}
+        </Text>
+      </YStack>
+
+      <OTPInput
+        length={OTP_LENGTH}
+        value={otp}
+        onChange={setOtp}
+        onComplete={handleVerify}
+      />
+
+      {error ? (
+        <YStack mt="$5" items="center">
+          <Text color="$error" fontSize="$3">
+            {error}
+          </Text>
+        </YStack>
+      ) : null}
+
+      <FormActions marginTop="$10">
+        <Button
+          variant="primary"
+          loading={
+            verifyEmailMutation.isPending ||
+            verifyOtpMutation.isPending ||
+            requestOtpMutation.isPending
+          }
+          onPress={() => handleVerify()}
+        >
+          VERIFY
+        </Button>
+      </FormActions>
+
+      <XStack jc="center" mt="$6" gap="$2">
+        <Text color="$colorSecondary" fontFamily="$body">
+          Didn&apos;t receive code?
+        </Text>
+        {timeLeft > 0 ? (
+          <Text color="$colorSecondary" fontWeight="600" fontFamily="$body">
+            Resend in {timeLeft}s
+          </Text>
+        ) : (
+          <Text
+            color="$primary"
+            fontWeight="800"
+            fontFamily="$body"
+            onPress={handleResend}
+          >
+            Resend
+          </Text>
+        )}
+      </XStack>
+    </FormScreen>
   );
 }

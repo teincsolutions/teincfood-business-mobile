@@ -239,8 +239,9 @@ export default function RiderBusinessesScreen() {
       flex={1}
       backgroundColor="$background"
       paddingTop={Math.max(insets.top + 8, 16)}
+      alignItems="center"
     >
-      <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
+      <YStack width="100%" maxWidth={960} gap="$1" paddingHorizontal="$4" paddingBottom="$4">
         <XStack gap="$2" alignItems="center">
           <BackButton />
           <YStack gap="$1" flex={1}>
@@ -268,6 +269,8 @@ export default function RiderBusinessesScreen() {
             <Button
               variant="primary"
               width="100%"
+              maxWidth={360}
+              alignSelf="center"
               icon={<UserPlus size={20} />}
               onPress={() => setJoinOpen(true)}
             >
@@ -335,7 +338,9 @@ export default function RiderBusinessesScreen() {
             }}
           />
         }
+        style={{ width: "100%", maxWidth: 960 }}
         contentContainerStyle={{
+          width: "100%",
           paddingHorizontal: 16,
           paddingBottom: Math.max(insets.bottom + 20, 24),
           flexGrow: 1,

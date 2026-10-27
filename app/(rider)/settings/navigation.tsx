@@ -65,9 +65,11 @@ export default function NavigationSettings() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="$background" alignItems="center">
       {/* Header */}
       <XStack
+        width="100%"
+        maxWidth={960}
         paddingHorizontal="$4"
         paddingTop={insets.top + 12}
         paddingBottom="$3"
@@ -97,7 +99,7 @@ export default function NavigationSettings() {
         </TouchableOpacity>
       </XStack>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ width: "100%", maxWidth: 960 }} showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 20}>
           {/* Current Selection */}
           <Card padding="$4" bordered backgroundColor="$blue2">
@@ -268,6 +270,9 @@ export default function NavigationSettings() {
           {/* Save Button */}
           <Button
             size="$5"
+            width="100%"
+            maxWidth={360}
+            alignSelf="center"
             backgroundColor="$primary"
             icon={<Save size={18} />}
             onPress={handleSave}

@@ -1,11 +1,12 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { YStack, XStack, Text, useTheme, Sheet, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MapPin, ChevronDown, Check, Navigation } from "@tamagui/lucide-icons";
 import { Button, BackButton } from "@/components/ui";
+import { FormActions } from "@/components/layout";
 import {
   PHONE_COUNTRIES,
   getCountryOption,
@@ -84,11 +85,13 @@ export default function LocationScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             flexGrow: 1,
+            alignItems: "center",
             paddingHorizontal: 20,
             paddingTop: Math.max(insets.top, 24),
             paddingBottom: Math.max(insets.bottom + 20, 24),
           }}
         >
+          <YStack width="100%" maxWidth={600} flexGrow={1}>
           <YStack mb="$4">{router.canDismiss() && <BackButton />}</YStack>
 
           <YStack mb="$6" items={"center"} gap="$3">
@@ -176,14 +179,15 @@ export default function LocationScreen() {
           </YStack>
 
           <YStack mt="auto" pt="$6" gap="$3">
-            <Button
-              variant="primary"
-              width={"100%"}
-              loading={isLoading}
-              onPress={handleContinue}
-            >
-              CONTINUE
-            </Button>
+            <FormActions marginTop="$0">
+              <Button
+                variant="primary"
+                loading={isLoading}
+                onPress={handleContinue}
+              >
+                CONTINUE
+              </Button>
+            </FormActions>
             <Button
               variant="ghost"
               height={40}
@@ -198,6 +202,7 @@ export default function LocationScreen() {
                 Back to Login
               </Text>
             </Button>
+          </YStack>
           </YStack>
         </ScrollView>
       </YStack>
