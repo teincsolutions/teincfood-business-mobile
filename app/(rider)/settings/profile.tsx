@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { UserRound } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
@@ -33,11 +33,21 @@ export default function RiderProfileScreen() {
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Profile can arrive after first render; keep the inputs in sync.
+  useEffect(() => {
+    if (!profile) return;
+    setPhone(profile.phone || "");
+    setLicenseNumber(profile.license_number || "");
+  }, [profile?.id]);
+
   const saving = createProfile.isPending || updateProfile.isPending;
 
   const handleSave = () => {
     const newErrors: Record<string, string> = {};
     if (!phone.trim()) newErrors.phone = "Phone number is required";
+    else if (!/^\+?[0-9\s\-()]{6,20}$/.test(phone.trim())) {
+      newErrors.phone = "Enter a valid phone number";
+    }
     if (!licenseNumber.trim())
       newErrors.licenseNumber = "License number is required";
     if (Object.keys(newErrors).length > 0) {

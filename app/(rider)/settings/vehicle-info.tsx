@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { Pressable } from "react-native";
 import { Save, Check } from "@tamagui/lucide-icons";
@@ -38,6 +38,18 @@ export default function VehicleInfo() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // The query may resolve after first render (cold start / refetch); populate
+  // the form then so an existing vehicle is not shown as blank.
+  useEffect(() => {
+    if (!vehicle?.id) return;
+    setVehicleType(vehicle.type || "motorcycle");
+    setPlateNumber(vehicle.plate_number || "");
+    setVehicleColor(vehicle.color || "");
+    setVehicleBrand(vehicle.brand || "");
+    setVehicleModel(vehicle.model || "");
+    setVehicleYear(vehicle.year ? String(vehicle.year) : "");
+  }, [vehicle?.id]);
+
   const handleSave = () => {
     const newErrors: Record<string, string> = {};
 
@@ -45,6 +57,12 @@ export default function VehicleInfo() {
     if (!vehicleColor.trim()) newErrors.color = "Color is required";
     if (!vehicleBrand.trim()) newErrors.brand = "Brand is required";
     if (!vehicleModel.trim()) newErrors.model = "Model is required";
+    if (vehicleYear.trim()) {
+      const year = Number(vehicleYear);
+      if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+        newErrors.year = "Enter a year between 1900 and 2100";
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

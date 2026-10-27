@@ -60,6 +60,12 @@ export default function AddVehicleScreen() {
     const newErrors: Record<string, string> = {};
     if (!form.type) newErrors.type = "Vehicle type is required";
     if (!form.plate_number.trim()) newErrors.plate_number = "Plate number is required";
+    if (form.year.trim()) {
+      const year = Number(form.year);
+      if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+        newErrors.year = "Enter a year between 1900 and 2100";
+      }
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -279,6 +285,11 @@ export default function AddVehicleScreen() {
                       <Calendar size={20} color="$colorMuted" />
                     </YStack>
                   </XStack>
+                  {errors.year ? (
+                    <Text fontSize="$2" color="$red10" fontFamily="$body">
+                      {errors.year}
+                    </Text>
+                  ) : null}
                 </YStack>
               </XStack>
 

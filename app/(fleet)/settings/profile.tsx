@@ -1,24 +1,43 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { YStack, XStack, Text, Card, Separator, Avatar } from "tamagui";
 import { Building, Phone } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { FormActions, FormScreen } from "@/components/layout";
-import { useFleetStore } from "@/stores/fleet.store";
+import { useBusinessStore } from "@/stores/business.store";
+import * as businessService from "@/services/business.service";
+import { extractApiErrorMessage } from "@teincfood/core";
+import { toast } from "sonner-native";
 
+/**
+ * Fleet profile — edits the real delivery-provider business record
+ * (name, description, email, phone) instead of a device-local mock.
+ */
 export default function FleetProfileScreen() {
-  const { fleet, updateFleet } = useFleetStore();
+  const router = useRouter();
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const updateBusiness = useBusinessStore((s) => s.updateBusiness);
+  const setActiveBusiness = useBusinessStore((s) => s.setActiveBusiness);
   const [isSaving, setIsSaving] = useState(false);
 
   const [form, setForm] = useState({
-    companyName: fleet?.companyName || "",
-    contactPersonName: fleet?.contactPersonName || "",
-    contactEmail: fleet?.contactEmail || "",
-    contactPhone: fleet?.contactPhone || "",
-    licenseNumber: fleet?.licenseNumber || "",
-    description: fleet?.description || "",
+    companyName: activeBusiness?.name || "",
+    description: activeBusiness?.description || "",
+    contactEmail: activeBusiness?.email || "",
+    contactPhone: activeBusiness?.phone || "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!activeBusiness) return;
+    setForm({
+      companyName: activeBusiness.name || "",
+      description: activeBusiness.description || "",
+      contactEmail: activeBusiness.email || "",
+      contactPhone: activeBusiness.phone || "",
+    });
+  }, [activeBusiness?.id]);
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -32,12 +51,9 @@ export default function FleetProfileScreen() {
     if (!form.companyName.trim()) {
       next.companyName = "Company name is required";
     }
-    if (!form.contactPersonName.trim()) {
-      next.contactPersonName = "Contact person name is required";
-    }
     if (!form.contactEmail.trim()) {
       next.contactEmail = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())) {
       next.contactEmail = "Enter a valid email address";
     }
     if (!form.contactPhone.trim()) {
@@ -47,21 +63,46 @@ export default function FleetProfileScreen() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
+    if (!activeBusiness?.id) {
+      toast.error("No active business selected");
+      return;
+    }
+
     setIsSaving(true);
-    setTimeout(() => {
-      updateFleet({
-        companyName: form.companyName.trim(),
-        contactPersonName: form.contactPersonName.trim(),
-        contactEmail: form.contactEmail.trim(),
-        contactPhone: form.contactPhone.trim(),
-        licenseNumber: form.licenseNumber.trim() || undefined,
-        description: form.description.trim() || undefined,
-      });
+    try {
+      const payload = {
+        business: {
+          name: form.companyName.trim(),
+          description: form.description.trim(),
+          email: form.contactEmail.trim(),
+          phone: form.contactPhone.trim(),
+        },
+      };
+      const res = await businessService.updateBusiness(activeBusiness.id, payload);
+      const data = res?.data;
+      const patch = {
+        name: data?.name ?? payload.business.name,
+        description: data?.description ?? payload.business.description,
+        email: data?.email ?? payload.business.email,
+        phone: data?.phone ?? payload.business.phone,
+      };
+      updateBusiness(activeBusiness.id, patch as any);
+      setActiveBusiness({ ...activeBusiness, ...patch } as any);
+      toast.success("Fleet profile updated");
+      router.back();
+    } catch (error: any) {
+      console.debug("[FleetProfile] save error", error);
+      toast.error(extractApiErrorMessage(error as Error));
+    } finally {
       setIsSaving(false);
-    }, 800);
+    }
   };
+
+  const displayName = form.companyName || activeBusiness?.name || "Fleet Company";
+  const businessNumber = activeBusiness?.business_number || activeBusiness?.code || "";
+  const logoUrl = activeBusiness?.logo_url;
 
   return (
     <FormScreen>
@@ -78,20 +119,22 @@ export default function FleetProfileScreen() {
         <Card padding="$4" bordered>
           <XStack gap="$3" alignItems="center">
             <Avatar circular size="$7">
-              <Avatar.Image src={fleet?.logoUrl} />
+              <Avatar.Image src={logoUrl} />
               <Avatar.Fallback backgroundColor="$primary">
                 <Text color="white" fontWeight="bold" fontSize="$6">
-                  {form.companyName?.charAt(0) || "F"}
+                  {displayName.charAt(0) || "F"}
                 </Text>
               </Avatar.Fallback>
             </Avatar>
             <YStack flex={1} gap="$1">
               <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                {form.companyName || "Fleet Company"}
+                {displayName}
               </Text>
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {fleet?.code || "FLEET-XX-000"}
-              </Text>
+              {businessNumber ? (
+                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  {businessNumber}
+                </Text>
+              ) : null}
             </YStack>
           </XStack>
         </Card>
@@ -114,24 +157,6 @@ export default function FleetProfileScreen() {
               onChangeText={(v) => updateField("companyName", v)}
               error={errors.companyName}
               required
-            />
-
-            <FormInput
-              label="Contact Person"
-              placeholder="Full name of contact person"
-              value={form.contactPersonName}
-              onChangeText={(v) => updateField("contactPersonName", v)}
-              error={errors.contactPersonName}
-              required
-            />
-
-            <FormInput
-              label="License Number"
-              placeholder="Business license number (optional)"
-              value={form.licenseNumber}
-              onChangeText={(v) => updateField("licenseNumber", v)}
-              error={errors.licenseNumber}
-              autoCapitalize="characters"
             />
 
             <FormInput
@@ -168,7 +193,7 @@ export default function FleetProfileScreen() {
 
             <FormInput
               label="Phone Number"
-              placeholder="+233 XX XXX XXXX"
+              placeholder="+233 24 000 0000"
               value={form.contactPhone}
               onChangeText={(v) => updateField("contactPhone", v)}
               error={errors.contactPhone}
@@ -178,9 +203,10 @@ export default function FleetProfileScreen() {
           </YStack>
         </Card>
 
-        <FormActions>
+        <FormActions marginTop="$2">
           <Button
             variant="primary"
+            size="$5"
             onPress={handleSave}
             loading={isSaving}
             disabled={isSaving}

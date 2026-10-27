@@ -16,6 +16,7 @@ import {
   FileText,
 } from "@tamagui/lucide-icons";
 import { useFleetStore } from "@/stores/fleet.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
@@ -25,6 +26,7 @@ export default function FleetSettingsScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { fleet, updateFleet } = useFleetStore();
+  const activeBusiness = useBusinessStore((state) => state.activeBusiness);
   const [isEditing, setIsEditing] = useState(false);
   const [commissionRate, setCommissionRate] = useState(
     fleet?.commissionRate?.toString() || "15",
@@ -117,22 +119,22 @@ export default function FleetSettingsScreen() {
         <Card padding="$4" bordered>
           <XStack gap="$3" alignItems="center">
             <Avatar circular size="$6">
-              <Avatar.Image src={fleet?.logoUrl} />
+              <Avatar.Image src={activeBusiness?.logo_url || fleet?.logoUrl} />
               <Avatar.Fallback backgroundColor="$primary">
                 <Text color="white" fontWeight="bold" fontSize="$6">
-                  {fleet?.companyName?.charAt(0) || "F"}
+                  {(activeBusiness?.name || fleet?.companyName)?.charAt(0) || "F"}
                 </Text>
               </Avatar.Fallback>
             </Avatar>
             <YStack flex={1}>
               <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-                {fleet?.companyName || "Fleet Company"}
+                {activeBusiness?.name || fleet?.companyName || "Fleet Company"}
               </Text>
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {fleet?.code || "FLEET-XX-000"}
+                {activeBusiness?.business_number || activeBusiness?.code || fleet?.code || "—"}
               </Text>
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                {user?.email || "fleet@example.com"}
+                {activeBusiness?.email || user?.email || "fleet@example.com"}
               </Text>
             </YStack>
             <Button

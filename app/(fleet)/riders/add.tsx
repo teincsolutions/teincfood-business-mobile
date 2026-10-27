@@ -12,6 +12,7 @@ import {
   useFleetInvitationsQuery,
   useRevokeInvitationMutation,
   extractApiErrorMessage,
+  validateEmail,
 } from "@teincfood/core";
 import { toast } from "sonner-native";
 
@@ -48,7 +49,21 @@ export default function AddRiderScreen() {
 
   const handleInvite = () => {
     const newErrors: Record<string, string> = {};
-    if (!email.trim()) newErrors.email = "Email is required";
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedEmail && !trimmedPhone) {
+      newErrors.email = "Enter an email or phone number";
+    } else if (trimmedEmail && !validateEmail(trimmedEmail).valid) {
+      newErrors.email = "Enter a valid email address";
+    }
+    if (
+      trimmedPhone &&
+      !/^\+?[0-9\s\-()]{6,20}$/.test(trimmedPhone)
+    ) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -57,8 +72,8 @@ export default function AddRiderScreen() {
 
     inviteRider.mutate(
       {
-        email: email.trim().toLowerCase(),
-        ...(phone.trim() ? { phone: phone.trim() } : {}),
+        ...(trimmedEmail ? { email: trimmedEmail.toLowerCase() } : {}),
+        ...(trimmedPhone ? { phone: trimmedPhone } : {}),
       },
       {
         onSuccess: () => {
@@ -135,8 +150,9 @@ export default function AddRiderScreen() {
                   Invite Rider
                 </Text>
                 <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                  The rider gets a 6-digit code to join your fleet. They can
-                  also request to join with your fleet business number.
+                  Enter the rider's email or phone number. They get a 6-digit
+                  code to join your fleet, or they can request to join with
+                  your fleet business number.
                 </Text>
               </YStack>
 
@@ -156,15 +172,22 @@ export default function AddRiderScreen() {
                 error={errors.email}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                required
               />
 
               <FormInput
-                label="Phone Number (Optional)"
+                label="Phone Number"
                 placeholder="+233 24 000 0000"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(value) => {
+                  setPhone(value);
+                  setErrors((p) => {
+                    const n = { ...p };
+                    delete n.phone;
+                    return n;
+                  });
+                }}
                 icon={<Phone size={20} color="$colorMuted" />}
+                error={errors.phone}
                 keyboardType="phone-pad"
               />
 

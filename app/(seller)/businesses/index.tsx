@@ -9,6 +9,7 @@ import {
   Crown,
   MapPin,
   Map,
+  Plus,
   Store,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
@@ -152,7 +153,7 @@ export default function SellerBusinessesScreen() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 8, 16)} {...(media.md || media.lg ? { maxWidth: 960, alignSelf: "center", width: "100%" } : {})}>
       <YStack gap="$1" paddingHorizontal="$4" paddingBottom="$4">
         <XStack gap="$2" alignItems="center">
           <BackButton />
@@ -164,6 +165,14 @@ export default function SellerBusinessesScreen() {
               Businesses you own or manage
             </Text>
           </YStack>
+          <Button
+            size="$3"
+            variant="primary"
+            icon={<Plus size={16} />}
+            onPress={() => router.push("/(shared)/businesses/add" as any)}
+          >
+            Add
+          </Button>
         </XStack>
       </YStack>
       <FlatList

@@ -9,6 +9,7 @@ import {
   Crown,
   MapPin,
   Map,
+  Plus,
   Store,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
@@ -163,6 +164,14 @@ export default function FleetBusinessesScreen() {
               Businesses you own or manage
             </Text>
           </YStack>
+          <Button
+            size="$3"
+            variant="primary"
+            icon={<Plus size={16} />}
+            onPress={() => router.push("/(shared)/businesses/add" as any)}
+          >
+            Add
+          </Button>
         </XStack>
       </YStack>
       <FlatList
