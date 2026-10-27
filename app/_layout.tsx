@@ -179,19 +179,17 @@ function AppShell() {
     return unsubscribe;
   }, []);
 
-  // Connect ChatClient WebSocket for real-time messaging. Keyed on the
-  // authenticated user (not the token) so a token rotation doesn't restart
-  // the client and wipe its conversation handlers. The lib refreshes the
-  // socket token itself through onTokenExpired.
+  // Connect ChatClient WebSocket for real-time messaging. Re-run when the
+  // access token rotates so the socket keeps the newest token; the lib guards
+  // its lifecycle listeners, so this is a cheap token update, not a restart.
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) {
+    if (!isAuthenticated || !user?.id || !accessToken) {
       disconnectChatClient();
       return;
     }
-    const { accessToken: token, refreshToken: refresh } = useAuthStore.getState();
-    if (!token) return;
-    connectChatClient(user.id, token, refresh ?? undefined).catch(console.error);
-  }, [isAuthenticated, user?.id]);
+    const { refreshToken: refresh } = useAuthStore.getState();
+    connectChatClient(user.id, accessToken, refresh ?? undefined).catch(console.error);
+  }, [isAuthenticated, user?.id, accessToken]);
 
   // Build notification action buttons based on action type
   const notificationActions = useCallback(
