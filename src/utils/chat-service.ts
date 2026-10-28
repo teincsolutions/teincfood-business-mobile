@@ -3,8 +3,7 @@ import type { AuthTokens } from '@teincfood/chat-client';
 import { AppState } from 'react-native';
 import { mmkvStorage } from './storage';
 import { API_BASE_URL, WS_BASE_URL } from './constants';
-import { useAuthStore } from '@/stores/auth.store';
-import { eventsService } from '@teincfood/core';
+import { eventsService, refreshSession } from '@teincfood/core';
 
 let _client: ChatClient | null = null;
 
@@ -16,29 +15,17 @@ export function getChatClient(): ChatClient {
       storage: createMMKVStorageAdapter(mmkvStorage),
       surface: "business-mobile",
       onTokenExpired: async (): Promise<AuthTokens | null> => {
-        const { refreshToken } = useAuthStore.getState();
-        if (!refreshToken) return null;
-
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          });
-          if (!response.ok) {
-            // Only clear auth for auth errors, not 5xx server errors
-            if (response.status === 401 || response.status === 403) {
-              useAuthStore.getState().clearAuth();
+        // Reuse core's single-flight refresh. Chat and REST must never rotate
+        // the refresh token in parallel — the backend revokes the old token on
+        // every use, so a second concurrent refresh would 401 the session.
+        // Core owns the health-gated logout when the refresh token is dead.
+        const tokens = await refreshSession();
+        return tokens
+          ? {
+              access_token: tokens.access_token,
+              refresh_token: tokens.refresh_token,
             }
-            return null;
-          }
-          const data = await response.json() as AuthTokens;
-          useAuthStore.getState().setTokens(data.access_token, data.refresh_token);
-          return data;
-        } catch {
-          // Network/server errors — don't clear auth, token likely still valid
-          return null;
-        }
+          : null;
       },
     });
   }

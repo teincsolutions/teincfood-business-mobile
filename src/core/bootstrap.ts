@@ -53,6 +53,7 @@ import { Platform } from "react-native";
 import { API_BASE_URL, WS_BASE_URL, ENTITLEMENT_HMAC_SECRET, COMPANY_INFO } from "@/utils/constants";
 import { api } from "@/services/api";
 import { getAppInstanceId } from "@/services/devices.service";
+import { logoutAfterSessionFailure } from "@/services/session-lifecycle.service";
 import { useConnectivityStore } from "@/stores/connectivity.store";
 import * as posSrv from "@/services/pos.service";
 import * as sellerSrv from "@/services/seller.service";
@@ -439,7 +440,10 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     // and core cannot read/store tokens.
     try { setAuthRefreshProvider(() => useAuthStore.getState().refreshToken ?? null); } catch {}
     try { setAuthTokensProvider((at: string, rt: string) => { try { useAuthStore.getState().setTokens(at, rt); } catch {} }); } catch {}
-    try { setAuthClearProvider(() => { try { useAuthStore.getState().clearAuth(); } catch {} }); } catch {}
+    // Core can discover a dead refresh token from sync/auth paths. Never let
+    // that clear the offline session until the device is online and /health
+    // proves the rejection came from a reachable backend.
+    try { setAuthClearProvider(() => { void logoutAfterSessionFailure(); }); } catch {}
     try {
       const deviceId = getAppInstanceId();
       if (deviceId) setAppInstanceId(deviceId);
