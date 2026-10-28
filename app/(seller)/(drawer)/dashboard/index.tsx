@@ -78,7 +78,9 @@ export default function SellerDashboard() {
     if (!activeBusiness?.id) return;
     setTogglingStore(true);
     try {
-      const result = await businessService.toggleBusinessOpen(activeBusiness.id);
+      const result = await businessService.toggleBusinessOpen(
+        activeBusiness.id,
+      );
       const updated = result?.data;
       if (updated?.is_open !== undefined) {
         // The toggle endpoint returns a partial business — merge it, never
@@ -174,45 +176,48 @@ export default function SellerDashboard() {
         )}
 
         {/* Header */}
-        <XStack justifyContent="space-between" alignItems="center">
-          <YStack>
-            <Text fontSize="$4" color="$color">
-              Welcome back, {user?.full_name || "Seller"}
-            </Text>
+        <YStack gap={2}>
+          <Text fontSize="$4" color="$color">
+            Welcome back, {user?.full_name || "Seller"}
+          </Text>
+          <XStack gap="$4" justify={"space-between"}>
             {activeBusiness && (
-              <XStack gap="$1" alignItems="center" marginTop="$1">
+              <XStack gap="$1" alignItems="center">
                 <Store size={14} color="$colorMuted" />
                 <Text fontSize="$3" color="$colorMuted">
                   {activeBusiness.name}
                 </Text>
               </XStack>
             )}
-          </YStack>
-          <XStack gap="$2" alignItems="center">
-            <Text fontSize="$3">
-              {isManuallyClosed
-                ? "Online ordering paused"
-                : isStoreOpen
-                  ? "Online ordering on"
-                  : "Outside business hours"}
-            </Text>
-            <Switch
-              size="$8"
-              checked={isStoreOpen}
-              disabled={togglingStore}
-              onCheckedChange={handleToggleStore}
-              backgroundColor={isStoreOpen ? "$primary" : "$color.gray600"}
-            >
-              <Switch.Thumb animation="quick" backgroundColor="$color.white" />
-            </Switch>
-            <Button
-              size="$4"
-              circular
-              icon={<Bell size={20} />}
-              onPress={() => router.push("/(shared)/notifications")}
-            />
+            <XStack gap="$2" alignItems="center">
+              <Text fontSize="$3">
+                {isManuallyClosed
+                  ? "Online ordering paused"
+                  : isStoreOpen
+                    ? "Online ordering on"
+                    : "Outside business hours"}
+              </Text>
+              <Switch
+                size="$8"
+                checked={isStoreOpen}
+                disabled={togglingStore}
+                onCheckedChange={handleToggleStore}
+                backgroundColor={isStoreOpen ? "$primary" : "$color.gray600"}
+              >
+                <Switch.Thumb
+                  animation="quick"
+                  backgroundColor="$color.white"
+                />
+              </Switch>
+              <Button
+                size="$4"
+                circular
+                icon={<Bell size={20} />}
+                onPress={() => router.push("/(shared)/notifications")}
+              />
+            </XStack>
           </XStack>
-        </XStack>
+        </YStack>
 
         {/* Metrics Cards */}
         <XStack gap="$3" flexWrap="wrap">
