@@ -1,0 +1,162 @@
+diff --git a/node_modules/react-native-tcp-socket/ios/TcpSockets.m b/node_modules/react-native-tcp-socket/ios/TcpSockets.m
+index 0fe15d2..a6d6bfd 100644
+--- a/node_modules/react-native-tcp-socket/ios/TcpSockets.m
++++ b/node_modules/react-native-tcp-socket/ios/TcpSockets.m
+@@ -35,7 +35,11 @@ - (void)stopObserving {
+ }
+ 
+ - (void)dealloc {
+-    for (NSNumber *cId in _clients.allKeys) {
++    NSArray<NSNumber *> *clientIds;
++    @synchronized(self) {
++        clientIds = _clients.allKeys;
++    }
++    for (NSNumber *cId in clientIds) {
+         [self destroyClient:cId];
+     }
+ }
+@@ -47,19 +51,21 @@ - (TcpSocketClient *)createSocket:(nonnull NSNumber *)cId {
+         return nil;
+     }
+ 
+-    if (!_clients) {
+-        _clients = [NSMutableDictionary new];
+-    }
++    @synchronized(self) {
++        if (!_clients) {
++            _clients = [NSMutableDictionary new];
++        }
+ 
+-    if (_clients[cId]) {
+-        RCTLogWarn(@"%@.createSocket called twice with the same id.",
+-                   [self class]);
+-        return nil;
+-    }
++        if (_clients[cId]) {
++            RCTLogWarn(@"%@.createSocket called twice with the same id.",
++                       [self class]);
++            return nil;
++        }
+ 
+-    _clients[cId] = [TcpSocketClient socketClientWithId:cId andConfig:self];
++        _clients[cId] = [TcpSocketClient socketClientWithId:cId andConfig:self];
+ 
+-    return _clients[cId];
++        return _clients[cId];
++    }
+ }
+ 
+ RCT_EXPORT_METHOD(connect
+@@ -67,13 +73,16 @@ - (TcpSocketClient *)createSocket:(nonnull NSNumber *)cId {
+                   : (NSString *)host port
+                   : (int)port withOptions
+                   : (NSDictionary *)options) {
+-    TcpSocketClient *client = _clients[cId];
++    TcpSocketClient *client = nil;
++    NSDictionary *tlsOptions = nil;
++    @synchronized(self) {
++        client = _clients[cId];
++        tlsOptions = _pendingTLS[cId];
++    }
+     if (!client) {
+         client = [self createSocket:cId];
+     }
+ 
+-    NSDictionary *tlsOptions = _pendingTLS[cId];
+-
+     NSError *error = nil;
+     if (![client connect:host
+                     port:port
+@@ -112,7 +121,10 @@ - (TcpSocketClient *)createSocket:(nonnull NSNumber *)cId {
+ RCT_EXPORT_METHOD(listen
+                   : (nonnull NSNumber *)cId withOptions
+                   : (nonnull NSDictionary *)options) {
+-    TcpSocketClient *client = _clients[cId];
++    TcpSocketClient *client = nil;
++    @synchronized(self) {
++        client = _clients[cId];
++    }
+     if (!client) {
+         client = [self createSocket:cId];
+     }
+@@ -127,13 +139,17 @@ - (TcpSocketClient *)createSocket:(nonnull NSNumber *)cId {
+ RCT_EXPORT_METHOD(startTLS
+                   : (nonnull NSNumber *)cId tlsOptions
+                   : (nonnull NSDictionary *)tlsOptions) {
+-    TcpSocketClient *client = _clients[cId];
+-    if (!client) {
+-        if (!_pendingTLS) {
+-            _pendingTLS = [NSMutableDictionary new];
++    TcpSocketClient *client = nil;
++    @synchronized(self) {
++        client = _clients[cId];
++        if (!client) {
++            if (!_pendingTLS) {
++                _pendingTLS = [NSMutableDictionary new];
++            }
++            _pendingTLS[cId] = tlsOptions;
+         }
+-        _pendingTLS[cId] = tlsOptions;
+-    } else {
++    }
++    if (client) {
+         [client startTLS:tlsOptions];
+     }
+ }
+@@ -264,7 +280,12 @@ - (void)onSecureConnection:(TcpSocketClient *)client
+ }
+ 
+ - (void)addClient:(TcpSocketClient *)client {
+-    _clients[client.id] = client;
++    @synchronized(self) {
++        if (!_clients) {
++            _clients = [NSMutableDictionary new];
++        }
++        _clients[client.id] = client;
++    }
+ }
+ 
+ - (void)onSocketConnection:(TcpSocketClient *)client
+@@ -313,7 +334,7 @@ - (void)onClose:(NSNumber *)clientID withError:(NSError *)err {
+         RCTLogWarn(@"onClose: unrecognized client id %@", clientID);
+     }
+ 
+-    if (err) {
++    if (err && client) {
+         [self onError:client withError:err];
+     }
+ 
+@@ -323,7 +344,9 @@ - (void)onClose:(NSNumber *)clientID withError:(NSError *)err {
+                            @"hadError" : err == nil ? @NO : @YES
+                        }];
+ 
+-    [_clients removeObjectForKey:clientID];
++    @synchronized(self) {
++        [_clients removeObjectForKey:clientID];
++    }
+ }
+ 
+ - (void)onError:(TcpSocketClient *)client withError:(NSError *)err {
+@@ -332,7 +355,10 @@ - (void)onError:(TcpSocketClient *)client withError:(NSError *)err {
+ }
+ 
+ - (TcpSocketClient *)findClient:(nonnull NSNumber *)cId {
+-    TcpSocketClient *client = _clients[cId];
++    TcpSocketClient *client = nil;
++    @synchronized(self) {
++        client = _clients[cId];
++    }
+     if (!client) {
+         NSString *msg =
+             [NSString stringWithFormat:@"no client found with id %@", cId];
+@@ -361,7 +387,9 @@ - (void)destroyClient:(nonnull NSNumber *)cId {
+ }
+ 
+ - (NSNumber *)getNextId {
+-    return @(_counter++ + COUNTER_OFFSET);
++    @synchronized(self) {
++        return @(_counter++ + COUNTER_OFFSET);
++    }
+ }
+ 
+ @end
