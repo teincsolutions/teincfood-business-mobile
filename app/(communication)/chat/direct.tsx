@@ -13,6 +13,7 @@ export default function DirectPairChatScreen() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [displayAvatar, setDisplayAvatar] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -78,6 +79,11 @@ export default function DirectPairChatScreen() {
             showBizAsContact
               ? conv.business.logo_url
               : other?.user?.avatar_url ?? null,
+          );
+          setPhoneNumber(
+            showBizAsContact
+              ? conv.business?.phone ?? null
+              : other?.user?.phone ?? null,
           );
         }
       } catch (e) {
@@ -147,6 +153,7 @@ export default function DirectPairChatScreen() {
       conversationId={conversationId}
       displayName={displayName}
       displayAvatar={displayAvatar}
+      phoneNumber={phoneNumber ?? undefined}
       isBusiness={!!senderBusinessId}
     />
   );
