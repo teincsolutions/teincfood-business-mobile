@@ -238,6 +238,13 @@ export function ContactChatScreen({
   const { messages, send, loadMore, sendTyping, markRead, typingUserId } =
     useChat(conversationId);
 
+  // Opening a thread must clear its badge immediately, even if the socket is
+  // still connecting. The chat client also pushes mark_read once joined;
+  // re-run when new messages arrive while the thread is open.
+  useEffect(() => {
+    markRead();
+  }, [conversationId, messages.length, markRead]);
+
   useEffect(() => {
     // Sync initial state (connection may have been established before mount)
     setConnectionState(client.isConnected() ? "connected" : "disconnected");
