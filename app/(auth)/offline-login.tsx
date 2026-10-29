@@ -50,7 +50,7 @@ export default function OfflineLoginScreen() {
     try {
       await login(selected.user_id, pin);
       setRole("seller");
-      router.replace("/");
+      router.replace("/(seller)/" as any);
     } catch (e) {
       const code = extractApiErrorCode(e);
       const message = extractApiErrorMessage(e);

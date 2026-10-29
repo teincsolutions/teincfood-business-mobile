@@ -110,6 +110,7 @@ function AppShell() {
   const authHydrated = useAuthStore((state) => state.isHydrated);
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
+  const offlineMemberId = useAuthStore((state) => state.offlineMemberId);
   const onboardingHydrated = useOnboardingStore((state) => state.isHydrated);
   const locationHydrated = useLocationStore((state) => state.isHydrated);
   const roleHydrated = useRoleStore((state) => state.isHydrated);
@@ -314,12 +315,19 @@ function AppShell() {
 
   const isReady =
     authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
-  const isAuthenticated = Boolean(user && accessToken);
-  // Use the user's selected intent (user.role) rather than backend-assigned
-  // roles (user.roles).  New users who selected "seller" only have
-  // roles: ["buyer"] until they create a business.
-  const isSeller = user?.role === "seller";
-  const isRider = user?.role === "rider";
+  const cloudAuthenticated = Boolean(user && accessToken);
+  const localAuthenticated = Boolean(user && offlineMemberId);
+  // Offline PIN sessions deliberately have no cloud token, but they still own
+  // the seller shell. Without this, the seller stack guard rejects the session
+  // and the app lands on a blank screen.
+  const isAuthenticated = cloudAuthenticated || localAuthenticated;
+  // Use the selected role (role store) plus the backend intent field. New
+  // users who selected "seller" only have roles: ["buyer"] until they create
+  // a business.
+  const isSeller =
+    isAuthenticated && (role === "seller" || user?.role === "seller");
+  const isRider =
+    cloudAuthenticated && (role === "rider" || user?.role === "rider");
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen
@@ -406,7 +414,10 @@ function AppShell() {
 
             {/* Fleet Manager routes - protected for fleet managers only */}
             <Stack.Protected
-              guard={isAuthenticated && user?.role === "fleet_manager"}
+              guard={
+                cloudAuthenticated &&
+                (role === "fleet_manager" || user?.role === "fleet_manager")
+              }
             >
               <Stack.Screen name="(fleet)" />
             </Stack.Protected>

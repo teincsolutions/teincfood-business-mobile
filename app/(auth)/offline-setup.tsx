@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Input, Text, YStack } from "tamagui";
+import { toast } from "sonner-native";
 import { extractApiErrorCode, extractApiErrorMessage } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
@@ -55,7 +56,8 @@ export default function OfflineSetupScreen() {
         },
         pin,
       });
-      router.replace("/");
+      toast.success("Offline access activated on this device");
+      router.replace("/(seller)/" as any);
     } catch (e) {
       const code = extractApiErrorCode(e);
       const message = extractApiErrorMessage(e);

@@ -1,28 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from "react";
 import {
-  activateOfflineDevice,
-  getOfflinePinLockState,
-  getOfflineSessionState,
-  removeOfflineDevice,
   sendOfflineDeviceHeartbeat,
   verifyOfflineLogin,
-  type OfflineLicenseEvaluation,
-  type OfflineMemberCredential,
-} from '@teincfood/core';
-import { useAuthStore } from '@/stores/auth.store';
-import { useBusinessStore } from '@/stores/business.store';
-import { useOfflineSetupStore } from '@/stores/offlineSetup.store';
-import type { User } from '@/types/user.model';
+  getOfflinePinLockState,
+} from "@teincfood/core";
+import { useAuthStore } from "@/stores/auth.store";
+import { useBusinessStore } from "@/stores/business.store";
+import { useOfflineAuthStore } from "@/stores/offlineAuth.store";
+import type { User } from "@/types/user.model";
 
-export interface OfflineAuthState {
-  loading: boolean;
-  hasDevice: boolean;
-  members: OfflineMemberCredential[];
-  evaluation: OfflineLicenseEvaluation | null;
-  error: string | null;
-}
-
-function memberAsUser(member: OfflineMemberCredential): User {
+function memberAsUser(member: {
+  user_id: string;
+  email?: string | null;
+  full_name: string;
+  role: string;
+}): User {
   const now = new Date().toISOString();
   return {
     id: member.user_id,
@@ -34,7 +26,7 @@ function memberAsUser(member: OfflineMemberCredential): User {
     roles: [member.role],
     email_verified_at: null,
     phone_verified_at: null,
-    kyc_status: 'none',
+    kyc_status: "none",
     has_completed_kyc: false,
     inserted_at: now,
     updated_at: now,
@@ -43,68 +35,47 @@ function memberAsUser(member: OfflineMemberCredential): User {
 
 export function useOfflineAuth() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const [state, setState] = useState<OfflineAuthState>({
-    loading: true,
-    hasDevice: false,
-    members: [],
-    evaluation: null,
-    error: null,
-  });
-
-  const refresh = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const result = await getOfflineSessionState(businessId);
-      setState({
-        loading: false,
-        hasDevice: result.hasDevice,
-        members: result.members,
-        evaluation: result.evaluation,
-        error: null,
-      });
-      return result;
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Could not read offline access',
-      }));
-      return null;
-    }
-  }, [businessId]);
+  const state = useOfflineAuthStore();
+  const refreshStore = state.refresh;
+  const hasDevice = state.hasDevice;
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refreshStore(businessId);
+  }, [businessId, refreshStore]);
 
   useEffect(() => {
-    if (!businessId || !state.hasDevice) return;
+    if (!businessId || !hasDevice) return;
     void sendOfflineDeviceHeartbeat(businessId);
     const timer = setInterval(() => {
       void sendOfflineDeviceHeartbeat(businessId);
     }, 60_000);
     return () => clearInterval(timer);
-  }, [businessId, state.hasDevice]);
+  }, [businessId, hasDevice]);
 
-  const login = useCallback(async (memberId: string, pin: string) => {
-    const member = await verifyOfflineLogin(memberId, pin, businessId);
-    if (!member) {
-      const lock = await getOfflinePinLockState(memberId, businessId);
-      if (lock.locked) {
-        const until = lock.lockedUntil
-          ? new Date(lock.lockedUntil).toLocaleTimeString()
-          : 'later';
-        throw new Error(`Too many attempts. Try again at ${until}.`);
+  const login = useCallback(
+    async (memberId: string, pin: string) => {
+      const member = await verifyOfflineLogin(memberId, pin, businessId);
+      if (!member) {
+        const lock = await getOfflinePinLockState(memberId, businessId);
+        if (lock.locked) {
+          const until = lock.lockedUntil
+            ? new Date(lock.lockedUntil).toLocaleTimeString()
+            : "later";
+          throw new Error(`Too many attempts. Try again at ${until}.`);
+        }
+        const suffix =
+          lock.remainingAttempts > 0 && lock.remainingAttempts <= 2
+            ? ` ${lock.remainingAttempts} attempt${lock.remainingAttempts === 1 ? "" : "s"} left.`
+            : "";
+        throw new Error(`Incorrect PIN.${suffix}`);
       }
-      const suffix =
-        lock.remainingAttempts > 0 && lock.remainingAttempts <= 2
-          ? ` ${lock.remainingAttempts} attempt${lock.remainingAttempts === 1 ? '' : 's'} left.`
-          : '';
-      throw new Error(`Incorrect PIN.${suffix}`);
-    }
-    useAuthStore.getState().setOfflineSession(memberAsUser(member), member.user_id);
-    return member;
-  }, [businessId]);
+      useAuthStore
+        .getState()
+        .setOfflineSession(memberAsUser(member), member.user_id);
+      return member;
+    },
+    [businessId],
+  );
 
   const activate = useCallback(
     async (args: {
@@ -118,21 +89,26 @@ export function useOfflineAuth() {
       pin: string;
       platform?: string;
     }) => {
-      if (!businessId) throw new Error('Select a business first');
-      const result = await activateOfflineDevice({ businessId, ...args });
-      useOfflineSetupStore.getState().clear(businessId);
-      await refresh();
-      return result;
+      if (!businessId) throw new Error("Select a business first");
+      return state.activate({ businessId, ...args });
     },
-    [businessId, refresh],
+    [businessId, state.activate],
   );
 
   const removeDevice = useCallback(async () => {
-    if (!businessId) throw new Error('Select a business first');
-    await removeOfflineDevice(businessId);
-    useOfflineSetupStore.getState().clear(businessId);
-    await refresh();
-  }, [businessId, refresh]);
+    if (!businessId) throw new Error("Select a business first");
+    await state.removeDevice(businessId);
+  }, [businessId, state.removeDevice]);
 
-  return { ...state, refresh, login, activate, removeDevice };
+  return {
+    loading: state.loading,
+    hasDevice: state.hasDevice,
+    members: state.members,
+    evaluation: state.evaluation,
+    error: state.error,
+    refresh: () => state.refresh(businessId),
+    login,
+    activate,
+    removeDevice,
+  };
 }
