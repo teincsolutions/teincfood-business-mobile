@@ -72,7 +72,6 @@ import {
   useScreenTracking,
 } from "../src/utils/observability";
 import { CustomerDisplayController } from "../src/customer-display/CustomerDisplayController";
-import { OTAUpdateBanner } from "../src/components/update/OTAUpdateBanner";
 
 // Fire-and-forget telemetry bootstrap (idempotent, never breaks startup).
 ensureObservability();
@@ -434,8 +433,6 @@ function AppShell() {
               <Stack.Screen name="(communication)" />
             </Stack.Protected>
           </Stack>
-
-          <OTAUpdateBanner />
 
           {showLock && (
             <BiometricLockOverlay onUnlock={() => setIsUnlocked(true)} />
