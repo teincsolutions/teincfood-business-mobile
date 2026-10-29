@@ -454,10 +454,11 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     try { setAuthClearProvider(() => { void logoutAfterSessionFailure(); }); } catch {}
     // Offline device license: private key in Keychain/Keystore, license in KV.
     try {
+      const secureKey = (key: string) => key.replace(/[^A-Za-z0-9._-]/g, "_");
       setOfflineSecureStorage({
-        getItem: (key) => SecureStore.getItemAsync(key),
-        setItem: (key, value) => SecureStore.setItemAsync(key, value),
-        removeItem: (key) => SecureStore.deleteItemAsync(key),
+        getItem: (key) => SecureStore.getItemAsync(secureKey(key)),
+        setItem: (key, value) => SecureStore.setItemAsync(secureKey(key), value),
+        removeItem: (key) => SecureStore.deleteItemAsync(secureKey(key)),
       });
       setOfflineRandomBytesProvider((length) => getRandomBytes(length));
     } catch {}
