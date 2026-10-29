@@ -273,8 +273,8 @@ export default function SellerSettings() {
     },
     {
       icon: AlertTriangle,
-      label: "Offline Device",
-      description: "License status, enrolled members, remove terminal",
+      label: "Offline Devices",
+      description: "License status, connected terminals, remove devices",
       route: "/(seller)/settings/offline-device",
       capability: "business_members_manage",
     },
