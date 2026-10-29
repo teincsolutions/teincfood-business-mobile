@@ -1,57 +1,75 @@
-import { useEffect, useRef } from 'react';
-import * as Updates from 'expo-updates';
-import { useAlert } from '../contexts/AlertContext';
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import * as Updates from "expo-updates";
+import { useOTAUpdateStore } from "@/stores/otaUpdate.store";
 
+const CHECK_INTERVAL_MS = 30 * 60 * 1000;
+let lastCheckAt = 0;
+
+export async function checkForOTAUpdate(): Promise<void> {
+  if (__DEV__ || process.env.EXPO_PUBLIC_ENABLE_OTA === "false") return;
+  if (!Updates.isEnabled) return;
+
+  const state = useOTAUpdateStore.getState();
+  if (state.phase === "downloading" || state.phase === "ready") return;
+  if (state.phase === "checking") return;
+
+  lastCheckAt = Date.now();
+  state.beginCheck();
+
+  try {
+    const update = await Updates.checkForUpdateAsync();
+    if (!update.isAvailable) {
+      useOTAUpdateStore.getState().setIdle();
+      return;
+    }
+    useOTAUpdateStore.getState().setAvailable();
+  } catch {
+    // Offline, wrong channel, or no published update. Retry later.
+    useOTAUpdateStore.getState().setIdle();
+  }
+}
+
+export async function installOTAUpdate(): Promise<void> {
+  const state = useOTAUpdateStore.getState();
+  if (state.phase === "downloading" || state.phase === "ready") return;
+
+  state.beginDownload();
+  try {
+    await Updates.fetchUpdateAsync();
+    useOTAUpdateStore.getState().setReady();
+  } catch (error) {
+    useOTAUpdateStore
+      .getState()
+      .setError(
+        error instanceof Error
+          ? error.message
+          : "The update could not be downloaded.",
+      );
+  }
+}
+
+export async function restartForOTAUpdate(): Promise<void> {
+  await Updates.reloadAsync();
+}
+
+/**
+ * Background OTA check. The UI is a VS Code-style update notice with an
+ * explicit Update button, not a blocking alert.
+ */
 export function useOTAUpdate() {
-  const { showAlert } = useAlert();
-  const checking = useRef(false);
-
   useEffect(() => {
-    if (__DEV__ || process.env.EXPO_PUBLIC_ENABLE_OTA === 'false') {
-      return;
-    }
-    if (!Updates.isEnabled) {
-      console.debug('[OTA] expo-updates not enabled (Expo Go or unconfigured build) — skipping');
-      return;
-    }
-    if (checking.current) return;
-    checking.current = true;
+    void checkForOTAUpdate();
 
-    const check = async () => {
-      try {
-        console.debug('[OTA] checking for update', {
-          channel: Updates.channel,
-          runtimeVersion: Updates.runtimeVersion,
-          updateId: Updates.updateId,
-        });
-        const update = await Updates.checkForUpdateAsync();
-        if (!update.isAvailable) {
-          console.debug('[OTA] no update available');
-          return;
-        }
-        console.debug('[OTA] update available — prompting user');
-        showAlert({
-          title: 'Update Available',
-          description: 'A new version of TF Business is available. Update now to get the latest features and fixes.',
-          confirmText: 'Update Now',
-          cancelText: 'Later',
-          onConfirm: async () => {
-            try {
-              await Updates.fetchUpdateAsync();
-              await Updates.reloadAsync();
-            } catch (e) {
-              console.debug('[OTA] fetch/reload failed', e);
-              // Keep the user in the current version if the update fails
-            }
-          },
-        });
-      } catch (e) {
-        console.debug('[OTA] check failed (offline, wrong channel, or unpublished)', e);
-      }
-    };
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      if (Date.now() - lastCheckAt < CHECK_INTERVAL_MS) return;
+      if (useOTAUpdateStore.getState().dismissed) return;
+      void checkForOTAUpdate();
+    });
 
-    check();
-  }, [showAlert]);
+    return () => subscription.remove();
+  }, []);
 }
 
 export default useOTAUpdate;
