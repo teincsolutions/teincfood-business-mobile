@@ -11,6 +11,7 @@ import {
 } from '@teincfood/core';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
+import { useOfflineSetupStore } from '@/stores/offlineSetup.store';
 import type { User } from '@/types/user.model';
 
 export interface OfflineAuthState {
@@ -119,6 +120,7 @@ export function useOfflineAuth() {
     }) => {
       if (!businessId) throw new Error('Select a business first');
       const result = await activateOfflineDevice({ businessId, ...args });
+      useOfflineSetupStore.getState().clear(businessId);
       await refresh();
       return result;
     },
@@ -128,6 +130,7 @@ export function useOfflineAuth() {
   const removeDevice = useCallback(async () => {
     if (!businessId) throw new Error('Select a business first');
     await removeOfflineDevice(businessId);
+    useOfflineSetupStore.getState().clear(businessId);
     await refresh();
   }, [businessId, refresh]);
 

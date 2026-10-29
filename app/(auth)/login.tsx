@@ -21,7 +21,7 @@ import {
   ChevronDown,
   Check,
 } from "@tamagui/lucide-icons";
-import { Button, FormInput, BackButton, AppleSignInButton } from "@/components/ui";
+import { Button, FormInput, AppleSignInButton } from "@/components/ui";
 import { FormActions } from "@/components/layout";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
@@ -230,10 +230,6 @@ export default function LoginScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <YStack mb="$4" paddingHorizontal="$8" width="100%" maxWidth={600} alignSelf="center">
-        {router.canDismiss() && <BackButton />}
-      </YStack>
-
       <YStack flex={1} bg="$background" items="center">
         <ScrollView
           bounces={false}

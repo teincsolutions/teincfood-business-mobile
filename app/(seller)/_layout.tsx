@@ -10,6 +10,7 @@ import { toast } from 'sonner-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
 import { useOfflineAuth } from '@/hooks/useOfflineAuth';
+import { useOfflineSetupStore } from '@/stores/offlineSetup.store';
 
 /** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
 function normalizeSegments(segments: string[]): string[] {
@@ -33,6 +34,9 @@ export default function SellerLayout() {
   const offlineMemberId = useAuthStore((s) => s.offlineMemberId);
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const { loading: offlineLoading, hasDevice, evaluation: offlineEvaluation } = useOfflineAuth();
+  const setupSkipped = useOfflineSetupStore((s) =>
+    activeBusinessId ? Boolean(s.skipped[activeBusinessId]) : false,
+  );
 
   // Keep the offline reference cache (menus, roles, members, taxes, business
   // profile, operating hours) in sync while the restaurant is online.
@@ -50,6 +54,7 @@ export default function SellerLayout() {
       !offlineMemberId &&
       activeBusinessId &&
       !offlineLoading &&
+      !setupSkipped &&
       (!hasDevice || (offlineEvaluation != null && !offlineEvaluation.valid))
     ) {
       router.replace('/(auth)/offline-setup' as any);
@@ -63,7 +68,7 @@ export default function SellerLayout() {
     } else if (displayStore.kitchenDisplayEnabled && !currentPath.includes('kitchen')) {
       router.replace('/(seller)/kitchen' as any);
     }
-  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, offlineEvaluation, router, segments]);
+  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, offlineEvaluation, setupSkipped, router, segments]);
 
   useEffect(() => {
     if (!membership?.capabilities || segments.length < 1) return;
