@@ -37,6 +37,7 @@ import {
   Bike,
   Calculator,
 } from "@tamagui/lucide-icons";
+import { Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
@@ -48,6 +49,7 @@ import {
   useBusinessMemberInvitationsQuery,
   useRevokeMemberInvitationMutation,
   useResendMemberInvitationMutation,
+  useUpdateMemberRoleMutation,
   extractApiErrorMessage,
 } from "@teincfood/core";
 import { useBusinessRolesQuery } from "@teincfood/core";
@@ -80,6 +82,7 @@ export default function MembersScreen() {
   const { data: rolesData } = useBusinessRolesQuery();
   const inviteMember = useInviteMemberMutation();
   const removeMember = useRemoveMemberMutation();
+  const updateMemberRole = useUpdateMemberRoleMutation();
   const sentInvitesQuery = useBusinessMemberInvitationsQuery();
   const revokeInvite = useRevokeMemberInvitationMutation();
   const resendInvite = useResendMemberInvitationMutation();
@@ -301,6 +304,21 @@ export default function MembersScreen() {
                 paddingVertical="$1"
                 borderRadius="$2"
                 backgroundColor={ROLE_COLORS[item.role] || "$gray9"}
+                onPress={() => {
+                  if (!canManageMembers || !item.user?.id || item.role === "chief") return;
+                  Alert.alert(
+                    "Change role",
+                    `Choose a new role for ${item.user?.full_name || "this member"}.`,
+                    [
+                      ...["manager", "sales"].map((role) => ({
+                        text: ROLE_LABELS[role] || role,
+                        onPress: () =>
+                          updateMemberRole.mutate({ userId: item.user!.id!, role }),
+                      })),
+                      { text: "Cancel", style: "cancel" as const },
+                    ],
+                  );
+                }}
               >
                 <Text fontSize="$2" color="white" fontWeight="600">
                   {ROLE_LABELS[item.role] || item.role}
