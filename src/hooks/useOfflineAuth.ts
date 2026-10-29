@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   activateOfflineDevice,
+  getOfflinePinLockState,
   getOfflineSessionState,
   removeOfflineDevice,
+  sendOfflineDeviceHeartbeat,
   verifyOfflineLogin,
   type OfflineLicenseEvaluation,
   type OfflineMemberCredential,
@@ -74,12 +76,34 @@ export function useOfflineAuth() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!businessId || !state.hasDevice) return;
+    void sendOfflineDeviceHeartbeat(businessId);
+    const timer = setInterval(() => {
+      void sendOfflineDeviceHeartbeat(businessId);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [businessId, state.hasDevice]);
+
   const login = useCallback(async (memberId: string, pin: string) => {
-    const member = await verifyOfflineLogin(memberId, pin);
-    if (!member) throw new Error('Incorrect PIN');
+    const member = await verifyOfflineLogin(memberId, pin, businessId);
+    if (!member) {
+      const lock = await getOfflinePinLockState(memberId, businessId);
+      if (lock.locked) {
+        const until = lock.lockedUntil
+          ? new Date(lock.lockedUntil).toLocaleTimeString()
+          : 'later';
+        throw new Error(`Too many attempts. Try again at ${until}.`);
+      }
+      const suffix =
+        lock.remainingAttempts > 0 && lock.remainingAttempts <= 2
+          ? ` ${lock.remainingAttempts} attempt${lock.remainingAttempts === 1 ? '' : 's'} left.`
+          : '';
+      throw new Error(`Incorrect PIN.${suffix}`);
+    }
     useAuthStore.getState().setOfflineSession(memberAsUser(member), member.user_id);
     return member;
-  }, []);
+  }, [businessId]);
 
   const activate = useCallback(
     async (args: {

@@ -272,6 +272,13 @@ export default function SellerSettings() {
       route: "/(seller)/settings/local-node",
     },
     {
+      icon: AlertTriangle,
+      label: "Offline Device",
+      description: "License status, enrolled members, remove terminal",
+      route: "/(seller)/settings/offline-device",
+      capability: "business_members_manage",
+    },
+    {
       icon: Monitor,
       label: "Diagnostics",
       description: "Sync queue, DD, cloud reachability, wipe",

@@ -19,7 +19,7 @@ import type { KVDriver } from "@teincfood/core";
 import type { HttpClient } from "@teincfood/core";
 import { setConnectivityState, getConnectivityState, subscribeConnectivity, setAuthProvider, setAuthRefreshProvider, setAuthTokensProvider, setAuthClearProvider } from "@teincfood/core";
 import { initDebugLogCapture } from "@teincfood/core";
-import { setAppInstanceId } from "@teincfood/core";
+import { setAppInstanceId, setDeviceMetadataProvider } from "@teincfood/core";
 import { ensureDeviceLease, purgeNonCanonicalMenuCache } from "@teincfood/core";
 import { setReferenceLocalNodeFetcher } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
@@ -46,6 +46,8 @@ import {
   placesService as corePlacesService,
   imageCacheService as coreImageCache,
 } from "@teincfood/core";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
@@ -433,6 +435,14 @@ function syncBusinessBridge(): void {
 }
 
 export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
+  try {
+    setDeviceMetadataProvider(() => ({
+      deviceName: Device.deviceName ?? Device.modelName ?? `${Platform.OS} terminal`,
+      platform: Platform.OS,
+      osVersion: Device.osVersion ?? String(Platform.Version),
+      appVersion: Constants.expoConfig?.version ?? undefined,
+    }));
+  } catch {}
   if (bootstrapped) return null;
   try {
     // Always-on shared log capture (same store Desktop Diagnostics reads).
