@@ -23,7 +23,9 @@ export type LocalNodeMessageType =
   | "register"
   | "register_ack"
   | "reference_fetch"
-  | "reference_response";
+  | "reference_response"
+  | "asset_fetch"
+  | "asset_response";
 
 export interface LocalNodeMessage {
   type: LocalNodeMessageType;
@@ -133,6 +135,24 @@ export interface LocalNodeReferenceResponseMessage extends LocalNodeMessage {
   type: "reference_response";
   payload: {
     data: Partial<Record<ReferenceDataKey, ReferenceDataRecord | null>>;
+  };
+}
+
+export interface LocalNodeAssetFetchMessage extends LocalNodeMessage {
+  type: "asset_fetch";
+  payload: {
+    businessId: string;
+    url: string;
+  };
+}
+
+export interface LocalNodeAssetResponseMessage extends LocalNodeMessage {
+  type: "asset_response";
+  payload: {
+    url: string;
+    base64: string | null;
+    contentType?: string | null;
+    error?: string | null;
   };
 }
 

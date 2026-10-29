@@ -60,6 +60,7 @@ export class TcpTransport implements TransportAdapter {
       execute: (cmd: Command) => client.execute(cmd),
       requestReferenceData: (businessId: string, keys: import("@teincfood/core").ReferenceDataKey[]) =>
         client.requestReferenceData(businessId, keys),
+      requestAsset: (businessId: string, url: string) => client.requestAsset(businessId, url),
       publishEvent: (event: DomainEvent) => client.publishEvent(event),
     };
   }

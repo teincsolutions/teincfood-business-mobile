@@ -19,6 +19,7 @@
  */
 
 import TcpSocket from "react-native-tcp-socket";
+import * as FileSystem from "expo-file-system";
 import { syncLogger } from "@teincfood/core";
 import { generateUUID } from "@teincfood/core";
 import { openSyncDatabase } from "@teincfood/core";
@@ -27,6 +28,7 @@ import type { Command, DomainEvent } from "@teincfood/core";
 import type { LocalNodeMessage } from "./types";
 import type { ReferenceDataKey, ReferenceDataRecord } from "@teincfood/core";
 import { computeProof, generateNonce } from "./security";
+import { getCachedImagePath } from "@teincfood/core";
 import { patchTLSServerListen } from "./tls-listen-patch";
 
 const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
@@ -524,6 +526,56 @@ export class LocalNodeServer {
         id: message.id,
         payload: { data },
       });
+      return;
+    }
+
+    if (message.type === "asset_fetch") {
+      if (!meta?.authenticated) {
+        syncLogger.warn("LocalNodeServer", "Rejected asset fetch from unauthenticated socket", {
+          deviceId: meta?.deviceId,
+        });
+        return;
+      }
+      const payload = message.payload as { businessId: string; url: string };
+      if (payload.businessId !== this.options.businessId || !payload.url) {
+        this.send(socket, {
+          type: "asset_response",
+          id: message.id,
+          payload: { url: payload.url, base64: null, error: "business_mismatch" },
+        });
+        return;
+      }
+      try {
+        const path = getCachedImagePath(payload.url);
+        const info = await FileSystem.getInfoAsync(path);
+        if (!info.exists || info.isDirectory) {
+          this.send(socket, {
+            type: "asset_response",
+            id: message.id,
+            payload: { url: payload.url, base64: null, error: "not_cached" },
+          });
+          return;
+        }
+        const base64 = await FileSystem.readAsStringAsync(path, {
+          encoding: "base64",
+        });
+        syncLogger.info("LocalNodeServer", "Serving cached image to peer", {
+          url: payload.url,
+          bytes: Math.floor((base64.length * 3) / 4),
+          device_id: meta.deviceId,
+        });
+        this.send(socket, {
+          type: "asset_response",
+          id: message.id,
+          payload: { url: payload.url, base64 },
+        });
+      } catch (error) {
+        this.send(socket, {
+          type: "asset_response",
+          id: message.id,
+          payload: { url: payload.url, base64: null, error: String(error) },
+        });
+      }
       return;
     }
 

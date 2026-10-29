@@ -111,6 +111,18 @@ export class LocalNodeClient {
     string,
     { resolve: (result: ReferenceFetchResult) => void; reject: (error: Error) => void }
   >();
+  private pendingAssetReplies = new Map<
+    string,
+    {
+      resolve: (value: {
+        url: string;
+        base64: string | null;
+        contentType?: string | null;
+        error?: string | null;
+      }) => void;
+      reject: (error: Error) => void;
+    }
+  >();
   private eventBuffer: DomainEvent[] = [];
   private eventHandler: ((event: DomainEvent) => void) | null = null;
   private authenticated = false;
@@ -279,6 +291,32 @@ export class LocalNodeClient {
     });
   }
 
+  /** Fetch cached image bytes from the LAN node. */
+  requestAsset(
+    businessId: string,
+    url: string,
+  ): Promise<{ url: string; base64: string | null; contentType?: string | null; error?: string | null }> {
+    return new Promise((resolve, reject) => {
+      if (!this.isConnected()) {
+        reject(new Error("Local Node client not authenticated"));
+        return;
+      }
+      const messageId = generateUUID();
+      this.pendingAssetReplies.set(messageId, { resolve, reject });
+      this.send({
+        type: "asset_fetch",
+        id: messageId,
+        payload: { businessId, url },
+      });
+      setTimeout(() => {
+        if (this.pendingAssetReplies.has(messageId)) {
+          this.pendingAssetReplies.delete(messageId);
+          reject(new Error("Local Node asset fetch timeout"));
+        }
+      }, 15_000);
+    });
+  }
+
   subscribe(handler: (event: DomainEvent) => void): void {
     this.eventHandler = handler;
     // Flush buffered events received before subscription.
@@ -404,6 +442,22 @@ export class LocalNodeClient {
         syncLogger.info("LocalNodeClient", "Reference data received from node", {
           message_id: message.id,
         });
+      }
+      return;
+    }
+
+    if (message.type === "asset_response") {
+      const pending = this.pendingAssetReplies.get(message.id);
+      if (pending) {
+        this.pendingAssetReplies.delete(message.id);
+        pending.resolve(
+          message.payload as {
+            url: string;
+            base64: string | null;
+            contentType?: string | null;
+            error?: string | null;
+          },
+        );
       }
       return;
     }

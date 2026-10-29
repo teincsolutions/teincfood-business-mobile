@@ -184,6 +184,13 @@ function buildFileSystemAdapter() {
     },
     deleteAsync: async (path: string, opts?: { idempotent?: boolean }) => { await FileSystem.deleteAsync(path, opts); },
     readDirectoryAsync: async (path: string) => FileSystem.readDirectoryAsync(path),
+    readAsBase64Async: async (path: string) =>
+      FileSystem.readAsStringAsync(path, { encoding: "base64" }),
+    writeAsBase64Async: async (path: string, base64: string) => {
+      await FileSystem.writeAsStringAsync(path, base64, {
+        encoding: "base64",
+      });
+    },
     getDocumentDirectory: () => docDir,
   } as import("@teincfood/core").FileSystemAdapter;
 }
@@ -247,6 +254,7 @@ function wireServiceAdapters(): void {
     Object.assign(coreBusinessService as Record<string, unknown>, {
       fetchBusinessMembers: businessSrv.fetchBusinessMembers,
       inviteBusinessMember: (businessSrv as unknown as { inviteBusinessMember?: unknown }).inviteBusinessMember,
+      updateBusinessMember: (businessSrv as unknown as { updateBusinessMember?: unknown }).updateBusinessMember,
       removeBusinessMember: (businessSrv as unknown as { removeBusinessMember?: unknown }).removeBusinessMember,
       fetchBusinessMemberInvitations: (businessSrv as unknown as { fetchBusinessMemberInvitations?: unknown }).fetchBusinessMemberInvitations,
       revokeBusinessMemberInvitation: (businessSrv as unknown as { revokeBusinessMemberInvitation?: unknown }).revokeBusinessMemberInvitation,

@@ -3800,10 +3800,10 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.39.tgz"
   integrity sha512-oqjWeB61M499C61GEeiesR0WAtL8TyT35gJcqYVXFGHZITGnZkExAdKTn18GIEc+hqtUU0vlNPHySjvKVb2kOQ==
 
-"@teincfood/core@^0.10.3":
-  version "0.10.3"
-  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.10.3.tgz#563500569406e0711c54a41a7fb8b803d014b8ea"
-  integrity sha512-sVDPJkPjpTQXqKaZkmednmDZj3eAG40nZqGSusPpX9q9EkRSNJoG43WCCI9CcE2ky38abdxuetCx9rp4fg+BRw==
+"@teincfood/core@^0.10.4":
+  version "0.10.4"
+  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.10.4.tgz#4a28b97468597f6373bc4e1b6b820553e96d36e8"
+  integrity sha512-Wf2kputc+cEOIaWE6O7tzD8kVUGFJDquhj7JuWUJR3ESWbte7ind52OTQGuoJKxJcs9L5TWMAA1mauDuM0uXCw==
   dependencies:
     "@noble/ed25519" "^2.3.0"
     "@noble/hashes" "^1.8.0"
