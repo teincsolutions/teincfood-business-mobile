@@ -126,6 +126,11 @@ export default function OrderDetails({
     (candidate) => candidate.id === id || candidate.order_number === id,
   );
   const order = data?.data ?? pendingOrder;
+  const customerDisplay = order
+    ? getCustomerDisplay(
+        order as unknown as Parameters<typeof getCustomerDisplay>[0],
+      )
+    : null;
   const showDialog = (
     title: string,
     description: string,
@@ -252,11 +257,11 @@ export default function OrderDetails({
                     Name
                   </Text>
                   <Text fontSize="$4" fontWeight="500">
-                    {order.user?.full_name}
+                    {customerDisplay?.name ?? "Walk-in"}
                   </Text>
                 </YStack>
               </XStack>
-              {order.user?.phone && (
+              {customerDisplay?.phone && (
                 <XStack alignItems="center" gap="$3">
                   <YStack width={24} alignItems="center">
                     <Phone size={18} color="$colorMuted" />
@@ -266,11 +271,26 @@ export default function OrderDetails({
                       Phone
                     </Text>
                     <Text fontSize="$4" fontWeight="500">
-                      {order.user.phone}
+                      {customerDisplay.phone}
                     </Text>
                   </YStack>
                 </XStack>
               )}
+              {customerDisplay?.isWalkIn && customerDisplay.tellerName ? (
+                <XStack alignItems="center" gap="$3">
+                  <YStack width={24} alignItems="center">
+                    <Text fontSize="$5">🧑‍🍳</Text>
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize="$2" color="$colorMuted">
+                      Served by
+                    </Text>
+                    <Text fontSize="$4" fontWeight="500">
+                      {customerDisplay.tellerName}
+                    </Text>
+                  </YStack>
+                </XStack>
+              ) : null}
               {order.delivery_address && (
                 <XStack alignItems="flex-start" gap="$3">
                   <YStack width={24} alignItems="center" paddingTop="$1">

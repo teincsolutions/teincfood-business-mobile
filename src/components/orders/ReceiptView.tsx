@@ -10,7 +10,7 @@
  */
 import { ScrollView } from "react-native";
 import { YStack, XStack, Text, Separator } from "tamagui";
-import { formatPriceFromMinor } from "@teincfood/core";
+import { formatPriceFromMinor, getCustomerDisplay } from "@teincfood/core";
 import type { SellerOrder } from "@teincfood/core";
 
 const RECEIPT_WIDTH = 304;
@@ -75,7 +75,11 @@ function Line({
   );
 }
 
-export function ReceiptView({ order }: { order: SellerOrder | null | undefined }) {
+export function ReceiptView({
+  order,
+}: {
+  order: SellerOrder | null | undefined;
+}) {
   if (!order) {
     return (
       <YStack flex={1} alignItems="center" justifyContent="center" padding="$4">
@@ -92,7 +96,11 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
   const money = (minor?: number | null) =>
     formatPriceFromMinor(minor ?? 0, currency as string);
   const business = order.business;
-  const customer = order.customer_name || order.user?.full_name;
+  const customerDisplay = getCustomerDisplay(order);
+  const customer = customerDisplay.isWalkIn
+    ? order.customer_name || null
+    : customerDisplay.name;
+  const teller = customerDisplay.isWalkIn ? customerDisplay.tellerName : null;
 
   return (
     <ScrollView
@@ -121,6 +129,7 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
           <Line label="Date" value={fmtDate(order.inserted_at)} />
           <Line label="Type" value={orderTypeText(order)} />
           {customer ? <Line label="Customer" value={customer} /> : null}
+          {teller ? <Line label="Served by" value={teller} /> : null}
         </YStack>
 
         {/* Callout number */}
@@ -143,10 +152,22 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
             <Text flex={1} fontSize={11} fontWeight="700" color="$colorMuted">
               Item
             </Text>
-            <Text width={28} textAlign="right" fontSize={11} fontWeight="700" color="$colorMuted">
+            <Text
+              width={28}
+              textAlign="right"
+              fontSize={11}
+              fontWeight="700"
+              color="$colorMuted"
+            >
               Qty
             </Text>
-            <Text width={80} textAlign="right" fontSize={11} fontWeight="700" color="$colorMuted">
+            <Text
+              width={80}
+              textAlign="right"
+              fontSize={11}
+              fontWeight="700"
+              color="$colorMuted"
+            >
               Price
             </Text>
           </XStack>
@@ -169,7 +190,12 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
                 </XStack>
                 {addons.map((a: any, ai: number) => (
                   <XStack key={a.id ?? ai} justifyContent="space-between">
-                    <Text flex={1} fontSize={11} color="$colorMuted" paddingLeft="$3">
+                    <Text
+                      flex={1}
+                      fontSize={11}
+                      color="$colorMuted"
+                      paddingLeft="$3"
+                    >
                       + {a.name}
                     </Text>
                     <Text fontSize={11} color="$colorMuted">
@@ -188,7 +214,10 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
         <YStack gap="$1">
           <Line label="Subtotal" value={money(order.subtotal_minor)} />
           {order.delivery_fee_minor ? (
-            <Line label="Delivery Fee" value={money(order.delivery_fee_minor)} />
+            <Line
+              label="Delivery Fee"
+              value={money(order.delivery_fee_minor)}
+            />
           ) : null}
           {taxLines.map((tax: any, ti: number) => {
             const rate = tax.rate_basis_points
@@ -205,7 +234,9 @@ export function ReceiptView({ order }: { order: SellerOrder | null | undefined }
           {order.discount_minor ? (
             <Line label="Discount" value={`-${money(order.discount_minor)}`} />
           ) : null}
-          {order.tip_minor ? <Line label="Tip" value={money(order.tip_minor)} /> : null}
+          {order.tip_minor ? (
+            <Line label="Tip" value={money(order.tip_minor)} />
+          ) : null}
         </YStack>
 
         <Separator borderColor="$color" borderWidth={1} />
