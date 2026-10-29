@@ -52,7 +52,16 @@ export default function OfflineDeviceSettings() {
     setDevicesLoading(true);
     setDevicesError(null);
     try {
-      setDevices(await listBusinessDevices(businessId));
+      const rows = await listBusinessDevices(businessId);
+      setDevices(
+        rows.sort((a, b) => {
+          if (a.online !== b.online) return a.online ? -1 : 1;
+          return (
+            Date.parse(b.last_seen ?? "1970-01-01") -
+            Date.parse(a.last_seen ?? "1970-01-01")
+          );
+        }),
+      );
     } catch (error) {
       setDevicesError(
         error instanceof Error
@@ -287,9 +296,7 @@ export default function OfflineDeviceSettings() {
                     <Text
                       fontSize="$1"
                       color={
-                        device.online && !revoked
-                          ? "$green"
-                          : "$colorSecondary"
+                        device.online && !revoked ? "$green" : "$colorSecondary"
                       }
                     >
                       {revoked ? "Removed" : relativeTime(device.last_seen)}
