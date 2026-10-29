@@ -7,6 +7,9 @@ import { useOfflineOrderHydration } from '@teincfood/core';
 import { routeCapabilities } from '@/constants/route-capabilities';
 import { StartupReadinessGate } from '@/components/StartupReadinessGate';
 import { toast } from 'sonner-native';
+import { useAuthStore } from '@/stores/auth.store';
+import { useBusinessStore } from '@/stores/business.store';
+import { useOfflineAuth } from '@/hooks/useOfflineAuth';
 
 /** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
 function normalizeSegments(segments: string[]): string[] {
@@ -26,6 +29,10 @@ export default function SellerLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { data: membership } = useMyBusinessCapabilities();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const offlineMemberId = useAuthStore((s) => s.offlineMemberId);
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const { loading: offlineLoading, hasDevice } = useOfflineAuth();
 
   // Keep the offline reference cache (menus, roles, members, taxes, business
   // profile, operating hours) in sync while the restaurant is online.
@@ -36,6 +43,19 @@ export default function SellerLayout() {
   useOfflineOrderHydration();
 
   useEffect(() => {
+    // First online setup: require a device license before offline work starts.
+    // An offline member session already has one and skips this gate.
+    if (
+      accessToken &&
+      !offlineMemberId &&
+      activeBusinessId &&
+      !offlineLoading &&
+      !hasDevice
+    ) {
+      router.replace('/(auth)/offline-setup' as any);
+      return;
+    }
+
     const displayStore = useDisplayStore.getState();
     const currentPath = segments.join('/');
     if (displayStore.calloutDisplayEnabled && !currentPath.includes('display')) {
@@ -43,7 +63,7 @@ export default function SellerLayout() {
     } else if (displayStore.kitchenDisplayEnabled && !currentPath.includes('kitchen')) {
       router.replace('/(seller)/kitchen' as any);
     }
-  }, []);
+  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, router, segments]);
 
   useEffect(() => {
     if (!membership?.capabilities || segments.length < 1) return;

@@ -69,6 +69,14 @@ import * as dashboardSrv from "@/services/seller-dashboard.service";
 import * as analyticsSrv from "@/services/seller-analytics.service";
 import * as placesSrv from "@/services/places.service";
 import { setNotifyHandlers, setSyncFailureReporter } from "@teincfood/core";
+import {
+  setOfflineSecureStorage,
+  setOfflineRandomBytesProvider,
+  setOfflineSessionRecoveryProvider,
+  exchangeOfflineSession,
+} from "@teincfood/core";
+import * as SecureStore from "expo-secure-store";
+import { getRandomBytes } from "expo-crypto";
 import { toast } from "sonner-native";
 import { getObservability } from "@/utils/observability";
 import * as desktopImageCache from "@teincfood/core";
@@ -444,6 +452,36 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
     // that clear the offline session until the device is online and /health
     // proves the rejection came from a reachable backend.
     try { setAuthClearProvider(() => { void logoutAfterSessionFailure(); }); } catch {}
+    // Offline device license: private key in Keychain/Keystore, license in KV.
+    try {
+      setOfflineSecureStorage({
+        getItem: (key) => SecureStore.getItemAsync(key),
+        setItem: (key, value) => SecureStore.setItemAsync(key, value),
+        removeItem: (key) => SecureStore.deleteItemAsync(key),
+      });
+      setOfflineRandomBytesProvider((length) => getRandomBytes(length));
+    } catch {}
+    // Refresh-token death while online: try the device license before logout.
+    try {
+      setOfflineSessionRecoveryProvider(async () => {
+        const auth = useAuthStore.getState();
+        const businessId = useBusinessStore.getState().activeBusiness?.id;
+        if (!businessId || !auth.offlineMemberId) return null;
+        try {
+          const result = await exchangeOfflineSession({
+            businessId,
+            memberId: auth.offlineMemberId,
+          });
+          useAuthStore.getState().setTokens(result.access_token, result.refresh_token);
+          return {
+            access_token: result.access_token,
+            refresh_token: result.refresh_token,
+          };
+        } catch {
+          return null;
+        }
+      });
+    } catch {}
     try {
       const deviceId = getAppInstanceId();
       if (deviceId) setAppInstanceId(deviceId);
@@ -501,8 +539,16 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
         },
         getBusiness: () => useBusinessStore.getState().activeBusiness as unknown as { id: string; ownerId?: string; owner_id?: string } | null,
         getAuth: () => {
-          const s = useAuthStore.getState() as unknown as { user: unknown | null; accessToken: string | null };
-          return { user: s.user ?? null, accessToken: s.accessToken ?? null };
+          const s = useAuthStore.getState() as unknown as {
+            user: unknown | null;
+            accessToken: string | null;
+            offlineMemberId: string | null;
+          };
+          return {
+            user: s.user ?? null,
+            accessToken: s.accessToken ?? null,
+            localSession: Boolean(s.offlineMemberId),
+          };
         },
         discovery: new ZeroconfDiscovery(),
         transport: new TcpTransport(),

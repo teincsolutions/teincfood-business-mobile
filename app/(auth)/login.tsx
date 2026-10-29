@@ -473,6 +473,20 @@ export default function LoginScreen() {
                 Logging in as {roleLabel} · Switch Role
               </Text>
             </Button>
+            <Button
+              variant="ghost"
+              height={40}
+              onPress={() => router.push({ pathname: "/(auth)/offline-login" })}
+            >
+              <Text
+                fontSize="$3"
+                color="$colorSecondary"
+                fontWeight="600"
+                fontFamily="$body"
+              >
+                Use offline access
+              </Text>
+            </Button>
           </YStack>
         </ScrollView>
       </YStack>

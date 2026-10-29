@@ -9,6 +9,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
+import { useBusinessStore } from "@/stores/business.store";
+import { getOfflineSessionState } from "@teincfood/core";
 import { useSecurityStore } from "@/stores/security.store";
 import { useCorePrime } from "@/core/bootstrap";
 import { queryClient } from "@/providers/QueryProvider";
@@ -47,6 +49,8 @@ export default function SplashScreen() {
   const authHydrated = useAuthStore((s) => s.isHydrated);
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const offlineMemberId = useAuthStore((s) => s.offlineMemberId);
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const onboardingHydrated = useOnboardingStore((s) => s.isHydrated);
   const hasSeenOnboarding = useOnboardingStore((s) => s.hasSeenOnboarding);
@@ -140,6 +144,29 @@ export default function SplashScreen() {
       if (accessToken) console.log("[DEBUG] Access token:", accessToken);
 
       if (!accessToken) {
+        // Offline member session: no cloud token, but the device license and
+        // local PIN session are valid. Never send this user back to online login.
+        if (offlineMemberId && user) {
+          try {
+            const offline = await getOfflineSessionState(activeBusinessId);
+            if (!offline.evaluation.entitled) {
+              clearAuth();
+              setRedirectTarget("/(auth)/offline-login");
+              return;
+            }
+          } catch {
+            clearAuth();
+            setRedirectTarget("/(auth)/offline-login");
+            return;
+          }
+
+          if (persistedRole === "seller") setRedirectTarget("/(seller)/");
+          else if (persistedRole === "rider") setRedirectTarget("/(rider)/");
+          else if (persistedRole === "fleet_manager") setRedirectTarget("/(fleet)/");
+          else setRedirectTarget("/(auth)/role");
+          return;
+        }
+
         // No session — check prerequisites in order: onboarding → location → role → login
         if (!hasSeenOnboarding) {
           setRedirectTarget("/(auth)/onboarding");
@@ -153,6 +180,15 @@ export default function SplashScreen() {
           setRedirectTarget("/(auth)/role");
           return;
         }
+
+        try {
+          const offline = await getOfflineSessionState(activeBusinessId);
+          if (offline.hasDevice && offline.members.length > 0) {
+            setRedirectTarget("/(auth)/offline-login");
+            return;
+          }
+        } catch {}
+
         setRedirectTarget("/(auth)/login");
         return;
       }
@@ -244,6 +280,9 @@ export default function SplashScreen() {
   }, [
     storesHydrated,
     accessToken,
+    offlineMemberId,
+    user,
+    activeBusinessId,
     persistedRole,
     isBiometricEnabled,
     retryCount,
