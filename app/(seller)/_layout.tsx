@@ -32,7 +32,7 @@ export default function SellerLayout() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const offlineMemberId = useAuthStore((s) => s.offlineMemberId);
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const { loading: offlineLoading, hasDevice } = useOfflineAuth();
+  const { loading: offlineLoading, hasDevice, evaluation: offlineEvaluation } = useOfflineAuth();
 
   // Keep the offline reference cache (menus, roles, members, taxes, business
   // profile, operating hours) in sync while the restaurant is online.
@@ -50,7 +50,7 @@ export default function SellerLayout() {
       !offlineMemberId &&
       activeBusinessId &&
       !offlineLoading &&
-      !hasDevice
+      (!hasDevice || (offlineEvaluation != null && !offlineEvaluation.valid))
     ) {
       router.replace('/(auth)/offline-setup' as any);
       return;
@@ -63,7 +63,7 @@ export default function SellerLayout() {
     } else if (displayStore.kitchenDisplayEnabled && !currentPath.includes('kitchen')) {
       router.replace('/(seller)/kitchen' as any);
     }
-  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, router, segments]);
+  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, offlineEvaluation, router, segments]);
 
   useEffect(() => {
     if (!membership?.capabilities || segments.length < 1) return;
