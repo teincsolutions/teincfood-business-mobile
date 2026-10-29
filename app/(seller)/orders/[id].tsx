@@ -93,8 +93,11 @@ export default function OrderDetails({
   const media = useMedia();
   const insets = useSafeAreaInsets();
 
-  // Live order updates for this specific order
-  const { data, isLoading, error } = useSellerOrderQuery(id as string);
+  // Live order updates for this specific order. Offline-created orders live
+  // in the pending outbox until the cloud acknowledges them, so fall back to
+  // that snapshot when the SQLite read model has not received the order yet.
+  const { data, isLoading } = useSellerOrderQuery(id as string);
+  const pendingOrders = usePendingOrders();
   const acceptMutation = useAcceptOrderMutation();
   const rejectMutation = useRejectOrderMutation();
   const startPreparingMutation = useStartPreparingOrderMutation();
@@ -119,7 +122,10 @@ export default function OrderDetails({
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
   const printMutation = usePrintReceiptMutation();
 
-  const order = data?.data;
+  const pendingOrder = pendingOrders.find(
+    (candidate) => candidate.id === id || candidate.order_number === id,
+  );
+  const order = data?.data ?? pendingOrder;
   const showDialog = (
     title: string,
     description: string,
@@ -146,7 +152,7 @@ export default function OrderDetails({
     printMutation.mutate(order);
   };
 
-  if (isLoading) {
+  if (isLoading && !pendingOrder) {
     return (
       <YStack
         flex={1}
@@ -162,7 +168,7 @@ export default function OrderDetails({
     );
   }
 
-  if (error || !order) {
+  if (!order) {
     return (
       <YStack
         flex={1}
