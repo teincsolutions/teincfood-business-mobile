@@ -325,9 +325,15 @@ function AppShell() {
   // users who selected "seller" only have roles: ["buyer"] until they create
   // a business.
   const isSeller =
-    isAuthenticated && (role === "seller" || user?.role === "seller");
+    isAuthenticated &&
+    (role === "seller" ||
+      user?.role === "seller" ||
+      Boolean(user?.roles?.includes("seller")));
   const isRider =
-    cloudAuthenticated && (role === "rider" || user?.role === "rider");
+    cloudAuthenticated &&
+    (role === "rider" ||
+      user?.role === "rider" ||
+      Boolean(user?.roles?.includes("rider")));
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen

@@ -23,7 +23,7 @@ function memberAsUser(member: {
     phone: null,
     avatar_url: null,
     has_password: false,
-    roles: [member.role],
+    roles: ["seller", member.role],
     email_verified_at: null,
     phone_verified_at: null,
     kyc_status: "none",
