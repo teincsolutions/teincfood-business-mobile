@@ -60,22 +60,17 @@ export default function SellerSettings() {
   const canManageTax = useHasCapability("tax_rules_manage");
   const { data: membership } = useMyBusinessCapabilities();
   const myCaps = new Set(membership?.capabilities ?? []);
-  const [isOpen, setIsOpen] = useState(
-    activeBusiness?.manually_closed !== undefined
-      ? !activeBusiness.manually_closed
-      : activeBusiness?.is_open !== false,
-  );
+  // `is_open` is the backend's actual online-ordering availability (manual
+  // pause AND operating hours). `manually_closed` alone kept the switch on
+  // outside business hours even though buyers could not order.
+  const manuallyClosed = activeBusiness?.manually_closed === true;
+  const storeOpen = activeBusiness?.is_open === true;
+  const outsideHours = activeBusiness?.is_open === false && !manuallyClosed;
+
+  const [isOpen, setIsOpen] = useState(storeOpen);
   const [isTogglingStore, setIsTogglingStore] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [activeSection, setActiveSection] = useState("store");
-
-  // The switch must follow the persisted business, not a one-shot initial
-  // value: a stale/absent field used to leave it stuck "on" after every
-  // remount (toggle appeared to reverse when reopening Settings).
-  const storeOpen =
-    activeBusiness?.manually_closed !== undefined
-      ? !activeBusiness.manually_closed
-      : activeBusiness?.is_open !== false;
 
   useEffect(() => {
     if (!isTogglingStore) setIsOpen(storeOpen);
@@ -140,7 +135,7 @@ export default function SellerSettings() {
   };
 
   const handleToggleStore = async (open: boolean) => {
-    if (!activeBusiness?.id || !canManageProfile) return;
+    if (!activeBusiness?.id || !canManageProfile || outsideHours) return;
     const previous = isOpen;
     setIsOpen(open);
     setIsTogglingStore(true);
@@ -316,18 +311,22 @@ export default function SellerSettings() {
             Online Ordering
           </Text>
           <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
-            {isOpen
-              ? "Online ordering is on — buyers can place orders"
-              : "Online ordering is paused — buyers cannot place orders"}
+            {outsideHours
+              ? "Online ordering is closed — outside your operating hours"
+              : isOpen
+                ? "Online ordering is on — buyers can place orders"
+                : "Online ordering is paused — buyers cannot place orders"}
           </Text>
           <Text color="$colorSecondary" fontSize="$2" fontFamily="$body" marginTop="$1">
-            Pausing only stops new online orders. Walk-in POS orders still work during business hours.
+            {outsideHours
+              ? "Update your operating hours to start accepting online orders."
+              : "Pausing only stops new online orders. Walk-in POS orders still work during business hours."}
           </Text>
         </YStack>
         <Switch
           size="$5"
           checked={isOpen}
-          disabled={!canManageProfile}
+          disabled={!canManageProfile || outsideHours}
           onCheckedChange={handleToggleStore}
           backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
         >

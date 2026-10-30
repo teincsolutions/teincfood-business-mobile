@@ -41,10 +41,10 @@ export default function SellerDashboard() {
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
-  // The toggle reflects the seller's manual pause, not the (automatic)
-  // outside-hours state, so it does not flip off on its own at closing time.
+  // Reflect actual availability: manual pause AND operating hours.
   const isManuallyClosed = activeBusiness?.manually_closed === true;
-  const isStoreOpen = !isManuallyClosed;
+  const isStoreOpen = activeBusiness?.is_open === true;
+  const outsideHours = activeBusiness?.is_open === false && !isManuallyClosed;
 
   // Fetch business KYC status (fresh every mount)
   const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
@@ -75,7 +75,7 @@ export default function SellerDashboard() {
   }, [refetch]);
 
   const handleToggleStore = useCallback(async () => {
-    if (!activeBusiness?.id) return;
+    if (!activeBusiness?.id || outsideHours) return;
     setTogglingStore(true);
     try {
       const result = await businessService.toggleBusinessOpen(
@@ -97,7 +97,7 @@ export default function SellerDashboard() {
     } finally {
       setTogglingStore(false);
     }
-  }, [activeBusiness?.id]);
+  }, [activeBusiness?.id, outsideHours]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -191,16 +191,18 @@ export default function SellerDashboard() {
             )}
             <XStack gap="$2" alignItems="center">
               <Text fontSize="$3">
-                {isManuallyClosed
-                  ? "Online ordering paused"
-                  : isStoreOpen
-                    ? "Online ordering on"
-                    : "Outside business hours"}
+                {outsideHours
+                  ? "Closed — outside business hours"
+                  : isManuallyClosed
+                    ? "Online ordering paused"
+                    : isStoreOpen
+                      ? "Online ordering on"
+                      : "Online ordering paused"}
               </Text>
               <Switch
                 size="$8"
                 checked={isStoreOpen}
-                disabled={togglingStore}
+                disabled={togglingStore || outsideHours}
                 onCheckedChange={handleToggleStore}
                 backgroundColor={isStoreOpen ? "$primary" : "$color.gray600"}
               >
