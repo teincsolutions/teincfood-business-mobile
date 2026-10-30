@@ -7,8 +7,14 @@ import { useBusinessStore } from "@/stores/business.store";
 
 const PLANS_KEY = ["subscription-plans"];
 const ENTITLEMENTS_KEY = ["reference-data", "subscription:entitlements"];
-const subscriptionKey = (businessId: string | undefined) => ["my-subscription", businessId];
-const promosKey = (businessId: string | undefined) => ["business-promos", businessId];
+const subscriptionKey = (businessId: string | undefined) => [
+  "my-subscription",
+  businessId,
+];
+const promosKey = (businessId: string | undefined) => [
+  "business-promos",
+  businessId,
+];
 
 /** Audience for plan filtering: merchant sellers vs delivery-provider fleets. */
 export function usePlanAudience(): string {
@@ -26,7 +32,9 @@ export function useSubscriptionPlansQuery() {
     queryFn: async () => {
       const plans = await subscriptionService.listSubscriptionPlans(audience);
       // Client-side guard: only this role's plans, single-column list.
-      const mine = plans.filter((p) => (!p.business_type ? true : p.business_type === audience));
+      const mine = plans.filter((p) =>
+        !p.business_type ? true : p.business_type === audience,
+      );
       return mine.length > 0 ? mine : plans;
     },
     // Never fire while the cloud is unreachable — the request would hang and
@@ -124,5 +132,74 @@ export function useDeletePromoMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: promosKey(businessId) });
     },
+  });
+}
+
+const billingKey = (businessId: string | undefined) => ["billing", businessId];
+
+export function useBillingQuery() {
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const online = useIsEffectivelyOnline();
+  return useQuery({
+    queryKey: billingKey(businessId),
+    queryFn: () => subscriptionService.fetchBilling(businessId!),
+    enabled: !!businessId && online,
+  });
+}
+
+function invalidateBilling(
+  queryClient: ReturnType<typeof useQueryClient>,
+  businessId: string | undefined,
+) {
+  queryClient.invalidateQueries({ queryKey: billingKey(businessId) });
+  queryClient.invalidateQueries({ queryKey: subscriptionKey(businessId) });
+  queryClient.invalidateQueries({ queryKey: PLANS_KEY });
+  if (businessId) {
+    void referenceSyncService
+      .sync({ businessId, keys: ["subscription:entitlements"], force: true })
+      .catch(() => undefined);
+  }
+}
+
+export function useUpdateBillingProfileMutation() {
+  const queryClient = useQueryClient();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useMutation({
+    mutationFn: (
+      payload: Parameters<typeof subscriptionService.updateBillingProfile>[1],
+    ) => subscriptionService.updateBillingProfile(businessId!, payload),
+    onSuccess: () => invalidateBilling(queryClient, businessId),
+  });
+}
+
+export function useCheckoutSubscriptionMutation() {
+  const queryClient = useQueryClient();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useMutation({
+    mutationFn: (payload: subscriptionService.SubscriptionCheckoutInput) =>
+      subscriptionService.checkoutSubscription(businessId!, payload),
+    onSuccess: () => invalidateBilling(queryClient, businessId),
+  });
+}
+
+export function useCancelSubscriptionMutation() {
+  const queryClient = useQueryClient();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useMutation({
+    mutationFn: () => subscriptionService.cancelSubscription(businessId!),
+    onSuccess: () => invalidateBilling(queryClient, businessId),
+  });
+}
+
+export function useResumeSubscriptionMutation() {
+  const queryClient = useQueryClient();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useMutation({
+    mutationFn: () => subscriptionService.resumeSubscription(businessId!),
+    onSuccess: () => invalidateBilling(queryClient, businessId),
   });
 }

@@ -18,10 +18,14 @@ import {
   useSubscriptionPlansQuery,
   useMySubscriptionQuery,
   useUpdateSubscriptionMutation,
+  useBillingQuery,
+  useCheckoutSubscriptionMutation,
   useBusinessPromosQuery,
   useCreatePromoMutation,
   useDeletePromoMutation,
 } from "@/hooks/useSubscription";
+import { BillingCard } from "@/components/subscription/BillingCard";
+import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import type { SubscriptionPlan } from "@/services/subscription.service";
@@ -327,10 +331,13 @@ function PlanCard({
 function PlanTab() {
   const plansQuery = useSubscriptionPlansQuery();
   const subQuery = useMySubscriptionQuery();
+  const billingQuery = useBillingQuery();
   const update = useUpdateSubscriptionMutation();
+  const checkout = useCheckoutSubscriptionMutation();
   const online = useIsEffectivelyOnline();
   const [selecting, setSelecting] = useState<string | null>(null);
   const [yearly, setYearly] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
   const currentPlanId =
     (subQuery.data?.configuration.subscription_plan_id as string | null) ??
@@ -390,71 +397,164 @@ function PlanTab() {
   }
 
   const confirmSelect = (plan: SubscriptionPlan) => {
-    Alert.alert(
-      `Switch to ${plan.name}?`,
-      `${formatMoney(plan.monthly_fee_minor, plan.currency)}/mo • ${plan.commission_rate_percent}% commission. Billed by your payment provider.`,
-      [
-        { text: `Cancel`, style: `cancel` },
+    const monthly = plan.monthly_fee_minor || 0;
+    const yearlyPrice = plan.yearly_fee_minor || 0;
+    const price = yearly && yearlyPrice > 0 ? yearlyPrice : monthly;
+    const profile = billingQuery.data?.billing_profile;
+    const status = billingQuery.data?.configuration.subscription_status;
+
+    if (price <= 0) {
+      setSelecting(plan.id);
+      update.mutate(plan.id, {
+        onSuccess: () => {
+          setSelecting(null);
+          toast.success(`Plan updated to ${plan.name}`);
+        },
+        onError: (e) => {
+          setSelecting(null);
+          toast.error(e instanceof Error ? e.message : String(e));
+        },
+      });
+      return;
+    }
+
+    if (!profile?.has_momo) {
+      toast.error("Add a mobile-money number in Billing first");
+      return;
+    }
+
+    if (status === "none") {
+      setSelecting(plan.id);
+      checkout.mutate(
         {
-          text: `Confirm`,
-          onPress: () => {
-            setSelecting(plan.id);
-            update.mutate(plan.id, {
-              onSuccess: () => {
-                setSelecting(null);
-                toast.success(`Plan updated to ${plan.name}`);
-              },
-              onError: (e) => {
-                setSelecting(null);
-                const msg = e instanceof Error ? e.message : String(e);
-                toast.error(msg);
-              },
-            });
+          plan_id: plan.id,
+          cycle: yearly ? "year" : "month",
+          start_trial: true,
+          phone: profile.momo_phone ?? undefined,
+          provider: profile.momo_provider ?? undefined,
+        },
+        {
+          onSuccess: () => {
+            setSelecting(null);
+            toast.success(`Trial started on ${plan.name}`);
+            void billingQuery.refetch();
+            void subQuery.refetch();
+          },
+          onError: (e) => {
+            setSelecting(null);
+            toast.error(e instanceof Error ? e.message : String(e));
           },
         },
-      ],
-    );
+      );
+      return;
+    }
+
+    setPendingPlan(plan);
   };
 
   return (
-    <FlatList
-      data={plans}
-      keyExtractor={(p) => p.id}
-      numColumns={1}
-      initialNumToRender={10}
-      windowSize={5}
-      maxToRenderPerBatch={10}
-      removeClippedSubviews
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={plansQuery.isRefetching || subQuery.isRefetching}
-          onRefresh={() => {
-            void plansQuery.refetch();
-            void subQuery.refetch();
-          }}
-        />
-      }
-      ListHeaderComponent={
-        <BillingPeriodToggle yearly={yearly} onChange={setYearly} />
-      }
-      ListEmptyComponent={
-        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-          {`No plans available right now.`}
-        </Text>
-      }
-      renderItem={({ item }) => (
-        <PlanCard
-          plan={item}
-          isCurrent={currentPlanId === item.id}
-          isPopular={popularId === item.id && currentPlanId !== item.id}
-          yearly={yearly}
-          updating={update.isPending && selecting === item.id}
-          onSelect={() => confirmSelect(item)}
-        />
-      )}
-    />
+    <>
+      <FlatList
+        data={plans}
+        keyExtractor={(p) => p.id}
+        numColumns={1}
+        initialNumToRender={10}
+        windowSize={5}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: 12, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={plansQuery.isRefetching || subQuery.isRefetching}
+            onRefresh={() => {
+              void plansQuery.refetch();
+              void subQuery.refetch();
+            }}
+          />
+        }
+        ListHeaderComponent={
+          <YStack gap="$3">
+            <BillingCard />
+            <BillingPeriodToggle yearly={yearly} onChange={setYearly} />
+          </YStack>
+        }
+        ListEmptyComponent={
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            {`No plans available right now.`}
+          </Text>
+        }
+        renderItem={({ item }) => (
+          <PlanCard
+            plan={item}
+            isCurrent={currentPlanId === item.id}
+            isPopular={popularId === item.id && currentPlanId !== item.id}
+            yearly={yearly}
+            updating={
+              (update.isPending || checkout.isPending) && selecting === item.id
+            }
+            onSelect={() => confirmSelect(item)}
+          />
+        )}
+      />
+      <MomoChargeSheet
+        open={!!pendingPlan}
+        title={
+          pendingPlan ? `Switch to ${pendingPlan.name}` : "Subscription payment"
+        }
+        subtitle={
+          pendingPlan
+            ? `${formatMoney(
+                yearly && pendingPlan.yearly_fee_minor > 0
+                  ? pendingPlan.yearly_fee_minor
+                  : pendingPlan.monthly_fee_minor,
+                pendingPlan.currency,
+              )} ${yearly ? "per year" : "per month"}`
+            : undefined
+        }
+        baseMinor={
+          pendingPlan
+            ? yearly && pendingPlan.yearly_fee_minor > 0
+              ? pendingPlan.yearly_fee_minor
+              : pendingPlan.monthly_fee_minor
+            : 0
+        }
+        feeMinor={
+          pendingPlan
+            ? Math.ceil(
+                ((yearly && pendingPlan.yearly_fee_minor > 0
+                  ? pendingPlan.yearly_fee_minor
+                  : pendingPlan.monthly_fee_minor) *
+                  (billingQuery.data?.configuration.momo_fee_basis_points ??
+                    195)) /
+                  10000,
+              )
+            : 0
+        }
+        currency={pendingPlan?.currency ?? "GHS"}
+        defaultPhone={billingQuery.data?.billing_profile.momo_phone}
+        defaultProvider={billingQuery.data?.billing_profile.momo_provider}
+        onStart={async (nextPhone, nextProvider) => {
+          if (!pendingPlan) return { charge: null, done: true };
+          const response = await checkout.mutateAsync({
+            plan_id: pendingPlan.id,
+            cycle: yearly ? "year" : "month",
+            start_trial: false,
+            phone: nextPhone,
+            provider: nextProvider,
+          });
+          return { charge: response.charge ?? null, done: !response.charge };
+        }}
+        onSuccess={() => {
+          setPendingPlan(null);
+          void billingQuery.refetch();
+          void subQuery.refetch();
+          void plansQuery.refetch();
+          toast.success("Subscription payment confirmed");
+        }}
+        onClose={() => setPendingPlan(null)}
+      />
+    </>
   );
 }
 

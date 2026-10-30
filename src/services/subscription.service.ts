@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { MomoCharge } from "@/types/payment";
 
 export interface SubscriptionPlan {
   id: string;
@@ -33,9 +34,15 @@ export interface Entitlements extends Record<string, unknown> {
   business_type: string;
 }
 
-export async function listSubscriptionPlans(businessType?: string): Promise<SubscriptionPlan[]> {
-  const qs = businessType ? `?business_type=${encodeURIComponent(businessType)}` : ``;
-  const res = await api.get<{ data: SubscriptionPlan[] }>(`/subscription-plans${qs}`);
+export async function listSubscriptionPlans(
+  businessType?: string,
+): Promise<SubscriptionPlan[]> {
+  const qs = businessType
+    ? `?business_type=${encodeURIComponent(businessType)}`
+    : ``;
+  const res = await api.get<{ data: SubscriptionPlan[] }>(
+    `/subscription-plans${qs}`,
+  );
   // axios interceptor unwraps data, but reference service expects nested
   return (res as unknown as { data: SubscriptionPlan[] }).data ?? [];
 }
@@ -52,7 +59,15 @@ export async function fetchMySubscription(businessId: string): Promise<{
       available_plans: SubscriptionPlan[];
     };
   }>(`/businesses/${businessId}/subscription`);
-  return (res as unknown as { data: { configuration: PaymentConfiguration; entitlements: Entitlements; available_plans: SubscriptionPlan[] } }).data;
+  return (
+    res as unknown as {
+      data: {
+        configuration: PaymentConfiguration;
+        entitlements: Entitlements;
+        available_plans: SubscriptionPlan[];
+      };
+    }
+  ).data;
 }
 
 export async function updateMySubscription(
@@ -62,5 +77,129 @@ export async function updateMySubscription(
   const res = await api.patch<{
     data: { configuration: PaymentConfiguration; entitlements: Entitlements };
   }>(`/businesses/${businessId}/subscription`, payload);
-  return (res as unknown as { data: { configuration: PaymentConfiguration; entitlements: Entitlements } }).data;
+  return (
+    res as unknown as {
+      data: { configuration: PaymentConfiguration; entitlements: Entitlements };
+    }
+  ).data;
+}
+
+export interface BillingProfile {
+  business_id: string;
+  has_momo: boolean;
+  momo_phone?: string | null;
+  momo_phone_last4?: string | null;
+  momo_provider?: string | null;
+  billing_email?: string | null;
+  auto_renew: boolean;
+  consent_at?: string | null;
+  consent_version?: string | null;
+  failed_attempts?: number;
+}
+
+export interface SubscriptionInvoice {
+  id: string;
+  plan_id: string | null;
+  billing_cycle: string;
+  base_amount_minor: number;
+  fee_minor: number;
+  amount_minor: number;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  due_at: string;
+  status: string;
+  reference: string;
+  payment_reference?: string | null;
+  paid_at?: string | null;
+  provider_fee_minor?: number | null;
+  attempt_count: number;
+}
+
+export interface BillingOverview {
+  configuration: PaymentConfiguration & {
+    momo_fee_basis_points?: number;
+    subscription_amount_override_minor?: number | null;
+    subscription_cycle_override?: string | null;
+    cancel_at_period_end?: boolean;
+  };
+  billing_profile: BillingProfile;
+  upcoming_invoice: SubscriptionInvoice | null;
+  invoices: SubscriptionInvoice[];
+  available_plans: SubscriptionPlan[];
+  entitlements: Entitlements;
+}
+
+export interface SubscriptionCheckoutInput {
+  plan_id: string;
+  cycle?: "month" | "year";
+  start_trial?: boolean;
+  phone?: string;
+  provider?: string;
+  address?: string;
+}
+
+export interface SubscriptionCheckoutResponse {
+  status: string;
+  configuration?: PaymentConfiguration;
+  upcoming_invoice?: SubscriptionInvoice | null;
+  invoice?: SubscriptionInvoice | null;
+  charge?: MomoCharge | null;
+}
+
+export async function fetchBilling(
+  businessId: string,
+): Promise<BillingOverview> {
+  const res = await api.get<{ data: BillingOverview }>(
+    `/businesses/${businessId}/billing`,
+  );
+  return (res as unknown as { data: BillingOverview }).data;
+}
+
+export async function updateBillingProfile(
+  businessId: string,
+  payload: {
+    phone?: string;
+    provider?: string;
+    billing_email?: string;
+    auto_renew?: boolean;
+    consent_version?: string;
+  },
+): Promise<BillingProfile> {
+  const res = await api.put<{ data: BillingProfile }>(
+    `/businesses/${businessId}/billing/profile`,
+    payload,
+  );
+  return (res as unknown as { data: BillingProfile }).data;
+}
+
+export async function checkoutSubscription(
+  businessId: string,
+  payload: SubscriptionCheckoutInput,
+): Promise<SubscriptionCheckoutResponse> {
+  const res = await api.post<{ data: SubscriptionCheckoutResponse }>(
+    `/businesses/${businessId}/subscription/checkout`,
+    payload,
+  );
+  return (res as unknown as { data: SubscriptionCheckoutResponse }).data;
+}
+
+export async function cancelSubscription(
+  businessId: string,
+): Promise<PaymentConfiguration> {
+  const res = await api.post<{ data: PaymentConfiguration }>(
+    `/businesses/${businessId}/subscription/cancel`,
+    {},
+  );
+  return (res as unknown as { data: PaymentConfiguration }).data;
+}
+
+export async function resumeSubscription(
+  businessId: string,
+): Promise<PaymentConfiguration> {
+  const res = await api.post<{ data: PaymentConfiguration }>(
+    `/businesses/${businessId}/subscription/resume`,
+    {},
+  );
+  return (res as unknown as { data: PaymentConfiguration }).data;
 }

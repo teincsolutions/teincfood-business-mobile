@@ -87,6 +87,8 @@ import {
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { printService } from "@/services/print.service";
+import { paymentService } from "@/services/payment.service";
+import type { MomoProvider, MomoQuote } from "@/types/payment";
 import type {
   MenuItem,
   MenuItemVariantResponse,
@@ -812,6 +814,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     string | null
   >(null);
   const [showClosedDialog, setShowClosedDialog] = useState(false);
+  const [momoPhone, setMomoPhone] = useState("");
+  const [momoProvider, setMomoProvider] = useState<MomoProvider>("mtn");
+  const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
   const router = useRouter();
   const paymentFlow = usePOSPaymentFlow();
   const isCloudReachable = useConnectivityStore(
@@ -874,6 +879,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   // Prefer the authoritative cloud preview; fall back to the local engine.
   const total = serverPricing?.total_minor ?? localPricing?.total_minor ?? 0;
   const taxLines = serverPricing?.tax_lines ?? localPricing?.tax_lines ?? [];
+  const payableTotal =
+    checkoutForm.pos_payment_method === "mobile_money" && momoQuote
+      ? momoQuote.total_minor
+      : total;
   const showLocalPricing = !serverPricing && !!localPricing;
 
   const orderTypes: { key: POSOrderType; label: string }[] = [
@@ -898,10 +907,43 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       key: "mobile_money",
       label: "Mobile Money",
       icon: Smartphone,
-      description: isCloudReachable ? "Pay via Paystack" : "Requires internet",
+      description: isCloudReachable ? "Approve prompt on customer phone" : "Requires internet",
       disabled: !isCloudReachable,
     },
   ];
+
+  // Prefill the customer's phone when the teller has already captured it.
+  useEffect(() => {
+    if (!momoPhone && checkoutForm.customer_phone) {
+      setMomoPhone(checkoutForm.customer_phone);
+    }
+  }, [checkoutForm.customer_phone, momoPhone]);
+
+  // Show the customer-paid MoMo fee before the order is placed.
+  useEffect(() => {
+    if (
+      checkoutForm.pos_payment_method !== "mobile_money" ||
+      !activeBusiness?.id ||
+      total <= 0
+    ) {
+      setMomoQuote(null);
+      return;
+    }
+
+    let cancelled = false;
+    paymentService
+      .getMomoQuote({ business_id: activeBusiness.id, amount_minor: total })
+      .then((response) => {
+        if (!cancelled) setMomoQuote(response.data);
+      })
+      .catch(() => {
+        if (!cancelled) setMomoQuote(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBusiness?.id, checkoutForm.pos_payment_method, total]);
 
   // Switch to cash automatically when mobile money is selected offline.
   useEffect(() => {
@@ -1005,7 +1047,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               setLastCompletedOrderId(orderId);
             }
             useCustomerDisplayStore.getState().setPaymentStatus("processing");
-            paymentFlow.startCheckout(orderId, total);
+            paymentFlow.startCheckout(orderId, total, {
+              phone: momoPhone,
+              provider: momoProvider,
+            });
           }
         },
         onError: (error) => {
@@ -1052,6 +1097,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     ) {
       toast.error("Mobile money requires an internet connection");
       updateCheckoutForm({ pos_payment_method: "cash" });
+      return;
+    }
+
+    if (
+      checkoutForm.pos_payment_method === "mobile_money" &&
+      momoPhone.replace(/\D/g, "").length < 9
+    ) {
+      toast.error("Enter the customer mobile-money number");
       return;
     }
 
@@ -1327,6 +1380,70 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             </XStack>
           </YStack>
 
+          {checkoutForm.pos_payment_method === "mobile_money" ? (
+            <YStack
+              gap="$3"
+              padding="$4"
+              backgroundColor="$backgroundStrong"
+              borderRadius="$5"
+            >
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Customer Mobile Money
+              </Text>
+              <XStack gap="$2">
+                {[
+                  { key: "mtn" as MomoProvider, label: "MTN" },
+                  { key: "vod" as MomoProvider, label: "Telecel" },
+                  { key: "atl" as MomoProvider, label: "AirtelTigo" },
+                ].map((provider) => {
+                  const selected = momoProvider === provider.key;
+                  return (
+                    <YStack
+                      key={provider.key}
+                      flex={1}
+                      alignItems="center"
+                      paddingVertical="$3"
+                      borderRadius="$3"
+                      borderWidth={1}
+                      borderColor={selected ? "$primary" : "$borderColor"}
+                      backgroundColor={
+                        selected ? "$primary" : "$backgroundSoft"
+                      }
+                      onPress={() => setMomoProvider(provider.key)}
+                    >
+                      <Text
+                        fontSize="$2"
+                        fontWeight="700"
+                        fontFamily="$body"
+                        color={selected ? "white" : "$color"}
+                      >
+                        {provider.label}
+                      </Text>
+                    </YStack>
+                  );
+                })}
+              </XStack>
+              <Input
+                value={momoPhone}
+                onChangeText={setMomoPhone}
+                placeholder="Customer MoMo number (e.g. 0551234987)"
+                keyboardType="phone-pad"
+                backgroundColor="$backgroundSoft"
+                borderWidth={0}
+                height={48}
+              />
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                The customer approves the prompt on their phone. No browser is
+                opened.
+              </Text>
+            </YStack>
+          ) : null}
+
           {/* Bill Details */}
           <YStack
             padding="$5"
@@ -1452,6 +1569,42 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   )}
               </>
             )}
+            {checkoutForm.pos_payment_method === "mobile_money" && momoQuote ? (
+              <>
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text
+                    fontSize="$4"
+                    fontFamily="$body"
+                    color="$colorSecondary"
+                  >
+                    Mobile Money Charge
+                  </Text>
+                  <Text
+                    fontSize="$4"
+                    fontFamily="$body"
+                    color="$colorSecondary"
+                  >
+                    {formatPriceFromMinor(momoQuote.fee_minor)}
+                  </Text>
+                </XStack>
+                <XStack justifyContent="space-between" alignItems="center">
+                  <Text
+                    fontSize="$4"
+                    fontFamily="$body"
+                    color="$colorSecondary"
+                  >
+                    Order Total
+                  </Text>
+                  <Text
+                    fontSize="$4"
+                    fontFamily="$body"
+                    color="$colorSecondary"
+                  >
+                    {formatPriceFromMinor(total)}
+                  </Text>
+                </XStack>
+              </>
+            ) : null}
             <Separator marginVertical="$2" borderColor="$borderColor" />
             <XStack justifyContent="space-between" alignItems="center">
               <Text
@@ -1460,7 +1613,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 fontFamily="$heading"
                 color="$color"
               >
-                Total
+                {checkoutForm.pos_payment_method === "mobile_money"
+                  ? "Pay Total"
+                  : "Total"}
               </Text>
               <Text
                 fontSize="$5"
@@ -1468,7 +1623,12 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 fontFamily="$heading"
                 color="$primary"
               >
-                {formatPriceFromMinor(total)}
+                {formatPriceFromMinor(
+                  checkoutForm.pos_payment_method === "mobile_money" &&
+                    momoQuote
+                    ? momoQuote.total_minor
+                    : total,
+                )}
               </Text>
             </XStack>
           </YStack>
@@ -1500,7 +1660,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           ) : isBusinessClosed ? (
             "Business Closed"
           ) : (
-            `Place Order — ${formatPriceFromMinor(total)}`
+            `Place Order — ${formatPriceFromMinor(payableTotal)}`
           )}
         </Button>
       </YStack>
@@ -1521,7 +1681,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         state={paymentFlow.state}
         errorMsg={paymentFlow.errorMsg}
         orderNumber={lastOrderNumber}
-        amountMinor={total}
+        amountMinor={momoQuote?.total_minor ?? total}
+        nextAction={paymentFlow.nextAction}
+        displayText={paymentFlow.displayText}
+        isSubmittingOtp={paymentFlow.isSubmittingOtp}
+        onSubmitOtp={paymentFlow.submitOtp}
         onClose={paymentFlow.reset}
       />
 
