@@ -22,7 +22,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { FlatList, RefreshControl, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import OrderDetails from "../../orders/[id]";
 import {
   useSellerOrdersQuery,
@@ -167,24 +167,6 @@ export default function SellerOrders() {
     setPaymentStatus("");
   }, [setSearchQuery, setActiveChips, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
-
-  const onEndReached = useCallback(() => {
-    if (hasNextPage && !loadingMore.current) {
-      loadingMore.current = true;
-      fetchNextPage().finally(() => {
-        loadingMore.current = false;
-      });
-    }
-  }, [hasNextPage, fetchNextPage]);
-
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
@@ -242,6 +224,35 @@ export default function SellerOrders() {
   } = useSellerOrdersQuery(true, filterParams);
   const cancelOrder = useCancelOrderMutation();
   const canReject = useHasCapability('orders_reject');
+
+  // These callbacks must live after the query hook: referencing refetch /
+  // hasNextPage in a dependency array before their `const` declarations throws
+  // a temporal-dead-zone error on the first render.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !loadingMore.current) {
+      loadingMore.current = true;
+      fetchNextPage().finally(() => {
+        loadingMore.current = false;
+      });
+    }
+  }, [hasNextPage, fetchNextPage]);
+
+  // New orders can arrive while this tab is mounted. A focus refetch makes the
+  // first visit reliable even if the realtime/invalidation event was missed.
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
 
   const allOrders = data || [];
 
