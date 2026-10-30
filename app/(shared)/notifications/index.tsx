@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
 import { YStack, XStack, Text, Spinner } from "tamagui";
 import {
   Bell,
@@ -12,7 +13,15 @@ import {
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackButton, Button, AppAlertDialog } from "@/components/ui";
-import { useNotificationsList, useNotificationsMutations } from "@teincfood/rn-notifications";
+import {
+  buildNotificationRoute,
+  useNotificationsList,
+  useNotificationsMutations,
+} from "@teincfood/rn-notifications";
+import {
+  useJoinRequestsQuery,
+  useUserInvitationsQuery,
+} from "@teincfood/core";
 import { NotificationActionCard } from "@/components/notifications/NotificationActionCard";
 
 const ICON_MAP: Record<string, [typeof Package, string]> = {
@@ -53,11 +62,33 @@ function formatTime(dateString: string): string {
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const { data, isLoading, refetch, isRefetching } = useNotificationsList();
   const notifications = data?.notifications ?? [];
 
   const { markAsRead, markAllAsRead, clearAll } = useNotificationsMutations();
+
+  // Fetch these once per screen, not once per notification card. Cards receive
+  // the matching status by id/code, which removes the old per-row N+1 queries.
+  const joinRequestsQuery = useJoinRequestsQuery();
+  const invitationsQuery = useUserInvitationsQuery();
+
+  const joinRequestStatuses = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const request of joinRequestsQuery.data?.data ?? []) {
+      if (request?.id) map.set(request.id, request.status);
+    }
+    return map;
+  }, [joinRequestsQuery.data]);
+
+  const invitationStatuses = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const invitation of invitationsQuery.data?.data ?? []) {
+      if (invitation?.code) map.set(invitation.code, invitation.status);
+    }
+    return map;
+  }, [invitationsQuery.data]);
 
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
@@ -87,13 +118,27 @@ export default function NotificationsScreen() {
     setShowClearDialog(false);
   }, [clearAll]);
 
-  const handleNotificationPress = useCallback((item: (typeof notifications)[0]) => {
-    handleMarkAsRead(item.id);
-  }, [handleMarkAsRead]);
+  const handleNotificationPress = useCallback(
+    (item: (typeof notifications)[0]) => {
+      void handleMarkAsRead(item.id);
+
+      // Deep-link into the order/delivery screen for this notification.
+      const route = buildNotificationRoute((item.payload ?? {}) as any);
+      if (route) router.push(route as any);
+    },
+    [handleMarkAsRead, router],
+  );
 
   const renderItem = useCallback(({ item }: { item: (typeof notifications)[0] }) => {
     const [Icon, iconColor] = getIcon(item.type);
     const isRead = item.read;
+    const payload = (item.payload ?? {}) as Record<string, any>;
+    const joinRequestStatus = payload.join_request_id
+      ? joinRequestStatuses.get(String(payload.join_request_id))
+      : null;
+    const invitationStatus = payload.code
+      ? invitationStatuses.get(String(payload.code))
+      : null;
     return (
       <YStack
         backgroundColor={isRead ? "$background" : "$orangeMuted"}
@@ -144,11 +189,19 @@ export default function NotificationsScreen() {
           <NotificationActionCard
             notification={item}
             onDone={refetch}
+            orderStatus={payload.order_status ?? payload.status}
+            joinRequestStatus={joinRequestStatus}
+            invitationStatus={invitationStatus}
           />
         </YStack>
       </YStack>
     );
-  }, [handleNotificationPress, refetch]);
+  }, [
+    handleNotificationPress,
+    refetch,
+    joinRequestStatuses,
+    invitationStatuses,
+  ]);
 
   if (isLoading) {
     return (

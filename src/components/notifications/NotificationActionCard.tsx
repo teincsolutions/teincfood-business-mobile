@@ -6,21 +6,29 @@ import { Button } from "@/components/ui";
 import {
   useAcceptFleetInvitationMutation,
   useAcceptBusinessInvitationMutation,
-  useUserInvitationsQuery,
 } from "@teincfood/core";
-import { useSellerOrderQuery } from "@/hooks/seller.hooks";
-import { useJoinRequestsQuery } from "@teincfood/core";
 import { useNotificationsMutations } from "@teincfood/rn-notifications";
 import * as sellerService from "@/services/seller.service";
 import * as fleetService from "@/services/fleet.service";
+import * as riderService from "@/services/rider.service";
 import type { Notification } from "@teincfood/rn-notifications";
 
 interface Props {
   notification: Notification;
   onDone: () => void;
+  /** Current order status fetched in one batch by the notifications screen. */
+  orderStatus?: string | null;
+  /** Current join-request status fetched once by the notifications screen. */
+  joinRequestStatus?: string | null;
+  /** Current invitation status fetched once by the notifications screen. */
+  invitationStatus?: string | null;
 }
 
-type ActionKind = "invitation" | "accept_order" | "review_join_request";
+type ActionKind =
+  | "invitation"
+  | "accept_order"
+  | "accept_delivery"
+  | "review_join_request";
 
 function resolveActionKind(
   payload: Record<string, unknown> | null,
@@ -28,6 +36,9 @@ function resolveActionKind(
   if (!payload) return null;
   const actionType = payload.action_type as string | undefined;
   if (actionType === "accept_order") return "accept_order";
+  if (actionType === "accept_delivery" || actionType === "claim_delivery") {
+    return "accept_delivery";
+  }
   if (actionType === "review_join_request") return "review_join_request";
   const category = payload.notification_category as string | undefined;
   if (
@@ -39,7 +50,13 @@ function resolveActionKind(
   return null;
 }
 
-export function NotificationActionCard({ notification, onDone }: Props) {
+export function NotificationActionCard({
+  notification,
+  onDone,
+  orderStatus,
+  joinRequestStatus,
+  invitationStatus,
+}: Props) {
   const [accepting, setAccepting] = useState(false);
   const [dismissing, setDismissing] = useState(false);
   const acceptFleet = useAcceptFleetInvitationMutation();
@@ -51,34 +68,39 @@ export function NotificationActionCard({ notification, onDone }: Props) {
   const code = payload.code as string | undefined;
   const orderId = payload.order_id as string | undefined;
   const joinRequestId = payload.join_request_id as string | undefined;
-  const orderQuery = useSellerOrderQuery(
-    orderId!,
-    actionKind === "accept_order" && !!orderId,
-  );
-  const joinRequestsQuery = useJoinRequestsQuery(
-    actionKind === "review_join_request" && !!joinRequestId,
-  );
-  const invitationsQuery = useUserInvitationsQuery();
+  const currentOrderStatus =
+    orderStatus ?? (payload.order_status as string | undefined);
 
   if (!actionKind) return null;
+  if (notification.action_dismissed) return null;
+  if (payload.action_required === "false" || payload.action_required === false) {
+    return null;
+  }
 
-  if (actionKind === "accept_order" && orderQuery.data) {
-    const order = orderQuery.data.data;
-    if (order && order.status !== "pending") {
-      const accepted =
-        order.status === "accepted" ||
-        order.status === "confirmed" ||
-        order.status === "preparing" ||
-        order.status === "ready" ||
-        order.status === "picked_up" ||
-        order.status === "delivered";
+  if (actionKind === "accept_order" && currentOrderStatus) {
+    if (currentOrderStatus !== "pending") {
+      const accepted = [
+        "accepted",
+        "confirmed",
+        "preparing",
+        "ready",
+        "waiting_pickup",
+        "on_the_way",
+        "arrived",
+        "picked_up",
+        "delivered",
+      ].includes(currentOrderStatus);
       return (
         <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
           <Button
             variant={accepted ? "success" : "danger"}
             disabled
             icon={({ size, color }) =>
-              accepted ? <Check size={size} color={color} /> : <X size={size} color={color} />
+              accepted ? (
+                <Check size={size} color={color} />
+              ) : (
+                <X size={size} color={color} />
+              )
             }
           >
             {accepted ? "Accepted" : "Declined"}
@@ -88,45 +110,72 @@ export function NotificationActionCard({ notification, onDone }: Props) {
     }
   }
 
-  if (actionKind === "review_join_request" && joinRequestsQuery.data) {
-    const matching = joinRequestsQuery.data.data.find(
-      (r) => r.id === joinRequestId,
-    );
-    if (matching && matching.status !== "pending") {
-      const approved = matching.status === "approved";
+  if (actionKind === "accept_delivery" && currentOrderStatus) {
+    if (!["ready", "pending"].includes(currentOrderStatus)) {
+      const claimed = ["waiting_pickup", "on_the_way", "arrived", "delivered"].includes(
+        currentOrderStatus,
+      );
       return (
         <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
           <Button
-            variant={approved ? "success" : "danger"}
+            variant={claimed ? "success" : "danger"}
             disabled
             icon={({ size, color }) =>
-              approved ? <Check size={size} color={color} /> : <X size={size} color={color} />
+              claimed ? (
+                <Check size={size} color={color} />
+              ) : (
+                <X size={size} color={color} />
+              )
             }
           >
-            {approved ? "Approved" : "Rejected"}
+            {claimed ? "Claimed" : "Unavailable"}
           </Button>
         </XStack>
       );
     }
   }
 
-  if (actionKind === "invitation" && invitationsQuery.data) {
-    const matching = invitationsQuery.data.data.find(
-      (inv) => inv.code === code,
+  if (
+    actionKind === "review_join_request" &&
+    joinRequestStatus &&
+    joinRequestStatus !== "pending"
+  ) {
+    const approved = joinRequestStatus === "approved";
+    return (
+      <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
+        <Button
+          variant={approved ? "success" : "danger"}
+          disabled
+          icon={({ size, color }) =>
+            approved ? (
+              <Check size={size} color={color} />
+            ) : (
+              <X size={size} color={color} />
+            )
+          }
+        >
+          {approved ? "Approved" : "Rejected"}
+        </Button>
+      </XStack>
     );
-    if (matching && matching.status !== "pending") {
-      return (
-        <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
-          <Button
-            variant="success"
-            disabled
-            icon={({ size, color }) => <Check size={size} color={color} />}
-          >
-            Accepted
-          </Button>
-        </XStack>
-      );
-    }
+  }
+
+  if (
+    actionKind === "invitation" &&
+    invitationStatus &&
+    invitationStatus !== "pending"
+  ) {
+    return (
+      <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">
+        <Button
+          variant="success"
+          disabled
+          icon={({ size, color }) => <Check size={size} color={color} />}
+        >
+          Accepted
+        </Button>
+      </XStack>
+    );
   }
 
   const isPrimaryDisabled = accepting || dismissing;
@@ -145,6 +194,11 @@ export function NotificationActionCard({ notification, onDone }: Props) {
         case "accept_order":
           if (orderId) {
             await sellerService.acceptOrder(orderId);
+          }
+          break;
+        case "accept_delivery":
+          if (orderId) {
+            await riderService.acceptDelivery(orderId);
           }
           break;
         case "review_join_request":
@@ -173,6 +227,7 @@ export function NotificationActionCard({ notification, onDone }: Props) {
             await fleetService.rejectJoinRequest(joinRequestId);
           break;
         case "invitation":
+        case "accept_delivery":
           break;
       }
       await dismissAction(notification.id);
@@ -189,10 +244,17 @@ export function NotificationActionCard({ notification, onDone }: Props) {
         ? "Approving..."
         : "Approve"
       : accepting
-        ? "Accepting..."
-        : "Accept";
+        ? actionKind === "accept_delivery"
+          ? "Claiming..."
+          : "Accepting..."
+        : actionKind === "accept_delivery"
+          ? "Claim"
+          : "Accept";
 
-  const secondaryLabel = actionKind === "invitation" ? "Dismiss" : "Decline";
+  const secondaryLabel =
+    actionKind === "invitation" || actionKind === "accept_delivery"
+      ? "Dismiss"
+      : "Decline";
 
   return (
     <XStack gap="$3" paddingTop="$2" justifyContent="flex-end">

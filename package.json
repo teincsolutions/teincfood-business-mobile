@@ -45,7 +45,7 @@
     "@teincfood/chat-client": "^0.1.39",
     "@teincfood/core": "0.10.10",
     "@teincfood/observability": "^0.1.1",
-    "@teincfood/rn-notifications": "^0.2.0",
+    "@teincfood/rn-notifications": "^0.2.1",
     "axios": "^1.14.0",
     "babel-preset-expo": "^55.0.14-canary-20260328-bdc6273",
     "expo": "^55.0.0",

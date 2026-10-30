@@ -36,7 +36,10 @@ import {
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from "@expo-google-fonts/manrope";
-import { setupNotifications } from "@teincfood/rn-notifications";
+import {
+  buildNotificationRoute,
+  setupNotifications,
+} from "@teincfood/rn-notifications";
 import type {
   PushNotificationData,
   NotificationAction,
@@ -62,6 +65,7 @@ import {
 import { subscribeAuthCleanup } from "../src/services/auth-cleanup.service";
 import * as sellerService from "../src/services/seller.service";
 import * as fleetService from "../src/services/fleet.service";
+import * as riderService from "../src/services/rider.service";
 import * as businessService from "../src/services/business.service";
 import { api } from "../src/services/api";
 import { AlertProvider } from "../src/contexts/AlertContext";
@@ -221,6 +225,9 @@ function AppShell() {
             { id: "accept_order", title: "Accept" },
             { id: "decline_order", title: "Decline" },
           ];
+        case "accept_delivery":
+        case "claim_delivery":
+          return [{ id: "accept_delivery", title: "Claim" }];
         case "review_join_request":
           return [
             { id: "approve_join_request", title: "Approve" },
@@ -246,13 +253,27 @@ function AppShell() {
       const code = data.code;
       const route = data.route;
       const joinRequestId = data.join_request_id;
+      const fallbackRoute =
+        buildNotificationRoute({
+          ...(data as any),
+          type: (data as any).type ?? "notification",
+        }) ??
+        (orderId
+          ? actionType === "accept_delivery" || actionType === "claim_delivery"
+            ? `/(rider)/deliveries/${orderId}`
+            : `/orders/${orderId}`
+          : route);
 
       switch (actionId) {
         case "accept_order":
           if (orderId) {
             sellerService.acceptOrder(orderId).catch(console.error);
-            router.push(`/order/${orderId}`);
+            router.push(`/orders/${orderId}`);
           }
+          return;
+        case "accept_delivery":
+          if (orderId) riderService.acceptDelivery(orderId).catch(console.error);
+          if (fallbackRoute) router.push(fallbackRoute);
           return;
         case "decline_order":
           if (orderId) sellerService.rejectOrder(orderId).catch(console.error);
@@ -290,10 +311,8 @@ function AppShell() {
           break;
       }
 
-      if (orderId) {
-        router.push(`/order/${orderId}`);
-      } else if (route) {
-        router.push(route);
+      if (fallbackRoute) {
+        router.push(fallbackRoute);
       }
     },
     [],
