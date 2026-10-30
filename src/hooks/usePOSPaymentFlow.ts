@@ -169,7 +169,7 @@ export function usePOSPaymentFlow() {
           order_id: orderId,
           phone: options.phone,
           provider: options.provider,
-          idempotency_key: `order-pay-${orderId}`,
+          idempotency_key: `order-pay-${orderId}-${Date.now()}`,
         });
 
         if (cancelledRef.current) return { ok: false, error: null };

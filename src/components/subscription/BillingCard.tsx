@@ -428,7 +428,7 @@ export function BillingCard() {
             invoice_id: payingInvoice.id,
             phone: nextPhone,
             provider: nextProvider,
-            idempotency_key: `invoice-${payingInvoice.id}`,
+            idempotency_key: `invoice-${payingInvoice.id}-${Date.now()}`,
           });
           return { charge: response.data };
         }}
