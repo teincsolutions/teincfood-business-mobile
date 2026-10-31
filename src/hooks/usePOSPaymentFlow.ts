@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { drainPending, eventsService } from "@teincfood/core";
+import {
+  drainPending,
+  eventsService,
+  extractApiErrorCode,
+} from "@teincfood/core";
 import { paymentService } from "@/services/payment.service";
 import { trackEvent } from "@/utils/observability";
 import { useBusinessStore } from "@/stores/business.store";
@@ -10,7 +14,7 @@ export type POSPaymentState =
 
 /** Outcome of a checkout run. error is null when still pending (phx owns it). */
 export type POSPaymentResult =
-  { ok: true } | { ok: false; error: string | null };
+  { ok: true } | { ok: false; error: string | null; code?: string };
 
 export type MomoChargeOptions = {
   phone: string;
@@ -180,15 +184,24 @@ export function usePOSPaymentFlow() {
         });
 
         if (cancelledRef.current) return { ok: false, error: null };
-        return applyCharge(response.data);
+        const result = applyCharge(response.data);
+        // Pull server truth after the charge: a missed Phoenix frame must not
+        // leave a paid order stuck in awaiting_payment / showing Pay again.
+        if (businessId) void drainPending(businessId).catch(() => undefined);
+        return result;
       } catch (err) {
         if (!cancelledRef.current) {
           const message =
             err instanceof Error
               ? err.message
               : "Could not start the mobile-money charge";
+          const code = extractApiErrorCode(err);
+          const businessId = useBusinessStore.getState().activeBusiness?.id;
+          if (businessId && code === "ALREADY_PAID") {
+            void drainPending(businessId).catch(() => undefined);
+          }
           fail(message);
-          return { ok: false, error: message };
+          return { ok: false, error: message, code };
         }
         return { ok: false, error: null };
       }
