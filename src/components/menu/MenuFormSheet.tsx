@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react';
-import { TouchableOpacity, KeyboardAvoidingView, Platform, Image, Alert, Keyboard } from 'react-native';
+import { TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   YStack,
@@ -16,6 +16,7 @@ import {
 import { Plus, X, ChevronDown, Camera, Image as ImageIcon } from '@tamagui/lucide-icons';
 import { toast } from 'sonner-native';
 import { Button, FormInput } from '@/components/ui';
+import { CachedImage } from '@/components/ui/CachedImage';
 import type { MenuItem } from '@teincfood/core';
 import type { MenuItemForm } from '@/types/menu.types';
 import type { UploadResult } from '@/services/upload.service';
@@ -94,7 +95,12 @@ export function MenuFormSheet({
   const media = useMedia();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addCategoryName, setAddCategoryName] = useState('');
-  const imageUrl = useCachedImageUrl(form.image_url);
+  const cachedImageUrl = useCachedImageUrl(form.image_url);
+  const imageUrl =
+    cachedImageUrl ??
+    (form.image_url && /^(https?|file|data|asset|content):/i.test(form.image_url)
+      ? form.image_url
+      : null);
 
   const updateFormField = <K extends keyof MenuItemForm>(
     field: K,
@@ -371,8 +377,8 @@ export function MenuFormSheet({
                   
                   {imageUrl ? (
                     <YStack position="relative" width={120} height={120}>
-                      <Image
-                        source={{ uri: imageUrl }}
+                      <CachedImage
+                        source={{ uri: form.image_url }}
                         style={{ width: 120, height: 120, borderRadius: 8 }}
                       />
                       <TouchableOpacity

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { TouchableOpacity, Image, useWindowDimensions } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { YStack, XStack, Text, Card, Separator, useTheme } from "tamagui";
 import {
   UtensilsCrossed,
@@ -11,7 +11,7 @@ import {
 import type { MenuItem } from "@teincfood/core";
 import { formatPriceFromMinor } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
-import { useCachedImageUrl } from "@teincfood/core";
+import { CachedImage } from "@/components/ui/CachedImage";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -29,9 +29,7 @@ export function MenuItemCard({
   onToggleAvailability,
 }: MenuItemCardProps) {
   const theme = useTheme();
-  const { width, isTablet } = useResponsive();
-  const imageUrl = useCachedImageUrl(item.image_url);
-
+  const { isTablet } = useResponsive();
   const s = isTablet
     ? {
         thumbnail: 96,
@@ -71,18 +69,17 @@ export function MenuItemCard({
             flexShrink={0}
             overflow="hidden"
           >
-            {imageUrl ? (
-              <Image
-                source={{ uri: imageUrl }}
-                style={{
-                  width: s.thumbnail,
-                  height: s.thumbnail,
-                  borderRadius: 8,
-                }}
-              />
-            ) : (
-              <UtensilsCrossed size={s.icon} color="$colorSecondary" />
-            )}
+            <CachedImage
+              source={item.image_url ? { uri: item.image_url } : null}
+              style={{
+                width: s.thumbnail,
+                height: s.thumbnail,
+                borderRadius: 8,
+              }}
+              placeholder={
+                <UtensilsCrossed size={s.icon} color="$colorSecondary" />
+              }
+            />
           </YStack>
 
           {/* Info */}

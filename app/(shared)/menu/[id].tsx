@@ -1,11 +1,10 @@
 // @ts-nocheck
-import { Image, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { YStack, XStack, Text, Card, Separator, useTheme } from 'tamagui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton, Button } from '@/components/ui';
 import { useMenuItemsQuery } from '@/hooks/menu.hooks';
-import { useCachedImageUrl } from '@teincfood/core';
 import { formatPriceFromMinor } from '@teincfood/core';
 import {
   UtensilsCrossed,
@@ -16,6 +15,7 @@ import {
   Tag,
 } from '@tamagui/lucide-icons';
 import { useResponsive } from '@/utils/responsive';
+import { CachedImage } from '@/components/ui/CachedImage';
 
 export default function MenuItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,7 +25,6 @@ export default function MenuItemDetailScreen() {
   const { isTablet } = useResponsive();
   const { data: items } = useMenuItemsQuery();
   const item = items?.find((i) => i.id === id);
-  const imageUri = useCachedImageUrl(item?.image_url ?? null);
 
   if (!item) {
     return (
@@ -54,13 +53,16 @@ export default function MenuItemDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero image */}
         <YStack height={isTablet ? 400 : 280} backgroundColor="$backgroundSoft" overflow="hidden">
-          {imageUri ? (
-            <Image source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          ) : (
-            <YStack flex={1} alignItems="center" justifyContent="center">
-              <UtensilsCrossed size={64} color="$colorMuted" />
-            </YStack>
-          )}
+          <CachedImage
+            source={item.image_url ? { uri: item.image_url } : null}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+            placeholder={
+              <YStack flex={1} alignItems="center" justifyContent="center">
+                <UtensilsCrossed size={64} color="$colorMuted" />
+              </YStack>
+            }
+          />
         </YStack>
 
         {/* Content card overlapping image */}

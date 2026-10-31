@@ -182,6 +182,15 @@ function buildFileSystemAdapter() {
     downloadAsync: async (url: string, fileUri: string) => {
       const dl = FileSystem.createDownloadResumable(url, fileUri, { cache: false });
       const res = await dl.downloadAsync();
+      // A presigned URL can expire or return an XML/text error body. Without
+      // this guard the error body is written as a .img file, which then wins
+      // over every fresh remote URL for the same object (stable cache key) and
+      // leaves the image permanently broken.
+      const status = res?.status ?? 0;
+      if (status && (status < 200 || status >= 300)) {
+        await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
+        throw new Error(`Image download failed with status ${status}`);
+      }
       return { uri: res?.uri ?? fileUri };
     },
     deleteAsync: async (path: string, opts?: { idempotent?: boolean }) => { await FileSystem.deleteAsync(path, opts); },

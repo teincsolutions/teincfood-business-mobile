@@ -1,7 +1,13 @@
+import { useEffect } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { toast } from "sonner-native";
 import { mmkvStorage } from "@/utils/storage";
-import { createAppQueryClient, createQueryPersister } from "@teincfood/core";
+import {
+  clearImageCache,
+  createAppQueryClient,
+  createQueryPersister,
+  invalidateCachedImages,
+} from "@teincfood/core";
 
 /**
  * Persister for React Query cache (core factory over MMKV).
@@ -33,7 +39,27 @@ interface QueryProviderProps {
   children: React.ReactNode;
 }
 
+const IMAGE_CACHE_SCHEMA_KEY = "image-cache-schema";
+const IMAGE_CACHE_SCHEMA_VERSION = "2";
+
 export function QueryProvider({ children }: QueryProviderProps) {
+  // Recover devices whose image cache was poisoned by a failed/expired
+  // presigned download (the error body used to be cached as the image). The
+  // durable cache is disposable; menu photos re-download from fresh URLs.
+  useEffect(() => {
+    try {
+      if (mmkvStorage.getString(IMAGE_CACHE_SCHEMA_KEY) === IMAGE_CACHE_SCHEMA_VERSION) {
+        return;
+      }
+      mmkvStorage.set(IMAGE_CACHE_SCHEMA_KEY, IMAGE_CACHE_SCHEMA_VERSION);
+      void clearImageCache()
+        .then(() => invalidateCachedImages(queryClient))
+        .catch(() => {});
+    } catch {
+      // Cache cleanup must never block app startup.
+    }
+  }, []);
+
   return (
     <PersistQueryClientProvider
       client={queryClient}
