@@ -57,14 +57,17 @@ export interface Business {
   deliverySettings: DeliverySettings;
   paymentSettings: PaymentSettings;
   status: BusinessStatus;
+  kyc_status?: string;
   isDefault: boolean;
   rating: number;
   reviewCount: number;
   totalOrders: number;
   /** Backend-computed open flag (operating hours + manual close). */
   is_open?: boolean;
-  /** Seller-facing manual open/close toggle (backend `manually_closed`). */
+  /** Seller-facing manual online-ordering pause (backend `manually_closed`). */
   manually_closed?: boolean;
+  /** Persisted owner preference for accepting online orders. */
+  online_ordering_enabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,4 +103,5 @@ import type { Business as ApiBusiness } from '@teincfood/core';
 
 export interface BusinessSummary extends ApiBusiness {
   isDefault?: boolean;
+  online_ordering_enabled?: boolean;
 }

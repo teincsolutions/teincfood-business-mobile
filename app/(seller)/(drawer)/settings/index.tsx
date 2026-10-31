@@ -45,6 +45,7 @@ import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -58,27 +59,36 @@ export default function SellerSettings() {
   const canManageProfile = useHasCapability("business_profile_manage");
   const canManageBilling = useHasCapability("finance_billing_manage");
   const canManageTax = useHasCapability("tax_rules_manage");
+  const canAcceptOnlineOrders = useHasFeature("seller.online_orders");
+  const { isLoading: entitlementsLoading } = useEntitlements();
   const { data: membership } = useMyBusinessCapabilities();
   const myCaps = new Set(membership?.capabilities ?? []);
-  // `is_open` is the backend's actual online-ordering availability (manual
-  // pause AND operating hours). `manually_closed` alone kept the switch on
-  // outside business hours even though buyers could not order.
+  // The switch is the owner's stored preference, not the current schedule.
+  // `is_open` remains the effective buyer availability (preference AND hours).
   const manuallyClosed = activeBusiness?.manually_closed === true;
-  const storeOpen = activeBusiness?.is_open === true;
-  const outsideHours = activeBusiness?.is_open === false && !manuallyClosed;
+  const onlineOrderingEnabled =
+    activeBusiness?.online_ordering_enabled ?? !manuallyClosed;
+  const outsideHours = activeBusiness?.is_open === false && onlineOrderingEnabled;
+  const approvedAndActive =
+    activeBusiness?.status === "active" && activeBusiness?.kyc_status === "approved";
+  const planBlocksOnlineOrders =
+    !entitlementsLoading && !canAcceptOnlineOrders;
+  const canToggleOnlineOrdering =
+    canManageProfile && approvedAndActive && !planBlocksOnlineOrders;
 
-  const [isOpen, setIsOpen] = useState(storeOpen);
+  const [isOpen, setIsOpen] = useState(onlineOrderingEnabled);
   const [isTogglingStore, setIsTogglingStore] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [activeSection, setActiveSection] = useState("store");
 
   useEffect(() => {
-    if (!isTogglingStore) setIsOpen(storeOpen);
-  }, [storeOpen, isTogglingStore]);
+    if (!isTogglingStore) setIsOpen(onlineOrderingEnabled);
+  }, [onlineOrderingEnabled, isTogglingStore]);
 
   const applyStoreStatus = (updated?: {
     is_open?: boolean;
     manually_closed?: boolean;
+    online_ordering_enabled?: boolean;
   }) => {
     const current = useBusinessStore.getState().activeBusiness;
     if (!current || !updated) return;
@@ -87,6 +97,9 @@ export default function SellerSettings() {
       ...(updated.is_open !== undefined ? { is_open: updated.is_open } : {}),
       ...(updated.manually_closed !== undefined
         ? { manually_closed: updated.manually_closed }
+        : {}),
+      ...(updated.online_ordering_enabled !== undefined
+        ? { online_ordering_enabled: updated.online_ordering_enabled }
         : {}),
     });
   };
@@ -135,7 +148,7 @@ export default function SellerSettings() {
   };
 
   const handleToggleStore = async (open: boolean) => {
-    if (!activeBusiness?.id || !canManageProfile || outsideHours) return;
+    if (!activeBusiness?.id || !canToggleOnlineOrdering) return;
     const previous = isOpen;
     setIsOpen(open);
     setIsTogglingStore(true);
@@ -311,22 +324,30 @@ export default function SellerSettings() {
             Online Ordering
           </Text>
           <Text color="$colorSecondary" fontSize="$3" fontFamily="$body">
-            {outsideHours
-              ? "Online ordering is closed — outside your operating hours"
-              : isOpen
-                ? "Online ordering is on — buyers can place orders"
-                : "Online ordering is paused — buyers cannot place orders"}
+            {!approvedAndActive
+              ? "Your business must be approved and active before it can accept online orders"
+              : planBlocksOnlineOrders
+                ? "Your current plan does not include online ordering"
+                : outsideHours
+                  ? "Online ordering is on — currently outside your operating hours"
+                  : isOpen
+                    ? "Online ordering is on — buyers can place orders"
+                    : "Online ordering is paused — buyers cannot place orders"}
           </Text>
           <Text color="$colorSecondary" fontSize="$2" fontFamily="$body" marginTop="$1">
-            {outsideHours
-              ? "Update your operating hours to start accepting online orders."
-              : "Pausing only stops new online orders. Walk-in POS orders still work during business hours."}
+            {!approvedAndActive
+              ? "Complete approval and activation to enable online orders."
+              : planBlocksOnlineOrders
+                ? "Upgrade your plan to enable online ordering."
+                : outsideHours
+                  ? "Buyers can order again during your operating hours."
+                  : "Pausing only stops new online orders. Walk-in POS orders still work during business hours."}
           </Text>
         </YStack>
         <Switch
           size="$5"
           checked={isOpen}
-          disabled={!canManageProfile || outsideHours}
+          disabled={!canToggleOnlineOrdering}
           onCheckedChange={handleToggleStore}
           backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
         >
@@ -571,7 +592,9 @@ export default function SellerSettings() {
   // Ordered sections for the tablet master-detail rail. Inline sections render
   // in the detail pane; link sections navigate (and act as rows in the rail).
   const sections = [
-    { key: "store", label: "Online Ordering", icon: Building, element: storeStatusCard },
+    ...(canManageProfile
+      ? [{ key: "store", label: "Online Ordering", icon: Building, element: storeStatusCard }]
+      : []),
     { key: "notifications", label: "Order Notifications", icon: Bell, element: notificationsCard },
     { key: "display", label: "Display Settings", icon: Monitor, element: displaySettingsCard },
     ...visibleLinkItems.map((item) => ({
@@ -581,7 +604,9 @@ export default function SellerSettings() {
       element: null,
       item,
     })),
-    { key: "danger", label: "Danger Zone", icon: AlertTriangle, element: dangerZoneCard },
+    ...(canManageProfile
+      ? [{ key: "danger", label: "Danger Zone", icon: AlertTriangle, element: dangerZoneCard }]
+      : []),
   ];
 
   if (isMasterDetail) {
@@ -698,11 +723,11 @@ export default function SellerSettings() {
           paddingBottom={insets.bottom + 24}
           gap="$4"
         >
-          {storeStatusCard}
+          {canManageProfile && storeStatusCard}
           {notificationsCard}
           {linkListCard}
           {displaySettingsCard}
-          {dangerZoneCard}
+          {canManageProfile && dangerZoneCard}
         </YStack>
       </ScrollView>
 

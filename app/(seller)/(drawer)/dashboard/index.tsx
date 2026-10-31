@@ -27,6 +27,8 @@ import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 
 /**
  * Seller Dashboard Screen
@@ -41,10 +43,20 @@ export default function SellerDashboard() {
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
-  // Reflect actual availability: manual pause AND operating hours.
+  const canManageProfile = useHasCapability("business_profile_manage");
+  const canAcceptOnlineOrders = useHasFeature("seller.online_orders");
+  const { isLoading: entitlementsLoading } = useEntitlements();
+  // The switch is the owner's stored preference; `is_open` is the effective
+  // buyer availability (preference AND operating hours).
   const isManuallyClosed = activeBusiness?.manually_closed === true;
-  const isStoreOpen = activeBusiness?.is_open === true;
-  const outsideHours = activeBusiness?.is_open === false && !isManuallyClosed;
+  const onlineOrderingEnabled =
+    activeBusiness?.online_ordering_enabled ?? !isManuallyClosed;
+  const outsideHours = activeBusiness?.is_open === false && onlineOrderingEnabled;
+  const approvedAndActive =
+    activeBusiness?.status === "active" && activeBusiness?.kyc_status === "approved";
+  const planBlocksOnlineOrders = !entitlementsLoading && !canAcceptOnlineOrders;
+  const canToggleOnlineOrdering =
+    canManageProfile && approvedAndActive && !planBlocksOnlineOrders;
 
   // Fetch business KYC status (fresh every mount)
   const { data: bizKyc } = useBusinessKycQuery(activeBusinessId);
@@ -75,21 +87,29 @@ export default function SellerDashboard() {
   }, [refetch]);
 
   const handleToggleStore = useCallback(async () => {
-    if (!activeBusiness?.id || outsideHours) return;
+    if (!activeBusiness?.id || !canToggleOnlineOrdering) return;
     setTogglingStore(true);
     try {
       const result = await businessService.toggleBusinessOpen(
         activeBusiness.id,
       );
       const updated = result?.data;
-      if (updated?.is_open !== undefined) {
+      if (
+        updated?.is_open !== undefined ||
+        updated?.online_ordering_enabled !== undefined
+      ) {
         // The toggle endpoint returns a partial business — merge it, never
         // replace the active business (that dropped currency, address, …).
         const current = useBusinessStore.getState().activeBusiness;
         useBusinessStore.getState().setActiveBusiness({
           ...(current ?? {}),
-          is_open: updated.is_open,
-          manually_closed: updated.manually_closed,
+          ...(updated.is_open !== undefined ? { is_open: updated.is_open } : {}),
+          ...(updated.manually_closed !== undefined
+            ? { manually_closed: updated.manually_closed }
+            : {}),
+          ...(updated.online_ordering_enabled !== undefined
+            ? { online_ordering_enabled: updated.online_ordering_enabled }
+            : {}),
         });
       }
     } catch (e) {
@@ -97,7 +117,7 @@ export default function SellerDashboard() {
     } finally {
       setTogglingStore(false);
     }
-  }, [activeBusiness?.id, outsideHours]);
+  }, [activeBusiness?.id, canToggleOnlineOrdering]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -191,26 +211,30 @@ export default function SellerDashboard() {
             )}
             <XStack gap="$2" alignItems="center">
               <Text fontSize="$3">
-                {outsideHours
-                  ? "Closed — outside business hours"
-                  : isManuallyClosed
-                    ? "Online ordering paused"
-                    : isStoreOpen
-                      ? "Online ordering on"
-                      : "Online ordering paused"}
+                {!approvedAndActive
+                  ? "Approval required"
+                  : planBlocksOnlineOrders
+                    ? "Plan does not include online orders"
+                    : outsideHours
+                      ? "Online ordering on — closed now"
+                      : onlineOrderingEnabled
+                        ? "Online ordering on"
+                        : "Online ordering paused"}
               </Text>
-              <Switch
-                size="$8"
-                checked={isStoreOpen}
-                disabled={togglingStore || outsideHours}
-                onCheckedChange={handleToggleStore}
-                backgroundColor={isStoreOpen ? "$primary" : "$color.gray600"}
-              >
-                <Switch.Thumb
-                  animation="quick"
-                  backgroundColor="$color.white"
-                />
-              </Switch>
+              {canManageProfile && (
+                <Switch
+                  size="$8"
+                  checked={onlineOrderingEnabled}
+                  disabled={togglingStore || !canToggleOnlineOrdering}
+                  onCheckedChange={handleToggleStore}
+                  backgroundColor={onlineOrderingEnabled ? "$primary" : "$color.gray600"}
+                >
+                  <Switch.Thumb
+                    animation="quick"
+                    backgroundColor="$color.white"
+                  />
+                </Switch>
+              )}
               <Button
                 size="$4"
                 circular
