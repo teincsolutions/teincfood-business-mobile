@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { eventsService } from "@teincfood/core";
+import { drainPending, eventsService } from "@teincfood/core";
 import { paymentService } from "@/services/payment.service";
 import { trackEvent } from "@/utils/observability";
+import { useBusinessStore } from "@/stores/business.store";
 import type { MomoCharge, MomoProvider } from "@/types/payment";
 
 export type POSPaymentState =
@@ -165,6 +166,12 @@ export function usePOSPaymentFlow() {
       }
 
       try {
+        // Offline-first order creation queues `order:create`; flush it before
+        // the backend/Paystack looks up the order. Without this the charge can
+        // race the sync and 404 with "Charge not found".
+        const businessId = useBusinessStore.getState().activeBusiness?.id;
+        if (businessId) await drainPending(businessId);
+
         const response = await paymentService.chargeMomo({
           order_id: orderId,
           phone: options.phone,
