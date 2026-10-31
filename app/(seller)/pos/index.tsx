@@ -907,7 +907,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       key: "mobile_money",
       label: "Mobile Money",
       icon: Smartphone,
-      description: isCloudReachable ? "Approve prompt on customer phone" : "Requires internet",
+      description: isCloudReachable
+        ? "Approve prompt on customer phone"
+        : "Requires internet",
       disabled: !isCloudReachable,
     },
   ];
@@ -1986,15 +1988,10 @@ function InProgressTab() {
     [activeOrders],
   );
 
-  if (isFetching) {
-    return (
-      <YStack flex={1} alignItems="center" justifyContent="center">
-        <Spinner size="large" color="$primary" />
-      </YStack>
-    );
-  }
-
-  if (isFetching) {
+  // Only block on the very first load. Background refetches must not replace
+  // the board with a full-screen spinner — that is the POS flicker operators
+  // see while the queue polls.
+  if (isFetching && !orders) {
     return (
       <YStack flex={1} alignItems="center" justifyContent="center">
         <Spinner size="large" color="$primary" />

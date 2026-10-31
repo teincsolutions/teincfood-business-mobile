@@ -44,7 +44,10 @@ import {
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
-import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import {
+  useHasCapability,
+  useMyBusinessCapabilities,
+} from "@/hooks/useMyBusinessCapabilities";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useResponsive } from "@/utils/responsive";
 
@@ -68,11 +71,12 @@ export default function SellerSettings() {
   const manuallyClosed = activeBusiness?.manually_closed === true;
   const onlineOrderingEnabled =
     activeBusiness?.online_ordering_enabled ?? !manuallyClosed;
-  const outsideHours = activeBusiness?.is_open === false && onlineOrderingEnabled;
+  const outsideHours =
+    activeBusiness?.is_open === false && onlineOrderingEnabled;
   const approvedAndActive =
-    activeBusiness?.status === "active" && activeBusiness?.kyc_status === "approved";
-  const planBlocksOnlineOrders =
-    !entitlementsLoading && !canAcceptOnlineOrders;
+    activeBusiness?.status === "active" &&
+    activeBusiness?.kyc_status === "approved";
+  const planBlocksOnlineOrders = !entitlementsLoading && !canAcceptOnlineOrders;
   const canToggleOnlineOrdering =
     canManageProfile && approvedAndActive && !planBlocksOnlineOrders;
 
@@ -115,7 +119,9 @@ export default function SellerSettings() {
 
   const calloutEnabled = useDisplayStore((s) => s.calloutDisplayEnabled);
   const kitchenEnabled = useDisplayStore((s) => s.kitchenDisplayEnabled);
-  const customerDisplayEnabled = useDisplayStore((s) => s.customerDisplayEnabled);
+  const customerDisplayEnabled = useDisplayStore(
+    (s) => s.customerDisplayEnabled,
+  );
   const customerDisplayCaps = useCustomerDisplayCapabilities();
 
   const handleToggleCallout = (enabled: boolean) => {
@@ -147,10 +153,20 @@ export default function SellerSettings() {
     updatePrefs.mutate({ order_notifications: enabled });
   };
 
-  const handleToggleStore = async (open: boolean) => {
-    if (!activeBusiness?.id || !canToggleOnlineOrdering) return;
+  const setOnlineOrdering = async (open: boolean) => {
+    if (!activeBusiness?.id) return;
+    // Pausing is always safe; resuming additionally requires the plan and
+    // approval gates because it makes the shop available to buyers.
+    if (open && !canToggleOnlineOrdering) return;
+    if (!open && !canManageProfile) return;
+    if (isOpen === open) {
+      setShowCloseDialog(false);
+      return;
+    }
+
     const previous = isOpen;
     setIsOpen(open);
+    setShowCloseDialog(false);
     setIsTogglingStore(true);
     try {
       const result = await businessService.toggleBusinessOpen(
@@ -158,25 +174,6 @@ export default function SellerSettings() {
       );
       // Persist the server's new state so every screen (and the next mount of
       // this one) sees it instead of the pre-toggle business snapshot.
-      applyStoreStatus(result?.data);
-    } catch (e) {
-      setIsOpen(previous);
-      toast.error(extractApiErrorMessage(e));
-    } finally {
-      setIsTogglingStore(false);
-    }
-  };
-
-  const handleCloseStore = async () => {
-    if (!activeBusiness?.id || !canManageProfile) return;
-    const previous = isOpen;
-    setIsOpen(false);
-    setShowCloseDialog(false);
-    setIsTogglingStore(true);
-    try {
-      const result = await businessService.toggleBusinessOpen(
-        activeBusiness.id,
-      );
       applyStoreStatus(result?.data);
     } catch (e) {
       setIsOpen(previous);
@@ -334,7 +331,12 @@ export default function SellerSettings() {
                     ? "Online ordering is on — buyers can place orders"
                     : "Online ordering is paused — buyers cannot place orders"}
           </Text>
-          <Text color="$colorSecondary" fontSize="$2" fontFamily="$body" marginTop="$1">
+          <Text
+            color="$colorSecondary"
+            fontSize="$2"
+            fontFamily="$body"
+            marginTop="$1"
+          >
             {!approvedAndActive
               ? "Complete approval and activation to enable online orders."
               : planBlocksOnlineOrders
@@ -348,7 +350,7 @@ export default function SellerSettings() {
           size="$5"
           checked={isOpen}
           disabled={!canToggleOnlineOrdering}
-          onCheckedChange={handleToggleStore}
+          onCheckedChange={(open) => void setOnlineOrdering(open)}
           backgroundColor={isOpen ? "$color.green" : "$color.gray600"}
         >
           <Switch.Thumb animation="quick" backgroundColor="$white" />
@@ -418,11 +420,7 @@ export default function SellerSettings() {
                 >
                   {item.label}
                 </Text>
-                <Text
-                  fontSize="$2"
-                  color="$colorSecondary"
-                  fontFamily="$body"
-                >
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
                   {item.description}
                 </Text>
               </YStack>
@@ -541,14 +539,16 @@ export default function SellerSettings() {
             >
               {customerDisplayCaps?.supported
                 ? "Show the order and totals to the customer on a second display"
-                : customerDisplayCaps?.reason ?? "Checking for a second display…"}
+                : (customerDisplayCaps?.reason ??
+                  "Checking for a second display…")}
             </Text>
           </YStack>
           <Switch
             size="$5"
             disabled={!customerDisplayCaps?.supported}
             checked={
-              customerDisplayEnabled && (customerDisplayCaps?.supported ?? false)
+              customerDisplayEnabled &&
+              (customerDisplayCaps?.supported ?? false)
             }
             onCheckedChange={handleToggleCustomerDisplay}
             backgroundColor={
@@ -579,11 +579,17 @@ export default function SellerSettings() {
           Danger Zone
         </Text>
         <Button
-          variant="danger"
+          variant={isOpen ? "danger" : "success"}
           width="100%"
+          disabled={isOpen ? !canManageProfile : !canToggleOnlineOrdering}
+          opacity={isOpen || canToggleOnlineOrdering ? 1 : 0.5}
           onPress={() => setShowCloseDialog(true)}
         >
-          Pause Online Ordering
+          {isOpen
+            ? "Pause Online Ordering"
+            : canToggleOnlineOrdering
+              ? "Resume Online Ordering"
+              : "Online Ordering Unavailable"}
         </Button>
       </YStack>
     </Card>
@@ -593,10 +599,27 @@ export default function SellerSettings() {
   // in the detail pane; link sections navigate (and act as rows in the rail).
   const sections = [
     ...(canManageProfile
-      ? [{ key: "store", label: "Online Ordering", icon: Building, element: storeStatusCard }]
+      ? [
+          {
+            key: "store",
+            label: "Online Ordering",
+            icon: Building,
+            element: storeStatusCard,
+          },
+        ]
       : []),
-    { key: "notifications", label: "Order Notifications", icon: Bell, element: notificationsCard },
-    { key: "display", label: "Display Settings", icon: Monitor, element: displaySettingsCard },
+    {
+      key: "notifications",
+      label: "Order Notifications",
+      icon: Bell,
+      element: notificationsCard,
+    },
+    {
+      key: "display",
+      label: "Display Settings",
+      icon: Monitor,
+      element: displaySettingsCard,
+    },
     ...visibleLinkItems.map((item) => ({
       key: item.label,
       label: item.label,
@@ -605,7 +628,14 @@ export default function SellerSettings() {
       item,
     })),
     ...(canManageProfile
-      ? [{ key: "danger", label: "Danger Zone", icon: AlertTriangle, element: dangerZoneCard }]
+      ? [
+          {
+            key: "danger",
+            label: "Danger Zone",
+            icon: AlertTriangle,
+            element: dangerZoneCard,
+          },
+        ]
       : []),
   ];
 
@@ -644,7 +674,10 @@ export default function SellerSettings() {
                     activeOpacity={0.7}
                     onPress={() => {
                       if (isLink) {
-                        openLinkItem((section as { item: (typeof settingsItems)[number] }).item);
+                        openLinkItem(
+                          (section as { item: (typeof settingsItems)[number] })
+                            .item,
+                        );
                       } else {
                         setActiveSection(section.key);
                       }
@@ -656,7 +689,9 @@ export default function SellerSettings() {
                       paddingHorizontal="$3"
                       paddingVertical="$3"
                       borderRadius={10}
-                      backgroundColor={isActive ? "$backgroundSoft" : "transparent"}
+                      backgroundColor={
+                        isActive ? "$backgroundSoft" : "transparent"
+                      }
                     >
                       <section.icon
                         size={20}
@@ -698,11 +733,15 @@ export default function SellerSettings() {
         <AppAlertDialog
           open={showCloseDialog}
           onOpenChange={setShowCloseDialog}
-          title="Close Store"
-          description="This will temporarily close your store and stop accepting new orders. You can reopen at any time."
-          confirmText="CLOSE STORE"
-          isDestructive
-          onConfirm={handleCloseStore}
+          title={isOpen ? "Pause Online Ordering" : "Resume Online Ordering"}
+          description={
+            isOpen
+              ? "This pauses new online orders only. Buyers will no longer see your restaurant, but walk-in POS orders and operating hours stay unchanged."
+              : "This makes your restaurant visible to buyers again and allows new online orders during your operating hours."
+          }
+          confirmText={isOpen ? "PAUSE" : "RESUME"}
+          isDestructive={isOpen}
+          onConfirm={() => void setOnlineOrdering(!isOpen)}
         />
       </YStack>
     );
@@ -734,11 +773,15 @@ export default function SellerSettings() {
       <AppAlertDialog
         open={showCloseDialog}
         onOpenChange={setShowCloseDialog}
-        title="Close Store"
-        description="This will temporarily close your store and stop accepting new orders. You can reopen at any time."
-        confirmText="CLOSE STORE"
-        isDestructive
-        onConfirm={handleCloseStore}
+        title={isOpen ? "Pause Online Ordering" : "Resume Online Ordering"}
+        description={
+          isOpen
+            ? "This pauses new online orders only. Buyers will no longer see your restaurant, but walk-in POS orders and operating hours stay unchanged."
+            : "This makes your restaurant visible to buyers again and allows new online orders during your operating hours."
+        }
+        confirmText={isOpen ? "PAUSE" : "RESUME"}
+        isDestructive={isOpen}
+        onConfirm={() => void setOnlineOrdering(!isOpen)}
       />
     </YStack>
   );

@@ -15,7 +15,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Phone,
   MapPin,
@@ -53,6 +53,9 @@ import {
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { ReceiptPreviewSheet } from "@/components/orders/ReceiptPreviewSheet";
 import { usePrintReceiptMutation } from "@/hooks/useReceiptPreview";
+import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
+import { paymentService } from "@/services/payment.service";
+import type { MomoQuote } from "@/types/payment";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "$yellow9",
@@ -100,7 +103,7 @@ export default function OrderDetails({
   // Live order updates for this specific order. Offline-created orders live
   // in the pending outbox until the cloud acknowledges them, so fall back to
   // that snapshot when the SQLite read model has not received the order yet.
-  const { data, isLoading } = useSellerOrderQuery(id as string);
+  const { data, isLoading, refetch } = useSellerOrderQuery(id as string);
   const pendingOrders = usePendingOrders();
   const acceptMutation = useAcceptOrderMutation();
   const rejectMutation = useRejectOrderMutation();
@@ -124,6 +127,8 @@ export default function OrderDetails({
     riderId: string;
   } | null>(null);
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
+  const [showMomoSheet, setShowMomoSheet] = useState(false);
+  const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
   const printMutation = usePrintReceiptMutation();
 
   const pendingOrder = pendingOrders.find(
@@ -135,6 +140,29 @@ export default function OrderDetails({
         order as unknown as Parameters<typeof getCustomerDisplay>[0],
       )
     : null;
+  const canCollectMomo = Boolean(
+    order?.is_pos &&
+    !order.is_paid &&
+    (order.pos_payment_method ?? order.payment_mode) === "mobile_money",
+  );
+
+  useEffect(() => {
+    if (!showMomoSheet || !order?.id) return;
+    let cancelled = false;
+    setMomoQuote(null);
+    paymentService
+      .getMomoQuote({ order_id: order.id })
+      .then((response) => {
+        if (!cancelled) setMomoQuote(response.data);
+      })
+      .catch(() => {
+        if (!cancelled) setMomoQuote(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showMomoSheet, order?.id]);
+
   const showDialog = (
     title: string,
     description: string,
@@ -583,6 +611,16 @@ export default function OrderDetails({
             </Text>
             <Separator />
 
+            {canCollectMomo && (
+              <Button
+                variant="success"
+                width="100%"
+                onPress={() => setShowMomoSheet(true)}
+              >
+                Collect Mobile Money
+              </Button>
+            )}
+
             {order.status === "pending" && (
               <>
                 <Button
@@ -745,6 +783,35 @@ export default function OrderDetails({
           </YStack>
         </YStack>
       </ScrollView>
+
+      <MomoChargeSheet
+        open={showMomoSheet}
+        title={`Collect Mobile Money · ${order.order_number}`}
+        subtitle="Ask the customer to approve the prompt on their phone."
+        baseMinor={momoQuote?.base_amount_minor ?? order.total_minor}
+        feeMinor={momoQuote?.fee_minor ?? 0}
+        currency={order.currency_code ?? order.currency ?? "GHS"}
+        defaultPhone={order.customer_phone}
+        amountLabel="Order amount"
+        onStart={async (phone, provider) => {
+          const response = await paymentService.chargeMomo({
+            order_id: order.id,
+            phone,
+            provider,
+            idempotency_key: `order-detail-pay-${order.id}-${Date.now()}`,
+          });
+          return { charge: response.data };
+        }}
+        onSuccess={() => {
+          toast.success("Mobile-money payment received");
+          setShowMomoSheet(false);
+          void refetch();
+        }}
+        onClose={() => {
+          setShowMomoSheet(false);
+          setMomoQuote(null);
+        }}
+      />
 
       {/* Receipt Preview Sheet (80mm thermal, live order) */}
       <ReceiptPreviewSheet

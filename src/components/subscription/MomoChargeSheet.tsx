@@ -21,6 +21,7 @@ type Props = {
   currency: string;
   defaultPhone?: string | null;
   defaultProvider?: string | null;
+  amountLabel?: string;
   onStart: (phone: string, provider: MomoProvider) => Promise<MomoStartResult>;
   onSuccess: () => void;
   onClose: () => void;
@@ -47,6 +48,7 @@ export function MomoChargeSheet({
   currency,
   defaultPhone,
   defaultProvider,
+  amountLabel = "Plan amount",
   onStart,
   onSuccess,
   onClose,
@@ -208,7 +210,7 @@ export function MomoChargeSheet({
             >
               <XStack justifyContent="space-between">
                 <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                  Plan amount
+                  {amountLabel}
                 </Text>
                 <Text fontSize="$3" color="$color" fontFamily="$body">
                   {formatMoney(baseMinor, currency)}
