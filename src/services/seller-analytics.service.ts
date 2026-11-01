@@ -65,13 +65,38 @@ export interface RevenueSummaryResponse {
   data: RevenueSummaryData;
 }
 
-export async function fetchSellerAnalytics(businessId: string, period?: string): Promise<SellerAnalyticsResponse> {
-  const params = period ? { period } : undefined;
-  return api.get(`/businesses/${businessId}/analytics`, { params });
+export interface AnalyticsRange {
+  date_from?: string;
+  date_to?: string;
 }
 
-export async function fetchRevenueSummary(businessId: string, period = 'today'): Promise<RevenueSummaryResponse> {
+function analyticsParams(
+  period?: string,
+  range?: AnalyticsRange,
+): Record<string, string> | undefined {
+  const params: Record<string, string> = {};
+  if (period) params.period = period;
+  if (range?.date_from) params.date_from = range.date_from;
+  if (range?.date_to) params.date_to = range.date_to;
+  return Object.keys(params).length > 0 ? params : undefined;
+}
+
+export async function fetchSellerAnalytics(
+  businessId: string,
+  period?: string,
+  range?: AnalyticsRange,
+): Promise<SellerAnalyticsResponse> {
+  return api.get(`/businesses/${businessId}/analytics`, {
+    params: analyticsParams(period, range),
+  });
+}
+
+export async function fetchRevenueSummary(
+  businessId: string,
+  period = 'today',
+  range?: AnalyticsRange,
+): Promise<RevenueSummaryResponse> {
   return api.get(`/businesses/${businessId}/revenue-summary`, {
-    params: { period },
+    params: analyticsParams(period, range),
   });
 }

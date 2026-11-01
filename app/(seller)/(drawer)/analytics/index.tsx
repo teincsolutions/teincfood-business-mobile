@@ -1,7 +1,16 @@
 // @ts-nocheck
 import { useState, useMemo } from "react";
 import { ScrollView, TouchableOpacity } from "react-native";
-import { YStack, Text, Card, XStack, Separator, Spinner, useMedia } from "tamagui";
+import {
+  YStack,
+  Text,
+  Card,
+  XStack,
+  Separator,
+  Spinner,
+  Sheet,
+  useMedia,
+} from "tamagui";
 import {
   TrendingUp,
   DollarSign,
@@ -18,13 +27,19 @@ import {
   useRevenueSummaryQuery,
   useSellerAnalyticsQuery,
 } from "@teincfood/core";
+import type { AnalyticsPeriod, AnalyticsRange } from "@teincfood/core";
 import { Badge } from "@/components/ui/Badge";
+import { Button, TamaguiDateInput } from "@/components/ui";
 
 const PERIODS = [
   { key: "today", label: "Today" },
   { key: "this_week", label: "This Week" },
   { key: "this_month", label: "This Month" },
-];
+  { key: "this_year", label: "This Year" },
+] as const;
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const monthStartIso = () => `${todayIso().slice(0, 7)}-01`;
 
 const METHOD_CONFIG = {
   cash: { icon: Banknote, label: "Cash", color: "$green9" },
@@ -97,10 +112,22 @@ function PaymentBar({ method, revenue_minor, count, percentage, totalColor }: {
 export default function SellerAnalytics() {
   const insets = useSafeAreaInsets();
   const media = useMedia();
-  const [period, setPeriod] = useState("today");
+  const [period, setPeriod] = useState<AnalyticsPeriod>("today");
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customFrom, setCustomFrom] = useState(monthStartIso);
+  const [customTo, setCustomTo] = useState(todayIso);
+  const [appliedRange, setAppliedRange] = useState<AnalyticsRange | undefined>();
+  const customInvalid =
+    !customFrom || !customTo || customFrom > customTo;
+  const range = period === "custom" ? appliedRange : undefined;
 
-  const { data: revenueData, isLoading: revenueLoading } = useRevenueSummaryQuery(period);
-  const { data: analyticsData } = useSellerAnalyticsQuery(period);
+  const { data: revenueData, isLoading: revenueLoading } =
+    useRevenueSummaryQuery(period, true, range);
+  const { data: analyticsData } = useSellerAnalyticsQuery(
+    period,
+    true,
+    range,
+  );
 
   const summary = revenueData?.data;
   const paymentMethods = summary?.by_payment_method ?? [];
@@ -112,13 +139,33 @@ export default function SellerAnalytics() {
     [days],
   );
 
-  const formatPeriodLabel = (p: string) => {
+  const formatPeriodLabel = (p: AnalyticsPeriod) => {
     switch (p) {
       case "today": return "Today";
       case "this_week": return "This Week";
       case "this_month": return "This Month";
+      case "this_year": return "This Year";
+      case "custom":
+        return appliedRange
+          ? `${appliedRange.date_from} – ${appliedRange.date_to}`
+          : "Custom";
       default: return p;
     }
+  };
+
+  const openCustom = () => {
+    if (!appliedRange) {
+      setCustomFrom(monthStartIso());
+      setCustomTo(todayIso());
+    }
+    setCustomOpen(true);
+  };
+
+  const applyCustom = () => {
+    if (customInvalid) return;
+    setAppliedRange({ date_from: customFrom, date_to: customTo });
+    setPeriod("custom");
+    setCustomOpen(false);
   };
 
   return (
@@ -131,16 +178,30 @@ export default function SellerAnalytics() {
           </Text>
 
           {/* Period Tabs */}
-          <XStack gap="$2">
+          <XStack gap="$2" flexWrap="wrap">
             {PERIODS.map((p) => (
               <PeriodTab
                 key={p.key}
                 label={p.label}
                 active={period === p.key}
-                onPress={() => setPeriod(p.key)}
+                onPress={() => {
+                  setPeriod(p.key);
+                  setCustomOpen(false);
+                }}
               />
             ))}
+            <PeriodTab
+              label="Custom"
+              active={period === "custom"}
+              onPress={openCustom}
+            />
           </XStack>
+
+          {period === "custom" && appliedRange && (
+            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+              Showing {formatPeriodLabel("custom")}
+            </Text>
+          )}
 
           {revenueLoading ? (
             <YStack padding="$8" alignItems="center">
@@ -328,6 +389,102 @@ export default function SellerAnalytics() {
           )}
         </YStack>
       </ScrollView>
+
+      <Sheet
+        modal
+        open={customOpen}
+        onOpenChange={setCustomOpen}
+        snapPointsMode="percent"
+        snapPoints={[52]}
+        position={0}
+        dismissOnSnapToBottom
+        dismissOnOverlayPress
+        zIndex={100_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(15, 23, 42, 0.28)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$8"
+          borderTopRightRadius="$8"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack
+            paddingHorizontal="$5"
+            paddingTop="$3"
+            paddingBottom={Math.max(insets.bottom, 16)}
+            gap="$4"
+          >
+            <XStack alignItems="center" gap="$2">
+              <CalendarDays size={20} color="$primary" />
+              <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+                Custom range
+              </Text>
+            </XStack>
+
+            <YStack gap="$3">
+              <YStack gap="$1">
+                <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                  From
+                </Text>
+                <TamaguiDateInput
+                  value={
+                    customFrom
+                      ? new Date(`${customFrom}T00:00:00`)
+                      : undefined
+                  }
+                  onChange={(date) =>
+                    setCustomFrom(date.toISOString().split("T")[0])
+                  }
+                  placeholder="Start date"
+                />
+              </YStack>
+              <YStack gap="$1">
+                <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                  To
+                </Text>
+                <TamaguiDateInput
+                  value={
+                    customTo ? new Date(`${customTo}T00:00:00`) : undefined
+                  }
+                  onChange={(date) =>
+                    setCustomTo(date.toISOString().split("T")[0])
+                  }
+                  placeholder="End date"
+                />
+              </YStack>
+            </YStack>
+
+            {customInvalid && (
+              <Text fontSize="$2" color="$red10" fontFamily="$body">
+                Choose a valid start and end date.
+              </Text>
+            )}
+
+            <XStack gap="$2">
+              <Button
+                flex={1}
+                variant="outline"
+                onPress={() => setCustomOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                variant="primary"
+                disabled={customInvalid}
+                onPress={applyCustom}
+              >
+                Apply range
+              </Button>
+            </XStack>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
     </YStack>
   );
 }
