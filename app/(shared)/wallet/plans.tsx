@@ -400,8 +400,8 @@ function PlanTab() {
     const monthly = plan.monthly_fee_minor || 0;
     const yearlyPrice = plan.yearly_fee_minor || 0;
     const price = yearly && yearlyPrice > 0 ? yearlyPrice : monthly;
-    const profile = billingQuery.data?.billing_profile;
-    const status = billingQuery.data?.configuration.subscription_status;
+    const config = billingQuery.data?.configuration;
+    const status = config?.subscription_status;
 
     if (price <= 0) {
       setSelecting(plan.id);
@@ -418,24 +418,27 @@ function PlanTab() {
       return;
     }
 
-    if (!profile?.has_momo) {
-      toast.error("Add a mobile-money number in Billing first");
-      return;
-    }
-
-    if (status === "none") {
+    // First-time users get the plan's trial without any payment setup. Mirror
+    // the backend's first-time rule (status none + no current period) rather
+    // than requiring a saved MoMo profile before the trial can start.
+    const firstTimeTrial = status === "none" && !config?.current_period_end;
+    if (firstTimeTrial) {
       setSelecting(plan.id);
       checkout.mutate(
         {
           plan_id: plan.id,
           cycle: yearly ? "year" : "month",
           start_trial: true,
-          phone: profile.momo_phone ?? undefined,
-          provider: profile.momo_provider ?? undefined,
         },
         {
-          onSuccess: () => {
+          onSuccess: (response) => {
             setSelecting(null);
+            if (response.charge) {
+              // Stale plan state: the backend decided a charge is required.
+              setPendingPlan(plan);
+              toast.info("Enter your mobile-money number to continue.");
+              return;
+            }
             toast.success(`Trial started on ${plan.name}`);
             void billingQuery.refetch();
             void subQuery.refetch();
@@ -449,6 +452,8 @@ function PlanTab() {
       return;
     }
 
+    // Paid plan (new or change): the sheet collects the MoMo number; checkout
+    // saves it to the billing profile and starts the charge.
     setPendingPlan(plan);
   };
 

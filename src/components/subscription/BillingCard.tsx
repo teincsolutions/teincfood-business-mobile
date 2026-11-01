@@ -80,10 +80,11 @@ export function BillingCard() {
 
   const saveProfile = async () => {
     try {
+      const trimmedPhone = phone.trim();
       await updateProfile.mutateAsync({
-        phone,
+        ...(trimmedPhone ? { phone: trimmedPhone } : {}),
         provider,
-        billing_email: email || undefined,
+        billing_email: email.trim() || undefined,
         auto_renew: autoRenew,
         consent_version: "2026-10",
       });
