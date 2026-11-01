@@ -48,9 +48,13 @@ axiosInstance.interceptors.request.use(
         status?: number;
         response?: unknown;
         isRateLimited?: boolean;
+        isLocalRateLimit?: boolean;
       };
       err.status = 429;
       err.isRateLimited = true;
+      // This rejection was produced by the local gate, not by the server.
+      // It must not extend the cooldown or trigger another user-facing toast.
+      err.isLocalRateLimit = true;
       err.response = {
         status: 429,
         data: {
@@ -158,12 +162,25 @@ axiosInstance.interceptors.response.use(
     // 429: open the global cooldown so background sync pauses, and tell the
     // user once per window instead of failing silently.
     if (status === 429) {
-      noteRateLimited(extractRetryAfterMs(error));
-      if (shouldReportRateLimit()) {
-        try {
-          toast.error("Server is busy — retrying automatically");
-        } catch {}
+      const isLocalRateLimit =
+        (error as { isLocalRateLimit?: boolean }).isLocalRateLimit === true;
+
+      // Only a real server 429 opens/extends the cooldown. The local gate
+      // rejects requests while that cooldown is active; feeding those
+      // rejections back in would keep extending the window and toast forever.
+      if (!isLocalRateLimit) {
+        noteRateLimited(extractRetryAfterMs(error));
+        if (shouldReportRateLimit()) {
+          try {
+            // Stable id replaces an existing toast instead of stacking a new
+            // one for every request in the burst.
+            toast.error("Server is busy — retrying automatically", {
+              id: "server-busy",
+            });
+          } catch {}
+        }
       }
+
       return rejectAsApiError();
     }
 
