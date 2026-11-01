@@ -336,20 +336,13 @@ export function BillingCard() {
             <Button
               variant="primary"
               height={46}
-              disabled={
-                !profile?.has_momo || upcoming.status === "payment_pending"
-              }
+              disabled={upcoming.status === "payment_pending"}
               onPress={() => setPayingInvoice(upcoming)}
             >
               {upcoming.status === "payment_pending"
                 ? "Waiting for approval"
                 : "Pay now"}
             </Button>
-            {!profile?.has_momo ? (
-              <Text fontSize="$2" color="$warning" fontFamily="$body">
-                Add a mobile-money number first.
-              </Text>
-            ) : null}
           </YStack>
         ) : (
           <YStack gap="$1">

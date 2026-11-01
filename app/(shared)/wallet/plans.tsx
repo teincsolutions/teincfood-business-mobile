@@ -13,7 +13,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Crown, TicketPercent } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { toast } from "sonner-native";
-import { useIsEffectivelyOnline, type Promo } from "@teincfood/core";
+import {
+  referenceSyncService,
+  useIsEffectivelyOnline,
+  type Promo,
+} from "@teincfood/core";
 import {
   useSubscriptionPlansQuery,
   useMySubscriptionQuery,
@@ -28,6 +32,7 @@ import { BillingCard } from "@/components/subscription/BillingCard";
 import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { useBusinessStore } from "@/stores/business.store";
 import type { SubscriptionPlan } from "@/services/subscription.service";
 
 type Tab = "plan" | "promos";
@@ -335,6 +340,7 @@ function PlanTab() {
   const update = useUpdateSubscriptionMutation();
   const checkout = useCheckoutSubscriptionMutation();
   const online = useIsEffectivelyOnline();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [yearly, setYearly] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
@@ -555,6 +561,15 @@ function PlanTab() {
           void billingQuery.refetch();
           void subQuery.refetch();
           void plansQuery.refetch();
+          if (businessId) {
+            void referenceSyncService
+              .sync({
+                businessId,
+                keys: ["subscription:entitlements"],
+                force: true,
+              })
+              .catch(() => undefined);
+          }
           toast.success("Subscription payment confirmed");
         }}
         onClose={() => setPendingPlan(null)}
