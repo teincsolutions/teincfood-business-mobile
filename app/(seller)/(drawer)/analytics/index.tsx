@@ -190,9 +190,43 @@ export default function SellerAnalytics() {
   const tellers = analyticsData?.data?.by_teller ?? [];
   const hours = analyticsData?.data?.by_hour ?? [];
   const topItems = analyticsData?.data?.top_items ?? [];
+  const trendRows = useMemo(() => {
+    if (period !== "this_year") {
+      return days.map((d) => ({
+        key: d.date,
+        label: new Date(d.date + "T00:00:00").toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        }),
+        revenue_minor: d.revenue_minor,
+        count: d.count,
+      }));
+    }
+
+    const months = new Map<string, { revenue_minor: number; count: number }>();
+    for (const day of days) {
+      const month = (day.date ?? "").slice(0, 7);
+      if (!month) continue;
+      const row = months.get(month) ?? { revenue_minor: 0, count: 0 };
+      row.revenue_minor += day.revenue_minor ?? 0;
+      row.count += day.count ?? 0;
+      months.set(month, row);
+    }
+    return [...months.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, row]) => ({
+        key: month,
+        label: new Date(`${month}-01T00:00:00`).toLocaleDateString(undefined, {
+          month: "short",
+          year: "numeric",
+        }),
+        ...row,
+      }));
+  }, [days, period]);
   const maxDayRevenue = useMemo(
-    () => Math.max(...days.map((d) => d.revenue_minor), 1),
-    [days],
+    () => Math.max(...trendRows.map((d) => d.revenue_minor), 1),
+    [trendRows],
   );
 
   const formatPeriodLabel = (p: AnalyticsPeriod) => {
@@ -337,42 +371,46 @@ export default function SellerAnalytics() {
               )}
 
               {/* Revenue by Day */}
-              {unlocked("analytics.sales_trends") && days.length > 0 && (
+              {unlocked("analytics.sales_trends") && trendRows.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
-                      Revenue by Day
+                      Revenue by {period === "this_year" ? "Month" : "Day"}
                     </Text>
                     <Separator />
-                    {days.map((d) => (
-                      <YStack key={d.date} gap="$1">
-                        <XStack justifyContent="space-between" alignItems="center">
-                          <Text fontSize="$3" fontFamily="$body" color="$color">
-                            {new Date(d.date + "T00:00:00").toLocaleDateString(undefined, {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </Text>
-                          <XStack gap="$2" alignItems="center">
-                            <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$color">
-                              {formatPriceFromMinor(d.revenue_minor, summary.currency)}
-                            </Text>
-                            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                              ({d.count})
-                            </Text>
-                          </XStack>
-                        </XStack>
-                        <YStack height={6} backgroundColor="$backgroundSoft" borderRadius="$full" overflow="hidden">
-                          <YStack
-                            width={`${(d.revenue_minor / maxDayRevenue) * 100}%`}
-                            height="100%"
-                            backgroundColor="$primary"
-                            borderRadius="$full"
-                          />
-                        </YStack>
+                    <ScrollView
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator
+                      style={{ maxHeight: 320 }}
+                    >
+                      <YStack gap="$3" paddingRight="$1">
+                        {trendRows.map((d) => (
+                          <YStack key={d.key} gap="$1">
+                            <XStack justifyContent="space-between" alignItems="center">
+                              <Text fontSize="$3" fontFamily="$body" color="$color">
+                                {d.label}
+                              </Text>
+                              <XStack gap="$2" alignItems="center">
+                                <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$color">
+                                  {formatPriceFromMinor(d.revenue_minor, summary.currency)}
+                                </Text>
+                                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                                  ({d.count})
+                                </Text>
+                              </XStack>
+                            </XStack>
+                            <YStack height={6} backgroundColor="$backgroundSoft" borderRadius="$full" overflow="hidden">
+                              <YStack
+                                width={`${(d.revenue_minor / maxDayRevenue) * 100}%`}
+                                height="100%"
+                                backgroundColor="$primary"
+                                borderRadius="$full"
+                              />
+                            </YStack>
+                          </YStack>
+                        ))}
                       </YStack>
-                    ))}
+                    </ScrollView>
                   </YStack>
                 </Card>
               )}
