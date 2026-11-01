@@ -7,17 +7,125 @@ import {
   TrendingUp,
   Building,
   Bike,
+  Crown,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
-import { useAllBalancesQuery, useBusinessWalletBalanceQuery } from "@teincfood/core";
+import { useAllBalancesQuery, useBusinessWalletBalanceQuery, useIsEffectivelyOnline } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useEntitlements } from "@/hooks/useEntitlements";
+import { useBillingQuery } from "@/hooks/useSubscription";
 import { useReferenceData } from "@teincfood/core";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
+}
+
+function formatShortDate(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function BillingSnapshot() {
+  const router = useRouter();
+  const online = useIsEffectivelyOnline();
+  const billing = useBillingQuery();
+  const data = billing.data;
+  const upcoming = data?.upcoming_invoice;
+  const lastPaid = (data?.invoices ?? []).find(
+    (invoice) => invoice.status === "paid" && invoice.paid_at,
+  );
+
+  const billLabel =
+    upcoming?.status === "open"
+      ? "Payment due"
+      : upcoming?.status === "payment_pending"
+        ? "Awaiting approval"
+        : "Next bill";
+
+  return (
+    <Card padding="$4" bordered>
+      <YStack gap="$3">
+        <XStack justifyContent="space-between" alignItems="center" gap="$2">
+          <XStack gap="$2" alignItems="center">
+            <Crown size={18} />
+            <Text
+              fontSize="$5"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Bills &amp; payments
+            </Text>
+          </XStack>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => router.push("/(shared)/wallet/plans" as never)}
+          >
+            View
+          </Button>
+        </XStack>
+
+        <Separator />
+
+        {!online ? (
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            Reconnect to view bills and payments.
+          </Text>
+        ) : billing.isLoading ? (
+          <YStack alignItems="center" padding="$2">
+            <Spinner color="$primary" />
+          </YStack>
+        ) : billing.isError ? (
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            Could not load bills. Open Manage plan to retry.
+          </Text>
+        ) : (
+          <YStack gap="$2">
+            {upcoming ? (
+              <YStack gap="$0.5">
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  {billLabel}
+                </Text>
+                <Text
+                  fontSize="$4"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color={upcoming.status === "open" ? "$warning" : "$color"}
+                >
+                  {formatMinor(upcoming.amount_minor, upcoming.currency)}
+                </Text>
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  Due {formatShortDate(upcoming.due_at)}
+                </Text>
+              </YStack>
+            ) : (
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                No bill due right now.
+              </Text>
+            )}
+
+            {lastPaid ? (
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                Last payment: {formatMinor(lastPaid.amount_minor, lastPaid.currency)} on{" "}
+                {formatShortDate(lastPaid.paid_at)}
+              </Text>
+            ) : (
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                No subscription payments yet.
+              </Text>
+            )}
+          </YStack>
+        )}
+      </YStack>
+    </Card>
+  );
 }
 
 export default function WalletScreen() {
@@ -170,7 +278,7 @@ export default function WalletScreen() {
                     </Text>
                     {role === "seller" || role === "fleet_manager" ? (
                       <Button variant="outline" onPress={() => router.push("/(shared)/wallet/plans" as never)}>
-                        Manage plan
+                        Manage plan &amp; bills
                       </Button>
                     ) : null}
                   </YStack>
@@ -182,6 +290,7 @@ export default function WalletScreen() {
               </YStack>
             </Card>
             )}
+            {canManageBilling && <BillingSnapshot />}
           </ScrollView>
         )}
       </YStack>

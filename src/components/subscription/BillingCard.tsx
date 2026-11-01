@@ -39,6 +39,151 @@ function formatDate(value?: string | null) {
   });
 }
 
+function invoiceStatus(status: string): {
+  label: string;
+  color: string;
+  background: string;
+} {
+  switch (status) {
+    case "paid":
+      return { label: "Paid", color: "$success", background: "$successMuted" };
+    case "open":
+      return { label: "Due", color: "$warning", background: "$warningMuted" };
+    case "payment_pending":
+      return {
+        label: "Awaiting approval",
+        color: "$warning",
+        background: "$warningMuted",
+      };
+    case "failed":
+      return { label: "Failed", color: "$error", background: "$errorMuted" };
+    case "void":
+      return {
+        label: "Void",
+        color: "$colorSecondary",
+        background: "$backgroundSoft",
+      };
+    case "scheduled":
+      return {
+        label: "Scheduled",
+        color: "$colorSecondary",
+        background: "$backgroundSoft",
+      };
+    default:
+      return {
+        label: status,
+        color: "$colorSecondary",
+        background: "$backgroundSoft",
+      };
+  }
+}
+
+function InvoiceHistory({
+  invoices,
+  upcomingId,
+}: {
+  invoices: SubscriptionInvoice[];
+  upcomingId?: string;
+}) {
+  const history = invoices.filter((invoice) => invoice.id !== upcomingId);
+
+  return (
+    <YStack gap="$2">
+      <XStack justifyContent="space-between" alignItems="center" gap="$2">
+        <Text
+          fontSize="$4"
+          fontWeight="700"
+          fontFamily="$heading"
+          color="$color"
+        >
+          Bills &amp; payments
+        </Text>
+        {history.length > 0 ? (
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+            {`${history.length} record${history.length === 1 ? "" : "s"}`}
+          </Text>
+        ) : null}
+      </XStack>
+
+      {history.length === 0 ? (
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+          No previous subscription bills yet.
+        </Text>
+      ) : (
+        <YStack>
+          {history.map((invoice) => {
+            const status = invoiceStatus(invoice.status);
+            return (
+              <XStack
+                key={invoice.id}
+                justifyContent="space-between"
+                alignItems="flex-start"
+                gap="$3"
+                paddingVertical="$2.5"
+                borderBottomWidth={1}
+                borderColor="$borderColor"
+              >
+                <YStack flex={1} gap="$0.5">
+                  <XStack gap="$2" alignItems="center" flexWrap="wrap">
+                    <Text
+                      fontSize="$1"
+                      fontWeight="700"
+                      fontFamily="$body"
+                      color={status.color}
+                      backgroundColor={status.background}
+                      paddingHorizontal="$2"
+                      paddingVertical="$0.5"
+                      borderRadius="$2"
+                    >
+                      {status.label}
+                    </Text>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      {invoice.billing_cycle === "year" ? "Yearly" : "Monthly"}
+                    </Text>
+                  </XStack>
+                  <Text
+                    fontSize="$2"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    {invoice.status === "paid"
+                      ? invoice.paid_at
+                        ? `Paid ${formatDate(invoice.paid_at)}`
+                        : `Paid`
+                      : `Due ${formatDate(invoice.due_at)}`}
+                  </Text>
+                  {invoice.payment_reference ? (
+                    <Text
+                      fontSize="$1"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                      numberOfLines={1}
+                    >
+                      {invoice.payment_reference}
+                    </Text>
+                  ) : null}
+                </YStack>
+                <Text
+                  fontSize="$3"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color="$color"
+                >
+                  {formatMoney(invoice.amount_minor, invoice.currency)}
+                </Text>
+              </XStack>
+            );
+          })}
+        </YStack>
+      )}
+    </YStack>
+  );
+}
+
 export function BillingCard() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const online = useIsEffectivelyOnline();
@@ -356,6 +501,13 @@ export function BillingCard() {
             ) : null}
           </YStack>
         )}
+
+        <Separator />
+
+        <InvoiceHistory
+          invoices={data.invoices ?? []}
+          upcomingId={upcoming?.id}
+        />
 
         <XStack gap="$2">
           <Button

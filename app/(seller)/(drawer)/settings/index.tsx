@@ -265,7 +265,7 @@ export default function SellerSettings() {
           {
             icon: Crown,
             label: "Subscription & Plan",
-            description: "Plan, billing status, promos",
+            description: "Plan, bills, payments, promos",
             route: "/(shared)/wallet/plans",
           },
         ]
