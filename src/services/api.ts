@@ -28,6 +28,11 @@ import {
 /**
  * Axios client instance for the Teinc Food Business API.
  */
+// The toast is informational only. Keep it rare even if the server stays
+// throttled across several Retry-After windows.
+const RATE_LIMIT_TOAST_COOLDOWN_MS = 5 * 60_000;
+let lastRateLimitToastAt = 0;
+
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -171,13 +176,17 @@ axiosInstance.interceptors.response.use(
       if (!isLocalRateLimit) {
         noteRateLimited(extractRetryAfterMs(error));
         if (shouldReportRateLimit()) {
-          try {
-            // Stable id replaces an existing toast instead of stacking a new
-            // one for every request in the burst.
-            toast.error("Server is busy — retrying automatically", {
-              id: "server-busy",
-            });
-          } catch {}
+          const now = Date.now();
+          if (now - lastRateLimitToastAt >= RATE_LIMIT_TOAST_COOLDOWN_MS) {
+            lastRateLimitToastAt = now;
+            try {
+              // Stable id replaces an existing toast instead of stacking a new
+              // one for every request in the burst.
+              toast.error("Server is busy — retrying automatically", {
+                id: "server-busy",
+              });
+            } catch {}
+          }
         }
       }
 
