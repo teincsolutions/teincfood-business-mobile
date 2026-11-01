@@ -463,6 +463,7 @@ export default function MembersScreen() {
                               payments_process: CreditCard,
                               deliveries_assign: Truck,
                               deliveries_all: Truck,
+                              analytics_read: BarChart3,
                               finance_read: BarChart3,
                               finance_billing_manage: Receipt,
                               finance_withdraw: ArrowUpRight,

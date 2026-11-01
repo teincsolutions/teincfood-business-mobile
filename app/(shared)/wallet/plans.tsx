@@ -42,6 +42,15 @@ function formatMoney(minor: number, currency: string): string {
 }
 
 const FEATURE_LABELS: Record<string, string> = {
+  "analytics.overview": "Analytics overview",
+  "analytics.sales_trends": "Sales trends",
+  "analytics.channel_split": "Online vs local",
+  "analytics.teller_performance": "Teller performance",
+  "analytics.payment_methods": "Payment methods",
+  "analytics.order_types": "Order types",
+  "analytics.hourly_heatmap": "Hourly heatmap",
+  "analytics.export": "Export reports",
+  "analytics.scheduled_reports": "Scheduled reports",
   "seller.online_orders": "Online orders",
   "seller.pos.terminal": "POS terminal",
   "seller.promo": "Promo campaigns",

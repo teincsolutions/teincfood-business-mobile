@@ -17,14 +17,43 @@ export interface AnalyticsRevenueByDay {
   revenue_minor: number;
 }
 
+export interface AnalyticsChannel {
+  channel: "online" | "local";
+  revenue_minor: number;
+  count: number;
+  percentage: number;
+}
+
+export interface AnalyticsTeller {
+  user_id: string;
+  name: string;
+  revenue_minor: number;
+  count: number;
+  average_order_value_minor: number;
+}
+
+export interface AnalyticsByHour {
+  hour: number;
+  revenue_minor: number;
+  count: number;
+}
+
 export interface SellerAnalyticsData {
   period: string;
+  currency?: string;
   total_revenue_minor: number;
   total_orders: number;
   average_order_value_minor: number;
+  total_refunds_minor: number;
   top_items: AnalyticsTopItem[];
   orders_by_status: AnalyticsOrdersByStatus;
   revenue_by_day: AnalyticsRevenueByDay[];
+  by_channel?: AnalyticsChannel[];
+  by_payment_method?: RevenuePaymentMethod[];
+  by_order_type?: RevenueOrderType[];
+  by_teller?: AnalyticsTeller[];
+  by_hour?: AnalyticsByHour[];
+  locked_sections?: string[];
 }
 
 export interface SellerAnalyticsResponse {
@@ -59,6 +88,10 @@ export interface RevenueSummaryData {
   by_payment_method: RevenuePaymentMethod[];
   by_order_type: RevenueOrderType[];
   by_day: RevenueByDay[];
+  by_channel?: AnalyticsChannel[];
+  by_teller?: AnalyticsTeller[];
+  by_hour?: AnalyticsByHour[];
+  locked_sections?: string[];
 }
 
 export interface RevenueSummaryResponse {

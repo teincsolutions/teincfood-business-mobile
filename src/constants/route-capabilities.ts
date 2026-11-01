@@ -6,7 +6,7 @@ export const routeCapabilities: Record<string, string> = {
   '/(seller)/deliveries': 'deliveries_assign',
   '/(seller)/menu': 'menu_manage',
   '/(seller)/menu/categories': 'menu_manage',
-  '/(seller)/analytics': 'finance_read',
+  '/(seller)/analytics': 'analytics_read',
   '/(seller)/members': 'business_members_manage',
   '/(seller)/riders': 'riders_manage',
   '/(seller)/settings/payment-settings': 'business_profile_manage',

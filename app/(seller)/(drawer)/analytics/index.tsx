@@ -20,8 +20,15 @@ import {
   CreditCard,
   ChefHat,
   CalendarDays,
+  Lock,
+  Crown,
+  Store,
+  Clock,
 } from "@tamagui/lucide-icons";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { formatPriceFromMinor } from "@teincfood/core";
 import {
   useRevenueSummaryQuery,
@@ -45,7 +52,8 @@ const METHOD_CONFIG = {
   cash: { icon: Banknote, label: "Cash", color: "$green9" },
   mobile_money: { icon: Smartphone, label: "Mobile Money", color: "$blue9" },
   card: { icon: CreditCard, label: "Card", color: "$purple9" },
-  prepaid: { icon: CreditCard, label: "Online", color: "$orange9" },
+  prepaid: { icon: CreditCard, label: "Online prepaid", color: "$orange9" },
+  online_prepaid: { icon: CreditCard, label: "Online prepaid", color: "$orange9" },
   pay_on_delivery: { icon: Banknote, label: "Pay on Delivery", color: "$red9" },
 };
 
@@ -68,6 +76,44 @@ function PeriodTab({ label, active, onPress }: { label: string; active: boolean;
         </Text>
       </YStack>
     </TouchableOpacity>
+  );
+}
+
+function LockedReportCard({
+  title,
+  feature,
+  showUpgrade,
+  onUpgrade,
+}: {
+  title: string;
+  feature: string;
+  showUpgrade: boolean;
+  onUpgrade: () => void;
+}) {
+  return (
+    <Card padding="$4" bordered>
+      <YStack gap="$2" alignItems="center">
+        <Lock size={24} color="$colorSecondary" />
+        <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
+          {title}
+        </Text>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" textAlign="center">
+          This report is not included in your current plan.
+        </Text>
+        <Text fontSize="$1" color="$colorSecondary" fontFamily="$body">
+          {feature}
+        </Text>
+        {showUpgrade ? (
+          <Button size="$3" onPress={onUpgrade}>
+            View plans
+          </Button>
+        ) : (
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+            Ask your owner or manager to upgrade.
+          </Text>
+        )}
+      </YStack>
+    </Card>
   );
 }
 
@@ -112,6 +158,11 @@ function PaymentBar({ method, revenue_minor, count, percentage, totalColor }: {
 export default function SellerAnalytics() {
   const insets = useSafeAreaInsets();
   const media = useMedia();
+  const router = useRouter();
+  const { data: features, evaluation } = useEntitlements();
+  const canManageBilling = useHasCapability("finance_billing_manage");
+  const unlocked = (feature: string) =>
+    Boolean(evaluation.entitled && features?.[feature] === true);
   const [period, setPeriod] = useState<AnalyticsPeriod>("today");
   const [customOpen, setCustomOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState(monthStartIso);
@@ -133,6 +184,9 @@ export default function SellerAnalytics() {
   const paymentMethods = summary?.by_payment_method ?? [];
   const orderTypes = summary?.by_order_type ?? [];
   const days = summary?.by_day ?? [];
+  const channels = analyticsData?.data?.by_channel ?? [];
+  const tellers = analyticsData?.data?.by_teller ?? [];
+  const hours = analyticsData?.data?.by_hour ?? [];
   const topItems = analyticsData?.data?.top_items ?? [];
   const maxDayRevenue = useMemo(
     () => Math.max(...days.map((d) => d.revenue_minor), 1),
@@ -254,7 +308,14 @@ export default function SellerAnalytics() {
               </Card>
 
               {/* Payment Method Breakdown */}
-              {paymentMethods.length > 0 && (
+              {!unlocked("analytics.payment_methods") ? (
+                <LockedReportCard
+                  title="Payment methods"
+                  feature="analytics.payment_methods"
+                  showUpgrade={canManageBilling}
+                  onUpgrade={() => router.push("/(shared)/wallet/plans")}
+                />
+              ) : paymentMethods.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
@@ -275,7 +336,7 @@ export default function SellerAnalytics() {
               )}
 
               {/* Revenue by Day */}
-              {days.length > 0 && (
+              {unlocked("analytics.sales_trends") && days.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
@@ -316,7 +377,14 @@ export default function SellerAnalytics() {
               )}
 
               {/* Order Type Breakdown */}
-              {orderTypes.length > 0 && (
+              {!unlocked("analytics.order_types") ? (
+                <LockedReportCard
+                  title="Order types"
+                  feature="analytics.order_types"
+                  showUpgrade={canManageBilling}
+                  onUpgrade={() => router.push("/(shared)/wallet/plans")}
+                />
+              ) : orderTypes.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
@@ -347,8 +415,115 @@ export default function SellerAnalytics() {
                 </Card>
               )}
 
+              {/* Online vs Local (is_pos) */}
+              {unlocked("analytics.channel_split") && channels.length > 0 && (
+                <Card padding="$4" bordered>
+                  <YStack gap="$3">
+                    <XStack gap="$2" alignItems="center">
+                      <Store size={18} color="$colorSecondary" />
+                      <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                        Online vs Local
+                      </Text>
+                    </XStack>
+                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                      Local means a POS sale; online means a buyer order.
+                    </Text>
+                    <Separator />
+                    {channels.map((channel) => (
+                      <XStack key={channel.channel} gap="$2" alignItems="center">
+                        <Text fontSize="$3" fontFamily="$body" color="$color" flex={1}>
+                          {channel.channel === "local" ? "Local (POS)" : "Online"}
+                        </Text>
+                        <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$color">
+                          {formatPriceFromMinor(channel.revenue_minor, summary.currency)}
+                        </Text>
+                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                          {channel.count} ({channel.percentage}%)
+                        </Text>
+                      </XStack>
+                    ))}
+                  </YStack>
+                </Card>
+              )}
+
+              {/* Teller performance */}
+              {!unlocked("analytics.teller_performance") ? (
+                <LockedReportCard
+                  title="Teller performance"
+                  feature="analytics.teller_performance"
+                  showUpgrade={canManageBilling}
+                  onUpgrade={() => router.push("/(shared)/wallet/plans")}
+                />
+              ) : tellers.length > 0 ? (
+                <Card padding="$4" bordered>
+                  <YStack gap="$3">
+                    <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                      Teller Performance
+                    </Text>
+                    <Separator />
+                    {tellers.map((teller) => (
+                      <XStack key={teller.user_id} justifyContent="space-between" alignItems="center">
+                        <Text fontSize="$4" fontFamily="$body" color="$color" flex={1}>
+                          {teller.name}
+                        </Text>
+                        <XStack gap="$2" alignItems="center">
+                          <Text fontSize="$4" fontWeight="700" fontFamily="$body" color="$color">
+                            {formatPriceFromMinor(teller.revenue_minor, summary.currency)}
+                          </Text>
+                          <Badge backgroundColor="$backgroundSoft" size="$2">
+                            <Text fontSize="$1" color="$colorSecondary" fontWeight="600">
+                              {teller.count}
+                            </Text>
+                          </Badge>
+                        </XStack>
+                      </XStack>
+                    ))}
+                  </YStack>
+                </Card>
+              ) : null}
+
+              {/* Hourly heatmap */}
+              {!unlocked("analytics.hourly_heatmap") ? (
+                <LockedReportCard
+                  title="Hourly heatmap"
+                  feature="analytics.hourly_heatmap"
+                  showUpgrade={canManageBilling}
+                  onUpgrade={() => router.push("/(shared)/wallet/plans")}
+                />
+              ) : hours.length > 0 ? (
+                <Card padding="$4" bordered>
+                  <YStack gap="$3">
+                    <XStack gap="$2" alignItems="center">
+                      <Clock size={18} color="$colorSecondary" />
+                      <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
+                        Hourly Heatmap
+                      </Text>
+                    </XStack>
+                    <Separator />
+                    {hours.map((hour) => (
+                      <XStack key={hour.hour} gap="$2" alignItems="center">
+                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" width={48}>
+                          {String(hour.hour).padStart(2, "0")}:00
+                        </Text>
+                        <YStack flex={1} height={6} backgroundColor="$backgroundSoft" borderRadius="$full" overflow="hidden">
+                          <YStack
+                            width={`${Math.max(3, (hour.revenue_minor / Math.max(...hours.map((h) => h.revenue_minor), 1)) * 100)}%`}
+                            height="100%"
+                            backgroundColor="$primary"
+                            borderRadius="$full"
+                          />
+                        </YStack>
+                        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" width={44} textAlign="right">
+                          {hour.count}
+                        </Text>
+                      </XStack>
+                    ))}
+                  </YStack>
+                </Card>
+              ) : null}
+
               {/* Top Selling Items */}
-              {topItems.length > 0 && (
+              {unlocked("analytics.sales_trends") && topItems.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
