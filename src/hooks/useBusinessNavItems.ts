@@ -4,7 +4,7 @@ import { sellerNavItems, type NavItem } from '@/constants/nav-items';
 
 export function useFilteredNavItems(): NavItem[] {
   const { data: membership } = useMyBusinessCapabilities();
-  const { data: features, evaluation } = useEntitlements();
+  const { data: features } = useEntitlements();
   const capabilities = membership?.capabilities ?? [];
 
   return sellerNavItems.filter((item) => {
@@ -17,7 +17,7 @@ export function useFilteredNavItems(): NavItem[] {
       return false;
     }
     if (!item.requiredFeature) return true;
-    if (!evaluation.entitled || !features) return false;
+    if (!features) return false;
     const value = features[item.requiredFeature];
     return value === true || (typeof value === "number" && value > 0);
   });

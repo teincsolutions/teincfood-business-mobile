@@ -161,8 +161,15 @@ export default function SellerAnalytics() {
   const router = useRouter();
   const { data: features, evaluation } = useEntitlements();
   const canManageBilling = useHasCapability("finance_billing_manage");
-  const unlocked = (feature: string) =>
-    Boolean(evaluation.entitled && features?.[feature] === true);
+  const baseAnalytics = new Set([
+    "analytics.overview",
+    "analytics.sales_trends",
+    "analytics.channel_split",
+  ]);
+  const unlocked = (feature: string) => {
+    if (!features || features[feature] !== true) return false;
+    return baseAnalytics.has(feature) || evaluation.entitled;
+  };
   const [period, setPeriod] = useState<AnalyticsPeriod>("today");
   const [customOpen, setCustomOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState(monthStartIso);
