@@ -81,12 +81,10 @@ function PeriodTab({ label, active, onPress }: { label: string; active: boolean;
 
 function LockedReportCard({
   title,
-  feature,
   showUpgrade,
   onUpgrade,
 }: {
   title: string;
-  feature: string;
   showUpgrade: boolean;
   onUpgrade: () => void;
 }) {
@@ -98,10 +96,7 @@ function LockedReportCard({
           {title}
         </Text>
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" textAlign="center">
-          This report is not included in your current plan.
-        </Text>
-        <Text fontSize="$1" color="$colorSecondary" fontFamily="$body">
-          {feature}
+          This report is not included in your current plan. Upgrade to unlock it.
         </Text>
         {showUpgrade ? (
           <Button size="$3" onPress={onUpgrade}>
@@ -318,7 +313,6 @@ export default function SellerAnalytics() {
               {!unlocked("analytics.payment_methods") ? (
                 <LockedReportCard
                   title="Payment methods"
-                  feature="analytics.payment_methods"
                   showUpgrade={canManageBilling}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
@@ -387,7 +381,6 @@ export default function SellerAnalytics() {
               {!unlocked("analytics.order_types") ? (
                 <LockedReportCard
                   title="Order types"
-                  feature="analytics.order_types"
                   showUpgrade={canManageBilling}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
@@ -422,7 +415,7 @@ export default function SellerAnalytics() {
                 </Card>
               )}
 
-              {/* Online vs Local (is_pos) */}
+              {/* Online vs Local */}
               {unlocked("analytics.channel_split") && channels.length > 0 && (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
@@ -433,13 +426,13 @@ export default function SellerAnalytics() {
                       </Text>
                     </XStack>
                     <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                      Local means a POS sale; online means a buyer order.
+                      Compare online orders with sales made at your counter.
                     </Text>
                     <Separator />
                     {channels.map((channel) => (
                       <XStack key={channel.channel} gap="$2" alignItems="center">
                         <Text fontSize="$3" fontFamily="$body" color="$color" flex={1}>
-                          {channel.channel === "local" ? "Local (POS)" : "Online"}
+                          {channel.channel === "local" ? "Local (counter)" : "Online"}
                         </Text>
                         <Text fontSize="$3" fontWeight="700" fontFamily="$body" color="$color">
                           {formatPriceFromMinor(channel.revenue_minor, summary.currency)}
@@ -457,7 +450,6 @@ export default function SellerAnalytics() {
               {!unlocked("analytics.teller_performance") ? (
                 <LockedReportCard
                   title="Teller performance"
-                  feature="analytics.teller_performance"
                   showUpgrade={canManageBilling}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
@@ -493,7 +485,6 @@ export default function SellerAnalytics() {
               {!unlocked("analytics.hourly_heatmap") ? (
                 <LockedReportCard
                   title="Hourly heatmap"
-                  feature="analytics.hourly_heatmap"
                   showUpgrade={canManageBilling}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
