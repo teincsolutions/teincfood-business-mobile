@@ -34,6 +34,14 @@ export async function fetchAvailableRiders(businessId?: string): Promise<{ data:
   });
 }
 
-export async function assignKioskOrderToRider(orderId: string, riderId: string): Promise<{ data: BusinessDelivery }> {
-  return api.post('/deliveries/assign', { order_id: orderId, rider_id: riderId });
+export async function assignKioskOrderToRider(
+  orderId: string,
+  riderId: string,
+  idempotencyKey?: string,
+): Promise<{ data: BusinessDelivery }> {
+  return api.post('/deliveries/assign', {
+    order_id: orderId,
+    rider_id: riderId,
+    ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+  });
 }

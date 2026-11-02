@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { YStack, XStack, Text, Spinner } from "tamagui";
+import { YStack, XStack, Text, Spinner, Sheet, Separator } from "tamagui";
 import {
   Bell,
   Package,
@@ -60,6 +60,36 @@ function formatTime(dateString: string): string {
   });
 }
 
+function formatMinor(minor: unknown): string | null {
+  if (typeof minor !== "number" || !Number.isFinite(minor)) return null;
+  return new Intl.NumberFormat("en-GH", {
+    style: "currency",
+    currency: "GHS",
+  }).format(minor / 100);
+}
+
+function detailRows(payload: Record<string, any>): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  const add = (label: string, value: unknown) => {
+    if (value === null || value === undefined || value === "") return;
+    if (Array.isArray(value)) {
+      if (value.length > 0) rows.push([label, value.join(", ")]);
+      return;
+    }
+    rows.push([label, String(value)]);
+  };
+
+  add("Order number", payload.order_number);
+  add("Status", payload.order_status ?? payload.status);
+  add("Business", payload.business_name);
+  add("Customer", payload.buyer_name ?? payload.sender_name ?? payload.customer_name);
+  add("Rider", payload.rider_number);
+  add("Total", formatMinor(payload.total_minor));
+  add("Expired documents", payload.expired_documents);
+  add("Invoice", payload.invoice_id);
+  return rows;
+}
+
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -93,6 +123,9 @@ export default function NotificationsScreen() {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [detailNotification, setDetailNotification] = useState<
+    (typeof notifications)[0] | null
+  >(null);
   const readTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unread = notifications.filter((n) => !n.read);
@@ -122,17 +155,31 @@ export default function NotificationsScreen() {
     (item: (typeof notifications)[0]) => {
       void handleMarkAsRead(item.id);
 
-      // Deep-link into the order/delivery screen for this notification.
-      const route = buildNotificationRoute((item.payload ?? {}) as any);
-      if (route) router.push(route as any);
+      // Deep-link into the order/delivery/chat/etc screen when one exists.
+      // Payloads from older backend jobs often omit app_type, so this app's
+      // business audience is used as the fallback.
+      const route = buildNotificationRoute(
+        (item.payload ?? {}) as any,
+        "business",
+      );
+      if (route) {
+        router.push(route as any);
+        return;
+      }
+
+      // No destination screen: show the full message and its metadata instead
+      // of letting the tap do nothing.
+      setDetailNotification(item);
     },
     [handleMarkAsRead, router],
   );
 
   const renderItem = useCallback(({ item }: { item: (typeof notifications)[0] }) => {
-    const [Icon, iconColor] = getIcon(item.type);
     const isRead = item.read;
     const payload = (item.payload ?? {}) as Record<string, any>;
+    const [Icon, iconColor] = getIcon(
+      String(payload.type ?? payload.notification_category ?? item.type),
+    );
     const joinRequestStatus = payload.join_request_id
       ? joinRequestStatuses.get(String(payload.join_request_id))
       : null;
@@ -179,9 +226,8 @@ export default function NotificationsScreen() {
                 fontSize="$3"
                 color="$colorSecondary"
                 fontFamily="$body"
-                numberOfLines={2}
               >
-                {item.message}
+                {item.body || item.message}
               </Text>
             </YStack>
           </XStack>
@@ -334,6 +380,90 @@ export default function NotificationsScreen() {
           </YStack>
         }
       />
+
+      {/* Notification detail — used when there is no destination screen. */}
+      <Sheet
+        modal
+        open={detailNotification !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailNotification(null);
+        }}
+        snapPoints={[65]}
+        dismissOnSnapToBottom
+      >
+        <Sheet.Overlay backgroundColor="rgba(0,0,0,0.45)" />
+        <Sheet.Frame
+          backgroundColor="$background"
+          paddingHorizontal="$5"
+          paddingTop="$2"
+          paddingBottom="$5"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginBottom="$3" />
+          {detailNotification && (
+            <YStack gap="$3">
+              <Text
+                fontSize="$6"
+                fontWeight="800"
+                fontFamily="$heading"
+                color="$color"
+              >
+                {detailNotification.title}
+              </Text>
+              <Text
+                fontSize="$2"
+                color="$colorSecondary"
+                fontFamily="$body"
+              >
+                {formatTime(detailNotification.created_at)}
+              </Text>
+              <Text
+                fontSize="$4"
+                color="$color"
+                fontFamily="$body"
+                lineHeight={22}
+              >
+                {detailNotification.body || detailNotification.message}
+              </Text>
+
+              {detailRows(
+                (detailNotification.payload ?? {}) as Record<string, any>,
+              ).map(([label, value]) => (
+                <YStack key={label} gap="$1">
+                  <Separator borderColor="$borderColor" />
+                  <XStack justifyContent="space-between" gap="$4">
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      {label}
+                    </Text>
+                    <Text
+                      fontSize="$3"
+                      color="$color"
+                      fontFamily="$body"
+                      fontWeight="600"
+                      flexShrink={1}
+                      textAlign="right"
+                    >
+                      {value}
+                    </Text>
+                  </XStack>
+                </YStack>
+              ))}
+
+              <Button
+                variant="primary"
+                size="$4"
+                marginTop="$2"
+                onPress={() => setDetailNotification(null)}
+              >
+                Close
+              </Button>
+            </YStack>
+          )}
+        </Sheet.Frame>
+      </Sheet>
 
       {/* Clear All Confirmation */}
       <AppAlertDialog

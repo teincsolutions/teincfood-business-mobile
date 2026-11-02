@@ -254,10 +254,13 @@ function AppShell() {
       const route = data.route;
       const joinRequestId = data.join_request_id;
       const fallbackRoute =
-        buildNotificationRoute({
-          ...(data as any),
-          type: (data as any).type ?? "notification",
-        }) ??
+        buildNotificationRoute(
+          {
+            ...(data as any),
+            type: (data as any).type ?? "notification",
+          },
+          "business",
+        ) ??
         (orderId
           ? actionType === "accept_delivery" || actionType === "claim_delivery"
             ? `/(rider)/deliveries/${orderId}`
@@ -318,19 +321,6 @@ function AppShell() {
     [],
   );
 
-  // Set up all notification infrastructure via shared library
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    setupNotifications({
-      http: api,
-      appType: "business",
-      buildActions: notificationActions,
-      onActionPress: handleNotifeeAction,
-      navigateToRoute: (route: string) => router.push(route),
-    }).catch(console.error);
-  }, [isAuthenticated]);
-
   const isReady =
     authHydrated && onboardingHydrated && locationHydrated && roleHydrated;
   const cloudAuthenticated = Boolean(user && accessToken);
@@ -352,6 +342,23 @@ function AppShell() {
     (role === "rider" ||
       user?.role === "rider" ||
       Boolean(user?.roles?.includes("rider")));
+
+  // Set up all notification infrastructure via shared library. This must run
+  // after isAuthenticated/isRider are initialised: referencing them in the
+  // dependency array before their declarations left the effect stuck on its
+  // initial undefined value, so push-tap deep links were never registered.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    setupNotifications({
+      http: api,
+      appType: "business",
+      fallbackAppType: isRider ? "rider" : isSeller ? "business" : "buyer",
+      buildActions: notificationActions,
+      onActionPress: handleNotifeeAction,
+      navigateToRoute: (route: string) => router.push(route),
+    }).catch(console.error);
+  }, [isAuthenticated, isRider, isSeller, handleNotifeeAction, notificationActions, router]);
 
   // Hide native splash screen only after fonts are loaded AND stores are hydrated
   // This ensures a smooth transition to our custom splash screen
