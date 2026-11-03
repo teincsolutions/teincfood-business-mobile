@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Crown, TicketPercent } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { toast } from "sonner-native";
@@ -33,6 +34,7 @@ import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useBusinessStore } from "@/stores/business.store";
+import { useRoleStore } from "@/stores/role.store";
 import type { SubscriptionPlan } from "@/services/subscription.service";
 
 type Tab = "plan" | "promos";
@@ -820,7 +822,51 @@ function PromosTab() {
 
 export default function PlansScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const role = useRoleStore((s) => s.role);
   const [tab, setTab] = useState<Tab>(`plan`);
+
+  // Riders do not have business subscriptions. Guard deep links so they never
+  // land on the seller/fleet plan picker.
+  if (role === "rider") {
+    return (
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        paddingTop={Math.max(insets.top + 8, 16)}
+        width="100%"
+        maxWidth={600}
+        alignSelf="center"
+        paddingHorizontal="$4"
+        gap="$4"
+      >
+        <XStack gap="$2" alignItems="center">
+          <BackButton />
+          <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+            Wallet
+          </Text>
+        </XStack>
+        <Card padding="$5" bordered>
+          <YStack gap="$3" alignItems="center">
+            <Crown size={32} color="$colorMuted" />
+            <Text fontSize="$5" fontWeight="700" textAlign="center" color="$color">
+              Subscriptions are for businesses
+            </Text>
+            <Text fontSize="$3" color="$colorSecondary" textAlign="center">
+              As a rider you are paid per delivery, so there is no plan or
+              subscription to manage here.
+            </Text>
+            <Button
+              variant="primary"
+              onPress={() => router.replace("/(shared)/wallet")}
+            >
+              Back to Wallet
+            </Button>
+          </YStack>
+        </Card>
+      </YStack>
+    );
+  }
 
   return (
     <YStack

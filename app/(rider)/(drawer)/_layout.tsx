@@ -175,7 +175,7 @@ function CustomDrawerContent(props: any) {
           />
           <DrawerMenuItem
             icon={DollarSign}
-            label="Wallet & Billing"
+            label="Wallet"
             sharedPrefix="/(shared)/wallet"
             onPress={() => router.push("/(shared)/wallet")}
             isActive={isActive}
