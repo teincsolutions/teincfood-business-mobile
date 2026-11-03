@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { YStack, Text, Spinner } from "tamagui";
 import { useStartupReadiness } from "@teincfood/core";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +37,7 @@ function requiredCapabilityFor(segments: string[]): string | null {
  */
 export function StartupReadinessGate({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
+  const router = useRouter();
   const { readiness, checking, recheck } = useStartupReadiness({ timeoutMs: 15000 });
 
   const requiredCap = requiredCapabilityFor(segments as unknown as string[]);
@@ -55,14 +56,39 @@ export function StartupReadinessGate({ children }: { children: React.ReactNode }
   }
 
   if (!readiness.ready) {
+    const lease = readiness.leaseError;
+    const terminalLimit =
+      lease?.code === "TERMINAL_LIMIT_REACHED" ||
+      lease?.code === "DEVICE_LIMIT_REACHED";
+    const title =
+      lease?.code === "TERMINAL_LIMIT_REACHED" || lease?.code === "DEVICE_LIMIT_REACHED"
+        ? "Terminal limit reached"
+        : "Offline data incomplete";
+    const message =
+      lease?.code === "TERMINAL_LIMIT_REACHED"
+        ? `${lease.message} Remove an old terminal or upgrade your plan, then retry.`
+        : lease?.code === "DEVICE_LIMIT_REACHED"
+          ? `${lease.message} Remove an old terminal, then retry.`
+          : readiness.network?.isOnline
+            ? "We couldn't finish syncing the menu, taxes, hours and terminal details. Check your connection and retry."
+            : "Connect to the internet once so the menu, taxes, hours and device number can sync before taking orders.";
+
     return (
       <YStack flex={1} alignItems="center" justifyContent="center" gap="$3" padding="$6">
         <Text fontSize="$7" fontWeight="700" textAlign="center">
-          Offline data incomplete
+          {title}
         </Text>
         <Text color="$color" textAlign="center">
-          Connect to the internet once so the menu, taxes, hours and device number can sync before taking orders.
+          {message}
         </Text>
+        {terminalLimit ? (
+          <Button
+            variant="outline"
+            onPress={() => router.push("/(seller)/settings/offline-device" as any)}
+          >
+            Manage terminals
+          </Button>
+        ) : null}
         <Button variant="primary" onPress={() => void recheck()} disabled={checking}>
           {checking ? "Retrying…" : "Retry"}
         </Button>

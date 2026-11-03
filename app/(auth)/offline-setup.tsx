@@ -23,17 +23,28 @@ export default function OfflineSetupScreen() {
   const user = useAuthStore((s) => s.user);
   const business = useBusinessStore((s) => s.activeBusiness);
   const { data: membership } = useMyBusinessCapabilities();
-  const { hasDevice, activate } = useOfflineAuth();
+  const { hasDevice, members, activateLicense, setOfflinePin } = useOfflineAuth();
   const skipSetup = useOfflineSetupStore((s) => s.skip);
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [currentPin, setCurrentPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const currentMember = user
+    ? members.find(
+        (member) =>
+          member.user_id === user.id &&
+          (!member.business_id || member.business_id === business?.id),
+      )
+    : null;
+  const hasExistingPin = Boolean(currentMember?.pin_hash);
 
   const canSubmit =
     Boolean(user && business && membership) &&
     pin.length === 6 &&
     pin === confirmPin &&
+    (!hasExistingPin || currentPin.length === 6) &&
     !busy;
 
   const submit = async () => {
@@ -46,17 +57,22 @@ export default function OfflineSetupScreen() {
     setBusy(true);
     setError(null);
     try {
-      await activate({
+      // License first; the PIN is only the optional offline quick-login.
+      if (!hasDevice) {
+        await activateLicense();
+      }
+      await setOfflinePin({
+        userId: user.id,
+        newPin: pin,
+        currentPin: hasExistingPin ? currentPin : undefined,
         member: {
-          userId: user.id,
           fullName: user.full_name ?? user.email ?? "Team member",
           email: user.email,
           role: membership.role,
           capabilities: membership.capabilities,
         },
-        pin,
       });
-      toast.success("Offline access activated on this device");
+      toast.success(hasExistingPin ? "Offline PIN updated" : "Offline PIN set");
       router.replace("/(seller)/" as any);
     } catch (e) {
       const code = extractApiErrorCode(e);
@@ -71,8 +87,8 @@ export default function OfflineSetupScreen() {
 
   const notNow = () => {
     Keyboard.dismiss();
-    if (business?.id) skipSetup(business.id);
-    router.replace("/");
+    if (!hasDevice && business?.id) skipSetup(business.id);
+    router.replace(hasDevice ? ("/(seller)/settings/offline-device" as any) : "/");
   };
 
   return (
@@ -102,21 +118,27 @@ export default function OfflineSetupScreen() {
                 fontFamily="$heading"
                 color="$color"
               >
-                Set up offline access
+                {hasDevice ? "Offline quick-login PIN" : "Set up offline access"}
               </Text>
               <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                This creates a device license for{" "}
-                {business?.name ?? "this business"} and a local PIN for{" "}
-                {user?.full_name ?? "this member"}. After this, you can sign out
-                and back in while the internet is down.
+                {hasDevice
+                  ? "This terminal already has an offline license. The 6-digit PIN is optional — it lets team members sign in quickly when the internet is down."
+                  : "This activates the terminal license and adds an optional 6-digit PIN for quick sign-in while offline."}
               </Text>
             </YStack>
 
-            {hasDevice ? (
-              <Text fontFamily="$body" color="$colorSecondary">
-                This device already has an offline license. You can update the
-                PIN below.
-              </Text>
+            {hasExistingPin ? (
+              <Input
+                value={currentPin}
+                onChangeText={(value) =>
+                  setCurrentPin(value.replace(/\D/g, "").slice(0, 6))
+                }
+                keyboardType="number-pad"
+                secureTextEntry
+                maxLength={6}
+                placeholder="Current 6-digit PIN"
+                height={52}
+              />
             ) : null}
 
             <Input
@@ -130,7 +152,7 @@ export default function OfflineSetupScreen() {
               onSubmitEditing={Keyboard.dismiss}
               secureTextEntry
               maxLength={6}
-              placeholder="6-digit offline PIN"
+              placeholder={hasExistingPin ? "New 6-digit PIN" : "6-digit offline PIN"}
               height={52}
             />
             <Input
@@ -161,7 +183,13 @@ export default function OfflineSetupScreen() {
               disabled={!canSubmit}
               onPress={() => void submit()}
             >
-              {busy ? "Activating…" : "Activate offline access"}
+              {busy
+                ? "Saving…"
+                : hasExistingPin
+                  ? "Change PIN"
+                  : hasDevice
+                    ? "Set PIN"
+                    : "Activate device & set PIN"}
             </Button>
 
             <Button chromeless onPress={notNow}>

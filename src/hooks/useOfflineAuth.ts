@@ -1,5 +1,8 @@
 import { useCallback, useEffect } from "react";
+import { Platform } from "react-native";
 import {
+  activateOfflineLicense,
+  setOfflineMemberPin,
   sendOfflineDeviceHeartbeat,
   verifyOfflineLogin,
   getOfflinePinLockState,
@@ -95,6 +98,36 @@ export function useOfflineAuth() {
     [businessId, state.activate],
   );
 
+  const activateLicense = useCallback(async () => {
+    if (!businessId) throw new Error("Select a business first");
+    const result = await activateOfflineLicense({
+      businessId,
+      platform: Platform.OS,
+    });
+    await state.refresh(businessId);
+    return result;
+  }, [businessId, state.refresh]);
+
+  const setOfflinePin = useCallback(
+    async (args: {
+      userId: string;
+      newPin: string;
+      currentPin?: string;
+      member?: {
+        fullName: string;
+        email?: string | null;
+        role: string;
+        capabilities: string[];
+      };
+    }) => {
+      if (!businessId) throw new Error("Select a business first");
+      const result = await setOfflineMemberPin({ businessId, ...args });
+      await state.refresh(businessId);
+      return result;
+    },
+    [businessId, state.refresh],
+  );
+
   const removeDevice = useCallback(async () => {
     if (!businessId) throw new Error("Select a business first");
     await state.removeDevice(businessId);
@@ -109,6 +142,8 @@ export function useOfflineAuth() {
     refresh: () => state.refresh(businessId),
     login,
     activate,
+    activateLicense,
+    setOfflinePin,
     removeDevice,
   };
 }

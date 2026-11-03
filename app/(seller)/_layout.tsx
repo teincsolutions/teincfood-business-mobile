@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useDisplayStore } from '@/stores/display.store';
 import { useMyBusinessCapabilities } from '@/hooks/useMyBusinessCapabilities';
@@ -10,7 +10,6 @@ import { toast } from 'sonner-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
 import { useOfflineAuth } from '@/hooks/useOfflineAuth';
-import { useOfflineSetupStore } from '@/stores/offlineSetup.store';
 
 /** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
 function normalizeSegments(segments: string[]): string[] {
@@ -33,10 +32,13 @@ export default function SellerLayout() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const offlineMemberId = useAuthStore((s) => s.offlineMemberId);
   const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const { loading: offlineLoading, hasDevice, evaluation: offlineEvaluation } = useOfflineAuth();
-  const setupSkipped = useOfflineSetupStore((s) =>
-    activeBusinessId ? Boolean(s.skipped[activeBusinessId]) : false,
-  );
+  const {
+    loading: offlineLoading,
+    hasDevice,
+    evaluation: offlineEvaluation,
+    activateLicense,
+  } = useOfflineAuth();
+  const licenseActivationAttempted = useRef<string | null>(null);
 
   // Keep the offline reference cache (menus, roles, members, taxes, business
   // profile, operating hours) in sync while the restaurant is online.
@@ -47,18 +49,21 @@ export default function SellerLayout() {
   useOfflineOrderHydration();
 
   useEffect(() => {
-    // First online setup: require a device license before offline work starts.
-    // An offline member session already has one and skips this gate.
+    // The terminal license is independent of the optional offline PIN. Activate
+    // it in the background once a seller is signed in online; never force the
+    // operator through PIN setup just to use the POS.
     if (
       accessToken &&
       !offlineMemberId &&
       activeBusinessId &&
       !offlineLoading &&
-      !setupSkipped &&
-      (!hasDevice || (offlineEvaluation != null && !offlineEvaluation.valid))
+      (!hasDevice || (offlineEvaluation != null && !offlineEvaluation.valid)) &&
+      licenseActivationAttempted.current !== activeBusinessId
     ) {
-      router.replace('/(auth)/offline-setup' as any);
-      return;
+      licenseActivationAttempted.current = activeBusinessId;
+      void activateLicense().catch((error) => {
+        console.debug('[offline] automatic license activation failed', error);
+      });
     }
 
     const displayStore = useDisplayStore.getState();
@@ -68,7 +73,7 @@ export default function SellerLayout() {
     } else if (displayStore.kitchenDisplayEnabled && !currentPath.includes('kitchen')) {
       router.replace('/(seller)/kitchen' as any);
     }
-  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, offlineEvaluation, setupSkipped, router, segments]);
+  }, [accessToken, offlineMemberId, activeBusinessId, offlineLoading, hasDevice, offlineEvaluation, activateLicense, router, segments]);
 
   useEffect(() => {
     if (!membership?.capabilities || segments.length < 1) return;

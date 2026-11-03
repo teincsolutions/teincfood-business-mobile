@@ -169,8 +169,9 @@ export default function OfflineDeviceSettings() {
             Offline device
           </Text>
           <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-            This terminal keeps a signed offline license and one PIN per
-            enrolled member.
+            The terminal license keeps this device active offline. A 6-digit
+            PIN is optional — it is only a quick sign-in when the internet is
+            down.
           </Text>
         </YStack>
 
@@ -182,12 +183,14 @@ export default function OfflineDeviceSettings() {
                 {loading
                   ? "Checking…"
                   : hasDevice
-                    ? "Activated"
+                    ? "Offline license active"
                     : "Not activated"}
               </Text>
               <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
                 {hasDevice
-                  ? `${members.length} member${members.length === 1 ? "" : "s"} can unlock offline`
+                  ? members.length > 0
+                    ? `${members.length} member${members.length === 1 ? "" : "s"} can unlock offline`
+                    : "License active · set a PIN for quick offline login"
                   : "Activate while online to enable offline sign-in"}
               </Text>
             </YStack>
@@ -222,7 +225,23 @@ export default function OfflineDeviceSettings() {
               color="$background"
               onPress={() => router.push("/(auth)/offline-setup")}
             >
-              Set up offline access
+              Activate offline license
+            </Button>
+          </Card>
+        ) : null}
+
+        {!loading && hasDevice ? (
+          <Card padding="$4" bordered gap="$3">
+            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+              Set or change the optional 6-digit PIN used for quick sign-in while
+              offline.
+            </Text>
+            <Button
+              bg="$primary"
+              color="$background"
+              onPress={() => router.push("/(auth)/offline-setup")}
+            >
+              Set or change offline PIN
             </Button>
           </Card>
         ) : null}
