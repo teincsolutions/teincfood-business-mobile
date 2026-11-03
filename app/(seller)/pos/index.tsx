@@ -86,6 +86,10 @@ import {
 } from "@/hooks/seller.hooks";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
+import {
+  enabledPosPaymentMethods,
+  usePaymentSettingsQuery,
+} from "@/hooks/usePaymentSettings";
 import { printService } from "@/services/print.service";
 import { paymentService } from "@/services/payment.service";
 import type { MomoProvider, MomoQuote } from "@/types/payment";
@@ -829,6 +833,15 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   );
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const paymentSettingsQuery = usePaymentSettingsQuery(activeBusiness?.id);
+  const enabledPaymentMethods = useMemo(
+    () => enabledPosPaymentMethods(paymentSettingsQuery.data?.data),
+    [paymentSettingsQuery.data],
+  );
+  const enabledPaymentMethodKey = enabledPaymentMethods.join("|");
+  const hasUsablePaymentMethod = enabledPaymentMethods.some(
+    (method) => method !== "mobile_money" || isCloudReachable,
+  );
   const businessOpen = useBusinessOpenNow(activeBusiness?.id, true, "pos");
   const isBusinessClosed =
     !!activeBusiness?.id &&
@@ -896,23 +909,25 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     icon: any;
     description: string;
     disabled?: boolean;
-  }[] = [
-    {
-      key: "cash",
-      label: "Cash",
-      icon: Banknote,
-      description: "Collect payment at counter",
-    },
-    {
-      key: "mobile_money",
-      label: "Mobile Money",
-      icon: Smartphone,
-      description: isCloudReachable
-        ? "Approve prompt on customer phone"
-        : "Requires internet",
-      disabled: !isCloudReachable,
-    },
-  ];
+  }[] = (
+    [
+      {
+        key: "cash",
+        label: "Cash",
+        icon: Banknote,
+        description: "Collect payment at counter",
+      },
+      {
+        key: "mobile_money",
+        label: "Mobile Money",
+        icon: Smartphone,
+        description: isCloudReachable
+          ? "Approve prompt on customer phone"
+          : "Requires internet",
+        disabled: !isCloudReachable,
+      },
+    ] as const
+  ).filter((method) => enabledPaymentMethods.includes(method.key));
 
   // Prefill the customer's phone when the teller has already captured it.
   useEffect(() => {
@@ -947,15 +962,36 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     };
   }, [activeBusiness?.id, checkoutForm.pos_payment_method, total]);
 
+  // Switch away from a method the merchant disabled in Payment Settings.
+  useEffect(() => {
+    if (enabledPaymentMethods.length === 0) return;
+    if (!enabledPaymentMethods.includes(checkoutForm.pos_payment_method)) {
+      updateCheckoutForm({ pos_payment_method: enabledPaymentMethods[0] });
+    }
+  }, [
+    enabledPaymentMethodKey,
+    enabledPaymentMethods,
+    checkoutForm.pos_payment_method,
+    updateCheckoutForm,
+  ]);
+
   // Switch to cash automatically when mobile money is selected offline.
   useEffect(() => {
     if (
       !isCloudReachable &&
       checkoutForm.pos_payment_method === "mobile_money"
     ) {
-      updateCheckoutForm({ pos_payment_method: "cash" });
+      const cashEnabled = enabledPaymentMethods.includes("cash");
+      if (cashEnabled) {
+        updateCheckoutForm({ pos_payment_method: "cash" });
+      }
     }
-  }, [isCloudReachable, checkoutForm.pos_payment_method, updateCheckoutForm]);
+  }, [
+    isCloudReachable,
+    checkoutForm.pos_payment_method,
+    updateCheckoutForm,
+    enabledPaymentMethods,
+  ]);
 
   const executePlaceOrder = useCallback(() => {
     // Re-check after the cash sheet: hours may have flipped while it was open.
@@ -1093,12 +1129,18 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       setShowClosedDialog(true);
       return;
     }
+    if (!enabledPaymentMethods.includes(checkoutForm.pos_payment_method)) {
+      toast.error("This payment method is disabled in Payment Settings");
+      return;
+    }
     if (
       checkoutForm.pos_payment_method === "mobile_money" &&
       !isCloudReachable
     ) {
       toast.error("Mobile money requires an internet connection");
-      updateCheckoutForm({ pos_payment_method: "cash" });
+      if (enabledPaymentMethods.includes("cash")) {
+        updateCheckoutForm({ pos_payment_method: "cash" });
+      }
       return;
     }
 
@@ -1121,6 +1163,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     isCloudReachable,
     executePlaceOrder,
     updateCheckoutForm,
+    enabledPaymentMethods,
   ]);
 
   useEffect(() => {
@@ -1380,6 +1423,12 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 );
               })}
             </XStack>
+            {paymentMethods.length === 0 ? (
+              <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
+                No POS payment methods are enabled. Turn on Cash or Mobile
+                Money in Settings → Payment.
+              </Text>
+            ) : null}
           </YStack>
 
           {checkoutForm.pos_payment_method === "mobile_money" ? (
@@ -1653,7 +1702,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           fontWeight="700"
           fontFamily="$body"
           height={52}
-          disabled={createOrder.isPending || isBusinessClosed}
+          disabled={
+            createOrder.isPending ||
+            isBusinessClosed ||
+            !hasUsablePaymentMethod
+          }
           pressStyle={{ opacity: 0.8 }}
           onPress={handlePlaceOrder}
         >
@@ -1661,6 +1714,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             <Spinner size="small" color="white" />
           ) : isBusinessClosed ? (
             "Business Closed"
+          ) : !hasUsablePaymentMethod ? (
+            "No Payment Method"
           ) : (
             `Place Order — ${formatPriceFromMinor(payableTotal)}`
           )}

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -16,52 +16,81 @@ import { ArrowLeft, Save, CreditCard, Building, Clock } from '@tamagui/lucide-ic
 import { Button, FormInput } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
-import * as businessService from '@/services/business.service';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  buildPaymentMethodSettings,
+  usePaymentSettingsQuery,
+  useUpdatePaymentSettingsMutation,
+} from '@/hooks/usePaymentSettings';
 import { useHasCapability } from '@/hooks/useMyBusinessCapabilities';
 
 export default function PaymentSettings() {
   const router = useRouter();
   const media = useMedia();
   const insets = useSafeAreaInsets();
-  const { activeBusiness, activeBusinessId } = useActiveBusiness();
-  const queryClient = useQueryClient();
+  const { activeBusinessId } = useActiveBusiness();
   const canEdit = useHasCapability("business_profile_manage");
+  const paymentSettingsQuery = usePaymentSettingsQuery(activeBusinessId);
+  const saveMutation = useUpdatePaymentSettingsMutation(activeBusinessId);
 
-  const settings = activeBusiness?.paymentSettings || {};
-  const [acceptCash, setAcceptCash] = useState(settings.acceptCash ?? true);
-  const [acceptMobileMoney, setAcceptMobileMoney] = useState(settings.acceptMobileMoney ?? true);
-  const [acceptCard, setAcceptCard] = useState(settings.acceptCard ?? true);
-  const [bankName, setBankName] = useState(settings.bankName || '');
-  const [accountNumber, setAccountNumber] = useState(settings.accountNumber || '');
-  const [accountName, setAccountName] = useState(settings.accountName || '');
-  const [mobileMoneyNumber, setMobileMoneyNumber] = useState(settings.mobileMoneyNumber || '');
-  const [payoutSchedule, setPayoutSchedule] = useState(settings.payoutSchedule || 'daily');
+  const [acceptCash, setAcceptCash] = useState(true);
+  const [acceptMobileMoney, setAcceptMobileMoney] = useState(true);
+  const [acceptCard, setAcceptCard] = useState(true);
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
+  const [payoutSchedule, setPayoutSchedule] = useState('daily');
 
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      businessService.updateBusiness(activeBusinessId!, {
-        paymentSettings: {
+  useEffect(() => {
+    const settings = paymentSettingsQuery.data?.data;
+    if (!settings) return;
+    const methods = settings.payment_methods ?? [];
+    if (!settings.configured) {
+      setAcceptCash(true);
+      setAcceptMobileMoney(true);
+      setAcceptCard(true);
+    } else {
+      setAcceptCash(
+        methods.includes('cash') || methods.includes('pay_on_delivery'),
+      );
+      setAcceptMobileMoney(methods.includes('mobile_money'));
+      setAcceptCard(methods.includes('card'));
+    }
+    setBankName(settings.payout_bank_name ?? settings.payout_bank_code ?? '');
+    setAccountNumber(settings.payout_account_number ?? '');
+    setAccountName(settings.payout_account_name ?? '');
+    setMobileMoneyNumber(settings.payout_momo_number ?? '');
+    setPayoutSchedule(settings.payout_schedule ?? 'daily');
+  }, [paymentSettingsQuery.data]);
+
+  const handleSave = () => {
+    if (!activeBusinessId) return;
+    saveMutation.mutate(
+      {
+        payment_methods: buildPaymentMethodSettings(
           acceptCash,
           acceptMobileMoney,
           acceptCard,
-          bankName,
-          accountNumber,
-          accountName,
-          mobileMoneyNumber,
-          payoutSchedule,
+        ),
+        payout_bank_name: bankName,
+        payout_account_name: accountName,
+        payout_account_number: accountNumber,
+        payout_momo_number: mobileMoneyNumber,
+        payout_schedule: payoutSchedule,
+      },
+      {
+        onSuccess: () => {
+          Alert.alert('Success', 'Payment settings updated', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
         },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['businesses'] });
-      Alert.alert('Success', 'Payment settings updated', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    },
-    onError: () => {
-      Alert.alert('Error', 'Failed to update payment settings');
-    },
-  });
+        onError: (error) => {
+          console.debug('[payment-settings] save failed', error);
+          Alert.alert('Error', 'Failed to update payment settings');
+        },
+      },
+    );
+  };
 
   const payoutOptions = [
     { value: 'daily', label: 'Daily', description: 'Receive payouts every day' },
@@ -98,7 +127,7 @@ export default function PaymentSettings() {
             paddingHorizontal="$4"
             backgroundColor="$primary"
             borderRadius="$3"
-            onPress={() => saveMutation.mutate()}
+            onPress={handleSave}
             disabled={saveMutation.isPending}
             icon={<Save size={18} color="white" />}
           >
@@ -217,7 +246,7 @@ export default function PaymentSettings() {
             </YStack>
           </Card>
 
-          <Button variant="primary" onPress={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+          <Button variant="primary" onPress={handleSave} disabled={saveMutation.isPending}>
             <Text color="white" fontWeight="bold">{saveMutation.isPending ? 'Saving Changes...' : 'Save Changes'}</Text>
           </Button>
         </YStack>

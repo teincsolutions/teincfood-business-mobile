@@ -46,6 +46,49 @@ export async function updateBusiness(businessId: string, data: Record<string, un
   return api.put<BusinessResponse>(`/businesses/${businessId}`, data);
 }
 
+// ─── Payment Settings ───
+
+export interface BusinessPaymentSettings {
+  configured: boolean;
+  payment_methods: string[];
+  payout_bank_name?: string | null;
+  payout_bank_code?: string | null;
+  payout_account_name?: string | null;
+  payout_account_number?: string | null;
+  payout_provider?: string | null;
+  payout_momo_number?: string | null;
+  payout_schedule?: string | null;
+}
+
+export interface BusinessPaymentSettingsResponse {
+  data: BusinessPaymentSettings;
+}
+
+export async function fetchPaymentSettings(
+  businessId: string,
+): Promise<BusinessPaymentSettingsResponse> {
+  return api.get<BusinessPaymentSettingsResponse>(
+    `/businesses/${businessId}/payment-settings`,
+  );
+}
+
+export async function updatePaymentSettings(
+  businessId: string,
+  data: {
+    payment_methods: string[];
+    payout_bank_name?: string;
+    payout_account_name?: string;
+    payout_account_number?: string;
+    payout_momo_number?: string;
+    payout_schedule?: string;
+  },
+): Promise<BusinessPaymentSettingsResponse> {
+  return api.put<BusinessPaymentSettingsResponse>(
+    `/businesses/${businessId}/payment-settings`,
+    data,
+  );
+}
+
 // ─── Business KYC ───
 
 export async function submitBusinessKyc(businessId: string, data: Record<string, unknown>): Promise<BusinessResponse> {

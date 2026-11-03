@@ -11,6 +11,7 @@ import {
   Package,
   Clock,
   Navigation,
+  Menu,
 } from '@tamagui/lucide-icons';
 import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -428,11 +429,23 @@ export default function RiderDeliveries() {
         paddingTop={insets.top + 12}
         paddingBottom="$3"
         alignItems="center"
+        justifyContent="flex-start"
         backgroundColor="$background"
       >
-        <XStack gap="$3" alignItems="center">
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Text fontSize={22}>☰</Text>
+        <XStack gap="$2" alignItems="center" flex={1}>
+          <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
+            style={{
+              width: 44,
+              height: 44,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: -8,
+            }}
+          >
+            <Menu size={24} color="$color" />
           </TouchableOpacity>
           <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color="$color">
             Deliveries
