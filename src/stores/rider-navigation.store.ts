@@ -24,6 +24,9 @@ export interface RiderNavigationTarget {
   notes?: string;
   userId?: string;
   orderId?: string;
+  orderNumber?: string;
+  customerName?: string;
+  kind?: "pickup" | "dropoff";
 }
 
 interface RiderNavigationState {

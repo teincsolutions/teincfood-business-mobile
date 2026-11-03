@@ -385,6 +385,9 @@ export default function RiderDeliveryDetails() {
           notes: delivery?.dropoff?.notes,
           userId: delivery?.customer?.user_id,
           orderId: delivery?.order_id,
+          orderNumber: delivery?.order_number,
+          customerName: delivery?.customer?.name,
+          kind: "dropoff" as const,
         }
       : {
           name: delivery?.pickup?.name ?? "Pickup",
@@ -394,6 +397,9 @@ export default function RiderDeliveryDetails() {
           longitude: pickupPos.lng,
           userId: delivery?.customer?.user_id,
           orderId: delivery?.order_id,
+          orderNumber: delivery?.order_number,
+          customerName: delivery?.customer?.name,
+          kind: "pickup" as const,
         };
 
     if (!isNum(target.latitude) || !isNum(target.longitude)) return;
