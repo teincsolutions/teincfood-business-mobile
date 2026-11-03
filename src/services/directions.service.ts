@@ -2,7 +2,8 @@ import { mmkvStorage } from '@/utils/storage';
 import { getDistance, getPreciseDistance } from 'geolib';
 import { api } from './api';
 
-const DIR_CACHE_KEY = (orderId: string) => `directions_polyline_${orderId}`;
+const DIR_CACHE_KEY = (orderId: string, leg?: string) =>
+  `directions_polyline_${orderId}${leg ? `_${leg}` : ""}`;
 const REFRESH_THRESHOLD_METERS = 50;
 const AVG_SPEED_MPS = 5.56; // ~20 km/h in m/s
 
@@ -29,12 +30,15 @@ export async function getDirectionsPolyline({
   orderId,
   origin,
   destination,
+  leg,
 }: {
   orderId: string;
   origin: { latitude: number; longitude: number };
   destination: { latitude: number; longitude: number };
+  /** Distinguishes the rider→pickup and pickup→customer legs for one order. */
+  leg?: string;
 }): Promise<DirectionResult> {
-  const cacheStr = mmkvStorage.getString(DIR_CACHE_KEY(orderId));
+  const cacheStr = mmkvStorage.getString(DIR_CACHE_KEY(orderId, leg));
   let cache: {
     origin: { latitude: number; longitude: number };
     destination: { latitude: number; longitude: number };
@@ -70,7 +74,7 @@ export async function getDirectionsPolyline({
     const { polyline, duration_seconds, static_duration_seconds } = res.data ?? {};
     if (polyline) {
       mmkvStorage.set(
-        DIR_CACHE_KEY(orderId),
+        DIR_CACHE_KEY(orderId, leg),
         JSON.stringify({ origin, destination, polyline, durationSeconds: duration_seconds, staticDurationSeconds: static_duration_seconds }),
       );
       return { polyline, durationSeconds: duration_seconds ?? null, staticDurationSeconds: static_duration_seconds ?? null, fromCache: false };

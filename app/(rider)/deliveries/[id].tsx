@@ -22,6 +22,7 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import polyline from "@mapbox/polyline";
 import {
   useRiderDeliveryDetailQuery,
+  useRiderProfileQuery,
   useUpdateDeliveryStatusMutation,
 } from "@teincfood/core";
 import type { RiderDeliveryDetail } from "@teincfood/core";
@@ -57,11 +58,14 @@ export default function RiderDeliveryDetails() {
   const { data: response, isLoading } = useRiderDeliveryDetailQuery(id as string);
   const delivery = response?.data ?? null;
   const updateStatus = useUpdateDeliveryStatusMutation();
+  const { data: riderProfile } = useRiderProfileQuery();
 
   // Map
   const mapRef = useRef<MapView>(null);
-  const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
-  const [routeEtaSeconds, setRouteEtaSeconds] = useState<number | null>(null);
+  const [pickupRouteCoords, setPickupRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [dropoffRouteCoords, setDropoffRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [pickupEtaSeconds, setPickupEtaSeconds] = useState<number | null>(null);
+  const [dropoffEtaSeconds, setDropoffEtaSeconds] = useState<number | null>(null);
   const [issueSheetOpen, setIssueSheetOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
 
@@ -76,6 +80,11 @@ export default function RiderDeliveryDetails() {
   };
   const hasPickup = isNum(pickupPos.lat) && isNum(pickupPos.lng);
   const hasDropoff = isNum(dropoffPos.lat) && isNum(dropoffPos.lng);
+  const riderPos = {
+    lat: isNum(riderProfile?.current_lat) ? riderProfile!.current_lat : null,
+    lng: isNum(riderProfile?.current_lng) ? riderProfile!.current_lng : null,
+  };
+  const hasRider = isNum(riderPos.lat) && isNum(riderPos.lng);
 
   // Fit map to markers when delivery loads
   const prevHasCoords = useRef(false);
@@ -97,37 +106,69 @@ export default function RiderDeliveryDetails() {
     }
   }, [hasPickup, hasDropoff]);
 
-  // Fetch route polyline
+  // Fetch both route legs: rider → pickup and pickup → customer.
   useEffect(() => {
-    if (!hasPickup || !hasDropoff) {
-      setRouteCoords([]);
+    if (!hasPickup || !hasDropoff || !delivery) {
+      setPickupRouteCoords([]);
+      setDropoffRouteCoords([]);
+      setPickupEtaSeconds(null);
+      setDropoffEtaSeconds(null);
       return;
     }
 
-    const origin = { latitude: pickupPos.lat!, longitude: pickupPos.lng! };
-    const destination = { latitude: dropoffPos.lat!, longitude: dropoffPos.lng! };
+    const pickup = { latitude: pickupPos.lat!, longitude: pickupPos.lng! };
+    const dropoff = { latitude: dropoffPos.lat!, longitude: dropoffPos.lng! };
+    const rider = hasRider
+      ? { latitude: riderPos.lat!, longitude: riderPos.lng! }
+      : null;
 
-    const immediateEta = estimateDurationSeconds(origin, destination);
-    setRouteEtaSeconds(immediateEta);
+    let cancelled = false;
+    async function loadRoutes() {
+      const [dropoffResult, pickupResult] = await Promise.all([
+        getDirectionsPolyline({
+          orderId: delivery!.order_id,
+          origin: pickup,
+          destination: dropoff,
+          leg: "dropoff",
+        }),
+        rider
+          ? getDirectionsPolyline({
+              orderId: delivery!.order_id,
+              origin: rider,
+              destination: pickup,
+              leg: "pickup",
+            })
+          : Promise.resolve(null),
+      ]);
+      if (cancelled) return;
 
-    getDirectionsPolyline({
-      orderId: delivery!.order_id,
-      origin,
-      destination,
-    }).then(({ polyline: encoded, durationSeconds, staticDurationSeconds }) => {
-      const eta = durationSeconds ?? staticDurationSeconds ?? immediateEta;
-      setRouteEtaSeconds(eta);
+      const decode = (encoded: string | null) =>
+        encoded
+          ? polyline
+              .decode(encoded)
+              .map(([lat, lng]: [number, number]) => ({ latitude: lat, longitude: lng }))
+          : [];
 
-      if (encoded) {
-        const decoded = polyline.decode(encoded);
-        const coords = decoded.map(([lat, lng]: [number, number]) => ({
-          latitude: lat,
-          longitude: lng,
-        }));
-        setRouteCoords(coords);
-      }
-    });
-  }, [id, hasPickup, hasDropoff]);
+      setDropoffRouteCoords(decode(dropoffResult?.polyline ?? null));
+      setPickupRouteCoords(decode(pickupResult?.polyline ?? null));
+      setDropoffEtaSeconds(
+        dropoffResult?.durationSeconds ??
+          dropoffResult?.staticDurationSeconds ??
+          estimateDurationSeconds(pickup, dropoff),
+      );
+      setPickupEtaSeconds(
+        rider
+          ? (pickupResult?.durationSeconds ??
+              pickupResult?.staticDurationSeconds ??
+              estimateDurationSeconds(rider, pickup))
+          : null,
+      );
+    }
+    void loadRoutes();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, hasPickup, hasDropoff, hasRider, delivery?.order_id]);
 
   const fitMapMarkers = useCallback(() => {
     const coords: { latitude: number; longitude: number }[] = [];
@@ -231,12 +272,24 @@ export default function RiderDeliveryDetails() {
             </Marker>
           )}
 
-          {routeCoords.length > 0 && (
+          {pickupRouteCoords.length > 0 && (
             <Polyline
-              coordinates={routeCoords}
-              strokeColor="#3498db"
-              strokeWidth={4}
-              lineDashPattern={[1]}
+              coordinates={pickupRouteCoords}
+              strokeColor="#2563EB"
+              strokeWidth={7}
+              lineCap="round"
+              lineJoin="round"
+              zIndex={2}
+            />
+          )}
+          {dropoffRouteCoords.length > 0 && (
+            <Polyline
+              coordinates={dropoffRouteCoords}
+              strokeColor="#F97316"
+              strokeWidth={7}
+              lineCap="round"
+              lineJoin="round"
+              zIndex={1}
             />
           )}
         </MapView>
@@ -292,8 +345,8 @@ export default function RiderDeliveryDetails() {
                 <XStack gap="$2" alignItems="center">
                   <Clock size={16} color="$colorMuted" />
                   <Text fontSize="$3" color="$colorMuted">
-                    {routeEtaSeconds
-                      ? `${Math.ceil(routeEtaSeconds / 60)} min`
+                    {pickupEtaSeconds || dropoffEtaSeconds
+                      ? `${Math.ceil(((pickupEtaSeconds ?? 0) + (dropoffEtaSeconds ?? 0)) / 60)} min`
                       : delivery.eta_minutes
                         ? `${delivery.eta_minutes} min`
                         : "--"}
