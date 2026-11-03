@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import { ScrollView, RefreshControl } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
-import { YStack, XStack, Text, Card, Separator, Switch } from "tamagui";
+import { YStack, XStack, Text, Card, Separator, Switch, Spinner } from "tamagui";
 import {
   DollarSign,
   Package,
@@ -17,11 +17,12 @@ import {
   UserPlus,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
+import { useRiderDeliveryZonesQuery } from "@/hooks/useRiderDeliveryZones";
+import { RiderCoverageMap } from "@/components/rider/RiderCoverageMap";
 import {
   useRiderMetricsQuery,
   useRiderProfileQuery,
@@ -54,7 +55,21 @@ export default function RiderHome() {
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
   const { data: profileData } = useRiderProfileQuery();
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
+  const {
+    data: deliveryZones = [],
+    isLoading: zonesLoading,
+    isError: zonesError,
+    refetch: refetchZones,
+  } = useRiderDeliveryZonesQuery();
   const updateOnlineStatus = useUpdateOnlineStatusMutation();
+
+  const riderLocation =
+    profileData?.current_lat != null && profileData?.current_lng != null
+      ? {
+          latitude: profileData.current_lat,
+          longitude: profileData.current_lng,
+        }
+      : null;
 
   // Rider status from backend: 'available' | 'busy' | 'offline'
   const riderStatus = metricsData?.status || 'offline';
@@ -79,8 +94,8 @@ export default function RiderHome() {
     .slice(0, 5);
 
   const onRefresh = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    await Promise.all([refetch(), refetchZones()]);
+  }, [refetch, refetchZones]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -431,40 +446,107 @@ export default function RiderHome() {
           </YStack>
         </Card>
 
-        {/* Map Preview */}
+        {/* Delivery coverage map */}
         {riderStatus !== 'offline' ? (
           <Card padding="$4" bordered>
-            <YStack gap="$3" alignItems="center">
-              <Text fontSize="$5" fontWeight="bold">
-                Delivery Map
-              </Text>
-              <YStack
-                height={200}
-                width="100%"
-                borderRadius="$4"
-                overflow="hidden"
-              >
-                <MapView
-                  style={{ flex: 1 }}
-                  provider={PROVIDER_GOOGLE}
-                  initialRegion={{
-                    latitude: 5.6037,
-                    longitude: -0.1870,
-                    latitudeDelta: 0.05,
-                    longitudeDelta: 0.05,
-                  }}
-                  showsUserLocation
-                  showsMyLocationButton={false}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+                <YStack flex={1} gap="$1">
+                  <Text fontSize="$5" fontWeight="bold">
+                    Delivery Coverage
+                  </Text>
+                  <Text fontSize="$2" color="$colorSecondary">
+                    {deliveryZones.length > 0
+                      ? `${deliveryZones.length} joined ${deliveryZones.length === 1 ? "business" : "businesses"} · ${deliveryZones.filter((zone) => zone.delivery_enabled).length} accepting deliveries`
+                      : "Businesses you deliver for and their delivery radius"}
+                  </Text>
+                </YStack>
+                <Button
+                  variant="ghost"
+                  height={36}
+                  width="auto"
+                  paddingHorizontal="$2"
+                  onPress={() => router.push("/(rider)/settings/delivery-zones")}
+                  icon={<ChevronRight size={18} color="$colorSecondary" />}
                 />
-              </YStack>
+              </XStack>
+
+              {deliveryZones.length > 0 ? (
+                <RiderCoverageMap
+                  zones={deliveryZones}
+                  riderLocation={riderLocation}
+                  height={220}
+                  interactive={false}
+                />
+              ) : zonesLoading ? (
+                <YStack
+                  height={220}
+                  width="100%"
+                  borderRadius="$5"
+                  backgroundColor="$backgroundSoft"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap="$2"
+                >
+                  <Spinner color="$primary" />
+                  <Text fontSize="$2" color="$colorSecondary">
+                    Loading coverage map...
+                  </Text>
+                </YStack>
+              ) : zonesError ? (
+                <YStack
+                  height={220}
+                  width="100%"
+                  borderRadius="$5"
+                  backgroundColor="$backgroundSoft"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap="$2"
+                  padding="$4"
+                >
+                  <MapPin size={28} color="$colorMuted" />
+                  <Text fontSize="$3" fontWeight="600" textAlign="center">
+                    Could not load delivery coverage
+                  </Text>
+                  <Button
+                    size="$3"
+                    variant="outline"
+                    onPress={() => refetchZones()}
+                  >
+                    Retry
+                  </Button>
+                </YStack>
+              ) : (
+                <YStack
+                  height={220}
+                  width="100%"
+                  borderRadius="$5"
+                  backgroundColor="$backgroundSoft"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap="$2"
+                  padding="$4"
+                >
+                  <MapPin size={28} color="$colorMuted" />
+                  <Text fontSize="$3" fontWeight="600" textAlign="center">
+                    You have not joined a business yet
+                  </Text>
+                  <Button
+                    size="$3"
+                    variant="outline"
+                    onPress={() => router.push("/(rider)/businesses")}
+                  >
+                    Browse Businesses
+                  </Button>
+                </YStack>
+              )}
+
               <Button
                 variant="outline"
-                height={48}
-                onPress={() => router.push("/(rider)/map")}
+                height={44}
+                onPress={() => router.push("/(rider)/settings/delivery-zones")}
               >
-                Open Full Map
+                Manage Delivery Zones
               </Button>
             </YStack>
           </Card>

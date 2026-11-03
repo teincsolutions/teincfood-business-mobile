@@ -23,34 +23,26 @@ import {
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { BackButton, Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
-import { RiderMarkerContent } from "@/components/rider/DeliveryMarkers";
+import {
+  RiderCoverageMap,
+  type RiderCoverageMapHandle,
+} from "@/components/rider/RiderCoverageMap";
 import { useRiderDeliveryZonesQuery } from "@/hooks/useRiderDeliveryZones";
 import { useRiderProfileQuery } from "@teincfood/core";
 import type { RiderDeliveryZone } from "@/services/rider-zones.service";
-
-function getZoneCoordinate(zone: RiderDeliveryZone) {
-  const latitude = zone.latitude ?? zone.address?.latitude ?? null;
-  const longitude = zone.longitude ?? zone.address?.longitude ?? null;
-  if (latitude == null || longitude == null) return null;
-  return { latitude, longitude };
-}
-
-function formatZoneAddress(zone: RiderDeliveryZone) {
-  if (!zone.address) return "Address not set";
-  return [zone.address.address_line, zone.address.city]
-    .filter(Boolean)
-    .join(", ");
-}
+import {
+  formatRiderZoneAddress,
+  getRiderZoneCoordinate,
+} from "@/utils/rider-zones";
 
 export default function DeliveryZones() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const theme = useTheme();
-  const mapRef = useRef<MapView>(null);
+  const coverageMapRef = useRef<RiderCoverageMapHandle>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
   const { data: zones = [], isLoading, isError, isRefetching, refetch } =
@@ -74,40 +66,9 @@ export default function DeliveryZones() {
     }
   }, [selectedZoneId, zones]);
 
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    const coordinates = zones
-      .map(getZoneCoordinate)
-      .filter(Boolean) as { latitude: number; longitude: number }[];
-
-    if (riderLocation) coordinates.push(riderLocation);
-    if (coordinates.length === 0) return;
-
-    const timer = setTimeout(() => {
-      mapRef.current?.fitToCoordinates(coordinates, {
-        edgePadding: { top: 70, right: 50, bottom: 70, left: 50 },
-        animated: true,
-      });
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [zones, riderLocation?.latitude, riderLocation?.longitude]);
-
   const focusZone = useCallback((zone: RiderDeliveryZone) => {
-    const coordinate = getZoneCoordinate(zone);
-    if (!coordinate || !mapRef.current) return;
-
     setSelectedZoneId(zone.id);
-    const delta = Math.max((zone.max_delivery_radius_km * 2.6) / 111, 0.02);
-    mapRef.current.animateToRegion(
-      {
-        ...coordinate,
-        latitudeDelta: delta,
-        longitudeDelta: delta,
-      },
-      600,
-    );
+    coverageMapRef.current?.focusZone(zone);
   }, []);
 
   const mapHeight = Math.min(screenHeight * 0.42, 360);
@@ -124,151 +85,14 @@ export default function DeliveryZones() {
         </Text>
       </YStack>
 
-      <YStack
+      <RiderCoverageMap
+        ref={coverageMapRef}
+        zones={zones}
+        riderLocation={riderLocation}
         height={mapHeight}
-        width="100%"
-        borderRadius="$5"
-        overflow="hidden"
-        backgroundColor="$backgroundSoft"
-      >
-        <MapView
-          ref={mapRef}
-          style={{ flex: 1 }}
-          provider={PROVIDER_GOOGLE}
-          showsMyLocationButton={false}
-          showsCompass
-          toolbarEnabled={false}
-          initialRegion={{
-            latitude: riderLocation?.latitude ?? 5.6037,
-            longitude: riderLocation?.longitude ?? -0.187,
-            latitudeDelta: 0.18,
-            longitudeDelta: 0.18,
-          }}
-          mapPadding={{ top: 50, bottom: 50, left: 16, right: 16 }}
-        >
-          {zones.map((zone) => {
-            const coordinate = getZoneCoordinate(zone);
-            if (!coordinate) return null;
-            const isSelected = selectedZone?.id === zone.id;
-            const radiusMeters = zone.max_delivery_radius_km * 1000;
-
-            return (
-              <Circle
-                key={`radius-${zone.id}`}
-                center={coordinate}
-                radius={radiusMeters}
-                strokeColor={
-                  isSelected ? theme.primary.val : theme.info.val
-                }
-                strokeWidth={isSelected ? 2.5 : 1.5}
-                fillColor={
-                  isSelected ? theme.primaryMuted.val : theme.infoMuted.val
-                }
-              />
-            );
-          })}
-
-          {zones.map((zone) => {
-            const coordinate = getZoneCoordinate(zone);
-            if (!coordinate) return null;
-            const isSelected = selectedZone?.id === zone.id;
-
-            return (
-              <Marker
-                key={zone.id}
-                coordinate={coordinate}
-                title={zone.name}
-                description={`${zone.max_delivery_radius_km} km delivery radius`}
-                anchor={{ x: 0.5, y: 0.68 }}
-                tracksViewChanges={false}
-                onPress={() => focusZone(zone)}
-              >
-                <YStack alignItems="center">
-                  <YStack
-                    width={38}
-                    height={38}
-                    borderRadius="$full"
-                    backgroundColor={isSelected ? "$primary" : "$info"}
-                    borderWidth={3}
-                    borderColor="$background"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Building size={17} color="white" />
-                  </YStack>
-                  <YStack
-                    backgroundColor="$background"
-                    paddingHorizontal="$2"
-                    paddingVertical="$0.5"
-                    borderRadius="$full"
-                    marginTop="$1"
-                    borderWidth={1}
-                    borderColor={isSelected ? "$primary" : "$info"}
-                  >
-                    <Text
-                      fontSize="$1"
-                      fontWeight="800"
-                      color={isSelected ? "$primary" : "$info"}
-                      numberOfLines={1}
-                      maxWidth={110}
-                    >
-                      {zone.name}
-                    </Text>
-                  </YStack>
-                </YStack>
-              </Marker>
-            );
-          })}
-
-          {riderLocation ? (
-            <Marker
-              coordinate={riderLocation}
-              title="You"
-              anchor={{ x: 0.5, y: 0.68 }}
-              tracksViewChanges={false}
-            >
-              <RiderMarkerContent />
-            </Marker>
-          ) : null}
-        </MapView>
-
-        {selectedZone ? (
-          <YStack
-            position="absolute"
-            top="$3"
-            left="$3"
-            right="$3"
-            backgroundColor="$background"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-            borderRadius="$3"
-            shadowColor="$shadowColorStrong"
-            shadowOpacity={1}
-            shadowRadius={8}
-            shadowOffset={{ width: 0, height: 2 }}
-            elevation={3}
-          >
-            <XStack gap="$2" alignItems="center">
-              <MapPin size={15} color="$primary" />
-              <Text
-                fontSize="$3"
-                fontWeight="700"
-                color="$color"
-                flex={1}
-                numberOfLines={1}
-              >
-                {selectedZone.name}
-              </Text>
-              <Text fontSize="$2" color="$colorSecondary">
-                {selectedZone.max_delivery_radius_km} km
-              </Text>
-            </XStack>
-            <Text fontSize="$2" color="$colorSecondary" numberOfLines={1}>
-              {formatZoneAddress(selectedZone)}
-            </Text>
-          </YStack>
-        ) : null}
-      </YStack>
+        selectedZoneId={selectedZone?.id ?? null}
+        onZonePress={(zone) => setSelectedZoneId(zone.id)}
+      />
 
       <XStack gap="$4" alignItems="center" flexWrap="wrap">
         <XStack gap="$2" alignItems="center">
@@ -423,7 +247,7 @@ export default function DeliveryZones() {
           ItemSeparatorComponent={() => <Separator />}
           renderItem={({ item: zone }) => {
             const isSelected = selectedZone?.id === zone.id;
-            const coordinate = getZoneCoordinate(zone);
+            const coordinate = getRiderZoneCoordinate(zone);
 
             return (
               <TouchableOpacity
@@ -493,7 +317,7 @@ export default function DeliveryZones() {
                       color="$colorSecondary"
                       numberOfLines={1}
                     >
-                      {formatZoneAddress(zone)}
+                      {formatRiderZoneAddress(zone)}
                     </Text>
 
                     <XStack gap="$3" alignItems="center" flexWrap="wrap">

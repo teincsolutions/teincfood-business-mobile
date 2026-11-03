@@ -28,14 +28,18 @@ import { BackButton, Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { MessageButton } from "@/components/chat/MessageButton";
 import { useRiderProfileQuery } from "@teincfood/core";
+import { RIDER_KEYS } from "@teincfood/core";
 import { useLeaveBusinessMutation } from "@teincfood/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMyJoinRequestsQuery } from "@/hooks/useRiderProfile";
+import { invalidateRiderDeliveryZones } from "@/hooks/useRiderDeliveryZones";
 import { JoinBusinessSheet } from "@/components/rider/JoinBusinessSheet";
 import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 
 export default function RiderBusinessesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const setMapTarget = useRiderNavigationStore((state) => state.setMapTarget);
   const { data: profile, isLoading, refetch } = useRiderProfileQuery();
   const { data: joinRequests = [], refetch: refetchRequests } =
@@ -95,6 +99,10 @@ export default function RiderBusinessesScreen() {
               onSuccess: () => {
                 setSelectedBusiness(null);
                 setSheetOpen(false);
+                void queryClient.invalidateQueries({
+                  queryKey: RIDER_KEYS.profile(),
+                });
+                void invalidateRiderDeliveryZones(queryClient);
                 refetch();
               },
             });

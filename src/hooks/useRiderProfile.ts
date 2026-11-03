@@ -6,6 +6,7 @@ import {
   submitRiderJoinRequest,
   fetchMyJoinRequests,
 } from "@/services/rider.service";
+import { invalidateRiderDeliveryZones } from "@/hooks/useRiderDeliveryZones";
 
 export interface RiderProfileForm {
   phone: string;
@@ -15,6 +16,7 @@ export interface RiderProfileForm {
 function invalidateRider(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: RIDER_KEYS.profile() });
   void queryClient.invalidateQueries({ queryKey: RIDER_KEYS.metrics() });
+  void invalidateRiderDeliveryZones(queryClient);
 }
 
 /** POST /riders/profile — creates the rider row + assigns the rider role. */
@@ -45,9 +47,11 @@ export function useUpdateRiderProfileMutation() {
 
 /** POST /riders/join {business_number} — request to work for a fleet. */
 export function useSubmitJoinRequestMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (businessNumber: string) =>
       submitRiderJoinRequest({ business_number: businessNumber }),
+    onSuccess: () => invalidateRider(queryClient),
     onError: (error) => {
       console.debug("[useSubmitJoinRequestMutation] error", error);
     },

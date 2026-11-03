@@ -26,9 +26,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { api } from "@/services/api";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
+import { invalidateRiderDeliveryZones } from "@/hooks/useRiderDeliveryZones";
 
 type FormErrors = {
   deliveryFee?: string;
@@ -59,6 +60,7 @@ export default function DeliverySettings() {
   const router = useRouter();
   const media = useMedia();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const { activeBusinessId } = useActiveBusiness();
   const canEdit = useHasCapability("business_profile_manage");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -116,6 +118,10 @@ export default function DeliverySettings() {
         free_delivery_threshold_minor: toMinor(freeDeliveryMinimum),
       }),
     onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [...SETTINGS_KEYS, activeBusinessId],
+      });
+      void invalidateRiderDeliveryZones(queryClient);
       setSaveStatus("success");
       toast.success("Delivery settings saved");
       setTimeout(() => router.back(), 1500);
