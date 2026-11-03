@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Marker } from "react-native-maps";
 import { YStack, Text } from "tamagui";
-import { ChefHat, MapPin, Navigation } from "@tamagui/lucide-icons";
+import { Navigation, UserRound, Utensils } from "@tamagui/lucide-icons";
 
 interface DeliveryMarkerProps {
   coordinate: { latitude: number; longitude: number };
@@ -59,7 +59,7 @@ export function PickupMapMarker({
           alignItems="center"
           justifyContent="center"
         >
-          <ChefHat size={18} color="white" />
+          <Utensils size={18} color="white" />
         </YStack>
         <MarkerLabel label="PICKUP" color="$success" />
       </YStack>
@@ -92,7 +92,7 @@ export function DropoffMapMarker({
           alignItems="center"
           justifyContent="center"
         >
-          <MapPin size={18} color="white" />
+          <UserRound size={18} color="white" />
         </YStack>
         <MarkerLabel label="DROPOFF" color="$primary" />
       </YStack>
