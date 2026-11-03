@@ -52,6 +52,7 @@ import {
 } from "@/hooks/kiosk.hooks";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { ReceiptPreviewSheet } from "@/components/orders/ReceiptPreviewSheet";
+import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
 import { usePrintReceiptMutation } from "@/hooks/useReceiptPreview";
 import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { paymentService } from "@/services/payment.service";
@@ -127,6 +128,7 @@ export default function OrderDetails({
     riderId: string;
   } | null>(null);
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
+  const [showMakeDelivery, setShowMakeDelivery] = useState(false);
   const [showMomoSheet, setShowMomoSheet] = useState(false);
   const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
   const printMutation = usePrintReceiptMutation();
@@ -611,6 +613,21 @@ export default function OrderDetails({
             </Text>
             <Separator />
 
+            {!isDeliveryOrder(
+              order as unknown as Parameters<typeof isDeliveryOrder>[0],
+            ) &&
+              ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+                order.status,
+              ) && (
+                <Button
+                  variant="outline"
+                  width="100%"
+                  onPress={() => setShowMakeDelivery(true)}
+                >
+                  Make Delivery
+                </Button>
+              )}
+
             {canCollectMomo && (
               <Button
                 variant="success"
@@ -818,6 +835,15 @@ export default function OrderDetails({
         open={receiptPreviewOpen}
         onOpenChange={setReceiptPreviewOpen}
         order={order}
+      />
+
+      <MakeDeliverySheet
+        open={showMakeDelivery}
+        onOpenChange={setShowMakeDelivery}
+        order={order}
+        onDone={() => {
+          void refetch();
+        }}
       />
 
       <RiderSelectionSheet

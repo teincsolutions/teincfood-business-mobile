@@ -34,12 +34,14 @@ import { useTheme } from "tamagui";
 import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FilterSheet } from "@/components/filters/FilterSheet";
+import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
 import { printService } from "@/services/print.service";
 import type { SellerOrder } from "@teincfood/core";
 import {
   formatPriceFromMinor,
   formatDateTime,
   resolveDateRange,
+  isDeliveryOrder,
 } from "@teincfood/core";
 import { getCustomerDisplay, isCancellable, cancelLabelFor, CANCELLABLE_STATUSES } from "@teincfood/core";
 
@@ -128,7 +130,7 @@ export default function SellerOrders() {
 
   const COL_ITEMS = 45;
   const COL_TIME = 70;
-  const COL_ACTIONS = 270;
+  const COL_ACTIONS = 400;
   const FIXED_TOTAL = COL_ITEMS + COL_TIME + COL_ACTIONS;
 
   const [containerWidth, setContainerWidth] = useState(0);
@@ -152,6 +154,7 @@ export default function SellerOrders() {
   const hasInitFilter = useRef(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
+  const [makeDeliveryTarget, setMakeDeliveryTarget] = useState<SellerOrder | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -351,6 +354,21 @@ export default function SellerOrders() {
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
           />
+          {!isDeliveryOrder(
+            item as unknown as Parameters<typeof isDeliveryOrder>[0],
+          ) &&
+            ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+              item.status,
+            ) && (
+              <Button
+                flex={1}
+                variant="outline"
+                height={40}
+                onPress={() => setMakeDeliveryTarget(item)}
+              >
+                Make Delivery
+              </Button>
+            )}
           {canReject && isCancellable(item.status) && (
             <Button
               variant="dangerOutline"
@@ -472,6 +490,21 @@ export default function SellerOrders() {
           icon={<Printer size={16} />}
           onPress={() => handlePrint(item)}
         />
+        {!isDeliveryOrder(
+          item as unknown as Parameters<typeof isDeliveryOrder>[0],
+        ) &&
+          ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+            item.status,
+          ) && (
+            <Button
+              variant="outline"
+              height={40}
+              paddingHorizontal="$3"
+              onPress={() => setMakeDeliveryTarget(item)}
+            >
+              Make Delivery
+            </Button>
+          )}
         {canReject && isCancellable(item.status) && (
           <Button
             variant="dangerOutline"
@@ -775,6 +808,18 @@ export default function SellerOrders() {
             cancelOrder.mutate(cancelTarget.id);
             setCancelTarget(null);
           }
+        }}
+      />
+
+      <MakeDeliverySheet
+        open={makeDeliveryTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setMakeDeliveryTarget(null);
+        }}
+        order={makeDeliveryTarget}
+        onDone={() => {
+          void refetch();
+          setMakeDeliveryTarget(null);
         }}
       />
     </YStack>

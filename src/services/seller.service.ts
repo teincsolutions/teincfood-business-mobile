@@ -54,6 +54,23 @@ export async function cancelOrderDeliveryFailure(orderId: string): Promise<{ dat
   return api.post(`/orders/${orderId}/cancel-delivery-failure`);
 }
 
+export async function convertOrderToDelivery(
+  orderId: string,
+  delivery: {
+    address: string;
+    latitude: number;
+    longitude: number;
+    city?: string;
+    region?: string;
+    customer_phone?: string;
+  },
+): Promise<SellerOrderDetailResponse> {
+  return api.post<SellerOrderDetailResponse>(
+    `/orders/${orderId}/convert-to-delivery`,
+    { delivery },
+  );
+}
+
 // ─── Business Orders ───
 
 export interface BusinessOrdersParams {

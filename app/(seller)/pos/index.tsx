@@ -40,6 +40,7 @@ import {
   FileText,
   Eye,
   XCircle,
+  Truck,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
@@ -86,6 +87,8 @@ import {
 } from "@/hooks/seller.hooks";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
+import { DeliveryAddressSheet } from "@/components/orders/DeliveryAddressSheet";
+import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
 import {
   enabledPosPaymentMethods,
   usePaymentSettingsQuery,
@@ -93,6 +96,7 @@ import {
 import { printService } from "@/services/print.service";
 import { paymentService } from "@/services/payment.service";
 import type { MomoProvider, MomoQuote } from "@/types/payment";
+import type { PlaceDetails } from "@/services/places.service";
 import type {
   MenuItem,
   MenuItemVariantResponse,
@@ -818,6 +822,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     string | null
   >(null);
   const [showClosedDialog, setShowClosedDialog] = useState(false);
+  const [showDeliveryAddress, setShowDeliveryAddress] = useState(false);
+  const [deliveryPlace, setDeliveryPlace] = useState<PlaceDetails | null>(null);
   const [momoPhone, setMomoPhone] = useState("");
   const [momoProvider, setMomoProvider] = useState<MomoProvider>("mtn");
   const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
@@ -901,7 +907,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const orderTypes: { key: POSOrderType; label: string }[] = [
     { key: "takeout", label: "Takeout" },
     { key: "dine_in", label: "Dine-in" },
+    { key: "delivery" as POSOrderType, label: "Delivery" },
   ];
+  const isDeliveryCheckout = checkoutForm.order_type === "delivery";
 
   const paymentMethods: {
     key: POSPaymentMethod;
@@ -999,6 +1007,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       setShowClosedDialog(true);
       return;
     }
+    if (checkoutForm.order_type === "delivery" && !deliveryPlace) {
+      toast.error("Choose the delivery address first");
+      setShowDeliveryAddress(true);
+      return;
+    }
     const { autoPrint } = usePrinterStore.getState();
 
     const subtotalMinor =
@@ -1038,6 +1051,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         customer_name: checkoutForm.customer_name || undefined,
         customer_phone: checkoutForm.customer_phone,
         pos_payment_method: checkoutForm.pos_payment_method,
+        delivery:
+          checkoutForm.order_type === "delivery" && deliveryPlace
+            ? {
+                address: deliveryPlace.formattedAddress,
+                latitude: deliveryPlace.latitude,
+                longitude: deliveryPlace.longitude,
+                city: deliveryPlace.city,
+                region: deliveryPlace.region,
+              }
+            : undefined,
         total_minor: total,
         subtotal_minor: subtotalMinor,
         tax_minor: taxMinor,
@@ -1051,6 +1074,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           const calloutNumber = response.callout_number;
           setLastOrderNumber(response.order_number);
           clearAll();
+          setDeliveryPlace(null);
+          setShowDeliveryAddress(false);
           toast.success(`Order #${calloutNumber} placed!`);
 
           console.debug(
@@ -1121,6 +1146,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     createOrder,
     clearAll,
     total,
+    deliveryPlace,
     paymentFlow.startCheckout,
   ]);
 
@@ -1128,6 +1154,17 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     if (isBusinessClosed) {
       setShowClosedDialog(true);
       return;
+    }
+    if (checkoutForm.order_type === "delivery") {
+      if (!isCloudReachable) {
+        toast.error("Delivery checkout requires an internet connection");
+        return;
+      }
+      if (!deliveryPlace) {
+        toast.error("Choose the delivery address first");
+        setShowDeliveryAddress(true);
+        return;
+      }
     }
     if (!enabledPaymentMethods.includes(checkoutForm.pos_payment_method)) {
       toast.error("This payment method is disabled in Payment Settings");
@@ -1159,8 +1196,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     }
   }, [
     isBusinessClosed,
+    checkoutForm.order_type,
     checkoutForm.pos_payment_method,
     isCloudReachable,
+    deliveryPlace,
     executePlaceOrder,
     updateCheckoutForm,
     enabledPaymentMethods,
@@ -1316,36 +1355,115 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               Order Type
             </Text>
             <XStack gap="$3">
-              {orderTypes.map((t) => (
-                <YStack
-                  key={t.key}
-                  flex={1}
-                  backgroundColor={
-                    checkoutForm.order_type === t.key
-                      ? "$primary"
-                      : "$backgroundStrong"
-                  }
-                  borderRadius="$4"
-                  padding="$4"
-                  gap="$2"
-                  alignItems="center"
-                  pressStyle={{ opacity: 0.8 }}
-                  onPress={() => updateCheckoutForm({ order_type: t.key })}
-                >
-                  <Text
-                    fontSize="$4"
-                    fontWeight="700"
-                    fontFamily="$heading"
-                    color={
-                      checkoutForm.order_type === t.key ? "white" : "$color"
+              {orderTypes.map((t) => {
+                const deliveryDisabled =
+                  t.key === "delivery" && !isCloudReachable;
+                return (
+                  <YStack
+                    key={t.key}
+                    flex={1}
+                    opacity={deliveryDisabled ? 0.45 : 1}
+                    backgroundColor={
+                      checkoutForm.order_type === t.key
+                        ? "$primary"
+                        : "$backgroundStrong"
+                    }
+                    borderRadius="$4"
+                    padding="$4"
+                    gap="$2"
+                    alignItems="center"
+                    pressStyle={
+                      deliveryDisabled ? undefined : { opacity: 0.8 }
+                    }
+                    onPress={
+                      deliveryDisabled
+                        ? undefined
+                        : () => updateCheckoutForm({ order_type: t.key })
                     }
                   >
-                    {t.label}
-                  </Text>
-                </YStack>
-              ))}
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$heading"
+                      color={
+                        checkoutForm.order_type === t.key ? "white" : "$color"
+                      }
+                    >
+                      {t.label}
+                    </Text>
+                    {t.key === "delivery" ? (
+                      <Text
+                        fontSize="$1"
+                        color={
+                          checkoutForm.order_type === t.key
+                            ? "rgba(255,255,255,0.8)"
+                            : "$colorSecondary"
+                        }
+                      >
+                        Requires internet
+                      </Text>
+                    ) : null}
+                  </YStack>
+                );
+              })}
             </XStack>
           </YStack>
+
+          {isDeliveryCheckout ? (
+            <YStack gap="$3">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Delivery Address
+              </Text>
+              <YStack
+                gap="$3"
+                backgroundColor="$backgroundStrong"
+                padding="$4"
+                borderRadius="$5"
+              >
+                <XStack alignItems="center" gap="$3">
+                  <YStack
+                    backgroundColor="$backgroundSoft"
+                    padding="$2"
+                    borderRadius="$3"
+                  >
+                    <Truck size={20} color="$primary" />
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize="$3" fontWeight="700" color="$color">
+                      {deliveryPlace
+                        ? "Delivery address selected"
+                        : "Choose where to deliver"}
+                    </Text>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      numberOfLines={2}
+                    >
+                      {deliveryPlace?.formattedAddress ||
+                        "Search for an address or landmark"}
+                    </Text>
+                  </YStack>
+                  <Button
+                    size="$3"
+                    variant="outline"
+                    onPress={() => setShowDeliveryAddress(true)}
+                  >
+                    {deliveryPlace ? "Change" : "Choose"}
+                  </Button>
+                </XStack>
+                {!isCloudReachable ? (
+                  <Text fontSize="$2" color="$warning">
+                    Delivery checkout is only available while online.
+                  </Text>
+                ) : null}
+              </YStack>
+            </YStack>
+          ) : null}
 
           {/* Payment Method */}
           <YStack gap="$3">
@@ -1620,6 +1738,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   )}
               </>
             )}
+            {(serverPricing?.delivery_fee_minor ?? 0) > 0 ? (
+              <XStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">
+                  Delivery Fee
+                </Text>
+                <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">
+                  {formatPriceFromMinor(serverPricing?.delivery_fee_minor ?? 0)}
+                </Text>
+              </XStack>
+            ) : null}
             {checkoutForm.pos_payment_method === "mobile_money" && momoQuote ? (
               <>
                 <XStack justifyContent="space-between" alignItems="center">
@@ -1705,7 +1833,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           disabled={
             createOrder.isPending ||
             isBusinessClosed ||
-            !hasUsablePaymentMethod
+            !hasUsablePaymentMethod ||
+            (isDeliveryCheckout && !deliveryPlace)
           }
           pressStyle={{ opacity: 0.8 }}
           onPress={handlePlaceOrder}
@@ -1716,6 +1845,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             "Business Closed"
           ) : !hasUsablePaymentMethod ? (
             "No Payment Method"
+          ) : isDeliveryCheckout && !deliveryPlace ? (
+            "Choose Delivery Address"
           ) : (
             `Place Order — ${formatPriceFromMinor(payableTotal)}`
           )}
@@ -1757,6 +1888,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           setShowClosedDialog(false);
           router.push("/(shared)/settings/operating-hours");
         }}
+      />
+
+      <DeliveryAddressSheet
+        open={showDeliveryAddress}
+        onOpenChange={setShowDeliveryAddress}
+        initialAddress={deliveryPlace?.formattedAddress}
+        onSelect={(place) => setDeliveryPlace(place)}
       />
     </YStack>
   );
@@ -1818,6 +1956,7 @@ function POSReadyCard({
   onCompletePickup,
   onAssignRider,
   onHandover,
+  onMakeDelivery,
   onCancel,
 }: {
   order: SellerOrder;
@@ -1825,6 +1964,7 @@ function POSReadyCard({
   onCompletePickup?: (id: string) => void;
   onAssignRider?: (id: string) => void;
   onHandover?: (deliveryId: string) => void;
+  onMakeDelivery?: (order: SellerOrder) => void;
   onCancel?: (order: SellerOrder) => void;
 }) {
   const callout =
@@ -1981,6 +2121,21 @@ function POSReadyCard({
               </Text>
             </Button>
           ) : null}
+          {!isDelivery && onMakeDelivery ? (
+            <Button
+              height={36}
+              paddingHorizontal="$3"
+              backgroundColor="$background"
+              borderWidth={1}
+              borderColor="$borderColor"
+              borderRadius="$3"
+              onPress={() => onMakeDelivery(order)}
+            >
+              <Text fontSize="$3" fontWeight="700" color="$color">
+                Make Delivery
+              </Text>
+            </Button>
+          ) : null}
           {onCancel ? (
             <Button
               height={36}
@@ -2004,6 +2159,9 @@ function POSReadyCard({
 
 function InProgressTab() {
   const { data: orders, isFetching, refetch } = usePOSOrdersQuery();
+  const [makeDeliveryOrder, setMakeDeliveryOrder] = useState<SellerOrder | null>(
+    null,
+  );
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
@@ -2185,6 +2343,7 @@ function InProgressTab() {
                   onPrint={(id) => printService.printOrderReceipt(id)}
                   onCompletePickup={(id) => completePickup.mutate(id)}
                   onAssignRider={openRiderSheet}
+                  onMakeDelivery={setMakeDeliveryOrder}
                   onHandover={(deliveryId) =>
                     confirmHandover.mutate(deliveryId)
                   }
@@ -2323,6 +2482,7 @@ function InProgressTab() {
                   onPrint={(id) => printService.printOrderReceipt(id)}
                   onCompletePickup={(id) => completePickup.mutate(id)}
                   onAssignRider={openRiderSheet}
+                  onMakeDelivery={setMakeDeliveryOrder}
                   onHandover={(deliveryId) =>
                     confirmHandover.mutate(deliveryId)
                   }
@@ -2334,6 +2494,17 @@ function InProgressTab() {
         </YStack>
       )}
       {riderSheet}
+      <MakeDeliverySheet
+        open={makeDeliveryOrder !== null}
+        onOpenChange={(open) => {
+          if (!open) setMakeDeliveryOrder(null);
+        }}
+        order={makeDeliveryOrder}
+        onDone={() => {
+          void refetch();
+          setMakeDeliveryOrder(null);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -2342,6 +2513,9 @@ function InProgressTab() {
 
 function TodayTab() {
   const today = new Date().toISOString().split("T")[0];
+  const [makeDeliveryOrder, setMakeDeliveryOrder] = useState<SellerOrder | null>(
+    null,
+  );
   const {
     data: orders,
     isFetching,
@@ -2682,6 +2856,24 @@ function TodayTab() {
             icon={<Printer size={14} />}
             onPress={() => printService.printOrderReceipt(item.id)}
           />
+          {!isDeliveryOrder(
+            item as unknown as Parameters<typeof isDeliveryOrder>[0],
+          ) &&
+            ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+              item.status,
+            ) && (
+              <Button
+                size="$2"
+                variant="outline"
+                height={36}
+                paddingHorizontal="$2"
+                onPress={() => setMakeDeliveryOrder(item)}
+              >
+                <Text fontSize="$2" fontWeight="700">
+                  Make Delivery
+                </Text>
+              </Button>
+            )}
           {action && (
             <Button
               size="$2"
@@ -2811,6 +3003,17 @@ function TodayTab() {
           </ScrollView>
         </YStack>
         {riderSheet}
+        <MakeDeliverySheet
+          open={makeDeliveryOrder !== null}
+          onOpenChange={(open) => {
+            if (!open) setMakeDeliveryOrder(null);
+          }}
+          order={makeDeliveryOrder}
+          onDone={() => {
+            void refetch();
+            setMakeDeliveryOrder(null);
+          }}
+        />
         {previewSheet}
       </>
     );
@@ -3069,6 +3272,22 @@ function TodayTab() {
                       icon={<Printer size={14} />}
                       onPress={() => printService.printOrderReceipt(item.id)}
                     />
+                    {!isDeliveryOrder(
+                      item as unknown as Parameters<typeof isDeliveryOrder>[0],
+                    ) &&
+                      ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+                        item.status,
+                      ) && (
+                        <Button
+                          size="$2"
+                          variant="outline"
+                          onPress={() => setMakeDeliveryOrder(item)}
+                        >
+                          <Text fontSize="$2" fontWeight="700">
+                            Make Delivery
+                          </Text>
+                        </Button>
+                      )}
                     {action && (
                       <Button
                         size="$2"
@@ -3110,6 +3329,17 @@ function TodayTab() {
         removeClippedSubviews
       />
       {riderSheet}
+      <MakeDeliverySheet
+        open={makeDeliveryOrder !== null}
+        onOpenChange={(open) => {
+          if (!open) setMakeDeliveryOrder(null);
+        }}
+        order={makeDeliveryOrder}
+        onDone={() => {
+          void refetch();
+          setMakeDeliveryOrder(null);
+        }}
+      />
       {previewSheet}
     </>
   );
