@@ -11,9 +11,8 @@ import {
   Package,
   Clock,
   Navigation,
-  Menu,
 } from '@tamagui/lucide-icons';
-import { useNavigation, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input } from '@/components/ui';
 import {
@@ -24,6 +23,7 @@ import {
 } from "@teincfood/core";
 import { useRiderDeliveryRealtimeUpdates } from '@/hooks/useRiderDeliveryRealtimeUpdates';
 import { useResponsive } from '@/utils/responsive';
+import { useRiderNavigationStore } from '@/stores/rider-navigation.store';
 
 type FilterOption = 'all' | 'active' | 'completed';
 
@@ -47,8 +47,8 @@ function formatDeliveryAddress(address: unknown): string {
 }
 
 export default function RiderDeliveries() {
-  const navigation = useNavigation();
   const router = useRouter();
+  const setMapTarget = useRiderNavigationStore((state) => state.setMapTarget);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<'available' | 'my_deliveries'>('my_deliveries');
   const [filter, setFilter] = useState<FilterOption>('all');
@@ -140,22 +140,25 @@ export default function RiderDeliveries() {
   }, [claimOrder]);
 
   const handleShowOnMap = useCallback((order) => {
-    router.push({
-      pathname: '/(rider)/map',
-      params: {
-        pickupLat: order.business_lat,
-        pickupLng: order.business_lng,
-        dropoffLat: order.delivery_lat,
-        dropoffLng: order.delivery_lng,
-        orderId: order.order_id,
-        orderNumber: order.order_number,
-        pickupAddress: order.business_name || order.business_address,
-        dropoffAddress: typeof order.delivery_address === 'string'
-          ? order.delivery_address
-          : order.delivery_address?.formattedAddress || 'Dropoff',
+    setMapTarget({
+      orderId: order.order_id,
+      orderNumber: order.order_number,
+      status: 'assigned',
+      pickup: {
+        name: order.business_name,
+        address: order.business_address,
+        latitude: order.business_lat,
+        longitude: order.business_lng,
+      },
+      dropoff: {
+        name: 'Dropoff',
+        address: formatDeliveryAddress(order.delivery_address),
+        latitude: order.delivery_lat,
+        longitude: order.delivery_lng,
       },
     });
-  }, [router]);
+    router.push('/(rider)/map');
+  }, [router, setMapTarget]);
 
   const FilterSelector = () => (
     <YStack>
@@ -418,43 +421,6 @@ export default function RiderDeliveries() {
     </XStack>
   );
 
-  const ListHeaderComponent = () => (
-    <YStack>
-      {/* Header with drawer menu */}
-      <XStack
-        width="100%"
-        maxWidth={960}
-        alignSelf="center"
-        paddingHorizontal="$4"
-        paddingTop={insets.top + 12}
-        paddingBottom="$3"
-        alignItems="center"
-        justifyContent="flex-start"
-        backgroundColor="$background"
-      >
-        <XStack gap="$2" alignItems="center" flex={1}>
-          <TouchableOpacity
-            onPress={() => navigation.openDrawer()}
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-            style={{
-              width: 44,
-              height: 44,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginLeft: -8,
-            }}
-          >
-            <Menu size={24} color="$color" />
-          </TouchableOpacity>
-          <Text fontSize="$7" fontWeight="800" fontFamily="$heading" color="$color">
-            Deliveries
-          </Text>
-        </XStack>
-      </XStack>
-    </YStack>
-  );
-
   const renderAvailableOrder = ({ item: order }) => (
     <YStack flex={1} px="$2" mb="$3">
       <AvailableOrderCard order={order} />
@@ -466,8 +432,6 @@ export default function RiderDeliveries() {
 
   return (
     <YStack flex={1} backgroundColor="$background" alignItems="center">
-      {/* Fixed header outside FlatList */}
-      <ListHeaderComponent />
       <TabBar />
 
       {/* Available tab — simple ordered list */}

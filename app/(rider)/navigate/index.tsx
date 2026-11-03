@@ -14,28 +14,21 @@ import {
   ExternalLink,
   Truck,
 } from "@tamagui/lucide-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import polyline from "@mapbox/polyline";
 import { useRiderProfileQuery } from "@teincfood/core";
 import { getDirectionsPolyline, estimateDurationSeconds } from "@/services/directions.service";
 import { useResponsive } from "@/utils/responsive";
-
-interface LocationData {
-  name: string;
-  address: string;
-  phone?: string;
-  lat: number;
-  lng: number;
-  notes?: string;
-  userId?: string;
-  orderId?: string;
-}
+import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 
 export default function NavigationScreen() {
   const router = useRouter();
-  const { location: locationParam } = useLocalSearchParams();
+  const locationData = useRiderNavigationStore((state) => state.navigationTarget);
+  const clearNavigationTarget = useRiderNavigationStore(
+    (state) => state.clearNavigationTarget,
+  );
   const insets = useSafeAreaInsets();
   const { isTablet } = useResponsive();
   const mapRef = useRef<MapView>(null);
@@ -44,9 +37,11 @@ export default function NavigationScreen() {
 
   const { data: profileData } = useRiderProfileQuery();
 
-  const locationData: LocationData | null = locationParam
-    ? JSON.parse(decodeURIComponent(locationParam as string))
-    : null;
+  useEffect(() => {
+    return () => {
+      clearNavigationTarget();
+    };
+  }, [clearNavigationTarget]);
 
   const riderLat = profileData?.current_lat ?? null;
   const riderLng = profileData?.current_lng ?? null;
@@ -57,7 +52,7 @@ export default function NavigationScreen() {
     if (!hasRiderPos || !locationData) return;
 
     const origin = { latitude: riderLat, longitude: riderLng };
-    const destination = { latitude: locationData.lat, longitude: locationData.lng };
+    const destination = { latitude: locationData.latitude, longitude: locationData.longitude };
 
     // Set immediate offline ETA estimate
     setEtaSeconds(estimateDurationSeconds(origin, destination));
@@ -94,7 +89,7 @@ export default function NavigationScreen() {
         }, 300);
       }
     });
-  }, [riderLat, riderLng, locationData?.lat, locationData?.lng]);
+  }, [riderLat, riderLng, locationData?.latitude, locationData?.longitude]);
 
   const handleCall = () => {
     const phoneNumber = locationData?.phone;
@@ -112,11 +107,8 @@ export default function NavigationScreen() {
 
   const handleOpenMaps = () => {
     if (!locationData) return;
-    const { lat, lng, name } = locationData;
-    const encodedName = encodeURIComponent(name);
-    const url = Platform.OS === "ios"
-      ? `http://maps.apple.com/?daddr=${lat},${lng}&q=${encodedName}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}`;
+    const { latitude, longitude } = locationData;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
     Linking.openURL(url);
   };
 
@@ -137,8 +129,8 @@ export default function NavigationScreen() {
         style={{ flex: 1 }}
         provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude: locationData.lat,
-          longitude: locationData.lng,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
           latitudeDelta: 0.03,
           longitudeDelta: 0.03,
         }}
@@ -149,7 +141,7 @@ export default function NavigationScreen() {
       >
         {/* Destination marker */}
         <Marker
-          coordinate={{ latitude: locationData.lat, longitude: locationData.lng }}
+          coordinate={{ latitude: locationData.latitude, longitude: locationData.longitude }}
           title={locationData.name}
           description={locationData.address}
           pinColor="#e74c3c"

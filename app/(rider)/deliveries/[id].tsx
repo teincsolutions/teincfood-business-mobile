@@ -30,6 +30,7 @@ import { BackButton, Button } from "@/components/ui";
 import { formatPrice, DEFAULT_CURRENCY } from "@teincfood/core";
 import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
 import { DeliveryTimeline, getDeliveryStepIndex } from "@/components/tracking/DeliveryTimeline";
+import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { getDirectionsPolyline, estimateDurationSeconds } from "@/services/directions.service";
 import { toast } from "sonner-native";
@@ -49,6 +50,9 @@ function isNum(v: unknown): v is number {
 export default function RiderDeliveryDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const setNavigationTarget = useRiderNavigationStore(
+    (state) => state.setNavigationTarget,
+  );
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const media = useMedia();
@@ -430,16 +434,16 @@ export default function RiderDeliveryDetails() {
                   variant="outline"
                   icon={<Navigation size={18} />}
                   onPress={() => {
-                    const data = {
-                      name: delivery.pickup?.name,
-                      address: delivery.pickup?.address,
+                    setNavigationTarget({
+                      name: delivery.pickup?.name ?? "Pickup",
+                      address: delivery.pickup?.address ?? "",
                       phone: delivery.pickup?.phone,
-                      lat: delivery.pickup?.lat,
-                      lng: delivery.pickup?.lng,
+                      latitude: delivery.pickup!.lat!,
+                      longitude: delivery.pickup!.lng!,
                       userId: delivery.customer?.user_id,
                       orderId: delivery.order_id,
-                    };
-                    router.push(`/(rider)/navigate/${encodeURIComponent(JSON.stringify(data))}`);
+                    });
+                    router.push("/(rider)/navigate");
                   }}
                   width="100%"
                 >
@@ -474,17 +478,17 @@ export default function RiderDeliveryDetails() {
                   width="100%"
                   icon={<Navigation size={18} />}
                   onPress={() => {
-                    const data = {
-                      name: delivery.dropoff?.name,
-                      address: delivery.dropoff?.address,
+                    setNavigationTarget({
+                      name: delivery.dropoff?.name ?? "Dropoff",
+                      address: delivery.dropoff?.address ?? "",
                       phone: delivery.dropoff?.phone,
-                      lat: delivery.dropoff?.lat,
-                      lng: delivery.dropoff?.lng,
+                      latitude: delivery.dropoff!.lat!,
+                      longitude: delivery.dropoff!.lng!,
                       notes: delivery.dropoff?.notes,
                       userId: delivery.customer?.user_id,
                       orderId: delivery.order_id,
-                    };
-                    router.push(`/(rider)/navigate/${encodeURIComponent(JSON.stringify(data))}`);
+                    });
+                    router.push("/(rider)/navigate");
                   }}
                 >
                   Navigate to Dropoff

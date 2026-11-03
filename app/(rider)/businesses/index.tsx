@@ -31,10 +31,12 @@ import { useRiderProfileQuery } from "@teincfood/core";
 import { useLeaveBusinessMutation } from "@teincfood/core";
 import { useMyJoinRequestsQuery } from "@/hooks/useRiderProfile";
 import { JoinBusinessSheet } from "@/components/rider/JoinBusinessSheet";
+import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 
 export default function RiderBusinessesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const setMapTarget = useRiderNavigationStore((state) => state.setMapTarget);
   const { data: profile, isLoading, refetch } = useRiderProfileQuery();
   const { data: joinRequests = [], refetch: refetchRequests } =
     useMyJoinRequestsQuery(!!profile);
@@ -57,20 +59,25 @@ export default function RiderBusinessesScreen() {
     const lng = business.longitude || business.address?.longitude;
     if (!lat || !lng) return;
     setSheetOpen(false);
+    setMapTarget({
+      orderNumber: business.name,
+      status: "assigned",
+      pickup: {
+        name: business.name,
+        address: business.address
+          ? `${business.address.address_line}, ${business.address.city}`
+          : business.name,
+        latitude: lat,
+        longitude: lng,
+      },
+      dropoff: {
+        name: "You",
+        latitude: profile?.current_lat ?? lat,
+        longitude: profile?.current_lng ?? lng,
+      },
+    });
     setTimeout(() => {
-      router.push({
-        pathname: "/(rider)/map",
-        params: {
-          pickupLat: lat,
-          pickupLng: lng,
-          dropoffLat: profile?.current_lat,
-          dropoffLng: profile?.current_lng,
-          pickupAddress: business.address
-            ? `${business.address.address_line}, ${business.address.city}`
-            : business.name,
-          orderNumber: business.name,
-        },
-      });
+      router.push("/(rider)/map");
     }, 200);
   };
 

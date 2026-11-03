@@ -1,23 +1,9 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
-import {
-  TouchableOpacity,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { YStack, XStack, Text, Card, Button, Separator, Sheet } from "tamagui";
-import {
-  MapPin,
-  Navigation,
-  Clock,
-  Phone,
-  MessageCircle,
-  ArrowLeft,
-  Truck,
-  Package,
-} from "@tamagui/lucide-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { TouchableOpacity, StyleSheet, View } from "react-native";
+import { YStack, XStack, Text } from "tamagui";
+import { ArrowLeft, Truck } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
@@ -26,11 +12,9 @@ import {
   useRiderProfileQuery,
   useRiderDeliveriesQuery,
 } from "@teincfood/core";
-import {
-  getDirectionsPolyline,
-  estimateDurationSeconds,
-} from "@/services/directions.service";
+import { getDirectionsPolyline } from "@/services/directions.service";
 import { phoenixSocket } from "@teincfood/core";
+import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 
 const DEFAULT_DELTA = 0.02;
 const ACTIVE_STATUSES = ["assigned", "picked_up", "en_route", "arrived"];
@@ -38,26 +22,17 @@ const ACTIVE_STATUSES = ["assigned", "picked_up", "en_route", "arrived"];
 export default function RiderMap() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
-  const params = useLocalSearchParams<{
-    pickupLat?: string;
-    pickupLng?: string;
-    dropoffLat?: string;
-    dropoffLng?: string;
-    orderId?: string;
-    orderNumber?: string;
-    pickupAddress?: string;
-    dropoffAddress?: string;
-  }>();
+  const mapTarget = useRiderNavigationStore((state) => state.mapTarget);
+  const clearMapTarget = useRiderNavigationStore(
+    (state) => state.clearMapTarget,
+  );
   const mapRef = useRef<MapView>(null);
+  const [routeTarget, setRouteTarget] = useState(mapTarget);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [pickupRouteCoords, setPickupRouteCoords] = useState([]);
   const [dropoffRouteCoords, setDropoffRouteCoords] = useState([]);
-  const [pickupEtaSeconds, setPickupEtaSeconds] = useState(null);
-  const [dropoffEtaSeconds, setDropoffEtaSeconds] = useState(null);
   const [riderLocation, setRiderLocation] = useState(null);
   const [initialRegion, setInitialRegion] = useState(null);
-  const [locationLoading, setLocationLoading] = useState(true);
 
   const { data: profileData } = useRiderProfileQuery();
   const { data: deliveries = [] } = useRiderDeliveriesQuery();
@@ -105,7 +80,6 @@ export default function RiderMap() {
           };
           setInitialRegion(region);
           mapRef.current?.animateToRegion(region, 1000);
-          setLocationLoading(false);
           return;
         }
       } catch {}
@@ -118,35 +92,45 @@ export default function RiderMap() {
           longitudeDelta: DEFAULT_DELTA,
         });
       }
-      setLocationLoading(false);
     }
 
     centerOnLocation();
   }, [profileData?.current_lat, profileData?.current_lng]);
 
-  // Build a virtual delivery from route params (navigated from deliveries screen)
-  const routeParamsDelivery =
-    params.pickupLat &&
-    params.pickupLng &&
-    params.dropoffLat &&
-    params.dropoffLng
-      ? {
-          id: `route-${params.orderId || "custom"}`,
-          order_id: params.orderId || "custom",
-          order_number: params.orderNumber || "Delivery",
-          pickup_lat: parseFloat(params.pickupLat),
-          pickup_lng: parseFloat(params.pickupLng),
-          dropoff_lat: parseFloat(params.dropoffLat),
-          dropoff_lng: parseFloat(params.dropoffLng),
-          status: "assigned",
-          eta_minutes: null,
-          pickup_name: params.pickupAddress || "Pickup",
-          pickup: params.pickupAddress || "Pickup location",
-          dropoff: params.dropoffAddress || "Dropoff location",
-          currency: "GHS",
-          earnings: 0,
-        }
-      : null;
+  // Consume the shared map target once, then keep it locally so clearing the
+  // store does not erase the route the rider is currently looking at.
+  useEffect(() => {
+    if (mapTarget) {
+      setRouteTarget(mapTarget);
+      clearMapTarget();
+    }
+  }, [mapTarget, clearMapTarget]);
+
+  // Build a virtual delivery from the shared map target (set before navigating).
+  const routeParamsDelivery = routeTarget
+    ? {
+        id: `route-${routeTarget.orderId || "custom"}`,
+        order_id: routeTarget.orderId || "custom",
+        order_number: routeTarget.orderNumber || "Delivery",
+        pickup_lat: routeTarget.pickup.latitude,
+        pickup_lng: routeTarget.pickup.longitude,
+        dropoff_lat: routeTarget.dropoff.latitude,
+        dropoff_lng: routeTarget.dropoff.longitude,
+        status: routeTarget.status || "assigned",
+        eta_minutes: null,
+        pickup_name: routeTarget.pickup.name || "Pickup",
+        pickup:
+          routeTarget.pickup.address ||
+          routeTarget.pickup.name ||
+          "Pickup location",
+        dropoff:
+          routeTarget.dropoff.address ||
+          routeTarget.dropoff.name ||
+          "Dropoff location",
+        currency: "GHS",
+        earnings: 0,
+      }
+    : null;
 
   // Active deliveries with coordinates (for markers)
   const activeDeliveries = deliveries.filter(
@@ -167,10 +151,14 @@ export default function RiderMap() {
   const riderLng = riderLocation?.longitude ?? profileData?.current_lng ?? null;
 
   useEffect(() => {
+    if (routeParamsDelivery) {
+      setSelectedDelivery(routeParamsDelivery);
+      return;
+    }
     if (activeDelivery && !selectedDelivery) {
       setSelectedDelivery(activeDelivery);
     }
-  }, [activeDelivery?.id]);
+  }, [activeDelivery?.id, routeTarget]);
 
   // Draw the two legs separately so the rider can see:
   //   blue  — rider → restaurant/bus pickup
@@ -179,8 +167,6 @@ export default function RiderMap() {
     if (!selectedDelivery) {
       setPickupRouteCoords([]);
       setDropoffRouteCoords([]);
-      setPickupEtaSeconds(null);
-      setDropoffEtaSeconds(null);
       return;
     }
 
@@ -231,18 +217,6 @@ export default function RiderMap() {
 
       setDropoffRouteCoords(dropoffCoords);
       setPickupRouteCoords(pickupCoords);
-      setDropoffEtaSeconds(
-        dropoffResult?.durationSeconds ??
-          dropoffResult?.staticDurationSeconds ??
-          estimateDurationSeconds(pickup, dropoff),
-      );
-      setPickupEtaSeconds(
-        rider
-          ? (pickupResult?.durationSeconds ??
-              pickupResult?.staticDurationSeconds ??
-              estimateDurationSeconds(rider, pickup))
-          : null,
-      );
 
       const coordsToFit = [
         pickup,
@@ -257,7 +231,7 @@ export default function RiderMap() {
           edgePadding: {
             top: 110,
             right: 60,
-            bottom: Math.min(screenHeight * 0.45, 420) + 40,
+            bottom: 90,
             left: 60,
           },
           animated: true,
@@ -269,21 +243,20 @@ export default function RiderMap() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDelivery, riderLat, riderLng, screenHeight]);
+  }, [selectedDelivery, riderLat, riderLng]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "picked_up":
-        return "#3498db";
-      case "assigned":
-        return "#FFA500";
-      case "en_route":
-        return "#f39c12";
-      case "arrived":
-        return "#2ecc71";
-      default:
-        return "#95a5a6";
+  const handleMarkerPress = (delivery) => {
+    if (delivery?.id && !String(delivery.id).startsWith("route-")) {
+      router.push(`/(rider)/deliveries/${delivery.id}`);
+      return;
     }
+    setSelectedDelivery(delivery);
+  };
+
+  const handleBack = () => {
+    setRouteTarget(null);
+    setSelectedDelivery(null);
+    router.back();
   };
 
   const renderRiderMarker = () => {
@@ -335,14 +308,7 @@ export default function RiderMap() {
           showsUserLocation
           showsMyLocationButton
           showsCompass
-          mapPadding={{
-            top: 60,
-            bottom: selectedDelivery
-              ? Math.min(screenHeight * 0.45, 420) + 16
-              : 96,
-            left: 16,
-            right: 16,
-          }}
+          mapPadding={{ top: 60, bottom: 96, left: 16, right: 16 }}
         >
         {/* Pickup Markers (green) */}
         {allRouteDeliveries.map((delivery) => (
@@ -355,7 +321,7 @@ export default function RiderMap() {
             title={`Pickup: ${delivery.order_number || "Delivery"}`}
             description={delivery.pickup || "Pickup location"}
             pinColor="#2ecc71"
-            onPress={() => setSelectedDelivery(delivery)}
+            onPress={() => handleMarkerPress(delivery)}
           />
         ))}
 
@@ -370,7 +336,7 @@ export default function RiderMap() {
             title={`Dropoff: ${delivery.order_number || "Delivery"}`}
             description={delivery.dropoff || "Dropoff location"}
             pinColor="#e74c3c"
-            onPress={() => setSelectedDelivery(delivery)}
+            onPress={() => handleMarkerPress(delivery)}
           />
         ))}
 
@@ -416,7 +382,7 @@ export default function RiderMap() {
         justifyContent="space-between"
         alignItems="center"
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={handleBack}>
           <YStack backgroundColor="$background" padding="$3" borderRadius="$10">
             <ArrowLeft size={20} color="$color" />
           </YStack>
@@ -462,207 +428,6 @@ export default function RiderMap() {
         </XStack>
       </XStack>
 
-      {/* Tamagui bottom sheet with delivery details */}
-      {selectedDelivery ? (
-        <Sheet
-          modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setSelectedDelivery(null);
-          }}
-          snapPoints={[55, 85]}
-          dismissOnSnapToBottom
-          position={0}
-          zIndex={100_000}
-        >
-          <Sheet.Overlay
-            animation="lazy"
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
-            backgroundColor="rgba(0,0,0,0.35)"
-          />
-          <Sheet.Frame
-            backgroundColor="$background"
-            borderTopLeftRadius="$6"
-            borderTopRightRadius="$6"
-            padding="$5"
-            maxHeight="90%"
-          >
-            <Sheet.Handle backgroundColor="$gray5" marginTop="$1" />
-            <Sheet.ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
-            >
-              <YStack gap="$4" pt="$3">
-                {/* Header: order number + status */}
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
-                    {selectedDelivery.order_number}
-                  </Text>
-                  <YStack
-                    backgroundColor={getStatusColor(selectedDelivery.status)}
-                    paddingHorizontal="$3"
-                    paddingVertical="$1"
-                    borderRadius="$10"
-                  >
-                    <Text color="white" fontSize="$2" textTransform="capitalize">
-                      {selectedDelivery.status.replace("_", " ")}
-                    </Text>
-                  </YStack>
-                </XStack>
-
-                <Separator />
-
-                {/* Pickup */}
-                <XStack gap="$3" alignItems="flex-start">
-                  <MapPin size={18} color="$success" style={{ marginTop: 2 }} />
-                  <YStack flex={1}>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                      Pickup
-                    </Text>
-                    <Text fontSize="$4" fontWeight="600" fontFamily="$body">
-                      {selectedDelivery.pickup_name ||
-                        selectedDelivery.pickup ||
-                        "Pickup"}
-                    </Text>
-                    {selectedDelivery.pickup_name &&
-                    selectedDelivery.pickup &&
-                    selectedDelivery.pickup !== selectedDelivery.pickup_name ? (
-                      <Text
-                        fontSize="$3"
-                        color="$colorSecondary"
-                        fontFamily="$body"
-                      >
-                        {selectedDelivery.pickup}
-                      </Text>
-                    ) : null}
-                  </YStack>
-                </XStack>
-
-                {/* Dropoff */}
-                <XStack gap="$3" alignItems="flex-start">
-                  <Navigation size={18} color="$danger" style={{ marginTop: 2 }} />
-                  <YStack flex={1}>
-                    <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                      Dropoff
-                    </Text>
-                    <Text fontSize="$4" fontWeight="600" fontFamily="$body">
-                      {selectedDelivery.dropoff || "Dropoff location"}
-                    </Text>
-                  </YStack>
-                </XStack>
-
-                {/* Items count */}
-                {selectedDelivery.items && selectedDelivery.items.length > 0 ? (
-                  <XStack gap="$3" alignItems="center">
-                    <Package size={18} color="$colorMuted" />
-                    <Text fontSize="$4" fontFamily="$body">
-                      {selectedDelivery.items.length} item
-                      {selectedDelivery.items.length > 1 ? "s" : ""}
-                    </Text>
-                  </XStack>
-                ) : null}
-
-                {/* Separate ETAs for each route leg */}
-                <XStack gap="$3" alignItems="center">
-                  <YStack width={18} height={5} borderRadius={3} backgroundColor="#2563EB" />
-                  <Clock size={16} color="$colorMuted" />
-                  <Text fontSize="$4" fontFamily="$body">
-                    To pickup:{" "}
-                    {pickupEtaSeconds
-                      ? `${Math.ceil(pickupEtaSeconds / 60)} min`
-                      : "Locating..."}
-                  </Text>
-                </XStack>
-                <XStack gap="$3" alignItems="center">
-                  <YStack width={18} height={5} borderRadius={3} backgroundColor="#F97316" />
-                  <Clock size={16} color="$colorMuted" />
-                  <Text fontSize="$4" fontFamily="$body">
-                    To customer:{" "}
-                    {dropoffEtaSeconds
-                      ? `${Math.ceil(dropoffEtaSeconds / 60)} min`
-                      : selectedDelivery.eta_minutes
-                        ? `${selectedDelivery.eta_minutes} min`
-                        : "Calculating..."}
-                  </Text>
-                </XStack>
-
-                <Separator />
-
-                {/* Action buttons */}
-                <XStack gap="$3">
-                  <Button
-                    circular
-                    width={48}
-                    height={48}
-                    variant="outline"
-                    icon={<Phone size={20} />}
-                    onPress={() => {}}
-                  />
-                  <Button
-                    circular
-                    width={48}
-                    height={48}
-                    variant="outline"
-                    icon={<MessageCircle size={20} />}
-                    onPress={() => {}}
-                  />
-                  <Button
-                    flex={1}
-                    height={48}
-                    backgroundColor="$primary"
-                    onPress={() =>
-                      router.push(`/(rider)/deliveries/${selectedDelivery.id}`)
-                    }
-                  >
-                    Details
-                  </Button>
-                </XStack>
-
-                {/* Close button */}
-                <Button variant="ghost" onPress={() => setSelectedDelivery(null)}>
-                  Close
-                </Button>
-              </YStack>
-            </Sheet.ScrollView>
-          </Sheet.Frame>
-        </Sheet>
-      ) : (
-        /* Quick Actions (when no delivery selected) */
-        <YStack
-          position="absolute"
-          bottom={insets.bottom + 20}
-          left="$4"
-          right="$4"
-          gap="$3"
-        >
-          <Card padding="$4" bordered backgroundColor="$background">
-            <YStack gap="$3">
-              <Text fontSize="$5" fontWeight="bold" fontFamily="$heading">
-                {allRouteDeliveries.length > 0
-                  ? `Tap a marker to see delivery details`
-                  : "No active deliveries"}
-              </Text>
-              <XStack gap="$3">
-                <Button
-                  flex={1}
-                  variant="outline"
-                  onPress={() => router.push("/(rider)/deliveries")}
-                >
-                  View All Deliveries
-                </Button>
-                <Button
-                  flex={1}
-                  backgroundColor="$primary"
-                  onPress={() => router.back()}
-                >
-                  Back to Home
-                </Button>
-              </XStack>
-            </YStack>
-          </Card>
-        </YStack>
-      )}
     </View>
   );
 }

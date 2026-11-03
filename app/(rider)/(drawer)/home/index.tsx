@@ -30,6 +30,7 @@ import {
   useRiderDeliveriesQuery,
 } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
+import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 
 /**
  * Rider Home Screen
@@ -39,6 +40,9 @@ export default function RiderHome() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const setNavigationTarget = useRiderNavigationStore(
+    (state) => state.setNavigationTarget,
+  );
   const { isTablet } = useResponsive();
   const user = useAuthStore((state) => state.user);
   const [dismissNoProfile, setDismissNoProfile] = useState(false);
@@ -315,15 +319,13 @@ export default function RiderHome() {
                       router.push("/(rider)/deliveries");
                       return;
                     }
-                    const locationData = {
+                    setNavigationTarget({
                       name: activeDelivery.dropoff || 'Dropoff',
                       address: activeDelivery.dropoff || 'Dropoff location',
-                      phone: '',
-                      lat: activeDelivery.dropoff_lat,
-                      lng: activeDelivery.dropoff_lng,
-                    };
-                    const encoded = encodeURIComponent(JSON.stringify(locationData));
-                    router.push(`/(rider)/navigate/${encoded}`);
+                      latitude: activeDelivery.dropoff_lat,
+                      longitude: activeDelivery.dropoff_lng,
+                    });
+                    router.push("/(rider)/navigate");
                   }}
                 >
                   Navigate
