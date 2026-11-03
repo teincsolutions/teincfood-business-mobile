@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { Linking, Platform, StyleSheet, View } from "react-native";
 import { YStack, XStack, Text, Spinner, useTheme } from "tamagui";
 import {
-  MapPin,
   Navigation,
   Clock,
   Phone,
@@ -17,7 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import MapView, {
   AnimatedRegion,
-  Marker,
   MarkerAnimated,
   Polyline,
   PROVIDER_GOOGLE,
@@ -30,6 +28,11 @@ import {
   estimateDurationSeconds,
 } from "@/services/directions.service";
 import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
+import {
+  DropoffMapMarker,
+  PickupMapMarker,
+  RiderMarkerContent,
+} from "@/components/rider/DeliveryMarkers";
 import { BackButton, Button } from "@/components/ui";
 
 const ROUTE_REFRESH_MIN_METERS = 80;
@@ -215,6 +218,25 @@ export default function NavigationScreen() {
           setDistanceMeters(routeDistance ?? null);
           setStaticDurationSeconds(staticDuration ?? null);
 
+          const markerPoints = [
+            ...(locationData.pickup
+              ? [
+                  {
+                    latitude: locationData.pickup.latitude,
+                    longitude: locationData.pickup.longitude,
+                  },
+                ]
+              : []),
+            ...(locationData.dropoff
+              ? [
+                  {
+                    latitude: locationData.dropoff.latitude,
+                    longitude: locationData.dropoff.longitude,
+                  },
+                ]
+              : []),
+          ];
+
           if (encoded) {
             const decoded = polyline
               .decode(encoded)
@@ -223,7 +245,7 @@ export default function NavigationScreen() {
 
             setTimeout(() => {
               mapRef.current?.fitToCoordinates(
-                [origin, destination, ...decoded],
+                [origin, destination, ...markerPoints, ...decoded],
                 {
                   edgePadding: {
                     top: insets.top + 150,
@@ -238,15 +260,18 @@ export default function NavigationScreen() {
           } else {
             setRouteError(true);
             setTimeout(() => {
-              mapRef.current?.fitToCoordinates([origin, destination], {
-                edgePadding: {
-                  top: insets.top + 150,
-                  right: 50,
-                  bottom: MAP_BOTTOM_PADDING,
-                  left: 50,
+              mapRef.current?.fitToCoordinates(
+                [origin, destination, ...markerPoints],
+                {
+                  edgePadding: {
+                    top: insets.top + 150,
+                    right: 50,
+                    bottom: MAP_BOTTOM_PADDING,
+                    left: 50,
+                  },
+                  animated: true,
                 },
-                animated: true,
-              });
+              );
             }, 250);
           }
         },
@@ -348,6 +373,26 @@ export default function NavigationScreen() {
   }
 
   const kindLabel = locationData.kind === "pickup" ? "Pickup" : "Dropoff";
+  const pickupPoint =
+    locationData.pickup ??
+    (locationData.kind === "pickup"
+      ? {
+          name: locationData.name,
+          address: locationData.address,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        }
+      : undefined);
+  const dropoffPoint =
+    locationData.dropoff ??
+    (locationData.kind === "dropoff"
+      ? {
+          name: locationData.name,
+          address: locationData.address,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        }
+      : undefined);
   const etaLabel = etaSeconds
     ? `${Math.ceil(etaSeconds / 60)} min`
     : routeLoading
@@ -393,27 +438,29 @@ export default function NavigationScreen() {
           right: 16,
         }}
       >
-        <Marker
-          coordinate={{
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-          }}
-          title={locationData.name}
-          description={locationData.address}
-          anchor={{ x: 0.5, y: 0.5 }}
-        >
-          <YStack
-            backgroundColor="$primary"
-            borderRadius="$full"
-            padding="$2"
-            borderWidth={3}
-            borderColor="$background"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <MapPin size={19} color="white" />
-          </YStack>
-        </Marker>
+        {pickupPoint ? (
+          <PickupMapMarker
+            coordinate={{
+              latitude: pickupPoint.latitude,
+              longitude: pickupPoint.longitude,
+            }}
+            title={pickupPoint.name ?? "Pickup"}
+            description={pickupPoint.address}
+            highlighted={locationData.kind === "pickup"}
+          />
+        ) : null}
+
+        {dropoffPoint ? (
+          <DropoffMapMarker
+            coordinate={{
+              latitude: dropoffPoint.latitude,
+              longitude: dropoffPoint.longitude,
+            }}
+            title={dropoffPoint.name ?? "Dropoff"}
+            description={dropoffPoint.address}
+            highlighted={locationData.kind === "dropoff"}
+          />
+        ) : null}
 
         {routeCoords.length > 0 ? (
           <Polyline
@@ -441,20 +488,10 @@ export default function NavigationScreen() {
           <MarkerAnimated
             coordinate={riderCoordinate}
             title="You"
-            anchor={{ x: 0.5, y: 0.5 }}
+            anchor={{ x: 0.5, y: 0.68 }}
             tracksViewChanges={false}
           >
-            <YStack
-              backgroundColor="$info"
-              borderRadius="$full"
-              padding="$2"
-              borderWidth={3}
-              borderColor="$background"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Navigation size={19} color="white" />
-            </YStack>
+            <RiderMarkerContent />
           </MarkerAnimated>
         ) : null}
       </MapView>

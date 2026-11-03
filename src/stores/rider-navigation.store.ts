@@ -27,6 +27,9 @@ export interface RiderNavigationTarget {
   orderNumber?: string;
   customerName?: string;
   kind?: "pickup" | "dropoff";
+  status?: string;
+  pickup?: RiderMapPoint;
+  dropoff?: RiderMapPoint;
 }
 
 interface RiderNavigationState {

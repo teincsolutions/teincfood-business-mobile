@@ -18,13 +18,11 @@ import {
   useMedia,
 } from "tamagui";
 import {
-  MapPin,
   Navigation,
   Clock,
   Package,
   Phone,
   MessageCircle,
-  ChefHat,
   Check,
   LocateFixed,
   AlertCircle,
@@ -33,7 +31,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, {
   AnimatedRegion,
-  Marker,
   MarkerAnimated,
   Polyline,
   PROVIDER_GOOGLE,
@@ -55,6 +52,11 @@ import {
   getDeliveryStepIndex,
 } from "@/components/tracking/DeliveryTimeline";
 import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
+import {
+  DropoffMapMarker,
+  PickupMapMarker,
+  RiderMarkerContent,
+} from "@/components/rider/DeliveryMarkers";
 import {
   getDirectionsPolyline,
   estimateDurationSeconds,
@@ -388,6 +390,25 @@ export default function RiderDeliveryDetails() {
           orderNumber: delivery?.order_number,
           customerName: delivery?.customer?.name,
           kind: "dropoff" as const,
+          status: delivery?.status,
+          pickup:
+            isNum(pickupPos.lat) && isNum(pickupPos.lng)
+              ? {
+                  name: delivery?.pickup?.name,
+                  address: delivery?.pickup?.address,
+                  latitude: pickupPos.lat,
+                  longitude: pickupPos.lng,
+                }
+              : undefined,
+          dropoff:
+            isNum(dropoffPos.lat) && isNum(dropoffPos.lng)
+              ? {
+                  name: delivery?.dropoff?.name,
+                  address: delivery?.dropoff?.address,
+                  latitude: dropoffPos.lat,
+                  longitude: dropoffPos.lng,
+                }
+              : undefined,
         }
       : {
           name: delivery?.pickup?.name ?? "Pickup",
@@ -400,6 +421,25 @@ export default function RiderDeliveryDetails() {
           orderNumber: delivery?.order_number,
           customerName: delivery?.customer?.name,
           kind: "pickup" as const,
+          status: delivery?.status,
+          pickup:
+            isNum(pickupPos.lat) && isNum(pickupPos.lng)
+              ? {
+                  name: delivery?.pickup?.name,
+                  address: delivery?.pickup?.address,
+                  latitude: pickupPos.lat,
+                  longitude: pickupPos.lng,
+                }
+              : undefined,
+          dropoff:
+            isNum(dropoffPos.lat) && isNum(dropoffPos.lng)
+              ? {
+                  name: delivery?.dropoff?.name,
+                  address: delivery?.dropoff?.address,
+                  latitude: dropoffPos.lat,
+                  longitude: dropoffPos.lng,
+                }
+              : undefined,
         };
 
     if (!isNum(target.latitude) || !isNum(target.longitude)) return;
@@ -544,68 +584,34 @@ export default function RiderDeliveryDetails() {
         }}
       >
         {hasPickup ? (
-          <Marker
+          <PickupMapMarker
             coordinate={{ latitude: pickupPos.lat!, longitude: pickupPos.lng! }}
             title={`Pickup: ${delivery.pickup?.name || "Restaurant"}`}
             description={delivery.pickup?.address || ""}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <YStack
-              backgroundColor="$success"
-              borderRadius="$full"
-              padding="$2"
-              borderWidth={3}
-              borderColor="$background"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <ChefHat size={18} color="white" />
-            </YStack>
-          </Marker>
+            highlighted={!pickupCompleted && !delivered}
+          />
         ) : null}
 
         {hasDropoff ? (
-          <Marker
+          <DropoffMapMarker
             coordinate={{
               latitude: dropoffPos.lat!,
               longitude: dropoffPos.lng!,
             }}
             title={`Dropoff: ${delivery.dropoff?.name || "Customer"}`}
             description={delivery.dropoff?.address || ""}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <YStack
-              backgroundColor="$primary"
-              borderRadius="$full"
-              padding="$2"
-              borderWidth={3}
-              borderColor="$background"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <MapPin size={18} color="white" />
-            </YStack>
-          </Marker>
+            highlighted={pickupCompleted && !delivered}
+          />
         ) : null}
 
         {hasRider ? (
           <MarkerAnimated
             coordinate={riderCoordinate}
             title="You"
-            anchor={{ x: 0.5, y: 0.5 }}
+            anchor={{ x: 0.5, y: 0.68 }}
             tracksViewChanges={false}
           >
-            <YStack
-              backgroundColor="$color"
-              borderRadius="$full"
-              padding="$2"
-              borderWidth={3}
-              borderColor="$background"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Navigation size={18} color="white" />
-            </YStack>
+            <RiderMarkerContent />
           </MarkerAnimated>
         ) : null}
 

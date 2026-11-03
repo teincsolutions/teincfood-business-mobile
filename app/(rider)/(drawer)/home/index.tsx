@@ -327,6 +327,22 @@ export default function RiderHome() {
                       orderId: activeDelivery.order_id,
                       orderNumber: activeDelivery.order_number,
                       kind: 'dropoff',
+                      status: activeDelivery.status,
+                      pickup:
+                        activeDelivery.pickup_lat != null &&
+                        activeDelivery.pickup_lng != null
+                          ? {
+                              name: activeDelivery.pickup_name,
+                              address: activeDelivery.pickup,
+                              latitude: activeDelivery.pickup_lat,
+                              longitude: activeDelivery.pickup_lng,
+                            }
+                          : undefined,
+                      dropoff: {
+                        name: activeDelivery.dropoff,
+                        latitude: activeDelivery.dropoff_lat,
+                        longitude: activeDelivery.dropoff_lng,
+                      },
                     });
                     router.push("/(rider)/navigate");
                   }}
