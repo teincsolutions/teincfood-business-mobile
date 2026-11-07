@@ -115,6 +115,9 @@ export function MenuFormSheet({
       const result = await onImagePick(localUri);
       console.log('[MenuForm] Upload succeeded', result);
       onFormChange({ ...form, image_url: result.download_url, image_key: result.key });
+      if (result.pending) {
+        toast.info("Photo saved locally — it will upload when you're online.");
+      }
     } catch (e) {
       console.error('[MenuForm] Upload failed', e);
       toast.error("Could not upload image. Try again.");

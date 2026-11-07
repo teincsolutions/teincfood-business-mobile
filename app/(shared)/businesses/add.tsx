@@ -27,9 +27,6 @@ export default function AddBusinessScreen() {
   const { addBusiness, setActiveBusiness } = useBusinessStore();
   const role = useRoleStore((s) => s.role);
   const businessType = role === 'fleet_manager' ? 'delivery_provider' : 'merchant';
-  const dashboardRoute = role === 'fleet_manager'
-    ? "/(fleet)/(drawer)/dashboard"
-    : "/(seller)/(drawer)/dashboard";
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const [form, setForm] = useState({
@@ -174,7 +171,8 @@ export default function AddBusinessScreen() {
 
       addBusiness(newBusiness as any);
       setActiveBusiness(newBusiness as any);
-      router.replace(dashboardRoute);
+      // Let the owner choose Free or a paid plan before landing in the shell.
+      router.replace("/(shared)/wallet/plans?onboarding=1");
     } catch (err: any) {
       console.debug("[AddBusiness] create error", err);
       const details = err?.data?.error?.details;

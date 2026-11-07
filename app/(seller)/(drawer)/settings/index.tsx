@@ -324,7 +324,7 @@ export default function SellerSettings() {
             {!approvedAndActive
               ? "Your business must be approved and active before it can accept online orders"
               : planBlocksOnlineOrders
-                ? "Your current plan does not include online ordering"
+                ? "Choose a plan to accept online orders"
                 : outsideHours
                   ? "Online ordering is on — currently outside your operating hours"
                   : isOpen
@@ -340,7 +340,7 @@ export default function SellerSettings() {
             {!approvedAndActive
               ? "Complete approval and activation to enable online orders."
               : planBlocksOnlineOrders
-                ? "Upgrade your plan to enable online ordering."
+                ? "Choose a plan to enable online ordering."
                 : outsideHours
                   ? "Buyers can order again during your operating hours."
                   : "Pausing only stops new online orders. Walk-in POS orders still work during business hours."}

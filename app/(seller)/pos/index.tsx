@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
@@ -41,6 +41,7 @@ import {
   Eye,
   XCircle,
   Truck,
+  Bike,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
@@ -89,6 +90,7 @@ import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
 import { DeliveryAddressSheet } from "@/components/orders/DeliveryAddressSheet";
 import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
+import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import {
   enabledPosPaymentMethods,
   usePaymentSettingsQuery,
@@ -118,7 +120,6 @@ import {
   PendingOrderCard,
   PreparingOrderCard,
   ReadyOrderCard,
-  RiderSelectionSheet,
 } from "@/components/kiosk";
 import { Badge } from "@/components/ui/Badge";
 import { CachedImage } from "@/components/ui/CachedImage";
@@ -816,6 +817,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const updateCheckoutForm = usePOSStore((s) => s.updateCheckoutForm);
   const clearAll = usePOSStore((s) => s.clearAll);
   const createOrder = useCreatePOSOrderMutation();
+  const assignRider = useAssignRiderMutation();
   const [showCashSheet, setShowCashSheet] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState<string | null>(null);
   const [lastCompletedOrderId, setLastCompletedOrderId] = useState<
@@ -824,6 +826,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const [showClosedDialog, setShowClosedDialog] = useState(false);
   const [showDeliveryAddress, setShowDeliveryAddress] = useState(false);
   const [deliveryPlace, setDeliveryPlace] = useState<PlaceDetails | null>(null);
+  const [selectedRider, setSelectedRider] = useState<any | null>(null);
+  const [showRiderPicker, setShowRiderPicker] = useState(false);
+  const selectedRiderRef = useRef<any | null>(null);
+  const pendingRiderRef = useRef<any | null>(null);
+  const pendingPaidOrderIdRef = useRef<string | null>(null);
   const [momoPhone, setMomoPhone] = useState("");
   const [momoProvider, setMomoProvider] = useState<MomoProvider>("mtn");
   const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
@@ -910,6 +917,36 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     { key: "delivery" as POSOrderType, label: "Delivery" },
   ];
   const isDeliveryCheckout = checkoutForm.order_type === "delivery";
+  const { data: availableRiders = [] } =
+    useAvailableRidersQuery(isDeliveryCheckout);
+
+  const assignRiderToOrder = useCallback(
+    async (orderId: string, rider: any | null) => {
+      if (!rider) return;
+      try {
+        await assignRider.mutateAsync({ orderId, riderId: rider.id });
+        toast.success(
+          rider.name ? `${rider.name} assigned to delivery` : "Rider assigned",
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Could not assign rider",
+        );
+      } finally {
+        if (selectedRiderRef.current?.id === rider.id) {
+          selectedRiderRef.current = null;
+          setSelectedRider(null);
+        }
+      }
+    },
+    [assignRider],
+  );
+
+  const chooseRider = useCallback((rider: any) => {
+    setSelectedRider(rider);
+    selectedRiderRef.current = rider;
+    setShowRiderPicker(false);
+  }, []);
 
   const paymentMethods: {
     key: POSPaymentMethod;
@@ -1092,6 +1129,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           );
 
           if (checkoutForm.pos_payment_method === "cash") {
+            void assignRiderToOrder(
+              orderId,
+              isDeliveryCheckout ? selectedRiderRef.current : null,
+            );
             if (autoPrint) {
               printService.printOrderReceipt(orderId);
             }
@@ -1106,6 +1147,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 )?.currency ?? "GHS",
             });
           } else {
+            pendingRiderRef.current = isDeliveryCheckout
+              ? selectedRiderRef.current
+              : null;
+            pendingPaidOrderIdRef.current = orderId;
             if (autoPrint) {
               setLastCompletedOrderId(orderId);
             }
@@ -1148,6 +1193,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     total,
     deliveryPlace,
     paymentFlow.startCheckout,
+    assignRiderToOrder,
+    isDeliveryCheckout,
   ]);
 
   const handlePlaceOrder = useCallback(() => {
@@ -1207,6 +1254,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     if (paymentFlow.state === "success") {
+      const paidOrderId = pendingPaidOrderIdRef.current;
+      const rider = pendingRiderRef.current;
+      pendingPaidOrderIdRef.current = null;
+      pendingRiderRef.current = null;
+      if (paidOrderId) {
+        void assignRiderToOrder(paidOrderId, rider);
+      }
       if (lastCompletedOrderId) {
         printService.printOrderReceipt(lastCompletedOrderId);
         setLastCompletedOrderId(null);
@@ -1214,10 +1268,17 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       const timer = setTimeout(() => paymentFlow.reset(), 2000);
       return () => clearTimeout(timer);
     }
-  }, [paymentFlow.state, paymentFlow.reset, lastCompletedOrderId]);
+  }, [
+    paymentFlow.state,
+    paymentFlow.reset,
+    lastCompletedOrderId,
+    assignRiderToOrder,
+  ]);
 
   useEffect(() => {
     if (paymentFlow.state === "failed") {
+      pendingPaidOrderIdRef.current = null;
+      pendingRiderRef.current = null;
       setLastCompletedOrderId(null);
     }
   }, [paymentFlow.state]);
@@ -1372,9 +1433,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     padding="$4"
                     gap="$2"
                     alignItems="center"
-                    pressStyle={
-                      deliveryDisabled ? undefined : { opacity: 0.8 }
-                    }
+                    pressStyle={deliveryDisabled ? undefined : { opacity: 0.8 }}
                     onPress={
                       deliveryDisabled
                         ? undefined
@@ -1462,6 +1521,45 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   </Text>
                 ) : null}
               </YStack>
+
+              <YStack
+                gap="$3"
+                backgroundColor="$backgroundStrong"
+                padding="$4"
+                borderRadius="$5"
+              >
+                <XStack alignItems="center" gap="$3">
+                  <YStack
+                    backgroundColor="$backgroundSoft"
+                    padding="$2"
+                    borderRadius="$3"
+                  >
+                    <Bike size={20} color="$primary" />
+                  </YStack>
+                  <YStack flex={1}>
+                    <Text fontSize="$3" fontWeight="700" color="$color">
+                      {selectedRider?.name ?? "Assign a rider"}
+                    </Text>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      numberOfLines={2}
+                    >
+                      {selectedRider?.rider_number ??
+                        (selectedRider
+                          ? "Rider selected — can be changed"
+                          : "Optional at checkout; assign later from the orders board")}
+                    </Text>
+                  </YStack>
+                  <Button
+                    size="$3"
+                    variant="outline"
+                    onPress={() => setShowRiderPicker(true)}
+                  >
+                    {selectedRider ? "Change" : "Assign"}
+                  </Button>
+                </XStack>
+              </YStack>
             </YStack>
           ) : null}
 
@@ -1543,8 +1641,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             </XStack>
             {paymentMethods.length === 0 ? (
               <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-                No POS payment methods are enabled. Turn on Cash or Mobile
-                Money in Settings → Payment.
+                No POS payment methods are enabled. Turn on Cash or Mobile Money
+                in Settings → Payment.
               </Text>
             ) : null}
           </YStack>
@@ -1896,6 +1994,19 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         initialAddress={deliveryPlace?.formattedAddress}
         onSelect={(place) => setDeliveryPlace(place)}
       />
+
+      <RiderSelectionSheet
+        visible={showRiderPicker}
+        onClose={() => setShowRiderPicker(false)}
+        riders={(availableRiders as any) ?? []}
+        onSelectRider={(riderId) => {
+          const rider = (availableRiders as any[])?.find(
+            (item) => item.id === riderId,
+          );
+          if (rider) chooseRider(rider);
+          else setShowRiderPicker(false);
+        }}
+      />
     </YStack>
   );
 }
@@ -2159,9 +2270,8 @@ function POSReadyCard({
 
 function InProgressTab() {
   const { data: orders, isFetching, refetch } = usePOSOrdersQuery();
-  const [makeDeliveryOrder, setMakeDeliveryOrder] = useState<SellerOrder | null>(
-    null,
-  );
+  const [makeDeliveryOrder, setMakeDeliveryOrder] =
+    useState<SellerOrder | null>(null);
   const acceptOrder = useAcceptKioskOrderMutation();
   const startPreparing = useStartPreparingKioskOrderMutation();
   const markReady = useMarkKioskOrderReadyMutation();
@@ -2513,9 +2623,8 @@ function InProgressTab() {
 
 function TodayTab() {
   const today = new Date().toISOString().split("T")[0];
-  const [makeDeliveryOrder, setMakeDeliveryOrder] = useState<SellerOrder | null>(
-    null,
-  );
+  const [makeDeliveryOrder, setMakeDeliveryOrder] =
+    useState<SellerOrder | null>(null);
   const {
     data: orders,
     isFetching,
@@ -2859,9 +2968,13 @@ function TodayTab() {
           {!isDeliveryOrder(
             item as unknown as Parameters<typeof isDeliveryOrder>[0],
           ) &&
-            ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
-              item.status,
-            ) && (
+            [
+              "pending",
+              "accepted",
+              "preparing",
+              "ready",
+              "waiting_pickup",
+            ].includes(item.status) && (
               <Button
                 size="$2"
                 variant="outline"
@@ -3275,9 +3388,13 @@ function TodayTab() {
                     {!isDeliveryOrder(
                       item as unknown as Parameters<typeof isDeliveryOrder>[0],
                     ) &&
-                      ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
-                        item.status,
-                      ) && (
+                      [
+                        "pending",
+                        "accepted",
+                        "preparing",
+                        "ready",
+                        "waiting_pickup",
+                      ].includes(item.status) && (
                         <Button
                           size="$2"
                           variant="outline"

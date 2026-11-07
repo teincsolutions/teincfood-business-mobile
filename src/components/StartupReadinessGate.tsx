@@ -66,7 +66,7 @@ export function StartupReadinessGate({ children }: { children: React.ReactNode }
         : "Offline data incomplete";
     const message =
       lease?.code === "TERMINAL_LIMIT_REACHED"
-        ? `${lease.message} Remove an old terminal or upgrade your plan, then retry.`
+        ? `${lease.message} Remove an old terminal or choose a plan with more terminals, then retry.`
         : lease?.code === "DEVICE_LIMIT_REACHED"
           ? `${lease.message} Remove an old terminal, then retry.`
           : readiness.network?.isOnline

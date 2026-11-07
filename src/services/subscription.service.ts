@@ -134,6 +134,8 @@ export interface SubscriptionCheckoutInput {
   plan_id: string;
   cycle?: "month" | "year";
   start_trial?: boolean;
+  /** Create the invoice only; never start a MoMo charge. */
+  defer_payment?: boolean;
   phone?: string;
   provider?: string;
   address?: string;
@@ -145,6 +147,7 @@ export interface SubscriptionCheckoutResponse {
   upcoming_invoice?: SubscriptionInvoice | null;
   invoice?: SubscriptionInvoice | null;
   charge?: MomoCharge | null;
+  payment_required?: boolean;
 }
 
 export async function fetchBilling(
@@ -154,6 +157,15 @@ export async function fetchBilling(
     `/businesses/${businessId}/billing`,
   );
   return (res as unknown as { data: BillingOverview }).data;
+}
+
+export async function fetchInvoices(
+  businessId: string,
+): Promise<SubscriptionInvoice[]> {
+  const res = await api.get<{ data: SubscriptionInvoice[] }>(
+    `/businesses/${businessId}/invoices`,
+  );
+  return (res as unknown as { data: SubscriptionInvoice[] }).data ?? [];
 }
 
 export async function updateBillingProfile(

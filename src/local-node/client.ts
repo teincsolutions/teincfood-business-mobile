@@ -317,6 +317,19 @@ export class LocalNodeClient {
     });
   }
 
+  /** Mirror locally cached image bytes to the LAN node. */
+  async putAsset(businessId: string, url: string, base64: string): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error("Local Node client not authenticated");
+    }
+    if (!businessId || !url || !base64) return;
+    this.send({
+      type: "asset_put",
+      id: generateUUID(),
+      payload: { businessId, url, base64 },
+    });
+  }
+
   subscribe(handler: (event: DomainEvent) => void): void {
     this.eventHandler = handler;
     // Flush buffered events received before subscription.

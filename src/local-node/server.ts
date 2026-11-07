@@ -28,7 +28,7 @@ import type { Command, DomainEvent } from "@teincfood/core";
 import type { LocalNodeMessage } from "./types";
 import type { ReferenceDataKey, ReferenceDataRecord } from "@teincfood/core";
 import { computeProof, generateNonce } from "./security";
-import { getCachedImagePath } from "@teincfood/core";
+import { ensureImageCacheDir, getCachedImagePath } from "@teincfood/core";
 import { patchTLSServerListen } from "./tls-listen-patch";
 
 const SERVER_KEYSTORE = require("../../assets/tls/server-keystore.p12");
@@ -526,6 +526,46 @@ export class LocalNodeServer {
         id: message.id,
         payload: { data },
       });
+      return;
+    }
+
+    if (message.type === "asset_put") {
+      if (!meta?.authenticated) {
+        syncLogger.warn("LocalNodeServer", "Rejected asset put from unauthenticated socket", {
+          deviceId: meta?.deviceId,
+        });
+        return;
+      }
+      const payload = message.payload as {
+        businessId: string;
+        url: string;
+        base64: string;
+      };
+      if (
+        payload.businessId !== this.options.businessId ||
+        !payload.url ||
+        !payload.base64
+      ) {
+        return;
+      }
+      try {
+        await ensureImageCacheDir();
+        await FileSystem.writeAsStringAsync(
+          getCachedImagePath(payload.url),
+          payload.base64,
+          { encoding: "base64" },
+        );
+        syncLogger.info("LocalNodeServer", "Stored mirrored image from peer", {
+          url: payload.url,
+          bytes: Math.floor((payload.base64.length * 3) / 4),
+          device_id: meta.deviceId,
+        });
+      } catch (error) {
+        syncLogger.warn("LocalNodeServer", "Failed to store mirrored image", {
+          url: payload.url,
+          error: String(error),
+        });
+      }
       return;
     }
 

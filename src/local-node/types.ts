@@ -25,7 +25,8 @@ export type LocalNodeMessageType =
   | "reference_fetch"
   | "reference_response"
   | "asset_fetch"
-  | "asset_response";
+  | "asset_response"
+  | "asset_put";
 
 export interface LocalNodeMessage {
   type: LocalNodeMessageType;
@@ -153,6 +154,15 @@ export interface LocalNodeAssetResponseMessage extends LocalNodeMessage {
     base64: string | null;
     contentType?: string | null;
     error?: string | null;
+  };
+}
+
+export interface LocalNodeAssetPutMessage extends LocalNodeMessage {
+  type: "asset_put";
+  payload: {
+    businessId: string;
+    url: string;
+    base64: string;
   };
 }
 

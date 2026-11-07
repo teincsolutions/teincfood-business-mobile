@@ -40,7 +40,8 @@ function CustomDrawerContent(props: any) {
 
   const activeRouteName = props.state?.routes?.[props.state?.index]?.name;
 
-  const { businessUnread, personalUnread, notificationUnread } = useUnreadCounts();
+  const { businessUnread, personalUnread, notificationUnread } =
+    useUnreadCounts();
 
   const isActive = (routeName?: string, sharedPrefix?: string) => {
     if (routeName && activeRouteName === routeName) return true;
@@ -70,27 +71,106 @@ function CustomDrawerContent(props: any) {
         style={{ flex: 1, backgroundColor: theme.background.val }}
       >
         <YStack padding="$2" gap="$1">
-          <DrawerMenuItem icon={LayoutDashboard} label="Dashboard" drawerName="dashboard/index" onPress={() => router.push("/(fleet)/dashboard")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            drawerName="dashboard/index"
+            onPress={() => router.push("/(fleet)/dashboard")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={Users} label="Riders" drawerName="riders/index" onPress={() => router.push("/(fleet)/riders")} isActive={isActive} fontFamily="$body" />
-          <DrawerMenuItem icon={Car} label="Vehicles" drawerName="vehicles/index" onPress={() => router.push("/(fleet)/vehicles")} isActive={isActive} fontFamily="$body" />
-          <DrawerMenuItem icon={DollarSign} label="Earnings" drawerName="earnings/index" onPress={() => router.push("/(fleet)/earnings")} isActive={isActive} fontFamily="$body" />
-          <DrawerMenuItem icon={DollarSign} label="Wallet & Billing" sharedPrefix="/(shared)/wallet" onPress={() => router.push("/(shared)/wallet")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem
+            icon={Users}
+            label="Riders"
+            drawerName="riders/index"
+            onPress={() => router.push("/(fleet)/riders")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
+          <DrawerMenuItem
+            icon={Car}
+            label="Vehicles"
+            drawerName="vehicles/index"
+            onPress={() => router.push("/(fleet)/vehicles")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
+          <DrawerMenuItem
+            icon={DollarSign}
+            label="Earnings"
+            drawerName="earnings/index"
+            onPress={() => router.push("/(fleet)/earnings")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
+          <DrawerMenuItem
+            icon={DollarSign}
+            label="Wallet"
+            sharedPrefix="/(shared)/wallet"
+            onPress={() => router.push("/(shared)/wallet")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={MessageSquare} label="Messages" sharedPrefix="/(communication)" onPress={() => router.push("/(communication)")} isActive={isActive} fontFamily="$body" badgeCount={businessUnread} secondaryBadgeCount={personalUnread} />
-          <DrawerMenuItem icon={Bell} label="Notifications" sharedPrefix="/(shared)/notifications" onPress={() => router.push("/(shared)/notifications")} isActive={isActive} fontFamily="$body" badgeCount={notificationUnread} />
-          <DrawerMenuItem icon={MailOpen} label="Invitations" sharedPrefix="/(shared)/invitations" onPress={() => router.push("/(shared)/invitations")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem
+            icon={MessageSquare}
+            label="Messages"
+            sharedPrefix="/(communication)"
+            onPress={() => router.push("/(communication)")}
+            isActive={isActive}
+            fontFamily="$body"
+            badgeCount={businessUnread}
+            secondaryBadgeCount={personalUnread}
+          />
+          <DrawerMenuItem
+            icon={Bell}
+            label="Notifications"
+            sharedPrefix="/(shared)/notifications"
+            onPress={() => router.push("/(shared)/notifications")}
+            isActive={isActive}
+            fontFamily="$body"
+            badgeCount={notificationUnread}
+          />
+          <DrawerMenuItem
+            icon={MailOpen}
+            label="Invitations"
+            sharedPrefix="/(shared)/invitations"
+            onPress={() => router.push("/(shared)/invitations")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
 
-          <DrawerMenuItem icon={Settings} label="Settings" drawerName="settings/index" onPress={() => router.push("/(fleet)/settings")} isActive={isActive} fontFamily="$body" />
-          <DrawerMenuItem icon={User} label="Profile" drawerName="profile" onPress={() => router.push("/(fleet)/profile")} isActive={isActive} fontFamily="$body" />
+          <DrawerMenuItem
+            icon={Settings}
+            label="Settings"
+            drawerName="settings/index"
+            onPress={() => router.push("/(fleet)/settings")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
+          <DrawerMenuItem
+            icon={User}
+            label="Profile"
+            drawerName="profile"
+            onPress={() => router.push("/(fleet)/profile")}
+            isActive={isActive}
+            fontFamily="$body"
+          />
 
           <Separator marginVertical="$2" />
 
-          <DrawerMenuItem icon={LogOut} label="Logout" onPress={() => setShowLogoutDialog(true)} danger fontFamily="$body" />
+          <DrawerMenuItem
+            icon={LogOut}
+            label="Logout"
+            onPress={() => setShowLogoutDialog(true)}
+            danger
+            fontFamily="$body"
+          />
         </YStack>
       </DrawerContentScrollView>
 
@@ -127,7 +207,7 @@ export default function FleetDrawerLayout() {
 
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
-  useDeliveryRealtimeUpdates(['fleet']);
+  useDeliveryRealtimeUpdates(["fleet"]);
 
   const handleProtectedRoute = (e: any) => {
     if (!isAuthenticated) {
@@ -232,9 +312,7 @@ export default function FleetDrawerLayout() {
           name="profile"
           options={{
             title: "Profile",
-            drawerIcon: ({ color, size }) => (
-              <User color={color} size={size} />
-            ),
+            drawerIcon: ({ color, size }) => <User color={color} size={size} />,
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />

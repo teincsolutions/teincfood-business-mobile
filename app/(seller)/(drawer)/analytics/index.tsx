@@ -96,7 +96,7 @@ function LockedReportCard({
           {title}
         </Text>
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" textAlign="center">
-          This report is not included in your current plan. Upgrade to unlock it.
+          This report is available on a higher plan. Choose a plan to view it.
         </Text>
         {showUpgrade ? (
           <Button size="$3" onPress={onUpgrade}>

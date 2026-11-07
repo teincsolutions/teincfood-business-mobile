@@ -10,6 +10,7 @@ import { toast } from 'sonner-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
 import { useOfflineAuth } from '@/hooks/useOfflineAuth';
+import { usePendingImageUploads } from '@/hooks/usePendingImageUploads';
 
 /** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
 function normalizeSegments(segments: string[]): string[] {
@@ -43,6 +44,7 @@ export default function SellerLayout() {
   // Keep the offline reference cache (menus, roles, members, taxes, business
   // profile, operating hours) in sync while the restaurant is online.
   useBusinessReferenceDataSync();
+  usePendingImageUploads();
 
   // Seed order screens from the durable offline read model so they render
   // current + recent orders immediately after a cold start (even offline).

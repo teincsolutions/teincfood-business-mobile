@@ -1,8 +1,7 @@
 export { useMenuItemsQuery, useMenuCategoriesQuery, useCreateMenuItemMutation, useUpdateMenuItemMutation, useDeleteMenuItemMutation, CATALOG_KEYS as MENU_KEYS } from "@teincfood/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBusinessStore } from "@/stores/business.store";
-import * as menuService from "@/services/menu.service";
-import { emitReferenceChanged, runOfflineCapableMutation } from "@teincfood/core";
+import { commitMenuMutationLocal } from "@teincfood/core";
 import { buildMenuCategoryEnvelope, getCachedCategories } from "@teincfood/core";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
@@ -12,13 +11,13 @@ export function useCreateMenuCategoryMutation() {
   const bid = useBusinessStore((s) => s.activeBusiness?.id);
   const qc = useQueryClient();
   return useMutation({
-    // Engine route (cloud → LAN → queue) via runOfflineCapableMutation.
+    // Local SQLite commit first; cloud/LAN replay is scheduled afterwards.
     mutationFn: (data: { name: string; description?: string; sort_order?: number }) => {
       const { wire, cacheRecord } = buildMenuCategoryEnvelope({ name: data.name, sort_order: data.sort_order });
       const payload = { ...data, ...wire, cacheRecord };
-      return runOfflineCapableMutation({ run: () => menuService.createBusinessCategory(bid!, data), commandType: "menu:create_category", businessId: bid!, entityId: cacheRecord.id, payload });
+      return commitMenuMutationLocal({ commandType: "menu:create_category", businessId: bid!, entityId: cacheRecord.id, payload });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category created"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category created"); },
     onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
@@ -30,9 +29,9 @@ export function useUpdateMenuCategoryMutation() {
       const current = bid ? getCachedCategories(qc, bid).find((c) => c.id === data.categoryId) : undefined;
       const wire = { name: data.name, ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sort_order !== undefined ? { sort_order: data.sort_order } : {}) };
       const { cacheRecord } = buildMenuCategoryEnvelope({ id: data.categoryId, name: data.name, sort_order: data.sort_order ?? current?.sort_order ?? 0 });
-      return runOfflineCapableMutation({ run: () => menuService.updateBusinessCategory(bid!, data.categoryId, wire), commandType: "menu:update_category", businessId: bid!, entityId: data.categoryId, payload: { ...data, cacheRecord } });
+      return commitMenuMutationLocal({ commandType: "menu:update_category", businessId: bid!, entityId: data.categoryId, payload: { ...data, ...wire, cacheRecord } });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category updated"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category updated"); },
     onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
@@ -41,8 +40,8 @@ export function useDeleteMenuCategoryMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      runOfflineCapableMutation({ run: () => menuService.deleteBusinessCategory(bid!, id), commandType: "menu:delete_category", businessId: bid!, entityId: id, payload: { id } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category deleted"); if (bid) emitReferenceChanged(bid, ["menu:categories"]); },
+      commitMenuMutationLocal({ commandType: "menu:delete_category", businessId: bid!, entityId: id, payload: { id } }),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CATALOG_KEYS.categories(bid) }); toast.success("Category deleted"); },
     onError: (e) => toast.error(extractApiErrorMessage(e)),
   });
 }
@@ -51,7 +50,7 @@ export function useToggleAvailabilityMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, available, cacheRecord }: { id: string; available: boolean; cacheRecord?: unknown }) =>
-      runOfflineCapableMutation({ run: () => menuService.toggleItemAvailability(id, available), commandType: "menu:update_item", businessId: bid!, entityId: id, payload: cacheRecord ? { id, available, cacheRecord } : { id, available } }),
+      commitMenuMutationLocal({ commandType: "menu:update_item", businessId: bid!, entityId: id, payload: cacheRecord ? { id, available, cacheRecord } : { id, available } }),
     onMutate: async ({ id, available }: { id: string; available: boolean }) => {
       await qc.cancelQueries({ queryKey: CATALOG_KEYS.items(bid) });
       const prev = qc.getQueriesData({ queryKey: CATALOG_KEYS.items(bid) });
@@ -63,7 +62,6 @@ export function useToggleAvailabilityMutation() {
       return { prev };
     },
     onError: (e, _v, ctx) => { const c = ctx as { prev?: [unknown, unknown][] } | undefined; if (c?.prev) for (const [k, d] of c.prev) qc.setQueryData(k as unknown[], d); toast.error(extractApiErrorMessage(e)); },
-    onSuccess: () => { if (bid) emitReferenceChanged(bid, ["menu:items"]); },
-    onSettled: () => { qc.invalidateQueries({ queryKey: CATALOG_KEYS.items(bid) }); },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: CATALOG_KEYS.items(bid) }); },
   });
 }

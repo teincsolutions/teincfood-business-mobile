@@ -1,25 +1,57 @@
 // @ts-nocheck — Tamagui stack props don't typecheck under this repo's tsconfig.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useRouter } from "expo-router";
 import { MailOpen, X } from "@tamagui/lucide-icons";
 import { Button } from "@/components/ui";
 import { useUserInvitationsQuery } from "@teincfood/core";
+import { useAuthStore } from "@/stores/auth.store";
+import { getItem, setItem } from "@/utils/storage";
+
+const DISMISSED_KEY = "pending_invites_dismissed";
 
 /**
  * Post-login banner: surfaces pending business/rider invitations with
- * explicit actions. Dismissible for the session; nothing auto-accepts.
+ * explicit actions. Dismissal is persisted so it does not reappear on the
+ * next screen visit; a newly received invitation makes it visible again.
  */
 export function PendingInvitesBanner() {
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(false);
+  const userId = useAuthStore((s) => s.user?.id ?? "anonymous");
+  const storageKey = `${DISMISSED_KEY}:${userId}`;
+  const readDismissed = () => {
+    const stored = getItem<string[]>(storageKey);
+    return Array.isArray(stored) ? stored : [];
+  };
+  const [dismissedIds, setDismissedIds] = useState<string[]>(readDismissed);
   const { data: invitesRes } = useUserInvitationsQuery();
 
-  const pendingCount = (invitesRes?.data ?? []).filter(
-    (i) => i.status === "pending",
-  ).length;
+  useEffect(() => {
+    setDismissedIds(readDismissed());
+  }, [storageKey]);
 
-  if (dismissed || pendingCount === 0) return null;
+  // `business_owner` is the user's own business, and `rider_linked` is an
+  // accepted relationship — neither is an invitation to join a team.
+  const pending = (invitesRes?.data ?? []).filter(
+    (i) =>
+      i.status === "pending" &&
+      (i.type === "business_member" || i.type === "fleet_rider"),
+  );
+
+  const pendingIds = pending.map((i) => i.id);
+  const allDismissed =
+    pendingIds.length > 0 &&
+    pendingIds.every((id) => dismissedIds.includes(id));
+
+  if (allDismissed || pending.length === 0) return null;
+
+  const dismiss = () => {
+    const next = Array.from(new Set(pendingIds));
+    setDismissedIds(next);
+    setItem(storageKey, next);
+  };
+
+  const pendingCount = pending.length;
 
   return (
     <Card padding="$4" bordered backgroundColor="$blue2" borderColor="$blue8">
@@ -37,7 +69,7 @@ export function PendingInvitesBanner() {
             circular
             size="$2"
             variant="ghost"
-            onPress={() => setDismissed(true)}
+            onPress={dismiss}
             icon={<X size={14} />}
           />
         </XStack>

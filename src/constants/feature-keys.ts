@@ -20,7 +20,7 @@ export type FeatureKey =
   | "limits.vehicles";
 
 export const FREE_LIMITS = {
-  menu_items: 3,
+  menu_items: 5,
   members: 1,
   terminals_linked: 1,
   promo_active: 0,

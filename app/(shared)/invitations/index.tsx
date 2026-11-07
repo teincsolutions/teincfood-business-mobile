@@ -38,12 +38,24 @@ export default function InvitationsScreen() {
 
   const invitations = invitesRes?.data ?? [];
 
+  // `business_owner` is the owner's own business and `rider_linked` is an
+  // already-accepted relationship. Neither is a pending team invitation;
+  // showing them as pending made owners look like invitees and offered a
+  // "Leave Business" action for their own business.
+  const isInvitationType = (type: string) =>
+    type === "business_member" || type === "fleet_rider";
+
   const pending = invitations.filter(
-    (i) => i.status === "pending" && !confirmedIds.has(i.id),
+    (i) =>
+      isInvitationType(i.type) &&
+      i.status === "pending" &&
+      !confirmedIds.has(i.id),
   );
 
   const joined = invitations.filter(
-    (i) => i.status === "accepted" || i.status === "active",
+    (i) =>
+      i.type !== "business_owner" &&
+      (i.status === "accepted" || i.status === "active"),
   );
 
   const markDone = (id: string) =>
@@ -56,7 +68,11 @@ export default function InvitationsScreen() {
     setConfirmedIds((prev) => {
       const next = new Set(prev);
       for (const i of invitations) {
-        if (i.business_id === businessId && i.status === "pending") {
+        if (
+          i.business_id === businessId &&
+          isInvitationType(i.type) &&
+          i.status === "pending"
+        ) {
           next.add(i.id);
         }
       }

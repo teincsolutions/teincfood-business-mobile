@@ -8,10 +8,18 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { YStack, XStack, Text, Card, Spinner, Separator } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Spinner,
+  Separator,
+  useMedia,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Crown, TicketPercent } from "@tamagui/lucide-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Crown, TicketPercent, X } from "@tamagui/lucide-icons";
 import { BackButton, Button, FormInput } from "@/components/ui";
 import { toast } from "sonner-native";
 import {
@@ -22,15 +30,12 @@ import {
 import {
   useSubscriptionPlansQuery,
   useMySubscriptionQuery,
-  useUpdateSubscriptionMutation,
-  useBillingQuery,
   useCheckoutSubscriptionMutation,
   useBusinessPromosQuery,
   useCreatePromoMutation,
   useDeletePromoMutation,
 } from "@/hooks/useSubscription";
 import { BillingCard } from "@/components/subscription/BillingCard";
-import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useBusinessStore } from "@/stores/business.store";
@@ -66,6 +71,8 @@ const FEATURE_LABELS: Record<string, string> = {
 };
 
 function FeatureMatrix({ features }: { features: Record<string, unknown> }) {
+  const media = useMedia();
+  const twoColumns = media.md || media.lg;
   const entries = useMemo(
     () => Object.entries(features).filter(([key]) => key in FEATURE_LABELS),
     [features],
@@ -80,27 +87,79 @@ function FeatureMatrix({ features }: { features: Record<string, unknown> }) {
   }
 
   return (
-    <YStack gap="$1">
+    <XStack flexWrap="wrap" gap="$2">
       {entries.map(([key, value]) => {
         const label = FEATURE_LABELS[key] ?? key;
-        const display =
-          typeof value === "boolean"
-            ? value
-              ? `✓ ${label}`
-              : `— ${label}`
-            : `${label}: ${String(value)}`;
+        const isBoolean = typeof value === "boolean";
+        const included = value === true;
+
         return (
-          <Text
+          <XStack
             key={key}
-            fontSize="$2"
-            color="$colorSecondary"
-            fontFamily="$body"
+            width={twoColumns ? "48%" : "100%"}
+            minHeight={28}
+            alignItems="center"
+            gap="$2"
           >
-            {display}
-          </Text>
+            {isBoolean ? (
+              <YStack
+                width={20}
+                height={20}
+                flexShrink={0}
+                borderRadius={10}
+                alignItems="center"
+                justifyContent="center"
+                backgroundColor={included ? "$green3" : "$backgroundSoft"}
+              >
+                {included ? (
+                  <Check size={12} color="$green10" />
+                ) : (
+                  <X size={12} color="$colorMuted" />
+                )}
+              </YStack>
+            ) : (
+              <YStack
+                minWidth={20}
+                flexShrink={0}
+                paddingHorizontal="$1.5"
+                paddingVertical="$0.5"
+                borderRadius="$2"
+                alignItems="center"
+                backgroundColor="$backgroundSoft"
+              >
+                <Text
+                  fontSize="$1"
+                  fontWeight="700"
+                  color="$color"
+                  fontFamily="$body"
+                >
+                  {String(value)}
+                </Text>
+              </YStack>
+            )}
+            <Text
+              flex={1}
+              fontSize="$2"
+              color={included || !isBoolean ? "$color" : "$colorSecondary"}
+              fontFamily="$body"
+            >
+              {label}
+            </Text>
+            {isBoolean ? (
+              <Text
+                flexShrink={0}
+                fontSize="$1"
+                fontWeight="700"
+                color={included ? "$green10" : "$colorMuted"}
+                fontFamily="$body"
+              >
+                {included ? `Included` : `Not included`}
+              </Text>
+            ) : null}
+          </XStack>
         );
       })}
-    </YStack>
+    </XStack>
   );
 }
 
@@ -286,10 +345,22 @@ function PlanCard({
   updating: boolean;
   onSelect: () => void;
 }) {
-  const price =
-    yearly && plan.yearly_fee_minor > 0
-      ? `${formatMoney(plan.yearly_fee_minor, plan.currency)}/yr`
-      : `${formatMoney(plan.monthly_fee_minor, plan.currency)}/mo`;
+  const monthlyMinor = plan.monthly_fee_minor || 0;
+  const yearlyMinor = plan.yearly_fee_minor || 0;
+  const hasYearly = yearlyMinor > 0;
+  const isFree = monthlyMinor === 0 && yearlyMinor === 0;
+  const price = isFree
+    ? "Free"
+    : yearly && hasYearly
+      ? `${formatMoney(yearlyMinor, plan.currency)}/yr`
+      : `${formatMoney(monthlyMinor, plan.currency)}/mo`;
+  const secondaryPrice = isFree
+    ? "No monthly or yearly charge"
+    : yearly && hasYearly
+      ? `Monthly: ${formatMoney(monthlyMinor, plan.currency)}/mo`
+      : hasYearly
+        ? `Yearly: ${formatMoney(yearlyMinor, plan.currency)}/yr`
+        : "Yearly billing is not available for this plan";
   return (
     <Card
       bordered
@@ -330,8 +401,11 @@ function PlanCard({
       <Text fontSize="$8" fontWeight="800" fontFamily="$heading" color="$color">
         {price}
       </Text>
+      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+        {secondaryPrice}
+      </Text>
       <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-        {`${plan.commission_rate_percent}% commission per order • ${plan.trial_days}d free trial`}
+        {`${plan.commission_rate_percent}% commission per order${plan.trial_days > 0 ? ` • ${plan.trial_days}d free trial` : ""}`}
       </Text>
       <Separator />
       <FeatureMatrix features={plan.features ?? {}} />
@@ -344,17 +418,19 @@ function PlanCard({
   );
 }
 
-function PlanTab() {
+function PlanTab({
+  onboarding = false,
+  onDone,
+}: {
+  onboarding?: boolean;
+  onDone?: () => void;
+}) {
   const plansQuery = useSubscriptionPlansQuery();
   const subQuery = useMySubscriptionQuery();
-  const billingQuery = useBillingQuery();
-  const update = useUpdateSubscriptionMutation();
   const checkout = useCheckoutSubscriptionMutation();
   const online = useIsEffectivelyOnline();
-  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const [selecting, setSelecting] = useState<string | null>(null);
   const [yearly, setYearly] = useState(false);
-  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
   const currentPlanId =
     (subQuery.data?.configuration.subscription_plan_id as string | null) ??
@@ -365,6 +441,7 @@ function PlanTab() {
     list.sort((a, b) => a.monthly_fee_minor - b.monthly_fee_minor);
     return list;
   }, [plansQuery.data, subQuery.data]);
+  const currentPlan = plans.find((plan) => plan.id === currentPlanId) ?? null;
   const popularId = useMemo(() => {
     const paid = plans.filter((p) => p.monthly_fee_minor > 0);
     if (paid.length === 0) return null;
@@ -414,70 +491,41 @@ function PlanTab() {
   }
 
   const confirmSelect = (plan: SubscriptionPlan) => {
-    const monthly = plan.monthly_fee_minor || 0;
-    const yearlyPrice = plan.yearly_fee_minor || 0;
-    const price = yearly && yearlyPrice > 0 ? yearlyPrice : monthly;
-    const config = billingQuery.data?.configuration;
-    const status = config?.subscription_status;
-
-    if (price <= 0) {
-      setSelecting(plan.id);
-      update.mutate(plan.id, {
-        onSuccess: () => {
+    setSelecting(plan.id);
+    checkout.mutate(
+      {
+        plan_id: plan.id,
+        cycle: yearly ? "year" : "month",
+        // Paid plans create a bill; the free plan activates immediately.
+        // Paying from Billing is a separate action, so a double tap can never
+        // start two MoMo charges.
+        start_trial: false,
+        defer_payment: true,
+      },
+      {
+        onSuccess: (response) => {
           setSelecting(null);
-          toast.success(`Plan updated to ${plan.name}`);
+          if (response.status === "active") {
+            toast.success(`${plan.name} is now your plan`);
+          } else {
+            toast.success("Bill created. Pay it from Billing when due.");
+          }
+          void subQuery.refetch();
+          void plansQuery.refetch();
         },
         onError: (e) => {
           setSelecting(null);
           toast.error(e instanceof Error ? e.message : String(e));
         },
-      });
-      return;
-    }
-
-    // First-time users get the plan's trial without any payment setup. Mirror
-    // the backend's first-time rule (status none + no current period) rather
-    // than requiring a saved MoMo profile before the trial can start.
-    const firstTimeTrial = status === "none" && !config?.current_period_end;
-    if (firstTimeTrial) {
-      setSelecting(plan.id);
-      checkout.mutate(
-        {
-          plan_id: plan.id,
-          cycle: yearly ? "year" : "month",
-          start_trial: true,
-        },
-        {
-          onSuccess: (response) => {
-            setSelecting(null);
-            if (response.charge) {
-              // Stale plan state: the backend decided a charge is required.
-              setPendingPlan(plan);
-              toast.info("Enter your mobile-money number to continue.");
-              return;
-            }
-            toast.success(`Trial started on ${plan.name}`);
-            void billingQuery.refetch();
-            void subQuery.refetch();
-          },
-          onError: (e) => {
-            setSelecting(null);
-            toast.error(e instanceof Error ? e.message : String(e));
-          },
-        },
-      );
-      return;
-    }
-
-    // Paid plan (new or change): the sheet collects the MoMo number; checkout
-    // saves it to the billing profile and starts the charge.
-    setPendingPlan(plan);
+      },
+    );
   };
 
   return (
     <>
       <FlatList
         data={plans}
+        extraData={`${yearly}-${selecting}-${checkout.isPending}`}
         keyExtractor={(p) => p.id}
         numColumns={1}
         initialNumToRender={10}
@@ -497,14 +545,64 @@ function PlanTab() {
         }
         ListHeaderComponent={
           <YStack gap="$3">
-            <BillingCard />
+            {onboarding ? null : <BillingCard />}
             <BillingPeriodToggle yearly={yearly} onChange={setYearly} />
           </YStack>
         }
         ListEmptyComponent={
-          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-            {`No plans available right now.`}
-          </Text>
+          onboarding ? (
+            <YStack gap="$3" alignItems="center" padding="$4">
+              <Text
+                fontSize="$3"
+                color="$colorSecondary"
+                textAlign="center"
+                fontFamily="$body"
+              >
+                {`Plans couldn't load. Check your connection and retry.`}
+              </Text>
+              <Button
+                variant="outline"
+                onPress={() => {
+                  void plansQuery.refetch();
+                  void subQuery.refetch();
+                }}
+              >
+                {`Retry`}
+              </Button>
+            </YStack>
+          ) : (
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              {`No plans available right now.`}
+            </Text>
+          )
+        }
+        ListFooterComponent={
+          onboarding ? (
+            <YStack gap="$2" paddingTop="$2">
+              {currentPlan ? (
+                <Button onPress={() => onDone?.()}>
+                  {`Continue with ${currentPlan.name}`}
+                </Button>
+              ) : (
+                <Text
+                  fontSize="$3"
+                  color="$colorSecondary"
+                  textAlign="center"
+                  fontFamily="$body"
+                >
+                  {`Select a plan to finish setting up your business.`}
+                </Text>
+              )}
+              <Text
+                fontSize="$2"
+                color="$colorMuted"
+                textAlign="center"
+                fontFamily="$body"
+              >
+                {`You can change plans later from Wallet → Plans.`}
+              </Text>
+            </YStack>
+          ) : null
         }
         renderItem={({ item }) => (
           <PlanCard
@@ -512,78 +610,10 @@ function PlanTab() {
             isCurrent={currentPlanId === item.id}
             isPopular={popularId === item.id && currentPlanId !== item.id}
             yearly={yearly}
-            updating={
-              (update.isPending || checkout.isPending) && selecting === item.id
-            }
+            updating={checkout.isPending && selecting === item.id}
             onSelect={() => confirmSelect(item)}
           />
         )}
-      />
-      <MomoChargeSheet
-        open={!!pendingPlan}
-        title={
-          pendingPlan ? `Switch to ${pendingPlan.name}` : "Subscription payment"
-        }
-        subtitle={
-          pendingPlan
-            ? `${formatMoney(
-                yearly && pendingPlan.yearly_fee_minor > 0
-                  ? pendingPlan.yearly_fee_minor
-                  : pendingPlan.monthly_fee_minor,
-                pendingPlan.currency,
-              )} ${yearly ? "per year" : "per month"}`
-            : undefined
-        }
-        baseMinor={
-          pendingPlan
-            ? yearly && pendingPlan.yearly_fee_minor > 0
-              ? pendingPlan.yearly_fee_minor
-              : pendingPlan.monthly_fee_minor
-            : 0
-        }
-        feeMinor={
-          pendingPlan
-            ? Math.ceil(
-                ((yearly && pendingPlan.yearly_fee_minor > 0
-                  ? pendingPlan.yearly_fee_minor
-                  : pendingPlan.monthly_fee_minor) *
-                  (billingQuery.data?.configuration.momo_fee_basis_points ??
-                    195)) /
-                  10000,
-              )
-            : 0
-        }
-        currency={pendingPlan?.currency ?? "GHS"}
-        defaultPhone={billingQuery.data?.billing_profile.momo_phone}
-        defaultProvider={billingQuery.data?.billing_profile.momo_provider}
-        onStart={async (nextPhone, nextProvider) => {
-          if (!pendingPlan) return { charge: null, done: true };
-          const response = await checkout.mutateAsync({
-            plan_id: pendingPlan.id,
-            cycle: yearly ? "year" : "month",
-            start_trial: false,
-            phone: nextPhone,
-            provider: nextProvider,
-          });
-          return { charge: response.charge ?? null, done: !response.charge };
-        }}
-        onSuccess={() => {
-          setPendingPlan(null);
-          void billingQuery.refetch();
-          void subQuery.refetch();
-          void plansQuery.refetch();
-          if (businessId) {
-            void referenceSyncService
-              .sync({
-                businessId,
-                keys: ["subscription:entitlements"],
-                force: true,
-              })
-              .catch(() => undefined);
-          }
-          toast.success("Subscription payment confirmed");
-        }}
-        onClose={() => setPendingPlan(null)}
       />
     </>
   );
@@ -672,7 +702,7 @@ function PromosTab() {
           {`Promo campaigns need a plan with promos`}
         </Text>
         <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-          {`Your current plan doesn't include promo campaigns. Switch plans to unlock discount codes for your customers.`}
+          {`Choose a plan to run promo campaigns and offer discount codes to your customers.`}
         </Text>
       </YStack>
     );
@@ -824,7 +854,30 @@ export default function PlansScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const role = useRoleStore((s) => s.role);
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  const isOnboarding = onboarding === "1";
   const [tab, setTab] = useState<Tab>(`plan`);
+
+  const finishOnboarding = async () => {
+    if (activeBusiness?.id) {
+      try {
+        await referenceSyncService.sync({
+          businessId: activeBusiness.id,
+          keys: ["subscription:entitlements"],
+          force: true,
+        });
+      } catch {
+        // The plan is already saved server-side; a later reconnect will sync
+        // the entitlement proof. Never trap the user on this screen.
+      }
+    }
+    router.replace(
+      role === "fleet_manager"
+        ? "/(fleet)/(drawer)/dashboard"
+        : "/(seller)/(drawer)/dashboard",
+    );
+  };
 
   // Riders do not have business subscriptions. Guard deep links so they never
   // land on the seller/fleet plan picker.
@@ -842,14 +895,24 @@ export default function PlansScreen() {
       >
         <XStack gap="$2" alignItems="center">
           <BackButton />
-          <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+          <Text
+            fontSize="$7"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
             Wallet
           </Text>
         </XStack>
         <Card padding="$5" bordered>
           <YStack gap="$3" alignItems="center">
             <Crown size={32} color="$colorMuted" />
-            <Text fontSize="$5" fontWeight="700" textAlign="center" color="$color">
+            <Text
+              fontSize="$5"
+              fontWeight="700"
+              textAlign="center"
+              color="$color"
+            >
               Subscriptions are for businesses
             </Text>
             <Text fontSize="$3" color="$colorSecondary" textAlign="center">
@@ -877,22 +940,60 @@ export default function PlansScreen() {
       maxWidth={600}
       alignSelf="center"
     >
-      <XStack padding="$4" gap="$2" alignItems="center">
-        <BackButton />
-        <Text
-          fontSize="$7"
-          fontWeight="bold"
-          fontFamily="$heading"
-          color="$color"
-        >
-          {`Subscription & Plan`}
-        </Text>
-      </XStack>
+      {isOnboarding ? (
+        <YStack paddingHorizontal="$4" paddingBottom="$1" gap="$1">
+          <XStack gap="$2" alignItems="center">
+            <YStack
+              width={30}
+              height={30}
+              borderRadius={15}
+              alignItems="center"
+              justifyContent="center"
+              backgroundColor="$primaryLight"
+            >
+              <Crown size={16} color="$primary" />
+            </YStack>
+            <Text
+              fontSize="$7"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+            >
+              {`Choose a plan`}
+            </Text>
+          </XStack>
+          <Text
+            fontSize="$3"
+            color="$colorSecondary"
+            fontFamily="$body"
+          >
+            {`Finish setting up ${activeBusiness?.name ?? "your business"}. Start on Free and upgrade whenever you're ready.`}
+          </Text>
+        </YStack>
+      ) : (
+        <XStack padding="$4" gap="$2" alignItems="center">
+          <BackButton />
+          <Text
+            fontSize="$7"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
+            {`Subscription & Plan`}
+          </Text>
+        </XStack>
+      )}
       <YStack paddingHorizontal="$4" gap="$3" flex={1}>
-        <StatusBanner />
-        <SectionTabs tab={tab} onChange={setTab} />
-        <Separator />
-        {tab === `plan` ? <PlanTab /> : <PromosTab />}
+        {isOnboarding ? null : <StatusBanner />}
+        {isOnboarding ? null : (
+          <SectionTabs tab={tab} onChange={setTab} />
+        )}
+        {isOnboarding ? null : <Separator />}
+        {tab === `plan` ? (
+          <PlanTab onboarding={isOnboarding} onDone={finishOnboarding} />
+        ) : (
+          <PromosTab />
+        )}
       </YStack>
     </YStack>
   );

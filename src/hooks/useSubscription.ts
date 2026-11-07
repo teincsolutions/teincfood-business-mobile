@@ -3,6 +3,8 @@ import { referenceSyncService, useIsEffectivelyOnline } from "@teincfood/core";
 import type { Promo } from "@teincfood/core";
 import * as subscriptionService from "@/services/subscription.service";
 import * as businessService from "@/services/business.service";
+import { paymentService } from "@/services/payment.service";
+import type { MomoProvider } from "@/types/payment";
 import { useBusinessStore } from "@/stores/business.store";
 
 const PLANS_KEY = ["subscription-plans"];
@@ -15,6 +17,14 @@ const promosKey = (businessId: string | undefined) => [
   "business-promos",
   businessId,
 ];
+
+/**
+ * Billing/plan/invoice data changes server-side, but not every time a screen
+ * opens. Keep it warm for 30 minutes and retain it for a day; every billing
+ * mutation and payment-success handler invalidates these keys explicitly.
+ */
+const BILLING_STALE_TIME = 30 * 60 * 1000;
+const BILLING_GC_TIME = 24 * 60 * 60 * 1000;
 
 /** Audience for plan filtering: merchant sellers vs delivery-provider fleets. */
 export function usePlanAudience(): string {
@@ -40,6 +50,8 @@ export function useSubscriptionPlansQuery() {
     // Never fire while the cloud is unreachable — the request would hang and
     // leave the screen spinning. Cached plans still render from persistence.
     enabled: !!businessId && online,
+    staleTime: BILLING_STALE_TIME,
+    gcTime: BILLING_GC_TIME,
   });
 }
 
@@ -50,6 +62,8 @@ export function useMySubscriptionQuery() {
     queryKey: subscriptionKey(businessId),
     queryFn: () => subscriptionService.fetchMySubscription(businessId!),
     enabled: !!businessId && online,
+    staleTime: BILLING_STALE_TIME,
+    gcTime: BILLING_GC_TIME,
   });
 }
 
@@ -136,6 +150,10 @@ export function useDeletePromoMutation() {
 }
 
 const billingKey = (businessId: string | undefined) => ["billing", businessId];
+const invoicesKey = (businessId: string | undefined) => [
+  "invoices",
+  businessId,
+];
 
 export function useBillingQuery() {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
@@ -144,6 +162,20 @@ export function useBillingQuery() {
     queryKey: billingKey(businessId),
     queryFn: () => subscriptionService.fetchBilling(businessId!),
     enabled: !!businessId && online,
+    staleTime: BILLING_STALE_TIME,
+    gcTime: BILLING_GC_TIME,
+  });
+}
+
+export function useInvoicesQuery() {
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const online = useIsEffectivelyOnline();
+  return useQuery({
+    queryKey: invoicesKey(businessId),
+    queryFn: () => subscriptionService.fetchInvoices(businessId!),
+    enabled: !!businessId && online,
+    staleTime: BILLING_STALE_TIME,
+    gcTime: BILLING_GC_TIME,
   });
 }
 
@@ -152,6 +184,7 @@ function invalidateBilling(
   businessId: string | undefined,
 ) {
   queryClient.invalidateQueries({ queryKey: billingKey(businessId) });
+  queryClient.invalidateQueries({ queryKey: invoicesKey(businessId) });
   queryClient.invalidateQueries({ queryKey: subscriptionKey(businessId) });
   queryClient.invalidateQueries({ queryKey: PLANS_KEY });
   if (businessId) {
@@ -201,5 +234,25 @@ export function useResumeSubscriptionMutation() {
   return useMutation({
     mutationFn: () => subscriptionService.resumeSubscription(businessId!),
     onSuccess: () => invalidateBilling(queryClient, businessId),
+  });
+}
+
+export function useChargeInvoiceMutation() {
+  return useMutation({
+    mutationFn: (params: {
+      invoiceId: string;
+      phone: string;
+      provider: MomoProvider;
+      attemptCount?: number;
+    }) =>
+      paymentService.chargeMomo({
+        invoice_id: params.invoiceId,
+        phone: params.phone,
+        provider: params.provider,
+        idempotency_key: `invoice-${params.invoiceId}-attempt-${params.attemptCount ?? 0}`,
+      }),
+    onError: (err) => {
+      console.debug("[useChargeInvoiceMutation] failed", err);
+    },
   });
 }

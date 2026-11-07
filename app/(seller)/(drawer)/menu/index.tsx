@@ -21,7 +21,13 @@ import { MenuItemCard, MenuFormSheet } from "@/components/menu";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { usePlanLimit } from "@/hooks/usePlanLimit";
 import { useBusinessStore } from "@/stores/business.store";
-import { uploadImage } from "@/services/upload.service";
+import {
+  bindPendingImageToItem,
+  flushPendingImageUploads,
+  isPendingImageUrl,
+  unbindPendingImageForItem,
+  uploadImage,
+} from "@/services/upload.service";
 import {
   useMenuItemsQuery,
   useMenuCategoriesQuery,
@@ -222,6 +228,12 @@ export default function SellerMenu() {
       }
       throw e;
     }
+    const pendingImageUrl = isPendingImageUrl(form.image_key)
+      ? form.image_key
+      : isPendingImageUrl(form.image_url)
+        ? form.image_url
+        : null;
+
     // Envelope: backend wire payload + backend-shaped cache record, built
     // together by the caller (owns every field).
     const buildEnvelope = (id: string | undefined) =>
@@ -237,7 +249,8 @@ export default function SellerMenu() {
         variants: variantInputs,
         extras: extraInputs,
         available: form.is_available,
-        imageUrl: form.image_key || form.image_url || null,
+        // Cache gets the renderable URL; the wire gets the server key below.
+        imageUrl: form.image_url || form.image_key || null,
       });
 
     if (editingItem) {
@@ -252,10 +265,34 @@ export default function SellerMenu() {
       const updateWire: Record<string, unknown> = { ...wire };
       if (updateImage === undefined) delete updateWire.image_url;
       else updateWire.image_url = updateImage;
+      // A pending image is a local preview URL. Keep it in the cache record
+      // for the offline menu tile, but never send it to the backend.
+      if (pendingImageUrl) delete updateWire.image_url;
       updateMutation.mutate(
         { id: editingItem.id, payload: { ...updateWire, cacheRecord } },
         {
-          onSuccess: () => setSheetOpen(false),
+          onSuccess: () => {
+            // Local SQLite commit is done. Close now; image queue + S3 upload
+            // are background work and must never keep the sheet open.
+            setSheetOpen(false);
+            if (pendingImageUrl) {
+              void bindPendingImageToItem(
+                pendingImageUrl,
+                businessId,
+                cacheRecord.id,
+                cacheRecord,
+              )
+                .then(() => flushPendingImageUploads())
+                .catch((err) =>
+                  console.error("[Menu] bind pending image failed", err),
+                );
+            } else {
+              void unbindPendingImageForItem(businessId, editingItem.id).catch(
+                (err) =>
+                  console.error("[Menu] unbind pending image failed", err),
+              );
+            }
+          },
           onError: (err: any) => {
             console.debug(
               "[Menu] Update item error:",
@@ -278,10 +315,29 @@ export default function SellerMenu() {
       );
     } else {
       const { wire, cacheRecord } = buildEnvelope(undefined);
+      if (pendingImageUrl) delete (wire as Record<string, unknown>).image_url;
+      else if (form.image_key) wire.image_url = form.image_key;
+      else if (!form.image_url) wire.image_url = null;
       createMutation.mutate(
         { ...wire, id: cacheRecord.id, cacheRecord },
         {
-          onSuccess: () => setSheetOpen(false),
+          onSuccess: () => {
+            // Local SQLite commit is done. Close now; image queue + S3 upload
+            // are background work and must never keep the sheet open.
+            setSheetOpen(false);
+            if (pendingImageUrl) {
+              void bindPendingImageToItem(
+                pendingImageUrl,
+                businessId,
+                cacheRecord.id,
+                cacheRecord,
+              )
+                .then(() => flushPendingImageUploads())
+                .catch((err) =>
+                  console.error("[Menu] bind pending image failed", err),
+                );
+            }
+          },
         onError: (err: any) => {
           console.debug(
             "[Menu] Create item error:",

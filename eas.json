@@ -26,17 +26,6 @@
       "env": {
         "EXPO_PUBLIC_UPDATE_CHANNEL": "production"
       }
-    },
-    "production-apk": {
-      "extends": "production",
-      "environment": "production",
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_UPDATE_CHANNEL": "production"
-      }
     }
   },
   "submit": {
