@@ -50,6 +50,9 @@ export default function WalletScreen() {
   const bizBalance = businessBalance?.data.balances?.[0];
   const riderBalance = balances.find((b) => b.type === "rider");
   const taxWallet = (businessBalance?.data as { tax_wallet?: any })?.tax_wallet;
+  const payoutTotalFromApi = (
+    businessBalance?.data as { payout_total_minor?: number }
+  )?.payout_total_minor;
 
   const historyEntries: any[] = Array.isArray(walletHistory)
     ? walletHistory
@@ -73,6 +76,8 @@ export default function WalletScreen() {
         (entry?.metadata?.transfer_amount_minor ?? entry?.amount_minor ?? 0),
       0,
     );
+
+  const totalPaidOutDisplay = payoutTotalFromApi ?? totalPaidOut;
 
   const taxStatusLabel: Record<string, string> = {
     none: "No certificate uploaded",
@@ -211,7 +216,7 @@ export default function WalletScreen() {
                       fontFamily="$heading"
                       color="$color"
                     >
-                      {formatMinor(totalPaidOut)}
+                      {formatMinor(totalPaidOutDisplay)}
                     </Text>
                     <Text
                       fontSize="$3"
