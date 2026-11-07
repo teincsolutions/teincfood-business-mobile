@@ -39,7 +39,10 @@ export default function PaymentSettings() {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
+  const [payoutProvider, setPayoutProvider] = useState('mtn');
   const [payoutSchedule, setPayoutSchedule] = useState('daily');
+  const [instantPayoutEnabled, setInstantPayoutEnabled] = useState(false);
+  const [payoutFeeMinor, setPayoutFeeMinor] = useState(100);
 
   useEffect(() => {
     const settings = paymentSettingsQuery.data?.data;
@@ -60,7 +63,10 @@ export default function PaymentSettings() {
     setAccountNumber(settings.payout_account_number ?? '');
     setAccountName(settings.payout_account_name ?? '');
     setMobileMoneyNumber(settings.payout_momo_number ?? '');
+    setPayoutProvider(settings.payout_provider ?? 'mtn');
     setPayoutSchedule(settings.payout_schedule ?? 'daily');
+    setInstantPayoutEnabled(settings.instant_payout_enabled ?? false);
+    setPayoutFeeMinor(settings.payout_fee_minor ?? 100);
   }, [paymentSettingsQuery.data]);
 
   const handleSave = () => {
@@ -76,7 +82,9 @@ export default function PaymentSettings() {
         payout_account_name: accountName,
         payout_account_number: accountNumber,
         payout_momo_number: mobileMoneyNumber,
+        payout_provider: payoutProvider,
         payout_schedule: payoutSchedule,
+        instant_payout_enabled: instantPayoutEnabled,
       },
       {
         onSuccess: () => {
@@ -208,6 +216,27 @@ export default function PaymentSettings() {
                 </XStack>
                 <Separator />
                 <FormInput label="Mobile Money Number" placeholder="+233 XX XXX XXXX" value={mobileMoneyNumber} onChangeText={setMobileMoneyNumber} keyboardType="phone-pad" />
+                <Text fontSize="$3" fontWeight="bold" color="$colorMuted">Provider</Text>
+                <XStack gap="$2">
+                  {[
+                    ['mtn', 'MTN'],
+                    ['vod', 'Telecel'],
+                    ['atl', 'AirtelTigo'],
+                  ].map(([value, label]) => (
+                    <TamaguiButton
+                      key={value}
+                      flex={1}
+                      height={42}
+                      backgroundColor={payoutProvider === value ? '$primaryLight' : 'transparent'}
+                      borderWidth={1}
+                      borderColor={payoutProvider === value ? '$primary' : '$borderColor'}
+                      borderRadius="$3"
+                      onPress={() => setPayoutProvider(value)}
+                    >
+                      <Text fontSize="$2" fontWeight="bold">{label}</Text>
+                    </TamaguiButton>
+                  ))}
+                </XStack>
               </YStack>
             </Card>
           )}
@@ -243,6 +272,33 @@ export default function PaymentSettings() {
                   </XStack>
                 </TamaguiButton>
               ))}
+            </YStack>
+          </Card>
+
+          <Card padding="$4" bordered>
+            <YStack gap="$3">
+              <XStack justifyContent="space-between" alignItems="center" gap="$3">
+                <YStack flex={1}>
+                  <Text fontWeight="bold" fontSize="$5">Instant Payout</Text>
+                  <Text fontSize="$2" color="$colorMuted" marginTop="$1">
+                    Send each order&apos;s settled amount straight to MoMo.
+                    Paystack charges GH₵{(payoutFeeMinor / 100).toFixed(2)} per
+                    transfer, deducted from the payout. Off keeps money in your
+                    wallet.
+                  </Text>
+                </YStack>
+                <Switch
+                  size="$3"
+                  checked={instantPayoutEnabled}
+                  onCheckedChange={setInstantPayoutEnabled}
+                >
+                  <Switch.Thumb animation="quick" />
+                </Switch>
+              </XStack>
+              <Text fontSize="$1" color="$colorMuted">
+                Wallet is credited first. A failed transfer never blocks the
+                order and is refunded to the wallet automatically.
+              </Text>
             </YStack>
           </Card>
 

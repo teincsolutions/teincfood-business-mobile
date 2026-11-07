@@ -1,199 +1,35 @@
 // @ts-nocheck
 import { ScrollView } from "react-native";
-import { YStack, XStack, Text, Card, Spinner, Separator, useMedia } from "tamagui";
+import {
+  YStack,
+  XStack,
+  Text,
+  Card,
+  Spinner,
+  Separator,
+  useMedia,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { TrendingUp, Building, Bike, Crown, Wallet } from "@tamagui/lucide-icons";
+import {
+  TrendingUp,
+  Building,
+  Bike,
+  Wallet,
+  Lock,
+} from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import {
   useAllBalancesQuery,
   useBusinessWalletBalanceQuery,
-  useIsEffectivelyOnline,
+  useWalletHistoryQuery,
 } from "@teincfood/core";
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
-import { useEntitlements } from "@/hooks/useEntitlements";
-import { useBillingQuery } from "@/hooks/useSubscription";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
-}
-
-function formatShortDate(value?: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/**
- * Seller/fleet billing snapshot. Riders have no subscription, so this is never
- * mounted for the rider wallet.
- */
-function BillingSnapshot() {
-  const router = useRouter();
-  const online = useIsEffectivelyOnline();
-  const billing = useBillingQuery();
-  const data = billing.data;
-  const upcoming = data?.upcoming_invoice;
-  const lastPaid = (data?.invoices ?? []).find(
-    (invoice) => invoice.status === "paid" && invoice.paid_at,
-  );
-
-  const billLabel =
-    upcoming?.status === "open"
-      ? "Payment due"
-      : upcoming?.status === "payment_pending"
-        ? "Awaiting approval"
-        : "Next bill";
-
-  return (
-    <Card padding="$4" bordered>
-      <YStack gap="$3">
-        <XStack justifyContent="space-between" alignItems="center" gap="$2">
-          <XStack gap="$2" alignItems="center">
-            <Crown size={18} />
-            <Text
-              fontSize="$5"
-              fontWeight="600"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Bills &amp; payments
-            </Text>
-          </XStack>
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => router.push("/(shared)/wallet/plans" as never)}
-          >
-            View
-          </Button>
-        </XStack>
-
-        <Separator />
-
-        {!online ? (
-          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-            Reconnect to view bills and payments.
-          </Text>
-        ) : billing.isLoading ? (
-          <YStack alignItems="center" padding="$2">
-            <Spinner color="$primary" />
-          </YStack>
-        ) : billing.isError ? (
-          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-            Could not load bills. Open Manage plan to retry.
-          </Text>
-        ) : (
-          <YStack gap="$2">
-            {upcoming ? (
-              <YStack gap="$0.5">
-                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  {billLabel}
-                </Text>
-                <Text
-                  fontSize="$4"
-                  fontWeight="700"
-                  fontFamily="$heading"
-                  color={upcoming.status === "open" ? "$warning" : "$color"}
-                >
-                  {formatMinor(upcoming.amount_minor, upcoming.currency)}
-                </Text>
-                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  Due {formatShortDate(upcoming.due_at)}
-                </Text>
-              </YStack>
-            ) : (
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                No bill due right now.
-              </Text>
-            )}
-
-            {lastPaid ? (
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                Last payment: {formatMinor(lastPaid.amount_minor, lastPaid.currency)} on{" "}
-                {formatShortDate(lastPaid.paid_at)}
-              </Text>
-            ) : (
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                No subscription payments yet.
-              </Text>
-            )}
-          </YStack>
-        )}
-      </YStack>
-    </Card>
-  );
-}
-
-/**
- * Business-only subscription/billing section. Kept out of the rider tree.
- */
-function BusinessBillingSection() {
-  const router = useRouter();
-  const ent = useEntitlements();
-  const entData = ent.data as Record<string, unknown> | undefined;
-  const entEvaluation = ent.evaluation;
-  const isTrial = entData?.subscription_status === "trialing";
-  const periodEnd = entData?.current_period_end as string | undefined;
-
-  return (
-    <>
-      <Card padding="$4" bordered>
-        <YStack gap="$2">
-          <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
-            Billing & Subscription
-          </Text>
-          <Separator />
-          {entData ? (
-            <YStack gap="$1">
-              <Text fontSize="$3" color="$color" fontFamily="$body">
-                Commission: {String(entData.commission_rate_percent ?? 0)}% • Status: {String(entData.subscription_status ?? "none")}
-              </Text>
-              {isTrial && periodEnd ? (
-                <Text fontSize="$3" color="$warning" fontFamily="$body">
-                  Trial ends {new Date(periodEnd).toLocaleDateString()}
-                </Text>
-              ) : null}
-              {entEvaluation.state === "expired" ? (
-                <Text fontSize="$3" color="$error" fontFamily="$body">
-                  Subscription expired — open Manage plan to renew
-                </Text>
-              ) : null}
-              {entEvaluation.state === "grace" ? (
-                <Text fontSize="$3" color="$warning" fontFamily="$body">
-                  Payment overdue — renew soon to keep features
-                </Text>
-              ) : null}
-              {entEvaluation.mustReconnect ? (
-                <Text fontSize="$3" color="$error" fontFamily="$body">
-                  Reconnect to verify your subscription
-                </Text>
-              ) : null}
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                Menus: {String(entData["limits.menu_items"] ?? "—")} • Members: {String(entData["limits.members"] ?? "—")} • Terminals: {String(entData["limits.terminals_linked"] ?? "—")}
-              </Text>
-              <Button
-                variant="outline"
-                onPress={() => router.push("/(shared)/wallet/plans" as never)}
-              >
-                Manage plan &amp; bills
-              </Button>
-            </YStack>
-          ) : (
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              Loading entitlements…
-            </Text>
-          )}
-        </YStack>
-      </Card>
-      <BillingSnapshot />
-    </>
-  );
 }
 
 export default function WalletScreen() {
@@ -205,18 +41,50 @@ export default function WalletScreen() {
   const { data: allBalances, isLoading: loadingAll } = useAllBalancesQuery();
   const { data: businessBalance, isLoading: loadingBiz } =
     useBusinessWalletBalanceQuery(Boolean(activeBusiness?.id));
+  const { data: walletHistory } = useWalletHistoryQuery(
+    Boolean(activeBusiness?.id),
+  );
 
   const isLoading = loadingAll || (Boolean(activeBusiness?.id) && loadingBiz);
   const balances = allBalances?.data.balances ?? [];
   const bizBalance = businessBalance?.data.balances?.[0];
   const riderBalance = balances.find((b) => b.type === "rider");
+  const taxWallet = (businessBalance?.data as { tax_wallet?: any })?.tax_wallet;
+
+  const historyEntries: any[] = Array.isArray(walletHistory)
+    ? walletHistory
+    : (walletHistory as any)?.entries ??
+      (walletHistory as any)?.pages?.flatMap(
+        (page: any) => page?.data?.entries ?? [],
+      ) ??
+      [];
+
+  const totalPaidOut = historyEntries
+    .filter(
+      (entry) =>
+        entry?.type === "debit" &&
+        entry?.metadata?.payout_status === "paid" &&
+        (entry?.metadata?.payout_kind === "withdrawal" ||
+          entry?.metadata?.payout_kind === "instant"),
+    )
+    .reduce(
+      (sum, entry) =>
+        sum +
+        (entry?.metadata?.transfer_amount_minor ?? entry?.amount_minor ?? 0),
+      0,
+    );
+
+  const taxStatusLabel: Record<string, string> = {
+    none: "No certificate uploaded",
+    pending: "Certificate under review",
+    approved: "Certificate approved",
+    rejected: "Certificate rejected",
+  };
 
   const isRider = role === "rider";
   const isSellerOrFleet = role === "seller" || role === "fleet_manager";
   const canFinanceRead = useHasCapability("finance_read");
-  const canManageBilling = useHasCapability("finance_billing_manage");
   const showBusinessBalance = !isSellerOrFleet || canFinanceRead;
-  const showBilling = !isRider && canManageBilling;
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -232,13 +100,18 @@ export default function WalletScreen() {
         <XStack gap="$2" alignItems="center">
           <BackButton />
           <YStack gap="$1" flex={1}>
-            <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
-              {isRider ? "Wallet" : "Wallet & Billing"}
+            <Text
+              fontSize="$8"
+              fontWeight="bold"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Wallet
             </Text>
             <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
               {isRider
                 ? "Your delivery balance and transactions"
-                : "Balance, transactions, and billing"}
+                : "Balance and transactions"}
             </Text>
           </YStack>
         </XStack>
@@ -287,29 +160,147 @@ export default function WalletScreen() {
                     >
                       {isSellerOrFleet
                         ? bizBalance
-                          ? formatMinor(bizBalance.amount_minor, bizBalance.currency)
+                          ? formatMinor(
+                              bizBalance.amount_minor,
+                              bizBalance.currency,
+                            )
                           : "GHS 0.00"
                         : riderBalance
-                          ? formatMinor(riderBalance.amount_minor, riderBalance.currency)
+                          ? formatMinor(
+                              riderBalance.amount_minor,
+                              riderBalance.currency,
+                            )
                           : "GHS 0.00"}
                     </Text>
-                    <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
                       Balance
                     </Text>
                   </>
                 ) : (
-                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                  <Text
+                    fontSize="$3"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
                     Business balances are visible to managers.
                   </Text>
                 )}
               </YStack>
             </Card>
 
+            {/* Payout and tax summary */}
+            {isSellerOrFleet && showBusinessBalance ? (
+              <YStack gap="$3">
+                <Card padding="$4" bordered>
+                  <YStack gap="$1">
+                    <Text
+                      fontSize="$4"
+                      fontWeight="600"
+                      fontFamily="$heading"
+                      color="$colorSecondary"
+                    >
+                      Total paid out
+                    </Text>
+                    <Text
+                      fontSize="$8"
+                      fontWeight="bold"
+                      fontFamily="$heading"
+                      color="$color"
+                    >
+                      {formatMinor(totalPaidOut)}
+                    </Text>
+                    <Text
+                      fontSize="$3"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      Completed withdrawals and instant payouts
+                    </Text>
+                  </YStack>
+                </Card>
+
+                {taxWallet ? (
+                  <Card
+                    padding="$4"
+                    bordered
+                    borderColor="$warning"
+                    backgroundColor="$yellow2"
+                  >
+                    <YStack gap="$2">
+                      <XStack
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <XStack gap="$2" alignItems="center">
+                          <Lock size={18} color="$warning" />
+                          <Text
+                            fontSize="$4"
+                            fontWeight="600"
+                            fontFamily="$heading"
+                            color="$color"
+                          >
+                            Tax wallet
+                          </Text>
+                        </XStack>
+                        <Text
+                          fontSize="$2"
+                          fontWeight="700"
+                          color="$warning"
+                          fontFamily="$body"
+                        >
+                          LOCKED
+                        </Text>
+                      </XStack>
+                      <Text
+                        fontSize="$8"
+                        fontWeight="bold"
+                        fontFamily="$heading"
+                        color="$color"
+                      >
+                        {formatMinor(
+                          taxWallet.balance_minor ??
+                            taxWallet.amount_minor ??
+                            0,
+                          taxWallet.currency,
+                        )}
+                      </Text>
+                      <Text
+                        fontSize="$3"
+                        color="$colorSecondary"
+                        fontFamily="$body"
+                      >
+                        {taxStatusLabel[taxWallet.tax_certificate_status] ??
+                          "Not withdrawable. Upload a tax certificate to request a transfer."}
+                      </Text>
+                      <Button
+                        variant="outline"
+                        size="$3"
+                        onPress={() => router.push("/(shared)/kyc")}
+                      >
+                        {taxWallet.tax_certificate_status === "pending"
+                          ? "View tax certificate"
+                          : "Upload tax certificate"}
+                      </Button>
+                    </YStack>
+                  </Card>
+                ) : null}
+              </YStack>
+            ) : null}
+
             {/* Quick actions */}
             {(!isSellerOrFleet || canFinanceRead) && (
               <Card padding="$4" bordered>
                 <YStack gap="$3">
-                  <Text fontSize="$5" fontWeight="600" fontFamily="$heading" color="$color">
+                  <Text
+                    fontSize="$5"
+                    fontWeight="600"
+                    fontFamily="$heading"
+                    color="$color"
+                  >
                     Quick Actions
                   </Text>
                   <Separator />
@@ -332,9 +323,6 @@ export default function WalletScreen() {
                 </YStack>
               </Card>
             )}
-
-            {/* Subscription/billing is business-only, never shown to riders. */}
-            {showBilling ? <BusinessBillingSection /> : null}
           </ScrollView>
         )}
       </YStack>

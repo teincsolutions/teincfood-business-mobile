@@ -27,19 +27,25 @@ import {
   Truck,
   Printer,
   Eye,
+  Wallet,
 } from "@tamagui/lucide-icons";
 import { BackButton, Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
 import {
+  cancelLabelFor,
   formatPriceFromMinor,
   getCustomerDisplay,
+  isCancellable,
   isDeliveryOrder,
+  isUnpaid,
   usePendingOrders,
 } from "@teincfood/core";
 import {
   useSellerOrderQuery,
   useAcceptOrderMutation,
+  useCancelOrderMutation,
+  useConfirmCashPaymentMutation,
   useRejectOrderMutation,
   useStartPreparingOrderMutation,
   useMarkOrderReadyMutation,
@@ -53,7 +59,9 @@ import {
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
 import { ReceiptPreviewSheet } from "@/components/orders/ReceiptPreviewSheet";
 import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
+import { CashPaymentSheet } from "@/components/pos";
 import { usePrintReceiptMutation } from "@/hooks/useReceiptPreview";
+import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import { paymentService } from "@/services/payment.service";
 import type { MomoQuote } from "@/types/payment";
@@ -113,6 +121,9 @@ export default function OrderDetails({
   const completePickupMutation = useCompletePickupMutation();
   const confirmHandoverMutation = useConfirmHandoverMutation();
   const assignRider = useAssignRiderMutation();
+  const confirmCashPayment = useConfirmCashPaymentMutation();
+  const cancelOrderMutation = useCancelOrderMutation();
+  const canReject = useHasCapability('orders_reject');
   const { data: riders } = useAvailableRidersQuery();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -130,6 +141,9 @@ export default function OrderDetails({
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
   const [showMakeDelivery, setShowMakeDelivery] = useState(false);
   const [showMomoSheet, setShowMomoSheet] = useState(false);
+  const [showCashSheet, setShowCashSheet] = useState(false);
+  const [recordingCash, setRecordingCash] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
   const printMutation = usePrintReceiptMutation();
 
@@ -189,6 +203,48 @@ export default function OrderDetails({
       return;
     }
     printMutation.mutate(order);
+  };
+
+  const handleCollectCash = async () => {
+    if (!order) return;
+    setRecordingCash(true);
+    try {
+      await confirmCashPayment.mutateAsync(order.id);
+      toast.success(`Cash recorded for ${order.order_number}`);
+      setShowCashSheet(false);
+      void refetch();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not record cash",
+      );
+    } finally {
+      setRecordingCash(false);
+    }
+  };
+
+  const handleCancelOrder = () => {
+    if (!order) return;
+    const label = cancelLabelFor(order.status);
+    showDialog(
+      `${label} Order`,
+      `${label} order ${order.order_number}?`,
+      () => {
+        setCancelling(true);
+        cancelOrderMutation.mutate(order.id, {
+          onSuccess: () => {
+            toast.success(`Order ${order.order_number} ${label.toLowerCase()}ed`);
+            void refetch();
+          },
+          onError: (error: unknown) => {
+            toast.error(
+              error instanceof Error ? error.message : "Could not update order",
+            );
+          },
+          onSettled: () => setCancelling(false),
+        });
+      },
+      true,
+    );
   };
 
   if (isLoading && !pendingOrder) {
@@ -514,6 +570,38 @@ export default function OrderDetails({
                   </Text>
                 </YStack>
               </XStack>
+              {(() => {
+                const payout = (order as any).payout;
+                if (!payout) return null;
+                const label =
+                  payout.status === "paid"
+                    ? "Paid to mobile money"
+                    : payout.status === "processing"
+                      ? "Instant payout processing"
+                      : payout.status === "failed"
+                        ? "Payout failed — returned to wallet"
+                        : payout.settled_to_wallet
+                          ? "Settled to business wallet"
+                          : "Awaiting settlement";
+                return (
+                  <>
+                    <Separator />
+                    <XStack alignItems="center" gap="$3">
+                      <YStack width={24} alignItems="center">
+                        <Wallet size={18} color="$colorMuted" />
+                      </YStack>
+                      <YStack flex={1}>
+                        <Text fontSize="$2" color="$colorMuted">
+                          Payout
+                        </Text>
+                        <Text fontSize="$4" fontWeight="500">
+                          {label}
+                        </Text>
+                      </YStack>
+                    </XStack>
+                  </>
+                );
+              })()}
               <Separator />
               <YStack gap="$2">
                 <XStack justifyContent="space-between">
@@ -637,6 +725,32 @@ export default function OrderDetails({
                 Collect Mobile Money
               </Button>
             )}
+
+            {isUnpaid(order) && order.status !== "cancelled" && (
+              <Button
+                variant="outline"
+                width="100%"
+                onPress={() => setShowCashSheet(true)}
+                disabled={recordingCash}
+              >
+                {recordingCash ? "Recording Cash..." : "Collect Cash"}
+              </Button>
+            )}
+
+            {canReject &&
+              order.status !== "pending" &&
+              isCancellable(order.status) && (
+                <Button
+                  variant="dangerOutline"
+                  width="100%"
+                  onPress={handleCancelOrder}
+                  disabled={cancelling}
+                >
+                  {cancelling
+                    ? "Updating..."
+                    : cancelLabelFor(order.status)}
+                </Button>
+              )}
 
             {order.status === "pending" && (
               <>
@@ -800,6 +914,15 @@ export default function OrderDetails({
           </YStack>
         </YStack>
       </ScrollView>
+
+      <CashPaymentSheet
+        open={showCashSheet}
+        onOpenChange={setShowCashSheet}
+        totalMinor={order.total_minor}
+        currency={order.currency_code ?? order.currency ?? "GHS"}
+        isProcessing={recordingCash}
+        onConfirm={() => void handleCollectCash()}
+      />
 
       <MomoChargeSheet
         open={showMomoSheet}

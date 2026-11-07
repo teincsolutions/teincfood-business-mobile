@@ -58,6 +58,8 @@ export interface BusinessPaymentSettings {
   payout_provider?: string | null;
   payout_momo_number?: string | null;
   payout_schedule?: string | null;
+  instant_payout_enabled?: boolean;
+  payout_fee_minor?: number;
 }
 
 export interface BusinessPaymentSettingsResponse {
@@ -80,7 +82,9 @@ export async function updatePaymentSettings(
     payout_account_name?: string;
     payout_account_number?: string;
     payout_momo_number?: string;
+    payout_provider?: string;
     payout_schedule?: string;
+    instant_payout_enabled?: boolean;
   },
 ): Promise<BusinessPaymentSettingsResponse> {
   return api.put<BusinessPaymentSettingsResponse>(

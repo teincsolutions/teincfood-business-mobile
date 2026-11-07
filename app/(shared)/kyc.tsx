@@ -2,10 +2,13 @@
 import { useState, useEffect } from "react";
 import { ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { YStack, XStack, Text } from "tamagui";
+import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { BackButton } from "@/components/ui";
+import * as DocumentPicker from "expo-document-picker";
+import { BackButton, Button } from "@/components/ui";
+import { uploadImage } from "@/services/upload.service";
+import * as walletService from "@/services/wallet.service";
 import {
   KycForm,
   type KycDocumentState,
@@ -168,6 +171,10 @@ export default function KycScreen() {
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(
     () => buildInitialDocs(configs),
   );
+  const [taxCertificate, setTaxCertificate] = useState<{
+    status: "idle" | "uploading" | "pending";
+    fileName?: string;
+  }>({ status: "idle" });
 
   const ownerKey =
     type === "business" && id ? `biz:${id}` : `user:${userId || "unknown"}`;
@@ -339,6 +346,39 @@ export default function KycScreen() {
     toast.success(`${docId.replace(/_/g, " ")} submitted for review`);
   };
 
+  const handleTaxCertificateUpload = async () => {
+    if (type !== "business" || !id || taxCertificate.status === "uploading") {
+      return;
+    }
+
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setTaxCertificate({ status: "uploading", fileName: asset.name });
+
+    try {
+      const { key } = await uploadImage(asset.uri, "kyc", {
+        ...uploadContext,
+        document_type: "tax_certificate",
+      });
+      const response = await walletService.requestTaxCertificate({
+        businessId: id,
+        certificateUrl: key,
+        notes: "Tax certificate submitted from business KYC",
+      });
+      setTaxCertificate({ status: "pending", fileName: asset.name });
+      toast.success(response.data.message);
+    } catch (error: any) {
+      setTaxCertificate({ status: "idle" });
+      toast.error(error?.message || "Could not upload tax certificate");
+    }
+  };
+
   const title = type === "business" ? "Business KYC" : "KYC Verification";
   const subtitle =
     type === "business"
@@ -379,18 +419,62 @@ export default function KycScreen() {
               <Text color="$colorMuted">Loading KYC data...</Text>
             </YStack>
           ) : (
-            <KycForm
-              title={title}
-              subtitle={subtitle}
-              docConfigs={configs}
-              documents={documents}
-              onDocumentsChange={persistDocuments}
-              onSubmitDoc={handleSubmitDoc}
-              uploadContext={uploadContext}
-              globalFeedback={
-                kycData?.kyc_status === "rejected" ? feedback.global : []
-              }
-            />
+            <>
+              <KycForm
+                title={title}
+                subtitle={subtitle}
+                docConfigs={configs}
+                documents={documents}
+                onDocumentsChange={persistDocuments}
+                onSubmitDoc={handleSubmitDoc}
+                uploadContext={uploadContext}
+                globalFeedback={
+                  kycData?.kyc_status === "rejected" ? feedback.global : []
+                }
+              />
+
+              {type === "business" && id ? (
+                <Card padding="$4" bordered>
+                  <YStack gap="$3">
+                    <YStack gap="$1">
+                      <Text
+                        fontSize="$5"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                      >
+                        Tax certificate
+                      </Text>
+                      <Text fontSize="$3" color="$colorSecondary">
+                        Withheld tax stays in a locked tax wallet. Upload a
+                        valid tax certificate; an admin reviews it and then
+                        releases the balance into your spendable wallet.
+                      </Text>
+                    </YStack>
+
+                    <Text fontSize="$3" color="$colorMuted">
+                      {taxCertificate.status === "pending"
+                        ? "Pending admin review"
+                        : taxCertificate.status === "uploading"
+                          ? "Uploading…"
+                          : "No certificate submitted yet"}
+                      {taxCertificate.fileName
+                        ? ` · ${taxCertificate.fileName}`
+                        : ""}
+                    </Text>
+
+                    <Button
+                      variant="outline"
+                      onPress={handleTaxCertificateUpload}
+                      loading={taxCertificate.status === "uploading"}
+                    >
+                      {taxCertificate.status === "pending"
+                        ? "Replace tax certificate"
+                        : "Upload tax certificate"}
+                    </Button>
+                  </YStack>
+                </Card>
+              ) : null}
+            </>
           )}
         </YStack>
       </ScrollView>
