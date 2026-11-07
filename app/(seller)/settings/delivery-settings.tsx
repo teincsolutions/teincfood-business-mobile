@@ -25,10 +25,13 @@ import { BackButton, Button } from "@/components/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
-import { api } from "@/services/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@teincfood/core";
+import {
+  extractApiErrorMessage,
+  useReferenceData,
+  setDeliverySettingsLocal,
+} from "@teincfood/core";
 import { invalidateRiderDeliveryZones } from "@/hooks/useRiderDeliveryZones";
 
 type FormErrors = {
@@ -38,6 +41,14 @@ type FormErrors = {
 };
 
 type SaveStatus = "idle" | "success" | "error";
+
+interface DeliverySettingsPayload {
+  delivery_enabled: boolean;
+  max_delivery_radius_km: number;
+  base_delivery_fee_minor: number;
+  min_order_minor: number;
+  free_delivery_threshold_minor: number;
+}
 
 const AmountInput = styled(Input, {
   flex: 1,
@@ -52,7 +63,6 @@ const AmountInput = styled(Input, {
   focusStyle: { borderWidth: 0 },
 });
 
-const SETTINGS_KEYS = ['delivery-settings'];
 const toMinor = (ghs: string) => Math.round(parseFloat(ghs || '0') * 100);
 const fromMinor = (minor: number) => (minor / 100).toFixed(2);
 
@@ -61,7 +71,9 @@ export default function DeliverySettings() {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { activeBusinessId } = useActiveBusiness();
+  const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const currency =
+    (activeBusiness as unknown as { currency?: string })?.currency ?? 'GHS';
   const canEdit = useHasCapability("business_profile_manage");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -72,14 +84,12 @@ export default function DeliverySettings() {
   const [minimumOrder, setMinimumOrder] = useState("");
   const [freeDeliveryMinimum, setFreeDeliveryMinimum] = useState("");
 
-  const { data: settings } = useQuery({
-    queryKey: [...SETTINGS_KEYS, activeBusinessId],
-    queryFn: async () => {
-      const res = await api.get<any>(`/businesses/${activeBusinessId}/delivery-settings`);
-      return res.data;
-    },
-    enabled: !!activeBusinessId,
-  });
+  // SQLite-first: serve cached settings instantly; the reference worker keeps
+  // them fresh in the background.
+  const { data: cachedSettings } = useReferenceData<{
+    data: DeliverySettingsPayload;
+  }>("delivery-settings");
+  const settings = cachedSettings?.payload?.data ?? null;
 
   useEffect(() => {
     if (settings) {
@@ -109,18 +119,20 @@ export default function DeliverySettings() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      api.put(`/businesses/${activeBusinessId}/delivery-settings`, {
+    mutationFn: async () => {
+      if (!activeBusinessId) throw new Error("No business selected");
+      // Local-first: the SQLite commit is the save. The outbox worker pushes
+      // it to the backend when connectivity is available.
+      await setDeliverySettingsLocal(activeBusinessId, {
         delivery_enabled: deliveryEnabled,
         max_delivery_radius_km: deliveryRadius,
         base_delivery_fee_minor: toMinor(deliveryFee),
         min_order_minor: toMinor(minimumOrder),
         free_delivery_threshold_minor: toMinor(freeDeliveryMinimum),
-      }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: [...SETTINGS_KEYS, activeBusinessId],
       });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reference"] });
       void invalidateRiderDeliveryZones(queryClient);
       setSaveStatus("success");
       toast.success("Delivery settings saved");
@@ -297,7 +309,7 @@ export default function DeliverySettings() {
                         fontWeight="600"
                         fontSize="$3"
                       >
-                        GHS
+                        {currency}
                       </Text>
                       <AmountInput
                         placeholder="0.00"
@@ -345,7 +357,7 @@ export default function DeliverySettings() {
                         fontWeight="600"
                         fontSize="$3"
                       >
-                        GHS
+                        {currency}
                       </Text>
                       <AmountInput
                         placeholder="0.00"
@@ -393,7 +405,7 @@ export default function DeliverySettings() {
                         fontWeight="600"
                         fontSize="$3"
                       >
-                        GHS
+                        {currency}
                       </Text>
                       <AmountInput
                         placeholder="0.00"

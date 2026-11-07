@@ -269,7 +269,8 @@ export default function RiderHome() {
               <YStack flex={1} alignItems="center" gap="$1">
                 <DollarSign size={24} color="$success" />
                 <Text fontSize="$7" fontWeight="bold">
-                  GHS {(metrics.todayEarnings / 100).toFixed(2)}
+                  {(metrics as any).currency ?? 'GHS'}{' '}
+                  {(metrics.todayEarnings / 100).toFixed(2)}
                 </Text>
                 <Text fontSize="$3" color="$colorMuted">
                   Earnings
@@ -435,7 +436,8 @@ export default function RiderHome() {
                   </YStack>
                   <XStack gap="$2" alignItems="center">
                     <Text fontWeight="bold" color="$success">
-                      +GHS {((delivery.earnings_minor ?? 0) / 100).toFixed(2)}
+                      +{delivery.currency || 'GHS'}{' '}
+                      {((delivery.earnings_minor ?? 0) / 100).toFixed(2)}
                     </Text>
                     <ChevronRight size={16} color="$colorMuted" />
                   </XStack>

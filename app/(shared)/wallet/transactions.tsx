@@ -69,10 +69,10 @@ export default function TransactionHistoryScreen() {
             color={isCredit ? "$green10" : "$color"}
           >
             {isCredit ? "+" : "-"}
-            {formatMinor(amountMinor)}
+            {formatMinor(amountMinor, item.currency)}
           </Text>
           <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
-            Bal: {formatMinor(item.balance_after)}
+            Bal: {formatMinor(item.balance_after, item.currency)}
           </Text>
         </YStack>
       </XStack>

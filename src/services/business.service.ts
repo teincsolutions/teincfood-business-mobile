@@ -50,7 +50,9 @@ export async function updateBusiness(businessId: string, data: Record<string, un
 
 export interface BusinessPaymentSettings {
   configured: boolean;
+  currency?: string;
   payment_methods: string[];
+  payout_method?: 'mobile_money' | 'bank' | null;
   payout_bank_name?: string | null;
   payout_bank_code?: string | null;
   payout_account_name?: string | null;
@@ -60,6 +62,7 @@ export interface BusinessPaymentSettings {
   payout_schedule?: string | null;
   instant_payout_enabled?: boolean;
   payout_fee_minor?: number;
+  bank_payout_fee_minor?: number;
 }
 
 export interface BusinessPaymentSettingsResponse {
@@ -78,7 +81,9 @@ export async function updatePaymentSettings(
   businessId: string,
   data: {
     payment_methods: string[];
+    payout_method?: 'mobile_money' | 'bank';
     payout_bank_name?: string;
+    payout_bank_code?: string;
     payout_account_name?: string;
     payout_account_number?: string;
     payout_momo_number?: string;

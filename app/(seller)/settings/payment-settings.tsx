@@ -27,7 +27,9 @@ export default function PaymentSettings() {
   const router = useRouter();
   const media = useMedia();
   const insets = useSafeAreaInsets();
-  const { activeBusinessId } = useActiveBusiness();
+  const { activeBusiness, activeBusinessId } = useActiveBusiness();
+  const currency =
+    (activeBusiness as unknown as { currency?: string })?.currency ?? 'GHS';
   const canEdit = useHasCapability("business_profile_manage");
   const paymentSettingsQuery = usePaymentSettingsQuery(activeBusinessId);
   const saveMutation = useUpdatePaymentSettingsMutation(activeBusinessId);
@@ -35,7 +37,9 @@ export default function PaymentSettings() {
   const [acceptCash, setAcceptCash] = useState(true);
   const [acceptMobileMoney, setAcceptMobileMoney] = useState(true);
   const [acceptCard, setAcceptCard] = useState(true);
+  const [payoutMethod, setPayoutMethod] = useState<'mobile_money' | 'bank'>('mobile_money');
   const [bankName, setBankName] = useState('');
+  const [bankCode, setBankCode] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
@@ -43,6 +47,7 @@ export default function PaymentSettings() {
   const [payoutSchedule, setPayoutSchedule] = useState('daily');
   const [instantPayoutEnabled, setInstantPayoutEnabled] = useState(false);
   const [payoutFeeMinor, setPayoutFeeMinor] = useState(100);
+  const [bankPayoutFeeMinor, setBankPayoutFeeMinor] = useState(800);
 
   useEffect(() => {
     const settings = paymentSettingsQuery.data?.data;
@@ -59,7 +64,9 @@ export default function PaymentSettings() {
       setAcceptMobileMoney(methods.includes('mobile_money'));
       setAcceptCard(methods.includes('card'));
     }
-    setBankName(settings.payout_bank_name ?? settings.payout_bank_code ?? '');
+    setPayoutMethod(settings.payout_method === 'bank' ? 'bank' : 'mobile_money');
+    setBankName(settings.payout_bank_name ?? '');
+    setBankCode(settings.payout_bank_code ?? '');
     setAccountNumber(settings.payout_account_number ?? '');
     setAccountName(settings.payout_account_name ?? '');
     setMobileMoneyNumber(settings.payout_momo_number ?? '');
@@ -67,6 +74,7 @@ export default function PaymentSettings() {
     setPayoutSchedule(settings.payout_schedule ?? 'daily');
     setInstantPayoutEnabled(settings.instant_payout_enabled ?? false);
     setPayoutFeeMinor(settings.payout_fee_minor ?? 100);
+    setBankPayoutFeeMinor(settings.bank_payout_fee_minor ?? 800);
   }, [paymentSettingsQuery.data]);
 
   const handleSave = () => {
@@ -78,7 +86,9 @@ export default function PaymentSettings() {
           acceptMobileMoney,
           acceptCard,
         ),
+        payout_method: payoutMethod,
         payout_bank_name: bankName,
+        payout_bank_code: bankCode,
         payout_account_name: accountName,
         payout_account_number: accountNumber,
         payout_momo_number: mobileMoneyNumber,
@@ -195,19 +205,56 @@ export default function PaymentSettings() {
           </Card>
 
           <Card padding="$4" bordered>
-            <YStack gap="$4">
-              <XStack gap="$3" alignItems="center">
-                <Building size={20} color="$primary" />
-                <Text fontWeight="bold" fontSize="$5">Bank Account</Text>
+            <YStack gap="$3">
+              <Text fontWeight="bold" fontSize="$5">Payout Destination</Text>
+              <Text fontSize="$2" color="$colorMuted">
+                Where Paystack sends withdrawals and instant payouts.
+              </Text>
+              <XStack gap="$2">
+                {[
+                  ['mobile_money', 'Mobile Money', `${currency} ${(payoutFeeMinor / 100).toFixed(2)} fee`],
+                  ['bank', 'Bank Account', `${currency} ${(bankPayoutFeeMinor / 100).toFixed(2)} fee`],
+                ].map(([value, label, fee]) => (
+                  <TamaguiButton
+                    key={value}
+                    flex={1}
+                    height={56}
+                    backgroundColor={payoutMethod === value ? '$primaryLight' : 'transparent'}
+                    borderWidth={1}
+                    borderColor={payoutMethod === value ? '$primary' : '$borderColor'}
+                    borderRadius="$3"
+                    onPress={() => setPayoutMethod(value as 'mobile_money' | 'bank')}
+                  >
+                    <YStack alignItems="center">
+                      <Text fontSize="$2" fontWeight="bold">{label}</Text>
+                      <Text fontSize="$1" color="$colorMuted">{fee}</Text>
+                    </YStack>
+                  </TamaguiButton>
+                ))}
               </XStack>
-              <Separator />
-              <FormInput label="Bank Name" placeholder="Select your bank" value={bankName} onChangeText={setBankName} />
-              <FormInput label="Account Number" placeholder="Enter account number" value={accountNumber} onChangeText={setAccountNumber} keyboardType="numeric" />
-              <FormInput label="Account Name" placeholder="Enter account holder name" value={accountName} onChangeText={setAccountName} />
             </YStack>
           </Card>
 
-          {acceptMobileMoney && (
+          {payoutMethod === 'bank' && (
+            <Card padding="$4" bordered>
+              <YStack gap="$4">
+                <XStack gap="$3" alignItems="center">
+                  <Building size={20} color="$primary" />
+                  <Text fontWeight="bold" fontSize="$5">Bank Account</Text>
+                </XStack>
+                <Separator />
+                <FormInput label="Bank Name" placeholder="e.g. GCB Bank" value={bankName} onChangeText={setBankName} />
+                <FormInput label="Bank Code" placeholder="e.g. 030100" value={bankCode} onChangeText={setBankCode} keyboardType="numeric" />
+                <FormInput label="Account Number" placeholder="Enter account number" value={accountNumber} onChangeText={setAccountNumber} keyboardType="numeric" />
+                <FormInput label="Account Name" placeholder="Enter account holder name" value={accountName} onChangeText={setAccountName} />
+                <Text fontSize="$2" color="$colorMuted">
+                  Bank payouts cost {currency} {(bankPayoutFeeMinor / 100).toFixed(2)} per transfer.
+                </Text>
+              </YStack>
+            </Card>
+          )}
+
+          {payoutMethod === 'mobile_money' && acceptMobileMoney && (
             <Card padding="$4" bordered>
               <YStack gap="$4">
                 <XStack gap="$3" alignItems="center">
@@ -237,6 +284,9 @@ export default function PaymentSettings() {
                     </TamaguiButton>
                   ))}
                 </XStack>
+                <Text fontSize="$2" color="$colorMuted">
+                  Mobile-money payouts cost {currency} {(payoutFeeMinor / 100).toFixed(2)} per transfer.
+                </Text>
               </YStack>
             </Card>
           )}
@@ -281,10 +331,12 @@ export default function PaymentSettings() {
                 <YStack flex={1}>
                   <Text fontWeight="bold" fontSize="$5">Instant Payout</Text>
                   <Text fontSize="$2" color="$colorMuted" marginTop="$1">
-                    Send each order&apos;s settled amount straight to MoMo.
-                    Paystack charges GH₵{(payoutFeeMinor / 100).toFixed(2)} per
-                    transfer, deducted from the payout. Off keeps money in your
-                    wallet.
+                    Send each order&apos;s settled amount straight to your{' '}
+                    {payoutMethod === 'bank' ? 'bank account' : 'mobile-money account'}.
+                    Paystack charges {currency}{' '}
+                    {((payoutMethod === 'bank' ? bankPayoutFeeMinor : payoutFeeMinor) / 100).toFixed(2)}{' '}
+                    per transfer, deducted from the payout. Off keeps money in
+                    your wallet.
                   </Text>
                 </YStack>
                 <Switch

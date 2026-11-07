@@ -53,6 +53,10 @@ export default function WalletScreen() {
   const payoutTotalFromApi = (
     businessBalance?.data as { payout_total_minor?: number }
   )?.payout_total_minor;
+  const walletCurrency =
+    (businessBalance?.data as { currency?: string })?.currency ??
+    bizBalance?.currency ??
+    "GHS";
 
   const historyEntries: any[] = Array.isArray(walletHistory)
     ? walletHistory
@@ -169,13 +173,13 @@ export default function WalletScreen() {
                               bizBalance.amount_minor,
                               bizBalance.currency,
                             )
-                          : "GHS 0.00"
+                          : formatMinor(0, walletCurrency)
                         : riderBalance
                           ? formatMinor(
                               riderBalance.amount_minor,
                               riderBalance.currency,
                             )
-                          : "GHS 0.00"}
+                          : formatMinor(0, walletCurrency)}
                     </Text>
                     <Text
                       fontSize="$3"
@@ -216,7 +220,7 @@ export default function WalletScreen() {
                       fontFamily="$heading"
                       color="$color"
                     >
-                      {formatMinor(totalPaidOutDisplay)}
+                      {formatMinor(totalPaidOutDisplay, walletCurrency)}
                     </Text>
                     <Text
                       fontSize="$3"

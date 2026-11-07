@@ -619,6 +619,17 @@ export default function OrderDetails({
                     )}
                   </Text>
                 </XStack>
+                {(order as any).service_fee_minor > 0 && (
+                  <XStack justifyContent="space-between">
+                    <Text color="$colorMuted">Service Fee</Text>
+                    <Text>
+                      {formatPriceFromMinor(
+                        (order as any).service_fee_minor,
+                        order.currency,
+                      )}
+                    </Text>
+                  </XStack>
+                )}
                 {order.tip_minor != null && order.tip_minor > 0 && (
                   <XStack justifyContent="space-between">
                     <Text color="$colorMuted">Tip</Text>
