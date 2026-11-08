@@ -11,7 +11,6 @@ import {
   Clock,
   Star,
   TrendingUp,
-  Bell,
   ChevronRight,
   Store,
   Package,
@@ -235,12 +234,6 @@ export default function SellerDashboard() {
                   />
                 </Switch>
               )}
-              <Button
-                size="$4"
-                circular
-                icon={<Bell size={20} />}
-                onPress={() => router.push("/(shared)/notifications")}
-              />
             </XStack>
           </XStack>
         </YStack>

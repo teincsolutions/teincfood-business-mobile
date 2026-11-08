@@ -16,6 +16,7 @@ import {
 } from "@/components/kyc/KycForm";
 import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
+import { useBusinessStore } from "@/stores/business.store";
 import { getItem, setItem } from "@/utils/storage";
 import {
   useUserKycQuery,
@@ -88,6 +89,10 @@ const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
   ],
 };
 
+// Sellers/fleet managers use the same business documents as business owners.
+DOCS_BY_TYPE.seller = DOCS_BY_TYPE.business;
+DOCS_BY_TYPE.fleet_manager = DOCS_BY_TYPE.business;
+
 // Unsaved per-requirement drafts, keyed by owner + flow. Survives app restarts;
 // cleared per document on successful submit.
 type KycDraftDoc = {
@@ -150,32 +155,38 @@ export default function KycScreen() {
     role?: string;
   }>();
 
+  const requestedType = (type as string) || "";
   const docType =
-    type === "business" ? "business" : (role as string) || "rider";
-  const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.rider;
-  const isRider = type !== "business" && docType === "rider";
+    requestedType === "business" ? "business" : (role as string) || "seller";
+  // Sellers and fleet managers own a business, so their KYC is business KYC.
+  const isBusiness =
+    requestedType === "business" ||
+    docType === "seller" ||
+    docType === "fleet_manager";
+  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const businessId = isBusiness ? id || activeBusinessId : undefined;
+  const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.business;
+  const isRider = !isBusiness && docType === "rider";
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const uploadContext =
-    type === "business" && id
-      ? { entity_type: "business", entity_id: id }
+    isBusiness && businessId
+      ? { entity_type: "business", entity_id: businessId }
       : { entity_type: "user", entity_id: userId || "unknown" };
 
   // Fetch existing KYC data. Riders submit to the rider profile (the record
-  // admins review); everyone else uses the user-level endpoint.
+  // admins review); businesses/sellers use the business endpoint.
   const { data: userKyc, isLoading: userLoading } = useUserKycQuery(
-    type !== "business" && !isRider,
+    !isBusiness && !isRider,
   );
   const { data: riderKyc, isLoading: riderLoading } = useRiderKycQuery(
     isRider,
   );
   const { data: bizKyc, isLoading: bizLoading } = useBusinessKycQuery(
-    type === "business" ? id : undefined,
+    isBusiness ? businessId : undefined,
   );
-  const kycData =
-    type === "business" ? bizKyc : isRider ? riderKyc : userKyc;
-  const loading =
-    type === "business" ? bizLoading : isRider ? riderLoading : userLoading;
+  const kycData = isBusiness ? bizKyc : isRider ? riderKyc : userKyc;
+  const loading = isBusiness ? bizLoading : isRider ? riderLoading : userLoading;
 
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(
     () => buildInitialDocs(configs),
@@ -186,7 +197,9 @@ export default function KycScreen() {
   }>({ status: "idle" });
 
   const ownerKey =
-    type === "business" && id ? `biz:${id}` : `user:${userId || "unknown"}`;
+    isBusiness && businessId
+      ? `biz:${businessId}`
+      : `user:${userId || "unknown"}`;
   const draftKey = draftKeyFor(ownerKey, docType);
 
   const readDraft = (): Record<string, KycDraftDoc> =>
@@ -329,9 +342,9 @@ export default function KycScreen() {
     payload: Record<string, any>,
   ) => {
     const singleDoc = { [docId]: payload };
-    if (type === "business" && id) {
+    if (isBusiness && businessId) {
       await submitBizMutation.mutateAsync({
-        businessId: id,
+        businessId,
         documents: singleDoc,
         partial: true,
       });
@@ -348,17 +361,16 @@ export default function KycScreen() {
       });
     }
     queryClient.invalidateQueries({
-      queryKey:
-        type === "business"
-          ? ["kyc", "business", id]
-          : isRider
-            ? ["kyc", "rider", userId]
-            : ["kyc", "user", userId],
+      queryKey: isBusiness
+        ? ["kyc", "business", businessId]
+        : isRider
+          ? ["kyc", "rider", userId]
+          : ["kyc", "user", userId],
     });
     // Submitted docs live on the server now — drop their drafts, and refresh
     // profile/banner state so home reflects the new kyc_status immediately.
     clearDocDraft(docId);
-    if (type !== "business") {
+    if (!isBusiness) {
       completeKyc();
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     }
@@ -366,7 +378,11 @@ export default function KycScreen() {
   };
 
   const handleTaxCertificateUpload = async () => {
-    if (type !== "business" || !id || taxCertificate.status === "uploading") {
+    if (
+      !isBusiness ||
+      !businessId ||
+      taxCertificate.status === "uploading"
+    ) {
       return;
     }
 
@@ -386,7 +402,7 @@ export default function KycScreen() {
         document_type: "tax_certificate",
       });
       const response = await walletService.requestTaxCertificate({
-        businessId: id,
+        businessId,
         certificateUrl: key,
         notes: "Tax certificate submitted from business KYC",
       });
@@ -398,11 +414,10 @@ export default function KycScreen() {
     }
   };
 
-  const title = type === "business" ? "Business KYC" : "KYC Verification";
-  const subtitle =
-    type === "business"
-      ? "Upload business documents for verification"
-      : "Upload your identity documents for verification";
+  const title = isBusiness ? "Business KYC" : "KYC Verification";
+  const subtitle = isBusiness
+    ? "Upload business documents for verification"
+    : "Upload your identity documents for verification";
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -452,7 +467,7 @@ export default function KycScreen() {
                 }
               />
 
-              {type === "business" && id ? (
+              {isBusiness && businessId ? (
                 <Card padding="$4" bordered>
                   <YStack gap="$3">
                     <YStack gap="$1">

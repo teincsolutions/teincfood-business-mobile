@@ -29,7 +29,7 @@ import {
 import { useAuthStore } from "@/stores/auth.store";
 import { useSecurityStore } from "@/stores/security.store";
 import { authService } from "@/services/auth.service";
-import { AppAlertDialog, DrawerMenuItem } from "@/components/ui";
+import { AppAlertDialog, Button, DrawerMenuItem } from "@/components/ui";
 import { DrawerHeader } from "@/components/ui/DrawerHeader";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { useResponsive } from "@/utils/responsive";
@@ -207,7 +207,7 @@ export default function SellerDrawerLayout() {
             headerTintColor: theme.color.val,
             headerTitleStyle: {
               fontFamily: "Manrope_600SemiBold",
-              fontSize: 36,
+              fontSize: 34,
             },
             drawerStyle: {
               backgroundColor: theme.background.val,
@@ -227,6 +227,16 @@ export default function SellerDrawerLayout() {
           name="dashboard/index"
           options={{
             title: "Dashboard",
+            headerRight: () => (
+              <Button
+                circular
+                size="$4"
+                variant="ghost"
+                marginEnd="$2"
+                icon={<Bell size={22} />}
+                onPress={() => router.push("/(shared)/notifications")}
+              />
+            ),
             drawerIcon: ({ color, size }) => (
               <LayoutDashboard color={color} size={size} />
             ),
