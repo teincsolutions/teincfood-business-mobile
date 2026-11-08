@@ -123,7 +123,7 @@ export default function OrderDetails({
   const assignRider = useAssignRiderMutation();
   const confirmCashPayment = useConfirmCashPaymentMutation();
   const cancelOrderMutation = useCancelOrderMutation();
-  const canReject = useHasCapability('orders_reject');
+  const canReject = useHasCapability("orders_reject");
   const { data: riders } = useAvailableRidersQuery();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -232,7 +232,9 @@ export default function OrderDetails({
         setCancelling(true);
         cancelOrderMutation.mutate(order.id, {
           onSuccess: () => {
-            toast.success(`Order ${order.order_number} ${label.toLowerCase()}ed`);
+            toast.success(
+              `Order ${order.order_number} ${label.toLowerCase()}ed`,
+            );
             void refetch();
           },
           onError: (error: unknown) => {
@@ -698,7 +700,7 @@ export default function OrderDetails({
                 icon={<Eye size={16} />}
                 onPress={handlePreview}
               >
-                Preview Receipt
+                Preview
               </Button>
               <Button
                 flex={1}
@@ -720,9 +722,13 @@ export default function OrderDetails({
             {!isDeliveryOrder(
               order as unknown as Parameters<typeof isDeliveryOrder>[0],
             ) &&
-              ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
-                order.status,
-              ) && (
+              [
+                "pending",
+                "accepted",
+                "preparing",
+                "ready",
+                "waiting_pickup",
+              ].includes(order.status) && (
                 <Button
                   variant="outline"
                   width="100%"
@@ -762,9 +768,7 @@ export default function OrderDetails({
                   onPress={handleCancelOrder}
                   disabled={cancelling}
                 >
-                  {cancelling
-                    ? "Updating..."
-                    : cancelLabelFor(order.status)}
+                  {cancelling ? "Updating..." : cancelLabelFor(order.status)}
                 </Button>
               )}
 
