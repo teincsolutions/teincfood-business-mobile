@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as LocalAuthentication from 'expo-local-authentication';
 import {
   YStack,
   XStack,
@@ -10,8 +11,10 @@ import {
   Button as TamaguiButton,
   Switch,
   Separator,
+  Sheet,
   useMedia,
 } from 'tamagui';
+import { extractApiErrorCode } from '@teincfood/core';
 import { ArrowLeft, Save, CreditCard, Building, Clock } from '@tamagui/lucide-icons';
 import { Button, FormInput } from '@/components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +25,8 @@ import {
   useUpdatePaymentSettingsMutation,
 } from '@/hooks/usePaymentSettings';
 import { useHasCapability } from '@/hooks/useMyBusinessCapabilities';
+import { useAuthStore } from '@/stores/auth.store';
+import { useProfileQuery } from '@/hooks/useProfile';
 
 export default function PaymentSettings() {
   const router = useRouter();
@@ -33,6 +38,14 @@ export default function PaymentSettings() {
   const canEdit = useHasCapability("business_profile_manage");
   const paymentSettingsQuery = usePaymentSettingsQuery(activeBusinessId);
   const saveMutation = useUpdatePaymentSettingsMutation(activeBusinessId);
+  const storeUser = useAuthStore((s) => s.user);
+  const { data: profile } = useProfileQuery();
+  const hasPassword = (profile ?? storeUser)?.has_password === true;
+
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyPassword, setVerifyPassword] = useState('');
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const [acceptCash, setAcceptCash] = useState(true);
   const [acceptMobileMoney, setAcceptMobileMoney] = useState(true);
@@ -77,37 +90,134 @@ export default function PaymentSettings() {
     setBankPayoutFeeMinor(settings.bank_payout_fee_minor ?? 800);
   }, [paymentSettingsQuery.data]);
 
-  const handleSave = () => {
+  const settings = paymentSettingsQuery.data?.data;
+  const payoutChanged =
+    Boolean(settings) &&
+    ((settings?.payout_method ?? 'mobile_money') !== payoutMethod ||
+      (settings?.payout_bank_name ?? '') !== bankName.trim() ||
+      (settings?.payout_bank_code ?? '') !== bankCode.trim() ||
+      (settings?.payout_account_name ?? '') !== accountName.trim() ||
+      (settings?.payout_account_number ?? '') !== accountNumber.trim() ||
+      (settings?.payout_momo_number ?? '') !== mobileMoneyNumber.trim() ||
+      (settings?.payout_provider ?? 'mtn') !== payoutProvider);
+
+  const buildPayload = () => ({
+    payment_methods: buildPaymentMethodSettings(
+      acceptCash,
+      acceptMobileMoney,
+      acceptCard,
+    ),
+    payout_method: payoutMethod,
+    payout_bank_name: bankName.trim(),
+    payout_bank_code: bankCode.trim(),
+    payout_account_name: accountName.trim(),
+    payout_account_number: accountNumber.trim(),
+    payout_momo_number: mobileMoneyNumber.trim(),
+    payout_provider: payoutProvider,
+    payout_schedule: payoutSchedule,
+    instant_payout_enabled: instantPayoutEnabled,
+  });
+
+  const submitSave = async (
+    verificationMethod?: 'password' | 'biometric',
+    currentPassword?: string,
+  ) => {
     if (!activeBusinessId) return;
-    saveMutation.mutate(
-      {
-        payment_methods: buildPaymentMethodSettings(
-          acceptCash,
-          acceptMobileMoney,
-          acceptCard,
-        ),
-        payout_method: payoutMethod,
-        payout_bank_name: bankName,
-        payout_bank_code: bankCode,
-        payout_account_name: accountName,
-        payout_account_number: accountNumber,
-        payout_momo_number: mobileMoneyNumber,
-        payout_provider: payoutProvider,
-        payout_schedule: payoutSchedule,
-        instant_payout_enabled: instantPayoutEnabled,
-      },
-      {
-        onSuccess: () => {
-          Alert.alert('Success', 'Payment settings updated', [
-            { text: 'OK', onPress: () => router.back() },
-          ]);
-        },
-        onError: (error) => {
-          console.debug('[payment-settings] save failed', error);
-          Alert.alert('Error', 'Failed to update payment settings');
-        },
-      },
-    );
+    setVerifying(true);
+    setVerifyError(null);
+    try {
+      await saveMutation.mutateAsync({
+        ...buildPayload(),
+        ...(verificationMethod
+          ? { verification_method: verificationMethod }
+          : {}),
+        ...(currentPassword ? { current_password: currentPassword } : {}),
+      });
+      setVerifyOpen(false);
+      setVerifyPassword('');
+      Alert.alert('Success', 'Payment settings updated', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      console.debug('[payment-settings] save failed', error);
+      const code = extractApiErrorCode(error);
+      if (code === 'PASSWORD_SETUP_REQUIRED') {
+        setVerifyOpen(false);
+        Alert.alert(
+          'Set a password first',
+          'Add a password in Privacy & Security so payout changes can be verified.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Set password',
+              onPress: () => router.push('/(shared)/profile/security'),
+            },
+          ],
+        );
+      } else if (code === 'INVALID_PASSWORD') {
+        setVerifyError('Current password is incorrect.');
+      } else if (code === 'VERIFICATION_REQUIRED') {
+        setVerifyOpen(false);
+        Alert.alert('Verification required', 'Verify again to change payout details.');
+      } else {
+        Alert.alert('Error', 'Failed to update payment settings');
+      }
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!activeBusinessId) return;
+
+    // Payment methods/schedule are routine. Payout account changes need
+    // biometric or password confirmation.
+    if (!payoutChanged) {
+      await submitSave();
+      return;
+    }
+
+    try {
+      const [hasHardware, isEnrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+
+      if (hasHardware && isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Confirm payout account change',
+          fallbackLabel: 'Use password',
+          cancelLabel: 'Cancel',
+          disableDeviceFallback: false,
+        });
+
+        if (result.success) {
+          await submitSave('biometric');
+          return;
+        }
+      }
+    } catch (error) {
+      console.debug('[payment-settings] biometric check failed', error);
+    }
+
+    if (!hasPassword) {
+      Alert.alert(
+        'Protect payout changes',
+        'Set a password in Privacy & Security first, or use biometrics when available.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Set password',
+            onPress: () => router.push('/(shared)/profile/security'),
+          },
+        ],
+      );
+      return;
+    }
+
+    setVerifyPassword('');
+    setVerifyError(null);
+    setVerifyOpen(true);
   };
 
   const payoutOptions = [
@@ -168,6 +278,25 @@ export default function PaymentSettings() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack padding="$4" gap="$4">
+          {!hasPassword ? (
+            <Card padding="$4" bordered backgroundColor="$yellow2" borderColor="$warning">
+              <YStack gap="$2">
+                <Text fontWeight="bold" fontSize="$4" color="$color">
+                  Protect payout changes
+                </Text>
+                <Text fontSize="$3" color="$colorSecondary">
+                  Set a password so changing your payout account always needs
+                  your approval. Biometrics can also be used when available.
+                </Text>
+                <Button
+                  variant="outline"
+                  onPress={() => router.push('/(shared)/profile/security')}
+                >
+                  Set up password
+                </Button>
+              </YStack>
+            </Card>
+          ) : null}
           <Card padding="$4" bordered>
             <YStack gap="$4">
               <Text fontWeight="bold" fontSize="$5">Accepted Payment Methods</Text>
@@ -360,6 +489,70 @@ export default function PaymentSettings() {
         </YStack>
       </ScrollView>
       )}
+
+      <Sheet
+        modal
+        open={verifyOpen}
+        onOpenChange={(open) => {
+          if (!open) setVerifyPassword('');
+          setVerifyOpen(open);
+        }}
+        snapPoints={[48]}
+        dismissOnSnapToBottom
+        zIndex={200_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(0,0,0,0.5)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          padding="$5"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          <YStack gap="$4">
+            <YStack gap="$1">
+              <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
+                Confirm payout change
+              </Text>
+              <Text fontSize="$3" color="$colorSecondary">
+                Enter your account password to approve this payout account change.
+              </Text>
+            </YStack>
+
+            <FormInput
+              label="Password"
+              placeholder="Current password"
+              value={verifyPassword}
+              onChangeText={(value) => {
+                setVerifyPassword(value);
+                setVerifyError(null);
+              }}
+              isPassword
+            />
+
+            {verifyError ? (
+              <Text fontSize="$3" color="$red10">
+                {verifyError}
+              </Text>
+            ) : null}
+
+            <Button
+              variant="primary"
+              height={46}
+              loading={verifying}
+              disabled={!verifyPassword || verifying}
+              onPress={() => void submitSave('password', verifyPassword)}
+            >
+              Confirm and save
+            </Button>
+          </YStack>
+        </Sheet.Frame>
+      </Sheet>
     </YStack>
   );
 }

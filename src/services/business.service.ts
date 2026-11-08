@@ -90,6 +90,8 @@ export async function updatePaymentSettings(
     payout_provider?: string;
     payout_schedule?: string;
     instant_payout_enabled?: boolean;
+    verification_method?: 'password' | 'biometric';
+    current_password?: string;
   },
 ): Promise<BusinessPaymentSettingsResponse> {
   return api.put<BusinessPaymentSettingsResponse>(
