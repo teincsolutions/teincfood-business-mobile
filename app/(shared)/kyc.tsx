@@ -19,8 +19,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { getItem, setItem } from "@/utils/storage";
 import {
   useUserKycQuery,
+  useRiderKycQuery,
   useBusinessKycQuery,
   useSubmitUserKycMutation,
+  useSubmitRiderKycMutation,
   useSubmitBusinessKycMutation,
 } from "@/hooks/useKyc";
 
@@ -151,6 +153,7 @@ export default function KycScreen() {
   const docType =
     type === "business" ? "business" : (role as string) || "rider";
   const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.rider;
+  const isRider = type !== "business" && docType === "rider";
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const uploadContext =
@@ -158,15 +161,21 @@ export default function KycScreen() {
       ? { entity_type: "business", entity_id: id }
       : { entity_type: "user", entity_id: userId || "unknown" };
 
-  // Fetch existing KYC data
+  // Fetch existing KYC data. Riders submit to the rider profile (the record
+  // admins review); everyone else uses the user-level endpoint.
   const { data: userKyc, isLoading: userLoading } = useUserKycQuery(
-    type !== "business",
+    type !== "business" && !isRider,
+  );
+  const { data: riderKyc, isLoading: riderLoading } = useRiderKycQuery(
+    isRider,
   );
   const { data: bizKyc, isLoading: bizLoading } = useBusinessKycQuery(
     type === "business" ? id : undefined,
   );
-  const kycData = type === "business" ? bizKyc : userKyc;
-  const loading = type === "business" ? bizLoading : userLoading;
+  const kycData =
+    type === "business" ? bizKyc : isRider ? riderKyc : userKyc;
+  const loading =
+    type === "business" ? bizLoading : isRider ? riderLoading : userLoading;
 
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(
     () => buildInitialDocs(configs),
@@ -282,6 +291,7 @@ export default function KycScreen() {
   }, [kycData]);
 
   const submitUserMutation = useSubmitUserKycMutation();
+  const submitRiderMutation = useSubmitRiderKycMutation();
   const submitBizMutation = useSubmitBusinessKycMutation();
   const completeKyc = useAuthStore((s) => s.completeKyc);
 
@@ -325,6 +335,11 @@ export default function KycScreen() {
         documents: singleDoc,
         partial: true,
       });
+    } else if (isRider) {
+      await submitRiderMutation.mutateAsync({
+        documents: singleDoc,
+        partial: true,
+      });
     } else {
       await submitUserMutation.mutateAsync({
         documents: singleDoc,
@@ -334,7 +349,11 @@ export default function KycScreen() {
     }
     queryClient.invalidateQueries({
       queryKey:
-        type === "business" ? ["kyc", "business", id] : ["kyc", "user", userId],
+        type === "business"
+          ? ["kyc", "business", id]
+          : isRider
+            ? ["kyc", "rider", userId]
+            : ["kyc", "user", userId],
     });
     // Submitted docs live on the server now — drop their drafts, and refresh
     // profile/banner state so home reflects the new kyc_status immediately.

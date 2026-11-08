@@ -109,8 +109,10 @@ export function KycForm({
   );
 
   const handleSubmitDoc = useCallback(
-    async (docId: string) => {
-      const doc = documents[docId];
+    async (docId: string, overrides?: Partial<KycDocumentState>) => {
+      const doc = { ...(documents[docId] || {}), ...(overrides || {}) } as
+        | KycDocumentState
+        | undefined;
       const config = docConfigs.find((c) => c.id === docId);
       if (!doc) return;
       // National ID (and any fileOptional doc) may be submitted with no
@@ -134,7 +136,10 @@ export function KycForm({
 
       try {
         await onSubmitDoc(docId, payload);
-        updateDoc(docId, { status: "pending" });
+        // Preserve the freshly uploaded key when auto-submitting right after
+        // an upload. `updateDoc` closes over the previous render's documents,
+        // so without the overrides the new URI can be dropped.
+        updateDoc(docId, { ...(overrides || {}), status: "pending" });
       } catch (e) {
         toast.error(extractApiErrorMessage(e));
       }
@@ -164,10 +169,18 @@ export function KycForm({
         });
         setUploadProgress(100);
 
-        // Profile photo — auto-submit immediately after upload
+        // Profile photo — auto-submit immediately after upload. Pass the
+        // just-uploaded key explicitly: this render's `documents` still has
+        // the pre-upload state, so calling handleSubmitDoc() bare used to
+        // return early and the photo was never submitted.
         const config = docConfigs.find((c) => c.id === docId);
         if (config?.isProfilePhoto) {
-          setTimeout(() => handleSubmitDoc(docId), 300);
+          await handleSubmitDoc(docId, {
+            uri: key,
+            previewUri: asset.uri,
+            fileName: asset.name,
+            uploadedAt: new Date().toISOString().split("T")[0],
+          });
         }
       } catch (e) {
         updateDoc(docId, { status: "not_uploaded", previewUri: undefined });

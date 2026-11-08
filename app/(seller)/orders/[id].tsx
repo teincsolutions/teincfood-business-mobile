@@ -282,6 +282,11 @@ export default function OrderDetails({
     );
   }
 
+  // Older local rows / offline snapshots may not have an items array. Keep
+  // rendering defensive: reading `.length` on undefined used to be a fatal
+  // JS error, which expo-updates turns into a native crash.
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+
   return (
     <YStack
       flex={1}
@@ -503,14 +508,14 @@ export default function OrderDetails({
           )}
 
           {/* Order Items */}
-          {order.items.length > 0 && (
+          {orderItems.length > 0 && (
             <Card padding="$4" bordered>
               <YStack gap="$3">
                 <Text fontSize="$4" fontWeight="bold">
                   Order Items
                 </Text>
                 <Separator />
-                {order.items.map((item) => (
+                {orderItems.map((item) => (
                   <YStack key={item.id} gap="$1">
                     <XStack justifyContent="space-between" alignItems="center">
                       <YStack flex={1}>

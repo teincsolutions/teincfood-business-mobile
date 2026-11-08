@@ -55,7 +55,23 @@ export function RiderSelectionSheet({
         <FlatList
           data={riders ?? []}
           keyExtractor={(item) => item.id}
-          renderItem={({ item: rider }) => (
+          renderItem={({ item: rider }) => {
+            // The API returns the display name under `user.full_name` (plus a
+            // flattened `name` on newer builds). Never assume either is
+            // present — a missing name here used to crash the whole order
+            // detail screen when the sheet rendered offscreen.
+            const riderName =
+              rider.name ??
+              (rider as any).user?.full_name ??
+              (rider as any).user?.name ??
+              rider.rider_number ??
+              "Rider";
+            const vehicleType =
+              rider.vehicle_type ?? (rider as any).vehicle?.type ?? "";
+            const rating = rider.rating ?? (rider as any).average_rating ?? 0;
+            const distance = rider.distance;
+
+            return (
             <Card
               padding="$4"
               marginBottom="$3"
@@ -75,33 +91,35 @@ export function RiderSelectionSheet({
                   justifyContent="center"
                 >
                   <Text color="white" fontSize="$5" fontWeight="bold">
-                    {rider.name.charAt(0)}
+                    {riderName.charAt(0).toUpperCase()}
                   </Text>
                 </YStack>
 
                 <YStack flex={1} gap="$1">
                   <XStack alignItems="center" gap="$2">
-                    <Text fontSize="$4" fontWeight="bold">{rider.name}</Text>
-                    <XStack alignItems="center" gap="$0.5">
-                      <Star size={12} color="$yellow10" />
-                      <Text fontSize="$2" color="$colorMuted">{rider.rating}</Text>
-                    </XStack>
+                    <Text fontSize="$4" fontWeight="bold" numberOfLines={1}>{riderName}</Text>
+                    {rating > 0 ? (
+                      <XStack alignItems="center" gap="$0.5">
+                        <Star size={12} color="$yellow10" />
+                        <Text fontSize="$2" color="$colorMuted">{rating}</Text>
+                      </XStack>
+                    ) : null}
                   </XStack>
 
                   <XStack alignItems="center" gap="$2">
-                    {getVehicleIcon(rider.vehicle_type)}
+                    {getVehicleIcon(vehicleType)}
                     <Text fontSize="$3" color="$colorSecondary">
-                      {rider.vehicle_type === 'motorcycle' ? 'Motorcycle' : rider.vehicle_type === 'car' ? 'Car' : 'Bicycle'}
+                      {vehicleType === 'motorcycle' ? 'Motorcycle' : vehicleType === 'car' ? 'Car' : 'Bicycle'}
                     </Text>
                   </XStack>
 
                   <XStack alignItems="center" gap="$1">
                     <Navigation size={12} color="$success" />
                     <Text fontSize="$2" color="$success" fontWeight="600">
-                      {rider.distance != null && rider.distance < 1
-                        ? `${(rider.distance * 1000).toFixed(0)}m away`
-                        : rider.distance != null
-                          ? `${rider.distance.toFixed(1)}km away`
+                      {distance != null && distance < 1
+                        ? `${(distance * 1000).toFixed(0)}m away`
+                        : distance != null
+                          ? `${distance.toFixed(1)}km away`
                           : 'Unknown distance'}
                     </Text>
                   </XStack>
@@ -113,7 +131,8 @@ export function RiderSelectionSheet({
                 />
               </XStack>
             </Card>
-          )}
+            );
+          }}
           ListEmptyComponent={
             <YStack padding="$6" alignItems="center">
               <Text color="$colorMuted">No riders available</Text>
