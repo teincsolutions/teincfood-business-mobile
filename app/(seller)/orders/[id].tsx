@@ -985,19 +985,21 @@ export default function OrderDetails({
         }}
       />
 
-      <RiderSelectionSheet
-        visible={showRiderSheet}
-        onClose={() => setShowRiderSheet(false)}
-        riders={riders ?? []}
-        onSelectRider={(riderId) => {
-          setShowRiderSheet(false);
-          if (order?.delivery_person) {
-            setPendingRiderChange({ orderId: order!.id, riderId });
-          } else {
-            assignRider.mutate({ orderId: order!.id, riderId });
-          }
-        }}
-      />
+      {showRiderSheet ? (
+        <RiderSelectionSheet
+          visible={showRiderSheet}
+          onClose={() => setShowRiderSheet(false)}
+          riders={riders ?? []}
+          onSelectRider={(riderId) => {
+            setShowRiderSheet(false);
+            if (order?.delivery_person) {
+              setPendingRiderChange({ orderId: order!.id, riderId });
+            } else {
+              assignRider.mutate({ orderId: order!.id, riderId });
+            }
+          }}
+        />
+      ) : null}
 
       <AppAlertDialog
         open={pendingRiderChange !== null}
