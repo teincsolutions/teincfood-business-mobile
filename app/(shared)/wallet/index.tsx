@@ -21,7 +21,8 @@ import {
   ArrowUpRight,
 } from "@tamagui/lucide-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { BackButton, Button } from "@/components/ui";
+import { toast } from "sonner-native";
+import { BackButton, Button, Input } from "@/components/ui";
 import {
   WALLET_KEYS,
   useAllBalancesQuery,
@@ -32,6 +33,11 @@ import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { usePaymentSettingsQuery } from "@/hooks/usePaymentSettings";
+import {
+  usePendingPayoutsQuery,
+  useResendPayoutOtpMutation,
+  useSubmitPayoutOtpMutation,
+} from "@/hooks/useWalletPayouts";
 import { WithdrawSheet } from "@/components/wallet/WithdrawSheet";
 
 function formatMinor(amount: number, currency = "GHS") {
@@ -55,6 +61,13 @@ export default function WalletScreen() {
   );
   const queryClient = useQueryClient();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [payoutOtp, setPayoutOtp] = useState("");
+  const [payoutOtpError, setPayoutOtpError] = useState<string | null>(null);
+
+  const { data: pendingPayouts } = usePendingPayoutsQuery(activeBusiness?.id);
+  const submitPayoutOtp = useSubmitPayoutOtpMutation();
+  const resendPayoutOtp = useResendPayoutOtpMutation();
+  const otpPayout = pendingPayouts?.data?.find((payout) => payout.otp_required);
 
   const isLoading = loadingAll || (Boolean(activeBusiness?.id) && loadingBiz);
   const balances = allBalances?.data.balances ?? [];
@@ -107,6 +120,44 @@ export default function WalletScreen() {
   const canWithdraw = useHasCapability("finance_withdraw");
   const showBusinessBalance = !isSellerOrFleet || canFinanceRead;
 
+  const handleApproveTransfer = () => {
+    if (!otpPayout) return;
+    const code = payoutOtp.trim();
+    if (!/^\d{4,10}$/.test(code)) {
+      setPayoutOtpError("Enter the OTP Paystack sent to your phone.");
+      return;
+    }
+    setPayoutOtpError(null);
+    submitPayoutOtp.mutate(
+      { reference: otpPayout.reference, otp: code },
+      {
+        onSuccess: () => {
+          toast.success("Transfer approved");
+          setPayoutOtp("");
+          void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+        },
+        onError: (error) => {
+          setPayoutOtpError(
+            error instanceof Error
+              ? error.message
+              : "Could not approve the transfer.",
+          );
+        },
+      },
+    );
+  };
+
+  const handleResendTransferOtp = () => {
+    if (!otpPayout) return;
+    resendPayoutOtp.mutate(otpPayout.reference, {
+      onSuccess: () => toast.success("Transfer OTP resent"),
+      onError: (error) =>
+        toast.error(
+          error instanceof Error ? error.message : "Could not resend the OTP",
+        ),
+    });
+  };
+
   return (
     <YStack flex={1} backgroundColor="$background">
       <YStack
@@ -146,6 +197,68 @@ export default function WalletScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: "$4", paddingBottom: 40 }}
           >
+            {otpPayout ? (
+              <Card
+                padding="$4"
+                bordered
+                borderColor="$warning"
+                backgroundColor="$yellow2"
+              >
+                <YStack gap="$3">
+                  <XStack gap="$2" alignItems="center">
+                    <Lock size={18} color="$warning" />
+                    <Text
+                      fontSize="$4"
+                      fontWeight="700"
+                      fontFamily="$heading"
+                      color="$color"
+                    >
+                      Approve transfer
+                    </Text>
+                  </XStack>
+                  <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                    {`Paystack sent a transfer OTP to your phone for the ${formatMinor(
+                      otpPayout.amount_minor,
+                      otpPayout.currency || walletCurrency,
+                    )} payout. Enter it below to release the money.`}
+                  </Text>
+                  <Input
+                    keyboardType="number-pad"
+                    placeholder="Enter transfer OTP"
+                    value={payoutOtp}
+                    onChangeText={(value) => {
+                      setPayoutOtp(value.replace(/\D/g, ""));
+                      setPayoutOtpError(null);
+                    }}
+                    error={payoutOtpError ?? undefined}
+                    textContentType="oneTimeCode"
+                    autoComplete="sms-otp"
+                  />
+                  <XStack gap="$2">
+                    <Button
+                      flex={1}
+                      variant="primary"
+                      height={46}
+                      loading={submitPayoutOtp.isPending}
+                      disabled={submitPayoutOtp.isPending || !payoutOtp}
+                      onPress={handleApproveTransfer}
+                    >
+                      Confirm transfer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      height={46}
+                      loading={resendPayoutOtp.isPending}
+                      disabled={resendPayoutOtp.isPending}
+                      onPress={handleResendTransferOtp}
+                    >
+                      Resend OTP
+                    </Button>
+                  </XStack>
+                </YStack>
+              </Card>
+            ) : null}
+
             {/* Balance card */}
             <Card
               padding="$4"
@@ -368,6 +481,9 @@ export default function WalletScreen() {
           settings={paymentSettings?.data}
           onSuccess={() => {
             void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+            void queryClient.invalidateQueries({
+              queryKey: ["wallet-pending-payouts", activeBusiness.id],
+            });
           }}
         />
       ) : null}

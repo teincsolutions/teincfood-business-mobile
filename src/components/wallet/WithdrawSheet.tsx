@@ -5,9 +5,13 @@ import { Sheet, YStack, XStack, Text, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X } from "@tamagui/lucide-icons";
 import { useMutation } from "@tanstack/react-query";
+import * as LocalAuthentication from "expo-local-authentication";
+import { useRouter } from "expo-router";
 import { toast } from "sonner-native";
-import { formatPriceFromMinor } from "@teincfood/core";
-import { Button, Input } from "@/components/ui";
+import { extractApiErrorCode, formatPriceFromMinor } from "@teincfood/core";
+import { AppAlertDialog, Button, Input } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth.store";
+import { useProfileQuery } from "@/hooks/useProfile";
 import * as walletService from "@/services/wallet.service";
 import type { BusinessPaymentSettings } from "@/services/business.service";
 
@@ -38,6 +42,10 @@ export function WithdrawSheet({
 }) {
   const media = useMedia();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const storeUser = useAuthStore((s) => s.user);
+  const { data: profile } = useProfileQuery();
+  const hasPassword = (profile ?? storeUser)?.has_password === true;
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PayoutMethod>("mobile_money");
   const [momoNumber, setMomoNumber] = useState("");
@@ -45,6 +53,11 @@ export function WithdrawSheet({
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
+  const [passwordStep, setPasswordStep] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [verificationBusy, setVerificationBusy] = useState(false);
+  const [setupPasswordOpen, setSetupPasswordOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -55,6 +68,10 @@ export function WithdrawSheet({
     setBankCode(settings?.payout_bank_code ?? "");
     setAccountNumber(settings?.payout_account_number ?? "");
     setAccountName(settings?.payout_account_name ?? "");
+    setPasswordStep(false);
+    setPassword("");
+    setPasswordError(null);
+    setSetupPasswordOpen(false);
   }, [open, settings]);
 
   const amountMinor = useMemo(() => {
@@ -70,12 +87,17 @@ export function WithdrawSheet({
   const insufficient = amountMinor > 0 && totalMinor > balanceMinor;
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (verification: {
+      method: "biometric" | "password";
+      currentPassword?: string;
+    }) => {
       if (!businessId) throw new Error("No active business");
       return walletService.withdrawFromWallet({
         businessId,
         amountMinor,
         payoutMethod: method,
+        verificationMethod: verification.method,
+        currentPassword: verification.currentPassword,
         ...(method === "mobile_money"
           ? { momoNumber: momoNumber.trim(), provider }
           : {
@@ -92,6 +114,16 @@ export function WithdrawSheet({
     },
     onError: (error: any) => {
       console.debug("[WithdrawSheet] withdrawal failed", error);
+      const code = extractApiErrorCode(error);
+      if (code === "PASSWORD_SETUP_REQUIRED") {
+        setSetupPasswordOpen(true);
+        return;
+      }
+      if (code === "INVALID_PASSWORD") {
+        setPasswordStep(true);
+        setPasswordError("Current password is incorrect.");
+        return;
+      }
       toast.error(error?.message || "Could not start the withdrawal");
     },
   });
@@ -106,7 +138,57 @@ export function WithdrawSheet({
     amountMinor > 0 &&
     !insufficient &&
     validDetails &&
-    !mutation.isPending;
+    !mutation.isPending &&
+    !verificationBusy;
+
+  const handleWithdrawPress = async () => {
+    if (!canSubmit) return;
+    Keyboard.dismiss();
+
+    if (passwordStep) {
+      if (!password) {
+        setPasswordError("Enter your account password.");
+        return;
+      }
+      mutation.mutate({ method: "password", currentPassword: password });
+      return;
+    }
+
+    try {
+      setVerificationBusy(true);
+      const [hasHardware, isEnrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+
+      if (hasHardware && isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: "Confirm wallet withdrawal",
+          fallbackLabel: "Use password",
+          cancelLabel: "Cancel",
+          disableDeviceFallback: false,
+        });
+
+        if (result.success) {
+          mutation.mutate({ method: "biometric" });
+          return;
+        }
+      }
+    } catch (error) {
+      console.debug("[WithdrawSheet] biometric check failed", error);
+    } finally {
+      setVerificationBusy(false);
+    }
+
+    if (!hasPassword) {
+      setSetupPasswordOpen(true);
+      return;
+    }
+
+    setPassword("");
+    setPasswordError(null);
+    setPasswordStep(true);
+  };
 
   return (
     <Sheet
@@ -307,22 +389,76 @@ export function WithdrawSheet({
               ) : null}
             </YStack>
 
+            {passwordStep ? (
+              <YStack gap="$2">
+                <Input
+                  label="Account password"
+                  placeholder="Current password"
+                  isPassword
+                  value={password}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    setPasswordError(null);
+                  }}
+                  error={passwordError ?? undefined}
+                  returnKeyType="done"
+                  onSubmitEditing={() => void handleWithdrawPress()}
+                />
+                <Text fontSize="$2" color="$colorSecondary">
+                  Confirm with your password to approve this withdrawal.
+                </Text>
+              </YStack>
+            ) : null}
+
             <Button
               variant="primary"
               height={48}
-              disabled={!canSubmit}
-              loading={mutation.isPending}
-              onPress={() => {
-                Keyboard.dismiss();
-                mutation.mutate();
-              }}
+              disabled={
+                !canSubmit || (passwordStep && password.trim().length === 0)
+              }
+              loading={mutation.isPending || verificationBusy}
+              onPress={() => void handleWithdrawPress()}
             >
-              {mutation.isPending ? "Starting withdrawal..." : "Withdraw"}
+              {verificationBusy
+                ? "VERIFYING..."
+                : mutation.isPending
+                  ? "Starting withdrawal..."
+                  : passwordStep
+                    ? "CONFIRM WITHDRAWAL"
+                    : "Withdraw"}
             </Button>
+
+            {passwordStep ? (
+              <Button
+                variant="outline"
+                height={44}
+                disabled={mutation.isPending}
+                onPress={() => {
+                  setPasswordStep(false);
+                  setPassword("");
+                  setPasswordError(null);
+                }}
+              >
+                Back
+              </Button>
+            ) : null}
           </YStack>
           </Sheet.ScrollView>
         </KeyboardAvoidingView>
       </Sheet.Frame>
+
+      <AppAlertDialog
+        open={setupPasswordOpen}
+        onOpenChange={setSetupPasswordOpen}
+        title="Set a password first"
+        description="Add a password in Privacy & Security so withdrawals can be approved securely."
+        confirmText="Set password"
+        onConfirm={() => {
+          setSetupPasswordOpen(false);
+          onOpenChange(false);
+          router.push("/(shared)/profile/security");
+        }}
+      />
     </Sheet>
   );
 }
