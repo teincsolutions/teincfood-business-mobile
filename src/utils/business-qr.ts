@@ -2,12 +2,18 @@
  * Business QR helpers.
  *
  * QR codes encode the universal business URL
- * (https://food.teincsolutions.com/biz/<BUSINESS_NUMBER>) so buyers and
- * riders share one code. Rider join needs only the business number —
- * these helpers extract it from any scanned content.
+ * (<frontend-domain>/biz/<BUSINESS_NUMBER>) so buyers and riders share one
+ * code. The frontend domain comes from EXPO_PUBLIC_FRONTEND_URL so test and
+ * production builds point at their own environment. Rider join needs only
+ * the business number — these helpers extract it from any scanned content.
  */
 
-export const BUSINESS_LINK_BASE = "https://food.teincsolutions.com/biz";
+const rawFrontendUrl =
+  process.env.EXPO_PUBLIC_FRONTEND_URL?.trim() || "https://food.teincsolutions.com";
+
+export const FRONTEND_URL = rawFrontendUrl.replace(/\/+$/, "");
+
+export const BUSINESS_LINK_BASE = `${FRONTEND_URL}/biz`;
 
 export function businessQrUrl(businessNumber: string): string {
   return `${BUSINESS_LINK_BASE}/${businessNumber.trim().toUpperCase()}`;
