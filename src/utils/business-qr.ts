@@ -8,8 +8,10 @@
  * the business number — these helpers extract it from any scanned content.
  */
 
-const rawFrontendUrl =
-  process.env.EXPO_PUBLIC_FRONTEND_URL?.trim() || "https://food.teincsolutions.com";
+// Direct property access keeps Expo's EXPO_PUBLIC_* inlining reliable.
+const rawFrontendUrl = (
+  process.env.EXPO_PUBLIC_FRONTEND_URL || "https://food.teincsolutions.com"
+).trim();
 
 export const FRONTEND_URL = rawFrontendUrl.replace(/\/+$/, "");
 
