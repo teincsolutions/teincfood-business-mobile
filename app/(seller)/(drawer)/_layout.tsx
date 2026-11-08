@@ -207,7 +207,7 @@ export default function SellerDrawerLayout() {
             headerTintColor: theme.color.val,
             headerTitleStyle: {
               fontFamily: "Manrope_600SemiBold",
-              fontSize: 34,
+              fontSize: 30,
             },
             drawerStyle: {
               backgroundColor: theme.background.val,
