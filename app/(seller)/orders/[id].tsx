@@ -989,7 +989,7 @@ export default function OrderDetails({
         <RiderSelectionSheet
           visible={showRiderSheet}
           onClose={() => setShowRiderSheet(false)}
-          riders={riders ?? []}
+          riders={riders?.data ?? []}
           onSelectRider={(riderId) => {
             setShowRiderSheet(false);
             if (order?.delivery_person) {

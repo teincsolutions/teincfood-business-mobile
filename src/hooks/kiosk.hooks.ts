@@ -18,6 +18,10 @@ import * as kioskService from "@/services/kiosk.service";
 import { useBusinessStore } from "@/stores/business.store";
 import { KIOSK_KEYS as Keys } from "@teincfood/core";
 
+/**
+ * Returns the backend response as-is: `{ data: DeliveryRider[] }`.
+ * Consumers must read `.data` — do not remap/unwrap here.
+ */
 export function useAvailableRidersQuery(enabled = true) {
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   return useQuery({

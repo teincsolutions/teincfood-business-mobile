@@ -2054,7 +2054,7 @@ function useRiderAssign() {
         setShowRiderSheet(false);
         setSelectedOrderId(null);
       }}
-      riders={(riders as any) ?? []}
+      riders={riders?.data ?? []}
       onSelectRider={handleSelectRider}
     />
   );

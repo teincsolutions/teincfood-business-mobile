@@ -347,7 +347,7 @@ export default function KitchenDisplay() {
       <RiderSelectionSheet
         visible={showRiderSheet}
         onClose={() => setShowRiderSheet(false)}
-        riders={(riders as any) ?? []}
+        riders={riders?.data ?? []}
         onSelectRider={handleAssignRider}
       />
 

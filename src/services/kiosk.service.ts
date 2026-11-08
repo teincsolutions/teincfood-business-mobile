@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { SellerOrder, SellerOrdersResponse, BusinessDelivery, DeliveryRider } from '@teincfood/core';
+import type { SellerOrder, SellerOrdersResponse, BusinessDelivery } from '@teincfood/core';
 
 export async function fetchKioskOrders(businessId?: string): Promise<SellerOrdersResponse> {
   if (businessId) {
@@ -28,8 +28,44 @@ export async function confirmKioskPickup(deliveryId: string): Promise<{ data: Bu
   return api.post(`/deliveries/${deliveryId}/confirm-pickup`);
 }
 
-export async function fetchAvailableRiders(businessId?: string): Promise<{ data: DeliveryRider[] }> {
-  return api.get('/deliveries/available-riders', {
+/** Shape returned by `GET /deliveries/available-riders` (flattened by the API). */
+export interface AvailableRider {
+  id: string;
+  rider_number?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
+  rating?: number | null;
+  vehicle_type?: string | null;
+  status?: string | null;
+  is_online?: boolean;
+  is_active?: boolean;
+  kyc_status?: string | null;
+  license_number?: string | null;
+  user?: {
+    id: string;
+    full_name: string | null;
+    phone: string | null;
+  } | null;
+  vehicle?: {
+    id: string;
+    type: string | null;
+    plate_number?: string | null;
+    brand?: string | null;
+    model?: string | null;
+    color?: string | null;
+    year?: number | null;
+  } | null;
+}
+
+export interface AvailableRidersResponse {
+  data: AvailableRider[];
+}
+
+export async function fetchAvailableRiders(
+  businessId?: string,
+): Promise<AvailableRidersResponse> {
+  return api.get<AvailableRidersResponse>('/deliveries/available-riders', {
     params: { business_id: businessId },
   });
 }

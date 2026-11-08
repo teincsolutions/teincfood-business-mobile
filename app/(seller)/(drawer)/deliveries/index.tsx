@@ -842,7 +842,7 @@ export default function SellerDeliveries() {
           setShowRiderSheet(false);
           setSelectedOrderId(null);
         }}
-        riders={riders ?? []}
+        riders={riders?.data ?? []}
         onSelectRider={handleAssignRider}
       />
 

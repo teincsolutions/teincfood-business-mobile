@@ -58,7 +58,7 @@ export function MakeDeliverySheet({
 
   const canAssignRider =
     order && ["ready", "waiting_pickup"].includes(order.status);
-  const { data: riders = [] } = useAvailableRidersQuery(
+  const { data: ridersResponse } = useAvailableRidersQuery(
     open && Boolean(canAssignRider),
   );
   const { details, isLoading: detailsLoading } =
@@ -83,14 +83,14 @@ export function MakeDeliverySheet({
 
   const availableRiders = useMemo(
     () =>
-      (riders ?? []).filter(
-        (rider: any) =>
+      (ridersResponse?.data ?? []).filter(
+        (rider) =>
           rider &&
           rider.id &&
           rider.status !== "offline" &&
           rider.is_active !== false,
       ),
-    [riders],
+    [ridersResponse],
   );
 
   const handleClose = () => {

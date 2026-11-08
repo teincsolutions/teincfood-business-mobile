@@ -305,7 +305,7 @@ export default function KioskMode() {
   const handleAssignRider = (riderId: string) => {
     if (!selectedOrderId) return;
 
-    const rider = riders?.find((r) => r.id === riderId);
+    const rider = riders?.data?.find((r) => r.id === riderId);
 
     // Close the rider sheet first so the dialog renders on top
     setShowRiderSheet(false);
@@ -866,7 +866,7 @@ export default function KioskMode() {
       <RiderSelectionSheet
         visible={showRiderSheet}
         onClose={() => setShowRiderSheet(false)}
-        riders={riders ?? []}
+        riders={riders?.data ?? []}
         onSelectRider={handleAssignRider}
       />
 
