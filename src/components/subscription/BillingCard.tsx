@@ -23,6 +23,7 @@ import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import {
   useBillingQuery,
   useCancelSubscriptionMutation,
+  useCheckoutSubscriptionMutation,
   useResumeSubscriptionMutation,
   useUpdateBillingProfileMutation,
 } from "@/hooks/useSubscription";
@@ -52,6 +53,7 @@ export function BillingCard() {
   const billing = useBillingQuery();
   const updateProfile = useUpdateBillingProfileMutation();
   const cancel = useCancelSubscriptionMutation();
+  const checkout = useCheckoutSubscriptionMutation();
   const resume = useResumeSubscriptionMutation();
   const queryClient = useQueryClient();
 
@@ -113,6 +115,37 @@ export function BillingCard() {
     queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
     queryClient.invalidateQueries({ queryKey: ["billing"] });
     toast.success("Subscription payment confirmed");
+  };
+
+  const freePlan = data?.available_plans?.find(
+    (plan) =>
+      (plan.monthly_fee_minor ?? 0) <= 0 && (plan.yearly_fee_minor ?? 0) <= 0,
+  );
+  const canCancelDuePlan =
+    Boolean(freePlan) &&
+    ((upcoming?.status === "open" && upcomingIsDue) ||
+      config?.subscription_status === "past_due");
+
+  const switchToFree = () => {
+    if (!freePlan) return;
+    checkout.mutate(
+      {
+        plan_id: freePlan.id,
+        cycle: "month",
+        start_trial: false,
+        defer_payment: true,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Switched to the Free plan");
+          void billing.refetch();
+        },
+        onError: (err) =>
+          toast.error(
+            err instanceof Error ? err.message : "Could not switch to Free",
+          ),
+      },
+    );
   };
 
   if (!online) {
@@ -367,6 +400,17 @@ export function BillingCard() {
                     ? "Retry payment"
                     : "Pay now"}
             </Button>
+            {canCancelDuePlan ? (
+              <Button
+                variant="outline"
+                height={46}
+                loading={checkout.isPending}
+                disabled={checkout.isPending}
+                onPress={switchToFree}
+              >
+                Cancel plan and switch to Free
+              </Button>
+            ) : null}
           </YStack>
         ) : (
           <YStack gap="$1">
@@ -377,6 +421,17 @@ export function BillingCard() {
               <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
                 Current period ends {formatDate(config.current_period_end)}.
               </Text>
+            ) : null}
+            {canCancelDuePlan ? (
+              <Button
+                variant="outline"
+                height={46}
+                loading={checkout.isPending}
+                disabled={checkout.isPending}
+                onPress={switchToFree}
+              >
+                Cancel plan and switch to Free
+              </Button>
             ) : null}
           </YStack>
         )}

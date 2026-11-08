@@ -58,7 +58,6 @@ export default function PaymentSettings() {
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
   const [payoutProvider, setPayoutProvider] = useState('mtn');
   const [payoutSchedule, setPayoutSchedule] = useState('daily');
-  const [instantPayoutEnabled, setInstantPayoutEnabled] = useState(false);
   const [payoutFeeMinor, setPayoutFeeMinor] = useState(100);
   const [bankPayoutFeeMinor, setBankPayoutFeeMinor] = useState(800);
 
@@ -84,8 +83,12 @@ export default function PaymentSettings() {
     setAccountName(settings.payout_account_name ?? '');
     setMobileMoneyNumber(settings.payout_momo_number ?? '');
     setPayoutProvider(settings.payout_provider ?? 'mtn');
-    setPayoutSchedule(settings.payout_schedule ?? 'daily');
-    setInstantPayoutEnabled(settings.instant_payout_enabled ?? false);
+    const instantEnabled =
+      settings.instant_payout_enabled === true ||
+      settings.payout_schedule === 'instant';
+    setPayoutSchedule(
+      instantEnabled ? 'instant' : (settings.payout_schedule ?? 'daily'),
+    );
     setPayoutFeeMinor(settings.payout_fee_minor ?? 100);
     setBankPayoutFeeMinor(settings.bank_payout_fee_minor ?? 800);
   }, [paymentSettingsQuery.data]);
@@ -115,7 +118,7 @@ export default function PaymentSettings() {
     payout_momo_number: mobileMoneyNumber.trim(),
     payout_provider: payoutProvider,
     payout_schedule: payoutSchedule,
-    instant_payout_enabled: instantPayoutEnabled,
+    instant_payout_enabled: payoutSchedule === 'instant',
   });
 
   const submitSave = async (
@@ -221,6 +224,7 @@ export default function PaymentSettings() {
   };
 
   const payoutOptions = [
+    { value: 'instant', label: 'Instant', description: 'Send each settled order straight to your payout account' },
     { value: 'daily', label: 'Daily', description: 'Receive payouts every day' },
     { value: 'weekly', label: 'Weekly', description: 'Receive payouts every Monday' },
     { value: 'biweekly', label: 'Bi-weekly', description: 'Receive payouts every 2 weeks' },
@@ -426,6 +430,13 @@ export default function PaymentSettings() {
                 <Clock size={20} color="$primary" />
                 <Text fontWeight="bold" fontSize="$5">Payout Schedule</Text>
               </XStack>
+              <Text fontSize="$2" color="$colorMuted">
+                Choose Instant to send each settled order straight to your{' '}
+                {payoutMethod === 'bank' ? 'bank account' : 'mobile-money account'}.
+                Paystack charges {currency}{' '}
+                {((payoutMethod === 'bank' ? bankPayoutFeeMinor : payoutFeeMinor) / 100).toFixed(2)}{' '}
+                per instant transfer, deducted from the payout.
+              </Text>
               <Separator />
               {payoutOptions.map((option) => (
                 <TamaguiButton
@@ -451,34 +462,9 @@ export default function PaymentSettings() {
                   </XStack>
                 </TamaguiButton>
               ))}
-            </YStack>
-          </Card>
-
-          <Card padding="$4" bordered>
-            <YStack gap="$3">
-              <XStack justifyContent="space-between" alignItems="center" gap="$3">
-                <YStack flex={1}>
-                  <Text fontWeight="bold" fontSize="$5">Instant Payout</Text>
-                  <Text fontSize="$2" color="$colorMuted" marginTop="$1">
-                    Send each order&apos;s settled amount straight to your{' '}
-                    {payoutMethod === 'bank' ? 'bank account' : 'mobile-money account'}.
-                    Paystack charges {currency}{' '}
-                    {((payoutMethod === 'bank' ? bankPayoutFeeMinor : payoutFeeMinor) / 100).toFixed(2)}{' '}
-                    per transfer, deducted from the payout. Off keeps money in
-                    your wallet.
-                  </Text>
-                </YStack>
-                <Switch
-                  size="$3"
-                  checked={instantPayoutEnabled}
-                  onCheckedChange={setInstantPayoutEnabled}
-                >
-                  <Switch.Thumb animation="quick" />
-                </Switch>
-              </XStack>
               <Text fontSize="$1" color="$colorMuted">
-                Wallet is credited first. A failed transfer never blocks the
-                order and is refunded to the wallet automatically.
+                Wallet is credited first. Failed instant transfers never block
+                the order and are refunded to the wallet automatically.
               </Text>
             </YStack>
           </Card>
