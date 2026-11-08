@@ -10,7 +10,7 @@
 
 // Direct property access keeps Expo's EXPO_PUBLIC_* inlining reliable.
 const rawFrontendUrl = (
-  process.env.EXPO_PUBLIC_FRONTEND_URL || "https://food.teincsolutions.com"
+  process.env.EXPO_PUBLIC_FRONTEND_URL || "https://teincfood.com"
 ).trim();
 
 export const FRONTEND_URL = rawFrontendUrl.replace(/\/+$/, "");
@@ -23,7 +23,7 @@ export function businessQrUrl(businessNumber: string): string {
 
 /**
  * Extract a business number from scanned QR content. Accepts:
- * - https://food.teincsolutions.com/biz/ABC-1234 (any host, /biz/ path)
+ * - https://teincfood.com/biz/ABC-1234 (any host, /biz/ path)
  * - teincfood://biz/ABC-1234 style deep links
  * - raw ABC-1234
  * Returns the uppercased number or null when unparseable.
