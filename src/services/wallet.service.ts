@@ -14,8 +14,12 @@ export async function fetchBusinessWalletBalance(businessId: string): Promise<Wa
 export async function withdrawFromWallet(params: {
   businessId: string;
   amountMinor: number;
+  payoutMethod?: 'mobile_money' | 'bank';
   momoNumber?: string;
   provider?: string;
+  bankCode?: string;
+  accountNumber?: string;
+  accountName?: string;
 }): Promise<{
   data: {
     transaction_id: string;
@@ -30,8 +34,12 @@ export async function withdrawFromWallet(params: {
   return api.post('/wallet/withdraw', {
     business_id: params.businessId,
     amount_minor: params.amountMinor,
+    ...(params.payoutMethod ? { payout_method: params.payoutMethod } : {}),
     ...(params.momoNumber ? { momo_number: params.momoNumber } : {}),
     ...(params.provider ? { provider: params.provider } : {}),
+    ...(params.bankCode ? { bank_code: params.bankCode } : {}),
+    ...(params.accountNumber ? { account_number: params.accountNumber } : {}),
+    ...(params.accountName ? { account_name: params.accountName } : {}),
   });
 }
 

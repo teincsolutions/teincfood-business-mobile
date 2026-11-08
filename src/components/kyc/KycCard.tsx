@@ -40,6 +40,8 @@ export interface KycDocConfig {
   description: string;
   required: boolean;
   hasIdNumber?: boolean;
+  /** Placeholder for the id-number field (e.g. TIN / Tax number). */
+  idNumberPlaceholder?: string;
   hasIdType?: boolean;
   hasDates?: boolean;
   isProfilePhoto?: boolean;
@@ -229,7 +231,7 @@ export function KycCard({
         <YStack paddingLeft="$11" marginTop="$1">
           <FormInput
             label=""
-            placeholder={`${config.name} number`}
+            placeholder={config.idNumberPlaceholder ?? `${config.name} number`}
             value={idNumber || ""}
             onChangeText={onIdNumberChange || (() => {})}
             editable={status !== "verified"}

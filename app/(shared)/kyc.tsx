@@ -2,12 +2,10 @@
 import { useState, useEffect } from "react";
 import { ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { YStack, XStack, Text, Card } from "tamagui";
+import { YStack, XStack, Text } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
-import * as DocumentPicker from "expo-document-picker";
-import { BackButton, Button } from "@/components/ui";
-import { uploadImage } from "@/services/upload.service";
+import { BackButton } from "@/components/ui";
 import * as walletService from "@/services/wallet.service";
 import {
   KycForm,
@@ -17,6 +15,7 @@ import {
 import { toast } from "sonner-native";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
+import { useRoleStore } from "@/stores/role.store";
 import { getItem, setItem } from "@/utils/storage";
 import {
   useUserKycQuery,
@@ -27,34 +26,54 @@ import {
   useSubmitBusinessKycMutation,
 } from "@/hooks/useKyc";
 
+const TAX_CERTIFICATE_DOC: KycDocConfig = {
+  id: "tax_certificate",
+  name: "Tax Certificate",
+  description:
+    "Optional. Upload your tax registration certificate and enter the TIN / tax number.",
+  required: false,
+  hasIdNumber: true,
+  idNumberPlaceholder: "TIN / Tax number",
+  hasDates: true,
+};
+
+const SELLER_DOCS: KycDocConfig[] = [
+  {
+    id: "national_id",
+    name: "National ID",
+    description: "Owner's government-issued ID",
+    required: true,
+    hasIdType: true,
+    hasIdNumber: true,
+    hasDates: true,
+  },
+  {
+    id: "business_cert",
+    name: "Registration Certificate",
+    description: "Business registration certificate or certificate of incorporation",
+    required: true,
+    hasIdNumber: true,
+    hasDates: true,
+  },
+  TAX_CERTIFICATE_DOC,
+];
+
+const FLEET_DOCS: KycDocConfig[] = [
+  {
+    id: "business_license",
+    name: "Business License",
+    description: "Valid operating licence for the delivery/fleet business",
+    required: true,
+    hasIdNumber: true,
+    hasDates: true,
+  },
+  TAX_CERTIFICATE_DOC,
+];
+
 const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
-  business: [
-    {
-      id: "national_id",
-      name: "National ID",
-      description: "Owner's government-issued ID",
-      required: true,
-      hasIdType: true,
-      hasIdNumber: true,
-      hasDates: true,
-    },
-    {
-      id: "business_license",
-      name: "Business License",
-      description: "Valid business operating license",
-      required: true,
-      hasIdNumber: true,
-      hasDates: true,
-    },
-    {
-      id: "business_cert",
-      name: "Business Certificate",
-      description: "Certificate of incorporation or business registration",
-      required: true,
-      hasIdNumber: true,
-      hasDates: true,
-    },
-  ],
+  business: SELLER_DOCS,
+  seller: SELLER_DOCS,
+  fleet_manager: FLEET_DOCS,
   rider: [
     {
       id: "profile_photo",
@@ -88,10 +107,6 @@ const DOCS_BY_TYPE: Record<string, KycDocConfig[]> = {
     },
   ],
 };
-
-// Sellers/fleet managers use the same business documents as business owners.
-DOCS_BY_TYPE.seller = DOCS_BY_TYPE.business;
-DOCS_BY_TYPE.fleet_manager = DOCS_BY_TYPE.business;
 
 // Unsaved per-requirement drafts, keyed by owner + flow. Survives app restarts;
 // cleared per document on successful submit.
@@ -156,14 +171,23 @@ export default function KycScreen() {
   }>();
 
   const requestedType = (type as string) || "";
+  const roleValue = useRoleStore((s) => s.role);
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const activeBusinessId = activeBusiness?.id;
+  const isFleet =
+    roleValue === "fleet_manager" ||
+    activeBusiness?.type === "delivery_provider";
   const docType =
-    requestedType === "business" ? "business" : (role as string) || "seller";
+    requestedType === "business"
+      ? isFleet
+        ? "fleet_manager"
+        : "seller"
+      : (role as string) || (isFleet ? "fleet_manager" : "seller");
   // Sellers and fleet managers own a business, so their KYC is business KYC.
   const isBusiness =
     requestedType === "business" ||
     docType === "seller" ||
     docType === "fleet_manager";
-  const activeBusinessId = useBusinessStore((s) => s.activeBusiness?.id);
   const businessId = isBusiness ? id || activeBusinessId : undefined;
   const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.business;
   const isRider = !isBusiness && docType === "rider";
@@ -191,10 +215,6 @@ export default function KycScreen() {
   const [documents, setDocuments] = useState<Record<string, KycDocumentState>>(
     () => buildInitialDocs(configs),
   );
-  const [taxCertificate, setTaxCertificate] = useState<{
-    status: "idle" | "uploading" | "pending";
-    fileName?: string;
-  }>({ status: "idle" });
 
   const ownerKey =
     isBusiness && businessId
@@ -347,7 +367,17 @@ export default function KycScreen() {
         businessId,
         documents: singleDoc,
         partial: true,
+        userType: docType,
       });
+      // Keep the tax-wallet release flow in sync when the optional tax
+      // certificate document is submitted as part of KYC.
+      if (docId === "tax_certificate" && payload.url) {
+        await walletService.requestTaxCertificate({
+          businessId,
+          certificateUrl: payload.url,
+          notes: "Tax certificate submitted from business KYC",
+        });
+      }
     } else if (isRider) {
       await submitRiderMutation.mutateAsync({
         documents: singleDoc,
@@ -375,43 +405,6 @@ export default function KycScreen() {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     }
     toast.success(`${docId.replace(/_/g, " ")} submitted for review`);
-  };
-
-  const handleTaxCertificateUpload = async () => {
-    if (
-      !isBusiness ||
-      !businessId ||
-      taxCertificate.status === "uploading"
-    ) {
-      return;
-    }
-
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
-    setTaxCertificate({ status: "uploading", fileName: asset.name });
-
-    try {
-      const { key } = await uploadImage(asset.uri, "kyc", {
-        ...uploadContext,
-        document_type: "tax_certificate",
-      });
-      const response = await walletService.requestTaxCertificate({
-        businessId,
-        certificateUrl: key,
-        notes: "Tax certificate submitted from business KYC",
-      });
-      setTaxCertificate({ status: "pending", fileName: asset.name });
-      toast.success(response.data.message);
-    } catch (error: any) {
-      setTaxCertificate({ status: "idle" });
-      toast.error(error?.message || "Could not upload tax certificate");
-    }
   };
 
   const title = isBusiness ? "Business KYC" : "KYC Verification";
@@ -467,47 +460,6 @@ export default function KycScreen() {
                 }
               />
 
-              {isBusiness && businessId ? (
-                <Card padding="$4" bordered>
-                  <YStack gap="$3">
-                    <YStack gap="$1">
-                      <Text
-                        fontSize="$5"
-                        fontWeight="700"
-                        fontFamily="$heading"
-                      >
-                        Tax certificate
-                      </Text>
-                      <Text fontSize="$3" color="$colorSecondary">
-                        Withheld tax stays in a locked tax wallet. Upload a
-                        valid tax certificate; an admin reviews it and then
-                        releases the balance into your spendable wallet.
-                      </Text>
-                    </YStack>
-
-                    <Text fontSize="$3" color="$colorMuted">
-                      {taxCertificate.status === "pending"
-                        ? "Pending admin review"
-                        : taxCertificate.status === "uploading"
-                          ? "Uploading…"
-                          : "No certificate submitted yet"}
-                      {taxCertificate.fileName
-                        ? ` · ${taxCertificate.fileName}`
-                        : ""}
-                    </Text>
-
-                    <Button
-                      variant="outline"
-                      onPress={handleTaxCertificateUpload}
-                      loading={taxCertificate.status === "uploading"}
-                    >
-                      {taxCertificate.status === "pending"
-                        ? "Replace tax certificate"
-                        : "Upload tax certificate"}
-                    </Button>
-                  </YStack>
-                </Card>
-              ) : null}
             </>
           )}
         </YStack>

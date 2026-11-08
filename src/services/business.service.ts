@@ -100,7 +100,10 @@ export async function updatePaymentSettings(
 
 // ─── Business KYC ───
 
-export async function submitBusinessKyc(businessId: string, data: Record<string, unknown>): Promise<BusinessResponse> {
+export async function submitBusinessKyc(
+  businessId: string,
+  data: Record<string, unknown> & { user_type?: string; partial?: boolean },
+): Promise<BusinessResponse> {
   return api.post<BusinessResponse>(`/businesses/${businessId}/kyc`, data);
 }
 

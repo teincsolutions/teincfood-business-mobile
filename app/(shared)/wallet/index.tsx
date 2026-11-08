@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useState } from "react";
 import { ScrollView } from "react-native";
 import {
   YStack,
@@ -17,9 +18,12 @@ import {
   Bike,
   Wallet,
   Lock,
+  ArrowUpRight,
 } from "@tamagui/lucide-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { BackButton, Button } from "@/components/ui";
 import {
+  WALLET_KEYS,
   useAllBalancesQuery,
   useBusinessWalletBalanceQuery,
   useWalletHistoryQuery,
@@ -27,6 +31,8 @@ import {
 import { useBusinessStore } from "@/stores/business.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { usePaymentSettingsQuery } from "@/hooks/usePaymentSettings";
+import { WithdrawSheet } from "@/components/wallet/WithdrawSheet";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
@@ -44,6 +50,11 @@ export default function WalletScreen() {
   const { data: walletHistory } = useWalletHistoryQuery(
     Boolean(activeBusiness?.id),
   );
+  const { data: paymentSettings } = usePaymentSettingsQuery(
+    activeBusiness?.id,
+  );
+  const queryClient = useQueryClient();
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const isLoading = loadingAll || (Boolean(activeBusiness?.id) && loadingBiz);
   const balances = allBalances?.data.balances ?? [];
@@ -93,6 +104,7 @@ export default function WalletScreen() {
   const isRider = role === "rider";
   const isSellerOrFleet = role === "seller" || role === "fleet_manager";
   const canFinanceRead = useHasCapability("finance_read");
+  const canWithdraw = useHasCapability("finance_withdraw");
   const showBusinessBalance = !isSellerOrFleet || canFinanceRead;
 
   return (
@@ -188,6 +200,16 @@ export default function WalletScreen() {
                     >
                       Balance
                     </Text>
+                    {isSellerOrFleet && activeBusiness && canWithdraw ? (
+                      <Button
+                        variant="primary"
+                        height={46}
+                        icon={<ArrowUpRight size={18} />}
+                        onPress={() => setWithdrawOpen(true)}
+                      >
+                        Withdraw
+                      </Button>
+                    ) : null}
                   </>
                 ) : (
                   <Text
@@ -335,6 +357,20 @@ export default function WalletScreen() {
           </ScrollView>
         )}
       </YStack>
+
+      {isSellerOrFleet && activeBusiness && canWithdraw ? (
+        <WithdrawSheet
+          open={withdrawOpen}
+          onOpenChange={setWithdrawOpen}
+          businessId={activeBusiness.id}
+          balanceMinor={bizBalance?.amount_minor ?? 0}
+          currency={walletCurrency}
+          settings={paymentSettings?.data}
+          onSuccess={() => {
+            void queryClient.invalidateQueries({ queryKey: WALLET_KEYS.all });
+          }}
+        />
+      ) : null}
     </YStack>
   );
 }

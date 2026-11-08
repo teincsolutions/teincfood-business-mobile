@@ -92,8 +92,22 @@ export function useSubmitRiderKycMutation() {
 
 export function useSubmitBusinessKycMutation() {
   return useMutation({
-    mutationFn: async ({ businessId, documents, partial }: { businessId: string; documents: Record<string, any>; partial?: boolean }) => {
-      return businessService.submitBusinessKyc(businessId, { documents, user_type: 'business_owner', partial: !!partial });
+    mutationFn: async ({
+      businessId,
+      documents,
+      partial,
+      userType,
+    }: {
+      businessId: string;
+      documents: Record<string, any>;
+      partial?: boolean;
+      userType?: string;
+    }) => {
+      return businessService.submitBusinessKyc(businessId, {
+        documents,
+        user_type: userType || 'business_owner',
+        partial: !!partial,
+      });
     },
   });
 }
