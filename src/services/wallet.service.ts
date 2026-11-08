@@ -51,45 +51,6 @@ export async function withdrawFromWallet(params: {
   });
 }
 
-export type PendingPayout = {
-  reference: string;
-  amount_minor: number;
-  fee_minor: number;
-  total_debit_minor: number;
-  currency: string;
-  payout_method?: string | null;
-  payout_status?: string | null;
-  otp_required: boolean;
-  inserted_at?: string | null;
-};
-
-export async function fetchPendingPayouts(
-  businessId: string,
-): Promise<{ data: PendingPayout[] }> {
-  return api.get('/wallet/payouts/pending', {
-    params: { business_id: businessId },
-  });
-}
-
-export async function submitPayoutOtp(
-  reference: string,
-  otp: string,
-): Promise<{ data: PendingPayout }> {
-  return api.post(
-    `/wallet/payouts/${encodeURIComponent(reference)}/otp`,
-    { otp },
-  );
-}
-
-export async function resendPayoutOtp(
-  reference: string,
-): Promise<{ data: { message: string } }> {
-  return api.post(
-    `/wallet/payouts/${encodeURIComponent(reference)}/otp/resend`,
-    {},
-  );
-}
-
 export async function requestTaxCertificate(params: {
   businessId: string;
   certificateUrl: string;
