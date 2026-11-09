@@ -1039,6 +1039,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   ]);
 
   const executePlaceOrder = useCallback(() => {
+    if (items.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
     // Re-check after the cash sheet: hours may have flipped while it was open.
     if (isBusinessClosed) {
       setShowClosedDialog(true);
@@ -1930,6 +1934,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           height={52}
           disabled={
             createOrder.isPending ||
+            items.length === 0 ||
             isBusinessClosed ||
             !hasUsablePaymentMethod ||
             (isDeliveryCheckout && !deliveryPlace)
@@ -1939,6 +1944,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         >
           {createOrder.isPending ? (
             <Spinner size="small" color="white" />
+          ) : items.length === 0 ? (
+            "Cart is empty"
           ) : isBusinessClosed ? (
             "Business Closed"
           ) : !hasUsablePaymentMethod ? (
@@ -2649,6 +2656,7 @@ function TodayTab() {
   const confirmHandover = useConfirmHandoverMutation();
   const { openFor: openRiderSheet, sheet: riderSheet } = useRiderAssign();
   const [previewOrder, setPreviewOrder] = useState<SellerOrder | null>(null);
+  const [cashTarget, setCashTarget] = useState<SellerOrder | null>(null);
   const previewSheet = (
     <ReceiptPreviewSheet
       open={previewOrder !== null}
@@ -2708,6 +2716,49 @@ function TodayTab() {
     COL_TOTAL_TODAY +
     COL_ACTIONS_TODAY +
     48;
+
+  const cashCollectable = (order: SellerOrder) =>
+    isUnpaid(order) &&
+    !["cancelled", "canceled"].includes(order.status) &&
+    (order.payment_mode === "pay_on_delivery" ||
+      (order.is_pos === true && (order.pos_payment_method ?? "") === "cash"));
+
+  const momoCollectable = (order: SellerOrder) =>
+    isUnpaid(order) &&
+    !["cancelled", "canceled"].includes(order.status) &&
+    (order.pos_payment_method ?? order.payment_mode) === "mobile_money";
+
+  const cashSheet = (
+    <CashPaymentSheet
+      open={cashTarget !== null}
+      onOpenChange={(open) => {
+        if (!open) setCashTarget(null);
+      }}
+      totalMinor={cashTarget?.total_minor ?? 0}
+      currency={
+        (cashTarget as unknown as { currency?: string; currency_code?: string })
+          ?.currency ??
+        (cashTarget as unknown as { currency?: string; currency_code?: string })
+          ?.currency_code ??
+        "GHS"
+      }
+      isProcessing={confirmCashPayment.isPending}
+      onConfirm={() => {
+        if (!cashTarget) return;
+        confirmCashPayment.mutate(cashTarget.id, {
+          onSuccess: () => {
+            toast.success(`Cash recorded for ${cashTarget.order_number}`);
+            setCashTarget(null);
+            void refetch();
+          },
+          onError: (error: unknown) =>
+            toast.error(
+              error instanceof Error ? error.message : "Could not record cash",
+            ),
+        });
+      }}
+    />
+  );
 
   const statusBg = (status: string) => {
     if (["pending", "awaiting_payment"].includes(status)) return "#f59e0b";
@@ -3001,15 +3052,28 @@ function TodayTab() {
               </Text>
             </Button>
           )}
-          {isUnpaid(item) && item.status !== "cancelled" && (
+          {cashCollectable(item) && (
             <Button
               size="$2"
               variant="outline"
               height={36}
               width={36}
               padding={0}
+              aria-label={`Collect cash for ${item.order_number}`}
               icon={<Banknote size={14} />}
-              onPress={() => confirmCashPayment.mutate(item.id)}
+              onPress={() => setCashTarget(item)}
+            />
+          )}
+          {momoCollectable(item) && (
+            <Button
+              size="$2"
+              variant="outline"
+              height={36}
+              width={36}
+              padding={0}
+              aria-label={`Collect mobile money for ${item.order_number}`}
+              icon={<Smartphone size={14} />}
+              onPress={() => router.push(`/(seller)/orders/${item.id}`)}
             />
           )}
           {isCancellable(item.status) && (
@@ -3128,6 +3192,7 @@ function TodayTab() {
           }}
         />
         {previewSheet}
+      {cashSheet}
       </>
     );
   }
@@ -3370,18 +3435,30 @@ function TodayTab() {
                     <Button
                       size="$2"
                       variant="outline"
+                      width={36}
+                      height={36}
+                      padding={0}
+                      aria-label={`View order ${item.order_number}`}
                       icon={<Eye size={14} />}
                       onPress={() => router.push(`/(seller)/orders/${item.id}`)}
                     />
                     <Button
                       size="$2"
                       variant="outline"
+                      width={36}
+                      height={36}
+                      padding={0}
+                      aria-label={`Preview receipt for ${item.order_number}`}
                       icon={<FileText size={14} />}
                       onPress={() => setPreviewOrder(item)}
                     />
                     <Button
                       size="$2"
                       variant="outline"
+                      width={36}
+                      height={36}
+                      padding={0}
+                      aria-label={`Print receipt for ${item.order_number}`}
                       icon={<Printer size={14} />}
                       onPress={() => printService.printOrderReceipt(item.id)}
                     />
@@ -3417,18 +3494,38 @@ function TodayTab() {
                         </Text>
                       </Button>
                     )}
-                    {isUnpaid(item) && item.status !== "cancelled" && (
+                    {cashCollectable(item) && (
                       <Button
                         size="$2"
                         variant="outline"
+                        width={36}
+                        height={36}
+                        padding={0}
+                        aria-label={`Collect cash for ${item.order_number}`}
                         icon={<Banknote size={14} />}
-                        onPress={() => confirmCashPayment.mutate(item.id)}
+                        onPress={() => setCashTarget(item)}
+                      />
+                    )}
+                    {momoCollectable(item) && (
+                      <Button
+                        size="$2"
+                        variant="outline"
+                        width={36}
+                        height={36}
+                        padding={0}
+                        aria-label={`Collect mobile money for ${item.order_number}`}
+                        icon={<Smartphone size={14} />}
+                        onPress={() => router.push(`/(seller)/orders/${item.id}`)}
                       />
                     )}
                     {isCancellable(item.status) && (
                       <Button
                         size="$2"
                         variant="outline"
+                        width={36}
+                        height={36}
+                        padding={0}
+                        aria-label={`Cancel order ${item.order_number}`}
                         icon={<XCircle size={14} />}
                         chromeless
                         onPress={() => cancelOrder.mutate(item.id)}
@@ -3458,6 +3555,7 @@ function TodayTab() {
         }}
       />
       {previewSheet}
+      {cashSheet}
     </>
   );
 }

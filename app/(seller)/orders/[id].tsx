@@ -159,7 +159,16 @@ export default function OrderDetails({
   const canCollectMomo = Boolean(
     order?.is_pos &&
     !order.is_paid &&
+    !["cancelled", "canceled"].includes(order.status) &&
     (order.pos_payment_method ?? order.payment_mode) === "mobile_money",
+  );
+
+  const canCollectCash = Boolean(
+    order &&
+    isUnpaid(order) &&
+    !["cancelled", "canceled"].includes(order.status) &&
+    (order.payment_mode === "pay_on_delivery" ||
+      (order.is_pos === true && (order.pos_payment_method ?? "") === "cash")),
   );
 
   useEffect(() => {
@@ -748,7 +757,7 @@ export default function OrderDetails({
               </Button>
             )}
 
-            {isUnpaid(order) && order.status !== "cancelled" && (
+            {canCollectCash && (
               <Button
                 variant="outline"
                 width="100%"

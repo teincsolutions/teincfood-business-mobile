@@ -348,9 +348,11 @@ export default function SellerOrders() {
             View
           </Button>
           <Button
-            flex={1}
             variant="outline"
+            width={40}
             height={40}
+            padding={0}
+            aria-label={`Print receipt for ${item.order_number}`}
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
           />
@@ -485,8 +487,10 @@ export default function SellerOrders() {
         </Button>
         <Button
           variant="outline"
+          width={40}
           height={40}
-          paddingHorizontal="$3"
+          padding={0}
+          aria-label={`Print receipt for ${item.order_number}`}
           icon={<Printer size={16} />}
           onPress={() => handlePrint(item)}
         />
