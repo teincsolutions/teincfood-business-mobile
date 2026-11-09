@@ -32,6 +32,7 @@ import { TouchableOpacity } from "react-native";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DIAGNOSTICS_ENABLED } from "@/utils/app-env";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
@@ -283,12 +284,16 @@ export default function SellerSettings() {
       route: "/(seller)/settings/offline-device",
       capability: "business_members_manage",
     },
-    {
-      icon: Monitor,
-      label: "Diagnostics",
-      description: "Sync queue, DD, cloud reachability, wipe",
-      route: "/(seller)/settings/diagnostics",
-    },
+    ...(DIAGNOSTICS_ENABLED
+      ? [
+          {
+            icon: Monitor,
+            label: "Diagnostics",
+            description: "Sync queue, DD, cloud reachability, wipe",
+            route: "/(seller)/settings/diagnostics",
+          },
+        ]
+      : []),
     {
       icon: Palette,
       label: "Theme",

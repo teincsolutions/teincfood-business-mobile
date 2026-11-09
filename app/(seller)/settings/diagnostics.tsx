@@ -35,6 +35,7 @@ import { useConnectivityStore, probeCloud } from "@/stores/connectivity.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { API_BASE_URL, WS_BASE_URL } from "@/utils/constants";
+import { DIAGNOSTICS_ENABLED } from "@/utils/app-env";
 import { toast } from "sonner-native";
 import { router } from "expo-router";
 import * as Clipboard from "expo-clipboard";
@@ -350,6 +351,14 @@ export default function DiagnosticsScreen() {
         ? "$error"
         : "$colorMuted";
   const pendingColor = pending ? "$warning" : "$success";
+
+  useEffect(() => {
+    if (!DIAGNOSTICS_ENABLED) {
+      router.replace("/(seller)/(drawer)/settings");
+    }
+  }, []);
+
+  if (!DIAGNOSTICS_ENABLED) return null;
 
   return (
     <YStack flex={1} backgroundColor="$background">
