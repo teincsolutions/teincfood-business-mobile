@@ -35,9 +35,13 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.teincfood.business",
-      // Universal links: https://food.teincsolutions.com/invite?code=
-      // opens the app when installed (association file served by the site).
-      associatedDomains: ["applinks:food.teincsolutions.com"],
+      // Universal links: https://teincfood.com/invite?code= opens the app
+      // when installed (association file served by the site). The old host
+      // stays listed so existing shared links keep working.
+      associatedDomains: [
+        "applinks:teincfood.com",
+        "applinks:food.teincsolutions.com",
+      ],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         LSApplicationQueriesSchemes: ["tel"],
@@ -76,13 +80,30 @@ module.exports = {
       },
       package: "com.teincfood.business",
       predictiveBackGestureEnabled: false,
-      // App Links: https://food.teincsolutions.com/invite?code=
-      // opens the app when installed (assetlinks served by the site).
+      // App Links: https://teincfood.com/invite?code= opens the app when
+      // installed (assetlinks served by the site). Business-only paths never
+      // overlap the buyer app's root/order/biz paths.
       intentFilters: [
         {
           action: "VIEW",
           autoVerify: true,
           data: [
+            {
+              scheme: "https",
+              host: "teincfood.com",
+              pathPrefix: "/invite",
+            },
+            {
+              scheme: "https",
+              host: "teincfood.com",
+              pathPrefix: "/business",
+            },
+            {
+              scheme: "https",
+              host: "teincfood.com",
+              pathPrefix: "/reset-password",
+            },
+            // Legacy links keep working after the domain move.
             {
               scheme: "https",
               host: "food.teincsolutions.com",
