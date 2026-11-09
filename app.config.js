@@ -36,12 +36,8 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.teincfood.business",
       // Universal links: https://teincfood.com/invite?code= opens the app
-      // when installed (association file served by the site). The old host
-      // stays listed so existing shared links keep working.
-      associatedDomains: [
-        "applinks:teincfood.com",
-        "applinks:food.teincsolutions.com",
-      ],
+      // when installed (association file served by the site).
+      associatedDomains: ["applinks:teincfood.com"],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         LSApplicationQueriesSchemes: ["tel"],
@@ -102,12 +98,6 @@ module.exports = {
               scheme: "https",
               host: "teincfood.com",
               pathPrefix: "/reset-password",
-            },
-            // Legacy links keep working after the domain move.
-            {
-              scheme: "https",
-              host: "food.teincsolutions.com",
-              pathPrefix: "/invite",
             },
           ],
           category: ["BROWSABLE", "DEFAULT"],

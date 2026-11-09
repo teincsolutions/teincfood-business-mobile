@@ -1,6 +1,6 @@
 // @ts-nocheck — Tamagui stack props (alignItems/padding/etc.) don't typecheck
 // under this repo's tsconfig; every other Tamagui screen uses the same escape.
-// Universal-link entry: https://food.teincsolutions.com/invite?code=XXXXXX
+// Universal-link entry: https://teincfood.com/invite?code=XXXXXX
 // opens here when the app is installed; forward the code to Invitations.
 import { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
