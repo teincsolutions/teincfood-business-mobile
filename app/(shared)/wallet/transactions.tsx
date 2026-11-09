@@ -60,6 +60,11 @@ export default function TransactionHistoryScreen() {
           <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
             {formatDate(item.inserted_at)}
           </Text>
+          {Number(item.metadata?.fee_minor) > 0 ? (
+            <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+              Charges: {formatMinor(Number(item.metadata.fee_minor), item.currency)}
+            </Text>
+          ) : null}
         </YStack>
         <YStack maxWidth={"30%"} alignItems="flex-end">
           <Text

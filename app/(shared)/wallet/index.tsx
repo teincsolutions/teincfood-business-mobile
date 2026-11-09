@@ -64,6 +64,9 @@ export default function WalletScreen() {
   const payoutTotalFromApi = (
     businessBalance?.data as { payout_total_minor?: number }
   )?.payout_total_minor;
+  const payoutFeesFromApi = (
+    businessBalance?.data as { payout_fee_total_minor?: number }
+  )?.payout_fee_total_minor;
   const walletCurrency =
     (businessBalance?.data as { currency?: string })?.currency ??
     bizBalance?.currency ??
@@ -92,7 +95,25 @@ export default function WalletScreen() {
       0,
     );
 
+  const payoutFee = (entry: any) => {
+    const metadata = entry?.metadata ?? {};
+    if (typeof metadata.fee_minor === "number") return metadata.fee_minor;
+    const net = metadata.transfer_amount_minor ?? entry?.amount_minor ?? 0;
+    return Math.max((entry?.amount_minor ?? 0) - net, 0);
+  };
+
+  const totalCharges = historyEntries
+    .filter(
+      (entry) =>
+        entry?.type === "debit" &&
+        entry?.metadata?.payout_status === "paid" &&
+        (entry?.metadata?.payout_kind === "withdrawal" ||
+          entry?.metadata?.payout_kind === "instant"),
+    )
+    .reduce((sum, entry) => sum + payoutFee(entry), 0);
+
   const totalPaidOutDisplay = payoutTotalFromApi ?? totalPaidOut;
+  const totalChargesDisplay = payoutFeesFromApi ?? totalCharges;
 
   const taxStatusLabel: Record<string, string> = {
     none: "No certificate uploaded",
@@ -249,7 +270,36 @@ export default function WalletScreen() {
                       color="$colorSecondary"
                       fontFamily="$body"
                     >
-                      Completed withdrawals and instant payouts
+                      Net received from completed withdrawals and instant payouts
+                    </Text>
+                    <Separator marginVertical="$2" />
+                    <XStack
+                      alignItems="center"
+                      justifyContent="space-between"
+                    >
+                      <Text
+                        fontSize="$4"
+                        fontWeight="600"
+                        fontFamily="$heading"
+                        color="$colorSecondary"
+                      >
+                        Charges
+                      </Text>
+                      <Text
+                        fontSize="$5"
+                        fontWeight="600"
+                        fontFamily="$heading"
+                        color="$color"
+                      >
+                        {formatMinor(totalChargesDisplay, walletCurrency)}
+                      </Text>
+                    </XStack>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      Provider fees deducted from your wallet
                     </Text>
                   </YStack>
                 </Card>
