@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/services/api";
 import * as businessService from "@/services/business.service";
 import type { SellerSetupStepId } from "@/constants/seller-setup";
 import { SELLER_SETUP_STEPS } from "@/constants/seller-setup";
@@ -18,22 +17,18 @@ export function sellerSetupQueryKey(businessId?: string | null) {
   return ["seller-setup", businessId ?? "none"] as const;
 }
 
-export async function fetchSellerSetupStatus(
-  businessId: string,
-): Promise<SellerSetupStatus> {
-  const res = await api.get<{ data: SellerSetupStatus }>(
-    `/businesses/${businessId}/setup-status`,
-  );
-  return res.data;
-}
-
 export function useSellerSetupStatus(
   businessId?: string | null,
   enabled = true,
 ) {
   return useQuery({
     queryKey: sellerSetupQueryKey(businessId),
-    queryFn: () => fetchSellerSetupStatus(businessId as string),
+    queryFn: async () => {
+      const response = await businessService.fetchSetupStatus(
+        businessId as string,
+      );
+      return response.data;
+    },
     enabled: enabled && Boolean(businessId),
     staleTime: 15_000,
   });
