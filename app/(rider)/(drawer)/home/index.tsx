@@ -21,6 +21,7 @@ import { Button } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { ServiceStatusBanner } from "@/components/ui";
 import { useRiderDeliveryRealtimeUpdates } from "@/hooks/useRiderDeliveryRealtimeUpdates";
+import { useRiderKycQuery } from "@/hooks/useKyc";
 import { useRiderDeliveryZonesQuery } from "@/hooks/useRiderDeliveryZones";
 import { RiderCoverageMap } from "@/components/rider/RiderCoverageMap";
 import {
@@ -54,6 +55,9 @@ export default function RiderHome() {
   // TanStack Query hooks
   const { data: metricsData, isLoading, refetch } = useRiderMetricsQuery();
   const { data: profileData } = useRiderProfileQuery();
+  // Rider KYC lives on the dispatch rider row, not the user profile. Reading
+  // user.kyc_status here showed "Verification Required" even after approval.
+  const { data: riderKyc, isLoading: riderKycLoading } = useRiderKycQuery();
   const { data: activeDeliveryData } = useActiveDeliveryQuery();
   const {
     data: deliveryZones = [],
@@ -179,10 +183,12 @@ export default function RiderHome() {
       >
         <YStack paddingHorizontal="$4" gap="$4">
           {/* Service Status */}
-        <ServiceStatusBanner
-          kyc_status={user?.kyc_status}
-          kycRoute="/(shared)/kyc?type=user&role=rider"
-        />
+        {!riderKycLoading && (
+          <ServiceStatusBanner
+            kyc_status={riderKyc?.kyc_status ?? profileData?.kyc_status}
+            kycRoute="/(shared)/kyc?type=user&role=rider"
+          />
+        )}
 
         {/* No Rider Profile Banner */}
         {!metricsData && !isLoading && !dismissNoProfile && (
