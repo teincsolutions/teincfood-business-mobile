@@ -99,6 +99,9 @@ export async function register(): Promise<void> {
   console.log('[PushToken] Starting push token registration...');
   // A previous account's refresh listener must not survive a login switch.
   cleanup();
+  // Retry stale token deletions before any early return (no permission, no
+  // Firebase, etc.) so a prior account cannot keep receiving pushes.
+  await flushPendingUnregisters();
 
   if (!messaging) {
     console.error('[PushToken] Firebase messaging not available — skipping registration');
@@ -121,7 +124,6 @@ export async function register(): Promise<void> {
   }
 
   try {
-    await flushPendingUnregisters();
     console.log('[PushToken] Registering background push handler...');
     registerBackgroundPushHandler();
     registerForegroundPushHandler();
