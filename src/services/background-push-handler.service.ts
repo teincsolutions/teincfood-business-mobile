@@ -4,6 +4,8 @@ import notifee, { AndroidAction, AndroidStyle } from '@notifee/react-native';
 import { ensureNotificationChannels } from './android-notifee-channels.service';
 import { getNotificationSound } from './notification-sounds';
 import { getChatClient } from '@/utils/chat-service';
+import { getActiveAccountId } from '@/utils/storage';
+import { useAuthStore } from '@/stores/auth.store';
 
 function buildActions(actionType: string | undefined): AndroidAction[] {
   switch (actionType) {
@@ -108,6 +110,13 @@ async function handleRemoteMessage(
   data: Record<string, string> | undefined,
 ): Promise<void> {
   if (!data) return;
+  // A push token belongs to the account that registered it. After logout the
+  // server unregister is best-effort, so suppress any late notification rather
+  // than showing the previous account's order/invite on the login screen.
+  if (!getActiveAccountId()) return;
+  // Offline member sessions have no cloud session; they must not render
+  // pushes that belong to whichever account last registered the device.
+  if (!useAuthStore.getState().accessToken) return;
   await displayPushNotification(title, body, data);
   try {
     getChatClient().handlePushPayload(parseFcmPayload(data))

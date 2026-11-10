@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import { devicesService } from '@/services/devices.service';
-import { accountStorage, getActiveAccountId } from '@/utils/storage';
+import { accountStorage, getActiveAccountId, mmkvStorage } from '@/utils/storage';
 import { registerBackgroundPushHandler, registerForegroundPushHandler } from '@/services/background-push-handler.service';
 import { trackEvent } from '@/utils/observability';
 
@@ -10,6 +10,52 @@ let refreshUnsubscribe: (() => void) | undefined;
 
 const REGISTERED_TOKEN_KEY = 'push_token_registered';
 const REGISTERED_TOKEN_ID_KEY = 'push_token_id';
+/** Device-level queue of token ids whose logout unregister failed offline. */
+const PENDING_UNREGISTER_KEY = 'push_pending_unregister_ids';
+
+function readPendingUnregisters(): string[] {
+  try {
+    const raw = mmkvStorage.getString(PENDING_UNREGISTER_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingUnregisters(ids: string[]): void {
+  try {
+    if (ids.length === 0) mmkvStorage.delete(PENDING_UNREGISTER_KEY);
+    else mmkvStorage.set(PENDING_UNREGISTER_KEY, JSON.stringify(ids));
+  } catch {}
+}
+
+function queuePendingUnregister(tokenId: string): void {
+  const ids = readPendingUnregisters();
+  if (!ids.includes(tokenId)) writePendingUnregisters([...ids, tokenId]);
+}
+
+/**
+ * A logout while offline cannot reach the backend, leaving the previous
+ * account's token active. Retry those deletes before the next account
+ * registers the same physical device token.
+ */
+async function flushPendingUnregisters(): Promise<void> {
+  const ids = readPendingUnregisters();
+  if (ids.length === 0) return;
+  const remaining: string[] = [];
+  for (const id of ids) {
+    try {
+      await devicesService.unregisterPushToken(id);
+    } catch {
+      remaining.push(id);
+    }
+  }
+  writePendingUnregisters(remaining);
+}
 
 function getStoredTokenHash(): string | null {
   return accountStorage.getString(REGISTERED_TOKEN_KEY) || null;
@@ -75,6 +121,7 @@ export async function register(): Promise<void> {
   }
 
   try {
+    await flushPendingUnregisters();
     console.log('[PushToken] Registering background push handler...');
     registerBackgroundPushHandler();
     registerForegroundPushHandler();
@@ -113,6 +160,9 @@ export async function unregister(): Promise<void> {
       console.log('[PushToken] Token unregistered on logout');
     } catch (error) {
       console.warn('[PushToken] Logout unregister failed:', error);
+      // Keep the id device-level so the next online login can retry it even
+      // though this account's scoped keys are about to be cleared.
+      queuePendingUnregister(tokenId);
     }
   }
   clearStoredTokenId();
