@@ -175,8 +175,9 @@ export function beginAccountScope(
 
     clearPersistedQueryCacheFor(previous);
     await queryClient.cancelQueries();
-    await queryClient.cancelQueries();
     queryClient.clear();
+    // Let the old LAN node finish tearing down before the new scope opens.
+    await localNodeService.shutdown().catch(() => undefined);
     setActiveAccountId(accountId);
     // Rehydrate only after core has closed the previous account's SQLite
     // handle and applied the new scope. Persistence stays blocked throughout
