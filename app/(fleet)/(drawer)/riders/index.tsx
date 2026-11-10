@@ -13,7 +13,8 @@ import { RiderDetailView } from "@/components/fleet/RiderDetailView";
 export default function FleetRidersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isTwoPane } = useResponsiveLayout("wide");
+  // Drawer content is single-pane at every size; details push normally.
+  const isTwoPane = false;
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -39,16 +39,15 @@ export const useBusinessStore = create<BusinessState>()(
 
       setBusinesses: (businesses) =>
         set((state) => {
-          let active = state.activeBusiness;
-          if (active) {
-            // Refresh activeBusiness from fresh data to pick up any
-            // fields the persisted copy might be missing (e.g. business_number).
-            const fresh = businesses.find((b) => b.id === active?.id);
-            if (fresh) active = fresh as any;
-          } else if (businesses.length === 1) {
-            active = businesses[0] as any;
+          // The persisted active business may belong to the previous account.
+          // Only keep it if it is present in the freshly loaded list.
+          let active = state.activeBusiness
+            ? businesses.find((b) => b.id === state.activeBusiness?.id) ?? null
+            : null;
+          if (!active && businesses.length > 0) {
+            active = (businesses.find((b) => b.isDefault) ?? businesses[0]) as any;
           }
-          return { businesses, activeBusiness: active };
+          return { businesses, activeBusiness: active as any };
         }),
 
       setActiveBusiness: (business) => set({ activeBusiness: business }),

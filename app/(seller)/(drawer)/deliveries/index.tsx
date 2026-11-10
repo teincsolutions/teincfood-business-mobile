@@ -10,6 +10,7 @@ import {
   ScrollView,
   Tooltip,
   Avatar,
+  Sheet,
 } from "tamagui";
 import {
   Truck,
@@ -44,6 +45,7 @@ import {
 import { useConfirmHandoverMutation } from "@/hooks/seller.hooks";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FilterSheet } from "@/components/filters/FilterSheet";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import {
   formatPriceFromMinor,
   formatDateTime,
@@ -97,10 +99,10 @@ function timeSince(dateStr: string) {
 
 export default function SellerDeliveries() {
   const insets = useSafeAreaInsets();
-  const { width } = useResponsive();
-  const isTablet = width >= 768;
+  const { width, isTablet, isLandscape } = useResponsive();
+  const useDeliveriesTable = isTablet && isLandscape;
 
-  const COL_ACTIONS = 120;
+  const COL_ACTIONS = 190;
 
   const [containerWidth, setContainerWidth] = useState(0);
   const searchQuery = useFilterStore((s) => s.deliveriesSearchQuery);
@@ -255,27 +257,17 @@ export default function SellerDeliveries() {
 
   const allDeliveries = deliveries || [];
 
-  // Tablet master-detail: keep a selection so the right pane always shows a
-  // detail. Default to the newest delivery once the list loads.
-  useEffect(() => {
-    if (!isTablet) return;
-    setSelectedDeliveryId((prev) => {
-      if (prev && allDeliveries.some((d) => d.id === prev)) return prev;
-      return allDeliveries[0]?.id ?? null;
-    });
-  }, [isTablet, allDeliveries]);
-
   const availWidth = containerWidth || width;
-  const remaining = Math.max(280, availWidth - COL_ACTIONS - 48);
+  const remaining = Math.max(495, availWidth - COL_ACTIONS - 32);
   const colWidths = {
-    order: Math.max(140, Math.round(remaining * 0.2)),
-    customer: Math.max(108, Math.round(remaining * 0.18)),
-    status: Math.max(100, Math.round(remaining * 0.15)),
-    rider: Math.max(160, Math.round(remaining * 0.25)),
-    address: Math.max(160, Math.round(remaining * 0.23)),
+    order: Math.max(100, Math.round(remaining * 0.2)),
+    customer: Math.max(95, Math.round(remaining * 0.18)),
+    status: Math.max(85, Math.round(remaining * 0.14)),
+    rider: Math.max(105, Math.round(remaining * 0.25)),
+    address: Math.max(110, Math.round(remaining * 0.23)),
   };
   const tableTotal =
-    Object.values(colWidths).reduce((a, b) => a + b, 0) + COL_ACTIONS + 48;
+    Object.values(colWidths).reduce((a, b) => a + b, 0) + COL_ACTIONS + 32;
 
   // ── Phone: compact card ──
   const renderPhoneCard = ({ item: d }: { item: any }) => {
@@ -288,7 +280,7 @@ export default function SellerDeliveries() {
         bordered
         marginBottom="$3"
         pressStyle={{ scale: 0.98, opacity: 0.9 }}
-        onPress={() => router.push(`/(seller)/deliveries/${d.id}`)}
+        onPress={() => setSelectedDeliveryId(d.id)}
       >
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
@@ -301,10 +293,18 @@ export default function SellerDeliveries() {
             <YStack
               paddingHorizontal="$2"
               paddingVertical="$1"
-              borderRadius="$2"
+              borderRadius="$full"
               backgroundColor={STATUS_COLORS[d.status]}
+              alignItems="center"
             >
-              <Text fontSize="$3" color={"$white"} fontFamily="$body">
+              <Text
+                fontSize="$2"
+                color={"$white"}
+                fontFamily="$body"
+                fontWeight="700"
+                numberOfLines={1}
+                letterSpacing={0.2}
+              >
                 {d.status
                   ? d.status
                       .replace(/_/g, " ")
@@ -415,7 +415,7 @@ export default function SellerDeliveries() {
               variant="outline"
               height={40}
               icon={<Navigation2 size={16} />}
-              onPress={() => router.push(`/(seller)/deliveries/${d.id}`)}
+              onPress={() => setSelectedDeliveryId(d.id)}
             >
               Track Delivery
             </Button>
@@ -426,7 +426,7 @@ export default function SellerDeliveries() {
               variant="outline"
               height={40}
               icon={<ExternalLink size={16} />}
-              onPress={() => router.push(`/(seller)/deliveries/${d.id}`)}
+              onPress={() => setSelectedDeliveryId(d.id)}
             >
               View Details
             </Button>
@@ -441,14 +441,13 @@ export default function SellerDeliveries() {
     const order = d.order || {};
     const rider = d.rider;
 
-    const isSelected = selectedDeliveryId === d.id;
     return (
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => setSelectedDeliveryId(d.id)}
       >
         <XStack
-          backgroundColor={isSelected ? "$backgroundSoft" : "$background"}
+          backgroundColor="$background"
           borderBottomWidth={1}
           borderBottomColor="$borderColor"
           paddingVertical="$3"
@@ -462,27 +461,55 @@ export default function SellerDeliveries() {
             </Text>
           </XStack>
 
-          <YStack width={colWidths.customer}>
+          <XStack width={colWidths.customer} gap="$2" alignItems="center">
             {(() => {
               const customer = getCustomerDisplay(
                 order as unknown as Parameters<typeof getCustomerDisplay>[0],
               );
               return (
                 <>
-                  <Tooltip label={customer.name}>
-                    <Tooltip.Trigger>
-                      <Text fontSize="$4" numberOfLines={1} ellipsis>
-                        {customer.name}
-                      </Text>
-                    </Tooltip.Trigger>
-                  </Tooltip>
-                  <Text fontSize="$3" color="$colorMuted">
-                    {customer.phone ?? ""}
-                  </Text>
+                  <Avatar
+                    circular
+                    size="$3"
+                    backgroundColor={
+                      customer.isWalkIn ? "$yellow2" : "$backgroundSoft"
+                    }
+                    flexShrink={0}
+                  >
+                    {customer.avatarUrl ? (
+                      <CachedAvatarImage src={customer.avatarUrl} />
+                    ) : null}
+                    <Avatar.Fallback
+                      alignItems="center"
+                      justifyContent="center"
+                      backgroundColor={
+                        customer.isWalkIn ? "$yellow2" : "$backgroundSoft"
+                      }
+                    >
+                      <Truck
+                        size={13}
+                        color={
+                          customer.isWalkIn ? "$yellow10" : "$colorMuted"
+                        }
+                      />
+                    </Avatar.Fallback>
+                  </Avatar>
+                  <YStack flex={1} minWidth={0}>
+                    <Tooltip label={customer.name}>
+                      <Tooltip.Trigger>
+                        <Text fontSize="$3" numberOfLines={1} ellipsis>
+                          {customer.name}
+                        </Text>
+                      </Tooltip.Trigger>
+                    </Tooltip>
+                    <Text fontSize="$2" color="$colorMuted" numberOfLines={1}>
+                      {customer.phone ?? ""}
+                    </Text>
+                  </YStack>
                 </>
               );
             })()}
-          </YStack>
+          </XStack>
 
           <XStack
             width={colWidths.status}
@@ -492,10 +519,18 @@ export default function SellerDeliveries() {
             <YStack
               paddingHorizontal="$2"
               paddingVertical="$1"
-              borderRadius="$2"
+              borderRadius="$full"
               backgroundColor={STATUS_COLORS[d.status]}
+              alignItems="center"
             >
-              <Text fontSize="$3" color={"$white"} fontFamily="$body">
+              <Text
+                fontSize="$2"
+                color={"$white"}
+                fontFamily="$body"
+                fontWeight="700"
+                numberOfLines={1}
+                letterSpacing={0.2}
+              >
                 {d.status
                   ? d.status
                       .replace(/_/g, " ")
@@ -713,7 +748,7 @@ export default function SellerDeliveries() {
     </YStack>
   );
 
-  const listBody = isTablet ? (
+  const listBody = useDeliveriesTable ? (
     <ScrollView horizontal showsHorizontalScrollIndicator style={{ flex: 1 }}>
       <YStack width={tableTotal}>
         {tableHeader}
@@ -798,43 +833,13 @@ export default function SellerDeliveries() {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
-      {isTablet ? (
-        <XStack flex={1}>
-          <YStack
-            flex={1.7}
-            borderRightWidth={1}
-            borderRightColor="$borderColor"
-            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-          >
-            {searchAndFilters}
-            {listBody}
-          </YStack>
-          <YStack flex={1} backgroundColor="$backgroundSoft">
-            {selectedDeliveryId ? (
-              <SellerDeliveryDetail deliveryId={selectedDeliveryId} embedded />
-            ) : (
-              <YStack
-                flex={1}
-                alignItems="center"
-                justifyContent="center"
-                gap="$3"
-                padding="$6"
-              >
-                <Truck size={40} color="$colorMuted" />
-                <Text color="$colorMuted" fontSize="$4" textAlign="center">
-                  Select a delivery to view its details
-                </Text>
-              </YStack>
-            )}
-          </YStack>
-        </XStack>
-      ) : (
-        <>
-          {searchAndFilters}
-          {listBody}
-        </>
-      )}
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      {searchAndFilters}
+      {listBody}
 
       <RiderSelectionSheet
         visible={showRiderSheet}
@@ -897,6 +902,41 @@ export default function SellerDeliveries() {
         onPaymentStatusChange={setPaymentStatus}
         onClear={resetFilters}
       />
+
+      <Sheet
+        modal
+        open={selectedDeliveryId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedDeliveryId(null);
+        }}
+        snapPointsMode="percent"
+        snapPoints={[90]}
+        dismissOnSnapToBottom
+        dismissOnOverlayPress
+        zIndex={100_000}
+      >
+        <Sheet.Overlay
+          animation="lazy"
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+          backgroundColor="rgba(15, 23, 42, 0.32)"
+        />
+        <Sheet.Frame
+          backgroundColor="$background"
+          borderTopLeftRadius="$6"
+          borderTopRightRadius="$6"
+          height="90%"
+          overflow="hidden"
+        >
+          <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
+          {selectedDeliveryId ? (
+            <SellerDeliveryDetail
+              deliveryId={selectedDeliveryId}
+              embedded
+            />
+          ) : null}
+        </Sheet.Frame>
+      </Sheet>
     </YStack>
   );
 }

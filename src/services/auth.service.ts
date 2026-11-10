@@ -200,6 +200,18 @@ export const authService = {
 
   async logout(): Promise<void> {
     const { refreshToken } = useAuthStore.getState();
+
+    // Unregister the device push token while the current account's access
+    // token is still valid. Other accounts on this terminal must never receive
+    // this user's notifications after a switch.
+    try {
+      const push = await import('@/hooks/usePushTokenRegistration');
+      push.cleanup();
+      await push.unregister();
+    } catch {
+      // Best-effort; local scoped token keys are cleared even if the API fails.
+    }
+
     if (refreshToken) {
       try {
         await api.post('/auth/logout', { refresh_token: refreshToken });

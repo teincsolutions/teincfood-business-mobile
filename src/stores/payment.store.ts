@@ -16,23 +16,7 @@ interface PaymentState {
 export const usePaymentStore = create<PaymentState>()(
   persist(
     (set, get) => ({
-      paymentMethods: [
-        {
-          id: "pm-1",
-          type: "mobile_money",
-          mobileMoneyNumber: "+233 20 123 4567",
-          accountHolderName: "MTN Mobile Money",
-          isDefault: true,
-        },
-        {
-          id: "pm-2",
-          type: "card",
-          last4: "4242",
-          cardHolderName: "Vishal Khadok",
-          cardBrand: "visa",
-          isDefault: false,
-        },
-      ],
+      paymentMethods: [],
 
       addPaymentMethod: (pm) => {
         set((state) => ({

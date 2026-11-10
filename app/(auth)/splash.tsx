@@ -14,7 +14,7 @@ import { getOfflineSessionState } from "@teincfood/core";
 import { useSecurityStore } from "@/stores/security.store";
 import { useCorePrime } from "@/core/bootstrap";
 import { queryClient } from "@/providers/QueryProvider";
-import { BUSINESSES_QUERY_KEY } from "@/hooks/useBusinessesQuery";
+import { businessesQueryKey } from "@/hooks/useBusinessesQuery";
 import * as businessService from "@/services/business.service";
 import { authService } from "@/services/auth.service";
 import {
@@ -259,7 +259,7 @@ export default function SplashScreen() {
       setStatusMessage("Loading your businesses...");
       void queryClient
         .prefetchQuery({
-          queryKey: BUSINESSES_QUERY_KEY,
+          queryKey: businessesQueryKey(user?.id ?? null),
           queryFn: async () => {
             const res = await businessService.fetchMyBusinesses();
             return res.data || [];

@@ -141,13 +141,15 @@ function AppShell() {
   // OTA update check (production builds only) — prompts user when a new version is available
   useOTAUpdate();
 
-  // Initialize offline-first SQLite database (seller role only)
+  // Initialize offline-first SQLite database (seller role only). The core
+  // driver opens a per-account file; re-run when the authenticated account
+  // changes so the next open can never attach to the previous user's DB.
   useEffect(() => {
-    if (!sellerOfflineEnabled) return;
+    if (!sellerOfflineEnabled || !user?.id) return;
     openSyncDatabase().catch((error) => {
       console.error("[SQLite] Failed to open sync database:", error);
     });
-  }, [sellerOfflineEnabled]);
+  }, [sellerOfflineEnabled, user?.id]);
 
   // Initialize connectivity monitoring
   useEffect(() => {
@@ -156,13 +158,21 @@ function AppShell() {
   }, []);
 
   // Initialize Local Node / LAN service (seller role only — fleet and
-  // rider roles never start LAN discovery or the local node server)
+  // rider roles never start LAN discovery or the local node server).
+  // Tear the mesh down between accounts so a LAN peer cannot keep serving
+  // the previous user's business while the login screen/new account loads.
   useEffect(() => {
-    if (!sellerOfflineEnabled) return;
+    if (!sellerOfflineEnabled || !user?.id) {
+      void localNodeService.shutdown().catch(() => undefined);
+      return;
+    }
     localNodeService.initialize().catch((error) => {
       console.error("[LocalNode] Failed to initialize:", error);
     });
-  }, [sellerOfflineEnabled]);
+    return () => {
+      void localNodeService.shutdown().catch(() => undefined);
+    };
+  }, [sellerOfflineEnabled, user?.id]);
 
   // Drain pending sync jobs when cloud connectivity returns (single source:
   // SQLite orders + sync_jobs FIFO). Legacy command-queue replay is retired.

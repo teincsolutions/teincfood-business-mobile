@@ -17,7 +17,12 @@ import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";
 import { CategoryPill } from "@/components/menu/CategoryPill";
-import { MenuItemCard, MenuFormSheet } from "@/components/menu";
+import {
+  MenuItemCard,
+  MenuItemTableHeader,
+  MenuItemTableRow,
+  MenuFormSheet,
+} from "@/components/menu";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { usePlanLimit } from "@/hooks/usePlanLimit";
 import { useBusinessStore } from "@/stores/business.store";
@@ -47,7 +52,11 @@ export default function SellerMenu() {
   const theme = useTheme();
   const router = useRouter();
   const { isTablet, isLandscape } = useResponsive();
-  const menuColumns = !isTablet ? 1 : isLandscape ? 3 : 2;
+  // Landscape tablets use a desktop-style table. Three card columns plus the
+  // drawer squeeze names into one letter per line, so keep cards for portrait
+  // and phones only.
+  const useMenuTable = isTablet && isLandscape;
+  const menuColumns = isTablet ? 2 : 1;
 
   // ── State (must be before hooks that use them) ──
   const activeCategory = useFilterStore((s) => s.menuActiveCategory);
@@ -501,30 +510,54 @@ export default function SellerMenu() {
         ))}
       </ScrollView>
 
+      {/* Landscape tablet: desktop-style table */}
+      {useMenuTable ? (
+        <>
+          <XStack paddingHorizontal="$4" pb="$2">
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              {data?.length || 0} {(data?.length || 0) === 1 ? "item" : "items"}
+            </Text>
+          </XStack>
+          <MenuItemTableHeader />
+        </>
+      ) : null}
+
       {/* List */}
       <FlatList
-        key={`menu-grid-${menuColumns}`}
+        key={useMenuTable ? "menu-table" : `menu-grid-${menuColumns}`}
         data={data}
         keyExtractor={(item) => item.id}
         extraData={data?.length}
-        numColumns={menuColumns}
-        renderItem={({ item }) => (
-          <YStack flex={1} padding="$1" maxWidth={isTablet ? "50%" : "100%"}>
-            <MenuItemCard
+        numColumns={useMenuTable ? 1 : menuColumns}
+        renderItem={({ item }) =>
+          useMenuTable ? (
+            <MenuItemTableRow
               item={item}
               onPress={(item) => router.push(`/(shared)/menu/${item.id}`)}
               onEdit={canManageMenu ? openEdit : undefined}
               onDelete={canManageMenu ? setDeleteTarget : undefined}
               onToggleAvailability={canManageMenu ? toggleAvailability : undefined}
             />
-          </YStack>
-        )}
+          ) : (
+            <YStack flex={1} padding="$1" maxWidth={isTablet ? "50%" : "100%"}>
+              <MenuItemCard
+                item={item}
+                onPress={(item) => router.push(`/(shared)/menu/${item.id}`)}
+                onEdit={canManageMenu ? openEdit : undefined}
+                onDelete={canManageMenu ? setDeleteTarget : undefined}
+                onToggleAvailability={canManageMenu ? toggleAvailability : undefined}
+              />
+            </YStack>
+          )
+        }
         ListHeaderComponent={
-          <XStack paddingHorizontal="$4" pb="$2">
-            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-              {data?.length || 0} {(data?.length || 0) === 1 ? "item" : "items"}
-            </Text>
-          </XStack>
+          useMenuTable ? null : (
+            <XStack paddingHorizontal="$4" pb="$2">
+              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                {data?.length || 0} {(data?.length || 0) === 1 ? "item" : "items"}
+              </Text>
+            </XStack>
+          )
         }
         ListEmptyComponent={
           <YStack alignItems="center" paddingVertical="$10" gap="$3">
@@ -546,7 +579,7 @@ export default function SellerMenu() {
           </YStack>
         }
         contentContainerStyle={{
-          paddingHorizontal: isTablet ? 24 : 16,
+          paddingHorizontal: useMenuTable ? 0 : isTablet ? 24 : 16,
           paddingBottom: insets.bottom + 16,
         }}
         initialNumToRender={10}

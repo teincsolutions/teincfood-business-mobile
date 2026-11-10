@@ -12,10 +12,12 @@ import { Button, Input, Text, XStack, YStack } from "tamagui";
 import {
   extractApiErrorCode,
   extractApiErrorMessage,
+  setAccountScope,
   type OfflineMemberCredential,
 } from "@teincfood/core";
 import { useOfflineAuth } from "@/hooks/useOfflineAuth";
 import { useRoleStore } from "@/stores/role.store";
+import { clearOfflineDeviceContext } from "@/utils/storage";
 
 export default function OfflineLoginScreen() {
   const router = useRouter();
@@ -32,9 +34,11 @@ export default function OfflineLoginScreen() {
 
   useEffect(() => {
     if (!loading && !hasDevice) {
+      if (!error) clearOfflineDeviceContext();
+      setAccountScope(null);
       router.replace("/(auth)/login");
     }
-  }, [hasDevice, loading, router]);
+  }, [error, hasDevice, loading, router]);
 
   const submit = async () => {
     if (!selected || pin.length !== 6) return;

@@ -216,7 +216,7 @@ export default function OperatingHoursSettings() {
       >
         <XStack gap="$3" alignItems="center">
           <BackButton />
-          <Text fontSize="$6" fontWeight="bold">
+          <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
             Operating Hours
           </Text>
         </XStack>
@@ -259,7 +259,7 @@ export default function OperatingHoursSettings() {
             <Text color="$colorMuted">Loading hours...</Text>
           </YStack>
         ) : (
-          <YStack padding="$4" gap="$4" paddingBottom={Math.max(insets.bottom + 8, 20)}>
+          <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4" paddingBottom={Math.max(insets.bottom + 8, 20)}>
             <Card padding="$4" bordered backgroundColor="$blue2">
               <XStack gap="$3" alignItems="center">
                 <Clock size={24} color="$blue10" />

@@ -118,13 +118,7 @@ export default function OrderFlowSettings() {
   });
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      {...(media.md || media.lg
-        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
-        : {})}
-    >
+    <YStack flex={1} backgroundColor="$background">
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 24)}
@@ -143,14 +137,14 @@ export default function OrderFlowSettings() {
             onPress={() => router.back()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
-          <Text fontSize="$6" fontWeight="bold">
+          <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
             Order Flow
           </Text>
         </XStack>
       </XStack>
 
       <ScrollView>
-        <YStack padding="$4" gap="$4">
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4">
           {!canEdit ? (
             <Card padding="$4" bordered backgroundColor="$yellow2">
               <Text fontSize="$3" color="$yellow10">

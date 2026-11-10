@@ -10,6 +10,7 @@ import {
   Separator,
   ScrollView,
   Tooltip,
+  Avatar,
 } from "tamagui";
 import {
   FileText,
@@ -19,11 +20,12 @@ import {
   Clock,
   Package,
   CalendarDays,
+  Truck,
+  User,
 } from "@tamagui/lucide-icons";
 import { FlatList, RefreshControl, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import OrderDetails from "../../orders/[id]";
 import {
   useSellerOrdersQuery,
   useCancelOrderMutation,
@@ -36,6 +38,7 @@ import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FilterSheet } from "@/components/filters/FilterSheet";
 import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
 import { printService } from "@/services/print.service";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import type { SellerOrder } from "@teincfood/core";
 import {
   formatPriceFromMinor,
@@ -124,16 +127,20 @@ function timeSince(dateStr: string) {
 export default function SellerOrders() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useResponsive();
+  const { width, isTablet, isLandscape } = useResponsive();
   const theme = useTheme();
-  const isTablet = width >= 768;
+  const useOrdersTable = isTablet && isLandscape;
 
-  const COL_ITEMS = 45;
-  const COL_TIME = 70;
-  const COL_ACTIONS = 400;
+  const COL_ITEMS = 44;
+  const COL_TIME = 64;
+  // Compact icon actions keep the table inside the drawer content width on a
+  // landscape iPad (the drawer leaves roughly 720pt). Text buttons forced a
+  // horizontal scroll and large empty gaps between columns.
+  const COL_ACTIONS = 188;
   const FIXED_TOTAL = COL_ITEMS + COL_TIME + COL_ACTIONS;
 
   const [containerWidth, setContainerWidth] = useState(0);
+
   const searchQuery = useFilterStore((s) => s.ordersSearchQuery);
   const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
   const activeChips = useFilterStore((s) => s.ordersActiveChips);
@@ -157,7 +164,6 @@ export default function SellerOrders() {
   const [makeDeliveryTarget, setMakeDeliveryTarget] = useState<SellerOrder | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const resetFilters = useCallback(() => {
     setSearchQuery("");
@@ -259,28 +265,18 @@ export default function SellerOrders() {
 
   const allOrders = data || [];
 
-  // Tablet master-detail: keep a selection so the right pane always shows a
-  // detail. Default to the newest order once the list loads.
-  useEffect(() => {
-    if (!isTablet) return;
-    setSelectedOrderId((prev) => {
-      if (prev && allOrders.some((o) => o.id === prev)) return prev;
-      return allOrders[0]?.id ?? null;
-    });
-  }, [isTablet, allOrders]);
-
   const availWidth = containerWidth || width;
-  const remaining = Math.max(300, availWidth - FIXED_TOTAL - 48);
+  const remaining = Math.max(280, availWidth - FIXED_TOTAL - 32);
   const colWidths = {
-    order: Math.max(100, Math.round(remaining * 0.25)),
-    customer: Math.max(108, Math.round(remaining * 0.28)),
-    status: Math.max(80, Math.round(remaining * 0.18)),
-    total: Math.max(100, Math.round(remaining * 0.25)),
+    order: Math.max(86, Math.round(remaining * 0.24)),
+    customer: Math.max(112, Math.round(remaining * 0.3)),
+    status: Math.max(74, Math.round(remaining * 0.19)),
+    total: Math.max(90, Math.round(remaining * 0.27)),
     items: COL_ITEMS,
     time: COL_TIME,
     actions: COL_ACTIONS,
   };
-  const tableTotal = Object.values(colWidths).reduce((a, b) => a + b, 0) + 48;
+  const tableTotal = Object.values(colWidths).reduce((a, b) => a + b, 0) + 32;
 
   const toggleChip = (key: string) => {
     useFilterStore.setState((state) => ({
@@ -390,14 +386,13 @@ export default function SellerOrders() {
   // ── Tablet: table row ──
   const renderTabletRow = ({ item }: { item: SellerOrder }) => {
     const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
-    const isSelected = selectedOrderId === item.id;
     return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={() => setSelectedOrderId(item.id)}
+      onPress={() => router.push(`/(seller)/orders/${item.id}`)}
     >
     <XStack
-      backgroundColor={isSelected ? "$backgroundSoft" : "$background"}
+      backgroundColor="$background"
       borderBottomWidth={1}
       borderBottomColor="$borderColor"
       paddingVertical="$4"
@@ -415,34 +410,62 @@ export default function SellerOrders() {
       {(() => {
         const c = getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]);
         return (
-          <YStack width={colWidths.customer}>
-            <Tooltip label={c.name}>
-              <Tooltip.Trigger>
-                <Text fontSize="$4" numberOfLines={1} ellipsis>
-                  {c.name}
-                </Text>
-              </Tooltip.Trigger>
-            </Tooltip>
-            <Text fontSize="$3" color="$colorMuted">
-              {c.phone || ""}
-            </Text>
-            {c.isWalkIn && c.tellerName ? (
-              <Text fontSize="$2" color="$colorMuted">
-                Teller: {c.tellerName}
+          <XStack width={colWidths.customer} gap="$2" alignItems="center">
+            <Avatar
+              circular
+              size="$3"
+              backgroundColor={c.isWalkIn ? "$yellow2" : "$backgroundSoft"}
+              flexShrink={0}
+            >
+              {c.avatarUrl ? <CachedAvatarImage src={c.avatarUrl} /> : null}
+              <Avatar.Fallback
+                alignItems="center"
+                justifyContent="center"
+                backgroundColor={c.isWalkIn ? "$yellow2" : "$backgroundSoft"}
+              >
+                <User
+                  size={14}
+                  color={c.isWalkIn ? "$yellow10" : "$colorMuted"}
+                />
+              </Avatar.Fallback>
+            </Avatar>
+            <YStack flex={1} minWidth={0}>
+              <Tooltip label={c.name}>
+                <Tooltip.Trigger>
+                  <Text fontSize="$4" numberOfLines={1} ellipsis>
+                    {c.name}
+                  </Text>
+                </Tooltip.Trigger>
+              </Tooltip>
+              <Text fontSize="$3" color="$colorMuted" numberOfLines={1}>
+                {c.phone || ""}
               </Text>
-            ) : null}
-          </YStack>
+              {c.isWalkIn && c.tellerName ? (
+                <Text fontSize="$2" color="$colorMuted" numberOfLines={1}>
+                  Teller: {c.tellerName}
+                </Text>
+              ) : null}
+            </YStack>
+          </XStack>
         );
       })()}
       <YStack
-        px="$3"
-        py="$1.5"
+        px="$2"
+        py="$1"
         borderRadius="$full"
         backgroundColor={badge.bg}
         width={colWidths.status}
         alignItems="center"
+        justifyContent="center"
       >
-        <Text fontSize="$3" color={badge.color} fontWeight="700" textAlign="center" numberOfLines={1}>
+        <Text
+          fontSize="$2"
+          color={badge.color}
+          fontWeight="700"
+          textAlign="center"
+          numberOfLines={1}
+          letterSpacing={0.2}
+        >
           {formatStatus(item.status)}
         </Text>
       </YStack>
@@ -475,16 +498,16 @@ export default function SellerOrders() {
           {timeSince(item.inserted_at)}
         </Text>
       </XStack>
-      <XStack gap="$3" width={COL_ACTIONS} justifyContent="flex-end">
+      <XStack gap="$2" width={COL_ACTIONS} justifyContent="flex-end">
         <Button
           variant="outline"
+          width={40}
           height={40}
-          paddingHorizontal="$3"
+          padding={0}
+          aria-label={`View order ${item.order_number}`}
           icon={<ExternalLink size={16} />}
-          onPress={() => setSelectedOrderId(item.id)}
-        >
-          View
-        </Button>
+          onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+        />
         <Button
           variant="outline"
           width={40}
@@ -502,23 +525,24 @@ export default function SellerOrders() {
           ) && (
             <Button
               variant="outline"
+              width={40}
               height={40}
-              paddingHorizontal="$3"
+              padding={0}
+              aria-label={`Make delivery for ${item.order_number}`}
+              icon={<Truck size={16} />}
               onPress={() => setMakeDeliveryTarget(item)}
-            >
-              Make Delivery
-            </Button>
+            />
           )}
         {canReject && isCancellable(item.status) && (
           <Button
             variant="dangerOutline"
+            width={40}
             height={40}
-            paddingHorizontal="$3"
+            padding={0}
+            aria-label={`${actionLabel(item.status)} order ${item.order_number}`}
             icon={<FileText size={16} />}
             onPress={() => setCancelTarget({ id: item.id, status: item.status })}
-          >
-            {actionLabel(item.status)}
-          </Button>
+          />
         )}
       </XStack>
     </XStack>
@@ -642,7 +666,7 @@ export default function SellerOrders() {
     </YStack>
   );
 
-  const listBody = isTablet ? (
+  const listBody = useOrdersTable ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
@@ -651,7 +675,7 @@ export default function SellerOrders() {
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"
         >
-          <YStack width={tableTotal} flex={1}>
+          <YStack width={tableTotal}>
             {tableHeader}
             {allOrders.length === 0 ? (
               <YStack padding="$8" alignItems="center">
@@ -744,37 +768,13 @@ export default function SellerOrders() {
       );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
-      {isTablet ? (
-        <XStack flex={1}>
-          <YStack
-            flex={1.7}
-            borderRightWidth={1}
-            borderRightColor="$borderColor"
-            onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-          >
-            {searchAndFilters}
-            {listBody}
-          </YStack>
-          <YStack flex={1} backgroundColor="$backgroundSoft">
-            {selectedOrderId ? (
-              <OrderDetails orderId={selectedOrderId} embedded />
-            ) : (
-              <YStack flex={1} alignItems="center" justifyContent="center" gap="$3" padding="$6">
-                <Package size={40} color="$colorMuted" />
-                <Text color="$colorMuted" fontSize="$4" textAlign="center">
-                  Select an order to view its details
-                </Text>
-              </YStack>
-            )}
-          </YStack>
-        </XStack>
-      ) : (
-        <>
-          {searchAndFilters}
-          {listBody}
-        </>
-      )}
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      {searchAndFilters}
+      {listBody}
 
       {/* Filter Sheet */}
       <FilterSheet

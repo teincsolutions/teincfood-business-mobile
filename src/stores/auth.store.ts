@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@/types/user.model';
-import { zustandStorage } from '@/utils/storage';
+import type { Business } from '@/types/business.model';
+import { rootZustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
-import { queryClient } from '@/providers/QueryProvider';
-import { useRoleStore } from './role.store';
-import { useLocationStore } from './location.store';
-import { useBusinessStore } from './business.store';
-import { useFleetStore } from './fleet.store';
 import { setLocalSessionActive } from '@teincfood/core';
+import {
+  adoptPersistedAccountScope,
+  beginAccountScope,
+  endAccountScope,
+} from '@/services/account-scope.service';
 
 interface AuthState {
   user: User | null;
@@ -19,7 +20,11 @@ interface AuthState {
 
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  setOfflineSession: (user: User, offlineMemberId: string) => void;
+  setOfflineSession: (
+    user: User,
+    offlineMemberId: string,
+    business?: Business | null,
+  ) => void;
   setUser: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   completeKyc: () => void;
@@ -37,8 +42,12 @@ export const useAuthStore = create<AuthState>()(
       isHydrated: false,
 
       setAuth: (user, accessToken, refreshToken) => {
+        // Set the new identity before switching scopes: store rehydration and
+        // LAN/query side-effects must observe the new account, never the old
+        // token while the new business list is already in memory.
         setLocalSessionActive(false);
         set({ user, accessToken, refreshToken, offlineMemberId: null });
+        beginAccountScope(user.id);
       },
 
       setTokens: (accessToken, refreshToken) => {
@@ -46,9 +55,10 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken, refreshToken, offlineMemberId: null });
       },
 
-      setOfflineSession: (user, offlineMemberId) => {
+      setOfflineSession: (user, offlineMemberId, business) => {
         setLocalSessionActive(true);
         set({ user, accessToken: null, refreshToken: null, offlineMemberId });
+        beginAccountScope(user.id, business ? { business } : undefined);
       },
 
   setUser: (user) => set({ user }),
@@ -64,20 +74,20 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       clearAuth: () => {
-        useRoleStore.getState().clearRole();
-        useLocationStore.getState().clearLocation();
-        useFleetStore.getState().clearFleet();
-        queryClient.clear();
         setLocalSessionActive(false);
         set({ user: null, accessToken: null, refreshToken: null, offlineMemberId: null });
+        endAccountScope();
       },
 
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
     }),
     {
       name: STORAGE_KEYS.USER_PROFILE, // Name in storage
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
       onRehydrateStorage: () => (state) => {
+        // Adopt the persisted account before any store performs a scoped read
+        // or core opens SQLite for the first time.
+        adoptPersistedAccountScope(state?.user?.id ?? null);
         // Run after hydration completes. An offline member session survives a
         // restart even though it has no cloud access token.
         setLocalSessionActive(Boolean(state?.offlineMemberId));

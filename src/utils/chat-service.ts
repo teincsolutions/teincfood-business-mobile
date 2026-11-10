@@ -1,18 +1,47 @@
-import { ChatClient, createMMKVStorageAdapter } from '@teincfood/chat-client';
-import type { AuthTokens } from '@teincfood/chat-client';
+import { ChatClient } from '@teincfood/chat-client';
+import type { AuthTokens, ChatStorage } from '@teincfood/chat-client';
 import { AppState } from 'react-native';
-import { mmkvStorage } from './storage';
+import { accountStorage, clearAccountStoragePrefix } from './storage';
 import { API_BASE_URL, WS_BASE_URL } from './constants';
 import { eventsService, refreshSession } from '@teincfood/core';
 
 let _client: ChatClient | null = null;
+
+/**
+ * Chat messages are account data. The adapter maps every chat key through the
+ * active account prefix so a new login cannot hydrate the previous user's
+ * inbox. `clear()` only removes chat keys for the current account.
+ */
+function createAccountChatStorage(): ChatStorage {
+  return {
+    async getItem<T = unknown>(key: string): Promise<T | null> {
+      const raw = accountStorage.getString(key);
+      if (raw == null) return null;
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        return null;
+      }
+    },
+    async setItem<T = unknown>(key: string, value: T): Promise<void> {
+      // accountStorage refuses writes before login and during a scope switch.
+      accountStorage.set(key, JSON.stringify(value));
+    },
+    async removeItem(key: string): Promise<void> {
+      accountStorage.delete(key);
+    },
+    async clear(): Promise<void> {
+      clearAccountStoragePrefix("chat:");
+    },
+  };
+}
 
 export function getChatClient(): ChatClient {
   if (!_client) {
     _client = new ChatClient({
       baseUrl: API_BASE_URL,
       wsUrl: WS_BASE_URL,
-      storage: createMMKVStorageAdapter(mmkvStorage),
+      storage: createAccountChatStorage(),
       surface: "business-mobile",
       onTokenExpired: async (): Promise<AuthTokens | null> => {
         // Reuse core's single-flight refresh. Chat and REST must never rotate
@@ -101,4 +130,10 @@ export function disconnectChatClient(): void {
   teardownChatResumeHandlers();
   teardownChatEventBridge();
   _client?.stop();
+}
+
+/** Drop the client instance so the next login rebuilds it against the new scope. */
+export function resetChatClient(): void {
+  disconnectChatClient();
+  _client = null;
 }

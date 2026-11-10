@@ -1,11 +1,11 @@
 // @ts-nocheck
 import { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { YStack, XStack, Text, Card, useMedia } from "tamagui";
+import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Clock, CheckCircle } from "@tamagui/lucide-icons";
-import { BackButton, Button, FormInput } from "@/components/ui";
+import { BackButton, Button, FormInput, DrawerToggleButton } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
 import {
@@ -18,9 +18,8 @@ import {
 } from "@teincfood/core";
 import { useRefreshBusinesses } from "@/hooks/useRefreshBusinesses";
 
-export default function InvitationsScreen() {
+export default function InvitationsScreen({ embedded = false }: { embedded?: boolean }) {
   const insets = useSafeAreaInsets();
-  const media = useMedia();
   const { code: linkedCode } = useLocalSearchParams<{ code?: string }>();
   const { data: invitesRes, refetch, isRefetching } = useUserInvitationsQuery();
   const leaveBusiness = useLeaveBusinessMutation();
@@ -254,16 +253,17 @@ export default function InvitationsScreen() {
   const data = [...pending, ...joined];
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack flex={1} backgroundColor="$background">
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
         alignItems="center"
         gap="$3"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <BackButton />
-        <Text fontSize="$7" fontWeight="bold">
+        {embedded ? <DrawerToggleButton /> : <BackButton />}
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Invitations
         </Text>
         {pending.length > 0 && (
@@ -283,6 +283,7 @@ export default function InvitationsScreen() {
         )}
       </XStack>
 
+      <YStack flex={1} width="100%" maxWidth={600} alignSelf="center">
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
@@ -336,6 +337,7 @@ export default function InvitationsScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
       />
+      </YStack>
 
       <AppAlertDialog
         open={confirmLeaveId !== null}

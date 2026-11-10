@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { zustandStorage } from "@/utils/storage";
+import { rootZustandStorage } from "@/utils/storage";
 
 export interface AppLocation {
   latitude: number;
@@ -37,7 +37,7 @@ export const useLocationStore = create<LocationState>()(
     }),
     {
       name: "Teinc Food Business-location",
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

@@ -149,14 +149,14 @@ export default function PrinterSettings() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 12, 24)}>
       <XStack padding="$4" alignItems="center" gap="$3" borderBottomWidth={1} borderBottomColor="$borderColor">
         <BackButton />
-        <Text fontSize="$6" fontWeight="bold">Printer Settings</Text>
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading">Printer Settings</Text>
       </XStack>
 
       <ScrollView>
-        <YStack padding="$4" gap="$4">
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4">
           {/* Auto-Print Toggle */}
           <Card padding="$4" bordered>
             <XStack justifyContent="space-between" alignItems="center">

@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import { mmkvStorage } from "@/utils/storage";
+import { accountStorage } from "@/utils/storage";
 
 const STORAGE_KEY = "offline_setup_skipped_businesses";
 
 function readSkipped(): Record<string, boolean> {
   try {
-    const raw = mmkvStorage.getString(STORAGE_KEY);
+    const raw = accountStorage.getString(STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     return parsed && typeof parsed === "object" ? (parsed as Record<string, boolean>) : {};
@@ -18,19 +18,21 @@ interface OfflineSetupState {
   skipped: Record<string, boolean>;
   skip: (businessId: string) => void;
   clear: (businessId: string) => void;
+  reload: () => void;
 }
 
 export const useOfflineSetupStore = create<OfflineSetupState>((set, get) => ({
   skipped: readSkipped(),
   skip: (businessId) => {
     const skipped = { ...get().skipped, [businessId]: true };
-    mmkvStorage.set(STORAGE_KEY, JSON.stringify(skipped));
+    accountStorage.set(STORAGE_KEY, JSON.stringify(skipped));
     set({ skipped });
   },
   clear: (businessId) => {
     const skipped = { ...get().skipped };
     delete skipped[businessId];
-    mmkvStorage.set(STORAGE_KEY, JSON.stringify(skipped));
+    accountStorage.set(STORAGE_KEY, JSON.stringify(skipped));
     set({ skipped });
   },
+  reload: () => set({ skipped: readSkipped() }),
 }));

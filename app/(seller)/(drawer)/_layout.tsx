@@ -349,6 +349,24 @@ export default function SellerDrawerLayout() {
           }}
           listeners={{ drawerItemPress: handleProtectedRoute }}
         />
+
+        {/* Shared screens rendered inside the drawer shell */}
+        <Drawer.Screen
+          name="wallet/index"
+          options={{ headerShown: false, title: "Wallet" }}
+        />
+        <Drawer.Screen
+          name="messages/index"
+          options={{ headerShown: false, title: "Messages" }}
+        />
+        <Drawer.Screen
+          name="notifications/index"
+          options={{ headerShown: false, title: "Notifications" }}
+        />
+        <Drawer.Screen
+          name="invitations/index"
+          options={{ headerShown: false, title: "Invitations" }}
+        />
       </Drawer>
 
       <AppAlertDialog

@@ -9,7 +9,6 @@ import {
   Separator,
   Spinner,
   Sheet,
-  useMedia,
 } from "tamagui";
 import {
   TrendingUp,
@@ -37,6 +36,7 @@ import {
 import type { AnalyticsPeriod, AnalyticsRange } from "@teincfood/core";
 import { Badge } from "@/components/ui/Badge";
 import { Button, TamaguiDateInput } from "@/components/ui";
+import { useResponsive } from "@/utils/responsive";
 
 const PERIODS = [
   { key: "today", label: "Today" },
@@ -83,13 +83,15 @@ function LockedReportCard({
   title,
   showUpgrade,
   onUpgrade,
+  width = "100%",
 }: {
   title: string;
   showUpgrade: boolean;
   onUpgrade: () => void;
+  width?: any;
 }) {
   return (
-    <Card padding="$4" bordered>
+    <Card width={width} padding="$4" bordered>
       <YStack gap="$2" alignItems="center">
         <Lock size={24} color="$colorSecondary" />
         <Text fontSize="$4" fontWeight="700" fontFamily="$heading" color="$color">
@@ -152,7 +154,7 @@ function PaymentBar({ method, revenue_minor, count, percentage, totalColor }: {
 
 export default function SellerAnalytics() {
   const insets = useSafeAreaInsets();
-  const media = useMedia();
+  const { isTablet } = useResponsive();
   const router = useRouter();
   const { data: features, evaluation } = useEntitlements();
   const canManageBilling = useHasCapability("finance_billing_manage");
@@ -258,10 +260,19 @@ export default function SellerAnalytics() {
     setCustomOpen(false);
   };
 
+  const reportWidth = isTablet ? "48.5%" : "100%";
+
   return (
     <YStack flex={1} backgroundColor="$background">
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" paddingBottom={insets.bottom + 24} gap="$4" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+        <YStack
+          padding={isTablet ? "$5" : "$4"}
+          paddingBottom={insets.bottom + 24}
+          gap="$4"
+          alignSelf="center"
+          width="100%"
+          maxWidth={isTablet ? 1100 : 600}
+        >
           {/* Header */}
           <Text fontSize="$6" fontWeight="700" fontFamily="$heading" color="$color">
             Analytics
@@ -300,8 +311,8 @@ export default function SellerAnalytics() {
           ) : summary ? (
             <>
               {/* Revenue Summary Cards */}
-              <XStack gap="$3">
-                <Card flex={1} padding="$4" bordered>
+              <XStack gap="$3" flexWrap="wrap">
+                <Card width={isTablet ? "32%" : "48%"} padding="$4" bordered>
                   <YStack gap="$2">
                     <XStack gap="$2" alignItems="center">
                       <DollarSign size={18} color="$green10" />
@@ -314,7 +325,7 @@ export default function SellerAnalytics() {
                     </Text>
                   </YStack>
                 </Card>
-                <Card flex={1} padding="$4" bordered>
+                <Card width={isTablet ? "32%" : "48%"} padding="$4" bordered>
                   <YStack gap="$2">
                     <XStack gap="$2" alignItems="center">
                       <ShoppingBag size={18} color="$blue10" />
@@ -327,31 +338,32 @@ export default function SellerAnalytics() {
                     </Text>
                   </YStack>
                 </Card>
+                <Card width={isTablet ? "32%" : "100%"} padding="$4" bordered>
+                  <YStack gap="$2">
+                    <XStack gap="$2" alignItems="center">
+                      <TrendingUp size={18} color="$yellow10" />
+                      <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                        Average Order Value
+                      </Text>
+                    </XStack>
+                    <Text fontSize="$7" fontWeight="bold" fontFamily="$heading" color="$color">
+                      {formatPriceFromMinor(summary.average_order_value_minor, summary.currency)}
+                    </Text>
+                  </YStack>
+                </Card>
               </XStack>
 
-              <Card padding="$4" bordered>
-                <YStack gap="$2">
-                  <XStack gap="$2" alignItems="center">
-                    <TrendingUp size={18} color="$yellow10" />
-                    <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-                      Average Order Value
-                    </Text>
-                  </XStack>
-                  <Text fontSize="$6" fontWeight="bold" fontFamily="$heading" color="$color">
-                    {formatPriceFromMinor(summary.average_order_value_minor, summary.currency)}
-                  </Text>
-                </YStack>
-              </Card>
-
+              <XStack flexWrap="wrap" gap="$4" alignItems="flex-start">
               {/* Payment Method Breakdown */}
               {!unlocked("analytics.payment_methods") ? (
                 <LockedReportCard
                   title="Payment methods"
                   showUpgrade={canManageBilling}
+                  width={reportWidth}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
               ) : paymentMethods.length > 0 && (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                       By Payment Method
@@ -372,7 +384,7 @@ export default function SellerAnalytics() {
 
               {/* Revenue by Day */}
               {unlocked("analytics.sales_trends") && trendRows.length > 0 && (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                       Revenue by {period === "this_year" ? "Month" : "Day"}
@@ -420,10 +432,11 @@ export default function SellerAnalytics() {
                 <LockedReportCard
                   title="Order types"
                   showUpgrade={canManageBilling}
+                  width={reportWidth}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
               ) : orderTypes.length > 0 && (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                       By Order Type
@@ -455,7 +468,7 @@ export default function SellerAnalytics() {
 
               {/* Online vs Local */}
               {unlocked("analytics.channel_split") && channels.length > 0 && (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <XStack gap="$2" alignItems="center">
                       <Store size={18} color="$colorSecondary" />
@@ -489,10 +502,11 @@ export default function SellerAnalytics() {
                 <LockedReportCard
                   title="Teller performance"
                   showUpgrade={canManageBilling}
+                  width={reportWidth}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
               ) : tellers.length > 0 ? (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                       Teller Performance
@@ -524,10 +538,11 @@ export default function SellerAnalytics() {
                 <LockedReportCard
                   title="Hourly heatmap"
                   showUpgrade={canManageBilling}
+                  width={reportWidth}
                   onUpgrade={() => router.push("/(shared)/wallet/plans")}
                 />
               ) : hours.length > 0 ? (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <XStack gap="$2" alignItems="center">
                       <Clock size={18} color="$colorSecondary" />
@@ -560,7 +575,7 @@ export default function SellerAnalytics() {
 
               {/* Top Selling Items */}
               {unlocked("analytics.sales_trends") && topItems.length > 0 && (
-                <Card padding="$4" bordered>
+                <Card width={reportWidth} padding="$4" bordered>
                   <YStack gap="$3">
                     <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color">
                       Top Selling Items
@@ -589,6 +604,7 @@ export default function SellerAnalytics() {
                   </YStack>
                 </Card>
               )}
+              </XStack>
             </>
           ) : (
             <Card padding="$8" alignItems="center" justifyContent="center" bordered>

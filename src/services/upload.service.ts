@@ -19,7 +19,7 @@ import {
 import type { MenuItem } from '@teincfood/core';
 import { api } from './api';
 import { updateMenuItem as updateMenuItemService } from './menu.service';
-import { getItem as getStoredItem, setItem as setStoredItem } from '@/utils/storage';
+import { accountStorage } from '@/utils/storage';
 import { useAuthStore } from '@/stores/auth.store';
 import { useConnectivityStore } from '@/stores/connectivity.store';
 
@@ -102,7 +102,16 @@ function pendingImageUrl(businessId: string, filename: string): string {
 }
 
 function loadQueue(): PendingImageUpload[] {
-  const jobs = getStoredItem<PendingImageUpload[]>(PENDING_UPLOADS_KEY);
+  // Pending menu uploads contain business/menu data. Scope the queue so a new
+  // account never flushes or displays the previous user's images.
+  const raw = accountStorage.getString(PENDING_UPLOADS_KEY);
+  if (!raw) return [];
+  let jobs: unknown;
+  try {
+    jobs = JSON.parse(raw);
+  } catch {
+    return [];
+  }
   if (!Array.isArray(jobs)) return [];
   return jobs.filter(
     (job) =>
@@ -114,7 +123,7 @@ function loadQueue(): PendingImageUpload[] {
 }
 
 function saveQueue(jobs: PendingImageUpload[]): void {
-  setStoredItem(PENDING_UPLOADS_KEY, jobs);
+  accountStorage.set(PENDING_UPLOADS_KEY, JSON.stringify(jobs));
 }
 
 /** Best-effort: push cached bytes to the Local Node for dark-LAN peers. */

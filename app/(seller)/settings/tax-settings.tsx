@@ -154,10 +154,7 @@ export default function TaxSettings() {
     <YStack
       flex={1}
       backgroundColor="$background"
-      paddingTop={Math.max(insets.top + 8, 24)}
-      {...(media.md || media.lg
-        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
-        : {})}
+      paddingTop={Math.max(insets.top + 12, 24)}
     >
       {/* Header */}
       <XStack
@@ -168,13 +165,13 @@ export default function TaxSettings() {
         borderBottomColor="$borderColor"
       >
         <BackButton />
-        <Text fontSize="$6" fontWeight="bold" flex={1}>
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading" flex={1}>
           Tax Settings
         </Text>
       </XStack>
 
       <ScrollView>
-        <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 24}>
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4" paddingBottom={insets.bottom + 24}>
           {!activeBusinessId ? (
             <Card padding="$6" bordered alignItems="center" gap="$3">
               <YStack alignItems="center" gap="$2">

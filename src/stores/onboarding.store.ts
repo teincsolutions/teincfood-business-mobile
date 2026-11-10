@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
+import { rootZustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 interface OnboardingState {
@@ -24,7 +24,7 @@ export const useOnboardingStore = create<OnboardingState>()(
     }),
     {
       name: STORAGE_KEYS.HAS_SEEN_ONBOARDING,
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

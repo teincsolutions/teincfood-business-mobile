@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { toast } from "sonner-native";
-import { mmkvStorage } from "@/utils/storage";
+import { QUERY_CACHE_KEY, accountStorage, mmkvStorage } from "@/utils/storage";
 import {
   clearImageCache,
   createAppQueryClient,
@@ -15,15 +15,18 @@ import {
  * Persisted cache allows the app to show previously fetched data immediately
  * after restart, even before the network is available.
  */
-const queryClientPersister = createQueryPersister({
-  getItem: (key: string): string | null => mmkvStorage.getString(key) ?? null,
-  setItem: (key: string, value: string): void => {
-    mmkvStorage.set(key, value);
+const queryClientPersister = createQueryPersister(
+  {
+    getItem: (key: string): string | null => accountStorage.getString(key),
+    setItem: (key: string, value: string): void => {
+      accountStorage.set(key, value);
+    },
+    removeItem: (key: string): void => {
+      accountStorage.delete(key);
+    },
   },
-  removeItem: (key: string): void => {
-    mmkvStorage.delete(key);
-  },
-});
+  QUERY_CACHE_KEY,
+);
 
 /**
  * Shared QueryClient instance (core factory).

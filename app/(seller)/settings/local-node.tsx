@@ -32,16 +32,16 @@ export default function LocalNodeSettings() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack flex={1} backgroundColor="$background" paddingTop={Math.max(insets.top + 12, 24)}>
       <XStack padding="$4" alignItems="center" gap="$3">
         <BackButton onPress={() => router.back()} />
-        <Text fontSize="$6" fontWeight="bold">
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
           Local Node
         </Text>
       </XStack>
 
       <ScrollView>
-        <YStack padding="$4" gap="$4">
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4">
           <Card padding="$4" bordered>
             <XStack gap="$3" alignItems="center" marginBottom="$3">
               <Server color="$primary" />

@@ -3,6 +3,7 @@ import { Input } from './Input';
 import { FormInput } from './FormInput';
 import { FormTextArea } from './FormTextArea';
 import { BackButton } from './BackButton';
+import { DrawerToggleButton } from './DrawerToggleButton';
 import { DrawerHeader } from './DrawerHeader';
 import { DrawerMenuItem } from './DrawerMenuItem';
 import { Skeleton, FoodCardSkeleton, RestaurantCardSkeleton, OrderCardSkeleton } from './Skeleton';
@@ -19,6 +20,7 @@ export {
   FormInput,
   FormTextArea,
   BackButton,
+  DrawerToggleButton,
   DrawerHeader,
   DrawerMenuItem,
   Skeleton,

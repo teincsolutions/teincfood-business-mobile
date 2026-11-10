@@ -13,7 +13,8 @@ import { VehicleDetailView } from "@/components/fleet/VehicleDetailView";
 export default function FleetVehiclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isTwoPane } = useResponsiveLayout("wide");
+  // Drawer content is single-pane at every size; details push normally.
+  const isTwoPane = false;
   const { data: vehiclesRes, refetch, isRefetching } = useFleetVehiclesQuery();
   const { data: ridersRes } = useFleetRidersQuery();
   const vehicles = vehiclesRes?.data ?? [];

@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui";
 import { LAYOUT_WIDTHS } from "@/components/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, MessageSquare, Building2, User } from "@tamagui/lucide-icons";
-import { BackButton } from "@/components/ui";
+import { BackButton, DrawerToggleButton } from "@/components/ui";
 import { useContacts } from "@/hooks/useContacts";
 import { useActiveBusiness } from "@/hooks/useActiveBusiness";
 import { formatTime, parseMarkdown } from "@teincfood/chat-client";
@@ -46,7 +46,7 @@ function renderMarkdown(tokens: MarkdownToken[]) {
 
 type TabKey = "business" | "personal";
 
-export default function InboxScreen() {
+export default function InboxScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeBusinessId, hasBusiness } = useActiveBusiness();
@@ -313,7 +313,7 @@ export default function InboxScreen() {
       >
         {/* Header */}
         <XStack ai="center" px="$5" pb="$3" gap="$3">
-          <BackButton />
+          {embedded ? <DrawerToggleButton /> : <BackButton />}
           <Text
             fontSize="$6"
             fontWeight="800"

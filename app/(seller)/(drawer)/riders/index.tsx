@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { FlatList, RefreshControl, ScrollView } from "react-native";
+import { FlatList, RefreshControl } from "react-native";
 import {
   YStack,
   XStack,
@@ -8,21 +8,19 @@ import {
   Card,
   Avatar,
   Sheet,
-  Separator,
   Input as TamaguiInput,
-  useMedia,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Users,
   UserPlus,
-  Search,
   Phone,
   ChevronRight,
   Clock,
   Check,
   X,
-  Mail,
+  ExternalLink,
+  Bike,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { Button, Input } from "@/components/ui";
@@ -34,16 +32,81 @@ import {
   useInviteRiderMutation,
 } from "@teincfood/core";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
+import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { toast } from "sonner-native";
-import { extractApiErrorMessage } from "@teincfood/core";
+import { extractApiErrorMessage, formatDate } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { useResponsive } from "@/utils/responsive";
 
 type Tab = "riders" | "requests";
 
+const RIDER_FILTERS = ["all", "available", "busy", "offline"] as const;
+
+const headerText = {
+  fontSize: "$2",
+  fontFamily: "$body",
+  fontWeight: "700",
+  color: "$colorSecondary",
+  textTransform: "uppercase",
+  letterSpacing: 0.6,
+} as const;
+
+function titleCase(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function StatusBadge({ status, active }: { status?: string; active?: boolean }) {
+  const isActive = active !== false && status !== "suspended";
+  return (
+    <YStack
+      paddingHorizontal="$2"
+      paddingVertical="$1"
+      borderRadius="$full"
+      backgroundColor={isActive ? "$successMuted" : "$errorMuted"}
+      alignItems="center"
+    >
+      <Text
+        fontSize="$2"
+        fontWeight="700"
+        fontFamily="$body"
+        color={isActive ? "$success" : "$error"}
+        numberOfLines={1}
+      >
+        {titleCase(status || (isActive ? "active" : "inactive"))}
+      </Text>
+    </YStack>
+  );
+}
+
+function RiderAvatar({ rider, size = "$5" }: { rider: any; size?: any }) {
+  const name = rider?.user?.full_name || rider?.rider_number || "Rider";
+  return (
+    <Avatar circular size={size} backgroundColor="$primaryLight" flexShrink={0}>
+      {rider?.user?.avatar_url ? (
+        <CachedAvatarImage src={rider.user.avatar_url} />
+      ) : null}
+      <Avatar.Fallback
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="$primaryLight"
+      >
+        <Text fontSize="$3" fontWeight="800" color="$primary">
+          {name.charAt(0).toUpperCase()}
+        </Text>
+      </Avatar.Fallback>
+    </Avatar>
+  );
+}
+
 export default function SellerRidersScreen() {
   const router = useRouter();
-  const media = useMedia();
   const insets = useSafeAreaInsets();
+  const { isTablet, isLandscape } = useResponsive();
+  const useTable = isTablet && isLandscape;
+  const gridColumns = !isTablet ? 1 : useTable ? 1 : 2;
+
   const [activeTab, setActiveTab] = useState<Tab>("riders");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -98,8 +161,6 @@ export default function SellerRidersScreen() {
       toast.error("Enter a rider number, email, or phone");
       return;
     }
-    // Send as rider_number if it looks like a rider number (prefix + digits),
-    // otherwise as email (contains @) or phone.
     const data: Record<string, string> = {};
     if (/^[\w-]+\d+$/i.test(identifier) || /^RID-/i.test(identifier)) {
       data.rider_number = identifier;
@@ -118,130 +179,291 @@ export default function SellerRidersScreen() {
     });
   };
 
-  const renderRider = ({ item: rider }: { item: any }) => (
+  const openRider = (riderId: string) => {
+    router.push(`/(seller)/riders/${riderId}`);
+  };
+
+  const renderRiderCard = ({ item: rider }: { item: any }) => (
     <Card
       padding="$4"
       bordered
-      marginBottom="$3"
       pressStyle={{ scale: 0.98, opacity: 0.9 }}
-      onPress={() => router.push(`/(seller)/riders/${rider.id}`)}
+      onPress={() => openRider(rider.id)}
     >
       <XStack gap="$3" alignItems="center">
-        <Avatar circular size="$5">
-          <Avatar.Fallback backgroundColor="$gray800">
-            <Text color="white" fontWeight="bold">
-              {(rider.user?.full_name || "R").charAt(0)}
-            </Text>
-          </Avatar.Fallback>
-        </Avatar>
-
-        <YStack flex={1} gap="$1">
-          <XStack justifyContent="space-between" alignItems="center">
-            <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
-              {rider.user?.full_name || "Rider"}
-            </Text>
-            <YStack
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-              borderRadius="$2"
-              backgroundColor={
-                rider.is_active ? "$successMuted" : "$errorMuted"
-              }
-            >
+        <RiderAvatar rider={rider} />
+        <YStack flex={1} minWidth={0} gap="$1">
+          <XStack justifyContent="space-between" alignItems="center" gap="$2">
+            <YStack flex={1} minWidth={0}>
               <Text
-                fontSize="$3"
-                color={rider.is_active ? "$success" : "$error"}
-                fontFamily="$body"
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                numberOfLines={1}
               >
-                {rider.status}
+                {rider.user?.full_name || "Rider"}
+              </Text>
+              <Text
+                fontSize="$2"
+                color="$colorSecondary"
+                fontFamily="$body"
+                numberOfLines={1}
+              >
+                {rider.rider_number || "—"}
               </Text>
             </YStack>
+            <StatusBadge status={rider.status} active={rider.is_active} />
           </XStack>
-
-          <XStack gap="$3" alignItems="center">
+          <XStack gap="$3" alignItems="center" flexWrap="wrap">
             <XStack gap="$1" alignItems="center">
-              <Phone size={14} color="$colorMuted" />
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              <Phone size={13} color="$colorMuted" />
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
                 {rider.user?.phone || "N/A"}
               </Text>
             </XStack>
-            {rider.vehicle?.plate_number && (
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
-                · {rider.vehicle.plate_number}
-              </Text>
-            )}
+            {rider.vehicle?.plate_number ? (
+              <XStack gap="$1" alignItems="center">
+                <Bike size={13} color="$colorMuted" />
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  {rider.vehicle.plate_number}
+                </Text>
+              </XStack>
+            ) : null}
           </XStack>
         </YStack>
-
-        <ChevronRight size={20} color="$colorMuted" />
+        <ChevronRight size={18} color="$colorMuted" />
       </XStack>
     </Card>
   );
 
-  const renderJoinRequest = ({ item: request }: { item: any }) => {
+  const RiderTableHeader = () => (
+    <XStack
+      paddingHorizontal="$4"
+      paddingVertical="$2"
+      gap="$3"
+      alignItems="center"
+      backgroundColor="$backgroundSoft"
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+    >
+      <Text flex={1.4} minWidth={0} {...headerText}>
+        Rider
+      </Text>
+      <Text width={130} flexShrink={0} {...headerText}>
+        Phone
+      </Text>
+      <Text width={90} flexShrink={0} {...headerText}>
+        Status
+      </Text>
+      <Text width={110} flexShrink={0} {...headerText}>
+        Vehicle
+      </Text>
+      <Text width={80} flexShrink={0} textAlign="right" {...headerText}>
+        Actions
+      </Text>
+    </XStack>
+  );
+
+  const RiderTableRow = ({ item: rider }: { item: any }) => (
+    <XStack
+      paddingHorizontal="$4"
+      paddingVertical="$3"
+      gap="$3"
+      alignItems="center"
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+      pressStyle={{ backgroundColor: "$backgroundSoft" }}
+      onPress={() => openRider(rider.id)}
+    >
+      <XStack flex={1.4} minWidth={0} gap="$3" alignItems="center">
+        <RiderAvatar rider={rider} size="$4" />
+        <YStack flex={1} minWidth={0}>
+          <Text
+            fontSize="$3"
+            fontWeight="700"
+            fontFamily="$body"
+            color="$color"
+            numberOfLines={1}
+          >
+            {rider.user?.full_name || "Rider"}
+          </Text>
+          <Text
+            fontSize="$2"
+            color="$colorSecondary"
+            fontFamily="$body"
+            numberOfLines={1}
+          >
+            {rider.rider_number || "—"}
+          </Text>
+        </YStack>
+      </XStack>
+      <YStack width={130} flexShrink={0}>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
+          {rider.user?.phone || "—"}
+        </Text>
+      </YStack>
+      <XStack width={90} flexShrink={0}>
+        <StatusBadge status={rider.status} active={rider.is_active} />
+      </XStack>
+      <YStack width={110} flexShrink={0}>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
+          {rider.vehicle?.plate_number || "—"}
+        </Text>
+      </YStack>
+      <XStack width={80} flexShrink={0} justifyContent="flex-end">
+        <Button
+          variant="outline"
+          width={40}
+          height={40}
+          padding={0}
+          aria-label={`View ${rider.user?.full_name || rider.rider_number || "rider"}`}
+          icon={<ExternalLink size={16} />}
+          onPress={() => openRider(rider.id)}
+        />
+      </XStack>
+    </XStack>
+  );
+
+  const renderRequestCard = ({ item: request }: { item: any }) => {
     const rider = request.rider || {};
     const user = rider.user || {};
     const isPending = approveRequest.isPending || rejectRequest.isPending;
-
     return (
-      <Card padding="$4" bordered marginBottom="$3">
+      <Card padding="$4" bordered>
         <YStack gap="$3">
           <XStack gap="$3" alignItems="center">
-            <Avatar circular size="$5">
-              <Avatar.Fallback backgroundColor="$gray800">
-                <Text color="white" fontWeight="bold">
-                  {(user.full_name || "R").charAt(0)}
-                </Text>
-              </Avatar.Fallback>
-            </Avatar>
-
-            <YStack flex={1}>
-              <Text fontSize="$5" fontWeight="600" fontFamily="$heading">
+            <RiderAvatar rider={rider} />
+            <YStack flex={1} minWidth={0}>
+              <Text fontSize="$4" fontWeight="700" fontFamily="$heading" numberOfLines={1}>
                 {user.full_name || rider.rider_number || "Rider"}
               </Text>
-              <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
                 {rider.rider_number || ""}
               </Text>
             </YStack>
-
             <YStack
               paddingHorizontal="$2"
               paddingVertical="$1"
-              borderRadius="$2"
+              borderRadius="$full"
               backgroundColor="$yellow2"
             >
-              <Text fontSize="$2" color="$yellow10" fontFamily="$body">
+              <Text fontSize="$2" color="$yellow10" fontFamily="$body" fontWeight="700">
                 Pending
               </Text>
             </YStack>
           </XStack>
-
-          <XStack gap="$3">
-            {canManageRiders ? (
-              <>
-                <Button
-                  size="$3"
-                  backgroundColor="$green10"
-                  icon={<Check size={14} />}
-                  onPress={() => handleApproveRequest(request.id)}
-                  disabled={isPending}
-                >
-                  Approve
-                </Button>
-                <Button
-                  size="$3"
-                  backgroundColor="$red10"
-                  icon={<X size={14} />}
-                  onPress={() => handleRejectRequest(request.id)}
-                  disabled={isPending}
-                >
-                  Reject
-                </Button>
-              </>
-            ) : null}
-          </XStack>
+          {canManageRiders ? (
+            <XStack gap="$2">
+              <Button
+                flex={1}
+                size="$3"
+                backgroundColor="$green10"
+                icon={<Check size={14} />}
+                onPress={() => handleApproveRequest(request.id)}
+                disabled={isPending}
+              >
+                Approve
+              </Button>
+              <Button
+                flex={1}
+                size="$3"
+                backgroundColor="$red10"
+                icon={<X size={14} />}
+                onPress={() => handleRejectRequest(request.id)}
+                disabled={isPending}
+              >
+                Reject
+              </Button>
+            </XStack>
+          ) : null}
         </YStack>
       </Card>
+    );
+  };
+
+  const RequestTableHeader = () => (
+    <XStack
+      paddingHorizontal="$4"
+      paddingVertical="$2"
+      gap="$3"
+      alignItems="center"
+      backgroundColor="$backgroundSoft"
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+    >
+      <Text flex={1} minWidth={0} {...headerText}>
+        Rider
+      </Text>
+      <Text width={140} flexShrink={0} {...headerText}>
+        Rider #
+      </Text>
+      <Text width={120} flexShrink={0} {...headerText}>
+        Requested
+      </Text>
+      <Text width={170} flexShrink={0} textAlign="right" {...headerText}>
+        Actions
+      </Text>
+    </XStack>
+  );
+
+  const RequestTableRow = ({ item: request }: { item: any }) => {
+    const rider = request.rider || {};
+    const user = rider.user || {};
+    const isPending = approveRequest.isPending || rejectRequest.isPending;
+    return (
+      <XStack
+        paddingHorizontal="$4"
+        paddingVertical="$3"
+        gap="$3"
+        alignItems="center"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+      >
+        <XStack flex={1} minWidth={0} gap="$3" alignItems="center">
+          <RiderAvatar rider={rider} size="$4" />
+          <Text fontSize="$3" fontWeight="700" fontFamily="$body" numberOfLines={1}>
+            {user.full_name || rider.rider_number || "Rider"}
+          </Text>
+        </XStack>
+        <YStack width={140} flexShrink={0}>
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
+            {rider.rider_number || "—"}
+          </Text>
+        </YStack>
+        <YStack width={120} flexShrink={0}>
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body" numberOfLines={1}>
+            {request.inserted_at ? formatDate(request.inserted_at) : "—"}
+          </Text>
+        </YStack>
+        <XStack width={170} flexShrink={0} justifyContent="flex-end" gap="$2">
+          {canManageRiders ? (
+            <>
+              <Button
+                size="$3"
+                height={38}
+                backgroundColor="$green10"
+                paddingHorizontal="$3"
+                icon={<Check size={14} />}
+                onPress={() => handleApproveRequest(request.id)}
+                disabled={isPending}
+              >
+                Approve
+              </Button>
+              <Button
+                size="$3"
+                height={38}
+                backgroundColor="$red10"
+                paddingHorizontal="$3"
+                icon={<X size={14} />}
+                onPress={() => handleRejectRequest(request.id)}
+                disabled={isPending}
+              >
+                Reject
+              </Button>
+            </>
+          ) : null}
+        </XStack>
+      </XStack>
     );
   };
 
@@ -275,25 +497,31 @@ export default function SellerRidersScreen() {
     </Card>
   );
 
+  const contentMax = useTable ? 1100 : isTablet ? 960 : undefined;
+  const listData = activeTab === "riders" ? riders : joinRequests;
+  const listKey = `${activeTab}-${useTable ? "table" : `grid-${gridColumns}`}`;
+
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
-      <YStack padding="$4" gap="$2">
-        <Text
-          fontSize="$7"
-          fontWeight="bold"
-          fontFamily="$heading"
-          color="$color"
-        >
+    <YStack flex={1} backgroundColor="$background">
+      {/* Full-width header */}
+      <YStack
+        paddingHorizontal="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
+        paddingBottom="$3"
+        gap="$2"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+      >
+        <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
           Riders
         </Text>
-        <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
           Manage delivery riders for your business
         </Text>
-
-        {/* Tabs */}
         <XStack gap="$3" paddingTop="$2">
           <Button
             flex={1}
+            height={44}
             variant={activeTab === "riders" ? "primary" : "outline"}
             onPress={() => setActiveTab("riders")}
           >
@@ -301,6 +529,7 @@ export default function SellerRidersScreen() {
           </Button>
           <Button
             flex={1}
+            height={44}
             variant={activeTab === "requests" ? "primary" : "outline"}
             onPress={() => setActiveTab("requests")}
           >
@@ -309,85 +538,109 @@ export default function SellerRidersScreen() {
         </XStack>
       </YStack>
 
-      {activeTab === "riders" && (
-        <YStack paddingHorizontal="$4" gap="$3">
-          <XStack gap="$3" alignItems="center">
-            <YStack flex={1} position="relative">
-              <Input
-                placeholder="Search riders..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </YStack>
-            <Button
-              variant="outline"
-              icon={<UserPlus size={18} />}
-              onPress={() => setInviteSheetOpen(true)}
-              disabled={!canManageRiders}
-            >
-              Invite
-            </Button>
-          </XStack>
-
-          <XStack gap="$2" flexWrap="wrap">
-            {["all", "available", "busy", "offline"].map((s) => (
+      <YStack
+        flex={1}
+        width="100%"
+        maxWidth={contentMax}
+        alignSelf="center"
+      >
+        {activeTab === "riders" ? (
+          <YStack padding="$4" gap="$3">
+            <XStack gap="$3" alignItems="center">
+              <YStack flex={1}>
+                <Input
+                  placeholder="Search riders..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </YStack>
               <Button
-                key={s}
-                height="$12"
-                width="auto"
-                variant={filterStatus === s ? "primary" : "outline"}
-                onPress={() => setFilterStatus(s)}
+                variant="outline"
+                height={44}
+                icon={<UserPlus size={18} />}
+                onPress={() => setInviteSheetOpen(true)}
+                disabled={!canManageRiders}
               >
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+                Invite
               </Button>
-            ))}
-          </XStack>
-        </YStack>
-      )}
+            </XStack>
+            <XStack gap="$2" flexWrap="wrap">
+              {RIDER_FILTERS.map((status) => (
+                <Button
+                  key={status}
+                  height={40}
+                  width="auto"
+                  paddingHorizontal="$3"
+                  variant={filterStatus === status ? "primary" : "outline"}
+                  onPress={() => setFilterStatus(status)}
+                >
+                  {titleCase(status)}
+                </Button>
+              ))}
+            </XStack>
+          </YStack>
+        ) : null}
 
-      {activeTab === "riders" ? (
+        {useTable && activeTab === "riders" ? <RiderTableHeader /> : null}
+        {useTable && activeTab === "requests" ? <RequestTableHeader /> : null}
+
         <FlatList
-          data={riders}
+          key={listKey}
+          data={listData}
           keyExtractor={(item) => item.id}
-          renderItem={renderRider}
+          numColumns={useTable ? 1 : gridColumns}
+          columnWrapperStyle={
+            !useTable && gridColumns > 1 ? { gap: 12 } : undefined
+          }
+          renderItem={
+            activeTab === "riders"
+              ? useTable
+                ? ({ item }) => <RiderTableRow item={item} />
+                : ({ item }) => (
+                    <YStack
+                      flex={1}
+                      paddingBottom="$3"
+                      maxWidth={gridColumns > 1 ? "50%" : "100%"}
+                    >
+                      {renderRiderCard({ item })}
+                    </YStack>
+                  )
+              : useTable
+                ? ({ item }) => <RequestTableRow item={item} />
+                : ({ item }) => (
+                    <YStack
+                      flex={1}
+                      paddingBottom="$3"
+                      maxWidth={gridColumns > 1 ? "50%" : "100%"}
+                    >
+                      {renderRequestCard({ item })}
+                    </YStack>
+                  )
+          }
           ListEmptyComponent={ListEmpty}
           refreshControl={
             <RefreshControl
-              refreshing={ridersRefetching || ridersLoading}
-              onRefresh={refetchRiders}
+              refreshing={
+                activeTab === "riders"
+                  ? ridersRefetching || ridersLoading
+                  : requestsLoading
+              }
+              onRefresh={
+                activeTab === "riders" ? refetchRiders : refetchRequests
+              }
             />
           }
           contentContainerStyle={{
-            padding: 16,
+            paddingHorizontal: useTable ? 0 : 16,
             paddingBottom: Math.max(insets.bottom + 20, 24),
+            flexGrow: 1,
           }}
           initialNumToRender={10}
           windowSize={5}
           maxToRenderPerBatch={10}
           removeClippedSubviews
         />
-      ) : (
-        <FlatList
-          data={joinRequests}
-          keyExtractor={(item) => item.id}
-          renderItem={renderJoinRequest}
-          ListEmptyComponent={ListEmpty}
-          refreshControl={
-            <RefreshControl
-              refreshing={requestsLoading}
-              onRefresh={refetchRequests}
-            />
-          }
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: Math.max(insets.bottom + 20, 24),
-          }}
-          initialNumToRender={10}
-          windowSize={5}
-          maxToRenderPerBatch={10}
-          removeClippedSubviews
-        />
-      )}
+      </YStack>
 
       {/* Invite Rider Sheet */}
       <Sheet
@@ -410,7 +663,7 @@ export default function SellerRidersScreen() {
           borderTopRightRadius="$6"
           padding="$5"
           paddingBottom={insets.bottom + 16}
-          {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}
+          {...(isTablet ? { maxWidth: 600, alignSelf: "center" } : {})}
         >
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <YStack gap="$4">
@@ -420,7 +673,6 @@ export default function SellerRidersScreen() {
             <Text fontSize="$3" color="$colorMuted">
               Enter the rider's number, email, or phone
             </Text>
-
             <TamaguiInput
               placeholder="Rider number, email, or phone"
               value={inviteIdentifier}
@@ -428,7 +680,6 @@ export default function SellerRidersScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-
             <Button
               backgroundColor="$primary"
               onPress={handleInvite}

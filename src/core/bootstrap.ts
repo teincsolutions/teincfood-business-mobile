@@ -10,7 +10,8 @@
  * existing call sites run against an already-bootstrapped core).
  */
 import { openDatabaseAsync } from "expo-sqlite";
-import { mmkvStorage } from "@/utils/storage";
+import { getAccountScope } from "@teincfood/core";
+import { getActiveAccountId, mmkvStorage } from "@/utils/storage";
 import { createTeincCore } from "@teincfood/core";
 import { setEntitlementSecret } from "@teincfood/core";
 import { setCompanyInfo } from "@teincfood/core";
@@ -88,10 +89,37 @@ let bootstrapped = false;
 
 function buildSqliteDriver(): SqliteDriver {
   let dbPromise: Promise<SQLiteDatabase> | null = null;
-  function getDb(): Promise<SQLiteDatabase> {
-    if (!dbPromise) dbPromise = openDatabaseAsync("teincfood_sync.db");
+  let dbScope: string | null | undefined;
+
+  function databaseName(scope: string | null): string {
+    if (!scope) return "teincfood_sync_guest.db";
+    const safe = scope.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 64);
+    return `teincfood_sync_${safe}.db`;
+  }
+
+  async function getDb(): Promise<SQLiteDatabase> {
+    const scope = getAccountScope();
+    if (dbPromise && dbScope === scope) return dbPromise;
+
+    // Never reuse a handle to another account's file. Close it before opening
+    // the scoped database so an in-flight query cannot cross the boundary.
+    if (dbPromise) {
+      try {
+        const previous = await dbPromise;
+        await previous.closeAsync();
+      } catch {}
+      dbPromise = null;
+    }
+
+    dbScope = scope;
+    dbPromise = openDatabaseAsync(databaseName(scope)).catch((error) => {
+      dbPromise = null;
+      dbScope = undefined;
+      throw error;
+    });
     return dbPromise;
   }
+
   return {
     execAsync: async (sql: string, ...args: unknown[]) => {
       const db = await getDb();
@@ -115,8 +143,14 @@ function buildSqliteDriver(): SqliteDriver {
       return db.withTransactionAsync(fn);
     },
     closeAsync: async () => {
-      const db = await getDb();
-      return db.closeAsync();
+      if (!dbPromise) return;
+      const current = dbPromise;
+      dbPromise = null;
+      dbScope = undefined;
+      try {
+        const db = await current;
+        await db.closeAsync();
+      } catch {}
     },
   };
 }
@@ -583,23 +617,47 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
         keepAlive: new ExpoKeepAlive(),
       });
       // Wire auth/business changes to re-initialize LAN (core service handles lifecycle)
+      const sellerLocalSession = (): boolean => {
+        const auth = useAuthStore.getState();
+        const userId = auth.user?.id ?? null;
+        // Auth state and the storage/core account scopes must all agree. During
+        // a login/logout transition one of them is briefly stale; starting LAN
+        // then could advertise the previous account's business.
+        if (
+          !userId ||
+          getActiveAccountId() !== userId ||
+          getAccountScope() !== userId
+        ) {
+          return false;
+        }
+        return Boolean(
+          useRoleStore.getState().role === "seller" &&
+            (auth.accessToken || auth.offlineMemberId),
+        );
+      };
       try {
         let prevBiz = useBusinessStore.getState().activeBusiness?.id ?? null;
         let prevToken = (useAuthStore.getState() as unknown as { accessToken?: string | null }).accessToken ?? null;
         useBusinessStore.subscribe((s: unknown, prev: unknown) => {
           const id = (s as { activeBusiness?: { id?: string } })?.activeBusiness?.id ?? null;
           const prevId = (prev as { activeBusiness?: { id?: string } })?.activeBusiness?.id ?? null;
-          if (id !== prevId) { prevBiz = id; localNodeService.initialize().catch(() => undefined); }
+          if (id !== prevId && id && sellerLocalSession()) { prevBiz = id; localNodeService.initialize().catch(() => undefined); }
         });
         useAuthStore.subscribe((s: unknown, prev: unknown) => {
           const tok = (s as { accessToken?: string | null })?.accessToken ?? null;
           const prevTok = (prev as { accessToken?: string | null })?.accessToken ?? null;
-          if (tok !== prevTok) { prevToken = tok; localNodeService.initialize().catch(() => undefined); }
+          if (tok !== prevTok && tok && sellerLocalSession()) { prevToken = tok; localNodeService.initialize().catch(() => undefined); }
         });
         // Also handle foreground resume for real devices
-        try { const { AppState } = require("react-native"); AppState.addEventListener("change", (st: string) => { if (st === "active") localNodeService.reconnectNow(); }); } catch {}
-        // Re-hydrate persisted LAN flag (KVDriver now set) then kick lifecycle
-        try { localNodeStore.rehydrate().then(() => localNodeService.initialize().catch(() => undefined)).catch(() => localNodeService.initialize().catch(() => undefined)); } catch { localNodeService.initialize().catch(() => undefined); }
+        try { const { AppState } = require("react-native"); AppState.addEventListener("change", (st: string) => { if (st === "active" && sellerLocalSession()) localNodeService.reconnectNow(); }); } catch {}
+        // Re-hydrate persisted LAN flag (KVDriver now set) then kick lifecycle.
+        // Never start the node before auth + business are restored: a signed-out
+        // terminal must not advertise the previous account's LAN identity.
+        const kickLocalNode = () => {
+          const biz = useBusinessStore.getState().activeBusiness?.id;
+          if (biz && sellerLocalSession()) localNodeService.initialize().catch(() => undefined);
+        };
+        try { localNodeStore.rehydrate().then(kickLocalNode).catch(kickLocalNode); } catch { kickLocalNode(); }
         // Retry mesh start after Zustand rehydrate (same businessId, owner optional) — ensures harness/desktop/mobile converge
         try {
           let retries = 0;
@@ -607,10 +665,9 @@ export function bootstrapCore(): ReturnType<typeof createTeincCore> | null {
             retries++;
             try {
               const biz = useBusinessStore.getState().activeBusiness as unknown as { id?: string } | null;
-              const auth = useAuthStore.getState() as unknown as { user: unknown; accessToken: string | null };
               const enabled = localNodeStore.getState().isLocalNodeEnabled;
               const listening = localNodeService.isLocalNode();
-              if (enabled && biz?.id && auth?.accessToken && !listening && retries < 30) {
+              if (enabled && biz?.id && sellerLocalSession() && !listening && retries < 30) {
                 localNodeService.initialize().catch(() => undefined);
               }
               if (retries >= 30 || listening) clearInterval(iv);

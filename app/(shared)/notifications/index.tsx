@@ -12,7 +12,7 @@ import {
   Check,
 } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton, Button, AppAlertDialog } from "@/components/ui";
+import { BackButton, Button, AppAlertDialog, DrawerToggleButton } from "@/components/ui";
 import {
   buildNotificationRoute,
   useNotificationsList,
@@ -90,7 +90,7 @@ function detailRows(payload: Record<string, any>): Array<[string, string]> {
   return rows;
 }
 
-export default function NotificationsScreen() {
+export default function NotificationsScreen({ embedded = false }: { embedded?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -272,7 +272,7 @@ export default function NotificationsScreen() {
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <BackButton />
+        {embedded ? <DrawerToggleButton /> : <BackButton />}
         <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color" flex={1}>
           Notifications
         </Text>

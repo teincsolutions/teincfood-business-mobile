@@ -1,4 +1,4 @@
-import { mmkvStorage } from '@/utils/storage';
+import { accountStorage } from '@/utils/storage';
 import { getDistance } from 'geolib';
 import { api } from './api';
 
@@ -44,7 +44,7 @@ export async function getDirectionsPolyline({
   cacheKey?: string;
 }): Promise<DirectionResult> {
   const resolvedCacheKey = cacheKey ?? orderId;
-  const cacheStr = mmkvStorage.getString(DIR_CACHE_KEY(resolvedCacheKey, leg));
+  const cacheStr = accountStorage.getString(DIR_CACHE_KEY(resolvedCacheKey, leg));
   let cache: {
     origin: { latitude: number; longitude: number };
     destination: { latitude: number; longitude: number };
@@ -91,7 +91,7 @@ export async function getDirectionsPolyline({
       static_duration_seconds,
     } = res.data ?? {};
     if (polyline) {
-      mmkvStorage.set(
+      accountStorage.set(
         DIR_CACHE_KEY(resolvedCacheKey, leg),
         JSON.stringify({
           origin,

@@ -1,4 +1,4 @@
-import { mmkvStorage } from '@/utils/storage';
+import { accountStorage, clearAccountStoragePrefix } from '@/utils/storage';
 import { api } from './api';
 
 export interface PlaceSuggestion {
@@ -39,13 +39,13 @@ function isExpired(timestamp: number, ttl: number): boolean {
 }
 
 function getFromCache<T>(key: string): T | null {
-  const json = mmkvStorage.getString(key);
+  const json = accountStorage.getString(key);
   if (!json) return null;
   try {
     const entry: CacheEntry<T> = JSON.parse(json);
     const ttl = key.startsWith(PLACES_CACHE_KEYS.SUGGESTIONS) ? SUGGESTIONS_TTL : DETAILS_TTL;
     if (isExpired(entry.timestamp, ttl)) {
-      mmkvStorage.delete(key);
+      accountStorage.delete(key);
       return null;
     }
     return entry.data;
@@ -56,7 +56,7 @@ function getFromCache<T>(key: string): T | null {
 
 function setToCache<T>(key: string, data: T): void {
   const entry: CacheEntry<T> = { data, timestamp: Date.now() };
-  mmkvStorage.set(key, JSON.stringify(entry));
+  accountStorage.set(key, JSON.stringify(entry));
 }
 
 function normalizePlaceId(placeRef: string): string {
@@ -224,11 +224,6 @@ export const placesService = {
   },
 
   clearCache(): void {
-    const keys = mmkvStorage.getAllKeys();
-    keys.forEach((key) => {
-      if (key.startsWith('places_')) {
-        mmkvStorage.delete(key);
-      }
-    });
+    clearAccountStoragePrefix('places_');
   },
 };

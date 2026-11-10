@@ -232,7 +232,7 @@ export default function PaymentSettings() {
   ];
 
   return (
-    <YStack flex={1} backgroundColor="$background" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack flex={1} backgroundColor="$background">
       <XStack
         padding="$4"
         paddingTop={Math.max(insets.top + 8, 24)}
@@ -251,7 +251,7 @@ export default function PaymentSettings() {
             onPress={() => router.dismiss()}
             icon={<ArrowLeft size={20} color="$color" />}
           />
-          <Text fontSize="$6" fontWeight="bold">Payment Settings</Text>
+          <Text fontSize="$6" fontWeight="800" fontFamily="$heading">Payment Settings</Text>
         </XStack>
         {canEdit && (
           <TamaguiButton
@@ -271,7 +271,7 @@ export default function PaymentSettings() {
       </XStack>
 
       {!canEdit ? (
-        <YStack padding="$4">
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4">
           <Card padding="$4" bordered backgroundColor="$yellow2">
             <Text fontSize="$3" color="$yellow10">
               Only business managers can change payment settings.
@@ -281,7 +281,7 @@ export default function PaymentSettings() {
       ) : (
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <YStack padding="$4" gap="$4">
+        <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4">
           {!hasPassword ? (
             <Card padding="$4" bordered backgroundColor="$yellow2" borderColor="$warning">
               <YStack gap="$2">

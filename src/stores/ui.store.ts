@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandStorage } from '@/utils/storage';
+import { rootZustandStorage } from '@/utils/storage';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 type ThemeMode = 'light' | 'dark' | 'system';
@@ -29,7 +29,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: STORAGE_KEYS.THEME_PREFERENCE,
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
       partialize: (state) => ({ themeMode: state.themeMode }),
     }
   )

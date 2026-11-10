@@ -2,14 +2,22 @@ import { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 import {
   activateOfflineLicense,
-  setOfflineMemberPin,
-  sendOfflineDeviceHeartbeat,
-  verifyOfflineLogin,
+  copyOfflineDeviceDataForAccount,
   getOfflinePinLockState,
+  sendOfflineDeviceHeartbeat,
+  setAccountScope,
+  setOfflineMemberPin,
+  verifyOfflineLogin,
 } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { useOfflineAuthStore } from "@/stores/offlineAuth.store";
+import {
+  clearOfflineDeviceContext,
+  getOfflineDeviceContext,
+  setOfflineDeviceContext,
+} from "@/utils/storage";
+import type { Business } from "@/types/business.model";
 import type { User } from "@/types/user.model";
 
 function memberAsUser(member: {
@@ -37,23 +45,45 @@ function memberAsUser(member: {
 }
 
 export function useOfflineAuth() {
-  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const authUser = useAuthStore((s) => s.user);
+  // Only pre-auth offline login may use the device pointer. A signed-in
+  // account always uses its own active business.
+  const deviceContext = authUser ? null : getOfflineDeviceContext();
+  const businessId =
+    activeBusiness?.id ?? deviceContext?.business.id ?? undefined;
   const state = useOfflineAuthStore();
   const refreshStore = state.refresh;
   const hasDevice = state.hasDevice;
 
   useEffect(() => {
+    // Reading account-scoped offline credentials before login requires the
+    // device's owning account scope. No app account is marked active, so no
+    // user store can persist into that scope.
+    if (!authUser?.id && deviceContext?.accountId) {
+      setAccountScope(deviceContext.accountId);
+    }
     void refreshStore(businessId);
-  }, [businessId, refreshStore]);
+  }, [authUser?.id, deviceContext?.accountId, businessId, refreshStore]);
 
   useEffect(() => {
-    if (!businessId || !hasDevice) return;
+    if (!authUser || !businessId || !hasDevice) return;
     void sendOfflineDeviceHeartbeat(businessId);
     const timer = setInterval(() => {
       void sendOfflineDeviceHeartbeat(businessId);
     }, 60_000);
     return () => clearInterval(timer);
-  }, [businessId, hasDevice]);
+  }, [authUser, businessId, hasDevice]);
+
+  // Remember the last licensed business while a real account is signed in.
+  // The pointer is device-level and used only by the pre-auth offline login.
+  useEffect(() => {
+    if (!authUser?.id || !activeBusiness?.id || !hasDevice) return;
+    setOfflineDeviceContext({
+      accountId: authUser.id,
+      business: activeBusiness,
+    });
+  }, [authUser?.id, activeBusiness, hasDevice]);
 
   const login = useCallback(
     async (memberId: string, pin: string) => {
@@ -72,12 +102,30 @@ export function useOfflineAuth() {
             : "";
         throw new Error(`Incorrect PIN.${suffix}`);
       }
+
+      // The device license/member directory lives in the activating account's
+      // scope. Copy just this business's credentials into the member's own
+      // scope before starting their offline session.
+      if (deviceContext && businessId === deviceContext.business.id) {
+        await copyOfflineDeviceDataForAccount({
+          fromAccountId: deviceContext.accountId,
+          toAccountId: member.user_id,
+          businessId,
+        });
+      }
+
+      const loginBusiness: Business | null =
+        deviceContext?.business ?? activeBusiness ?? null;
       useAuthStore
         .getState()
-        .setOfflineSession(memberAsUser(member), member.user_id);
+        .setOfflineSession(
+          memberAsUser(member),
+          member.user_id,
+          loginBusiness,
+        );
       return member;
     },
-    [businessId],
+    [activeBusiness, businessId, deviceContext],
   );
 
   const activate = useCallback(
@@ -131,7 +179,10 @@ export function useOfflineAuth() {
   const removeDevice = useCallback(async () => {
     if (!businessId) throw new Error("Select a business first");
     await state.removeDevice(businessId);
-  }, [businessId, state.removeDevice]);
+    if (deviceContext?.business.id === businessId) {
+      clearOfflineDeviceContext();
+    }
+  }, [businessId, deviceContext?.business.id, state.removeDevice]);
 
   return {
     loading: state.loading,

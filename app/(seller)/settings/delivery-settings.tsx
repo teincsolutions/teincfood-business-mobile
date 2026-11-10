@@ -157,9 +157,8 @@ export default function DeliverySettings() {
     >
       <YStack
         flex={1}
-        paddingTop={Math.max(insets.top + 8, 24)}
+        paddingTop={Math.max(insets.top + 12, 24)}
         backgroundColor="$background"
-        {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}
       >
         {/* Header */}
         <XStack
@@ -172,7 +171,7 @@ export default function DeliverySettings() {
         >
           <XStack gap="$3" alignItems="center">
            <BackButton />
-            <Text fontSize="$6" fontWeight="bold">
+            <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
               Delivery Settings
             </Text>
           </XStack>
@@ -223,7 +222,7 @@ export default function DeliverySettings() {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ flexGrow: 1 }}
           >
-            <YStack padding="$4" gap="$4" paddingBottom={insets.bottom + 80}>
+            <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4" paddingBottom={insets.bottom + 80}>
             {/* Delivery Toggle */}
             <Card padding="$4" bordered>
               <XStack justifyContent="space-between" alignItems="center">

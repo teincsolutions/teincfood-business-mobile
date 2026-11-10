@@ -407,6 +407,9 @@ export default function DiagnosticsScreen() {
         contentContainerStyle={{
           padding: 20,
           paddingBottom: Math.max(insets.bottom + 20, 24),
+          width: "100%",
+          maxWidth: 720,
+          alignSelf: "center",
         }}
         refreshControl={
           <RefreshControl

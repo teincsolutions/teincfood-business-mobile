@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { zustandStorage } from "@/utils/storage";
+import { rootZustandStorage } from "@/utils/storage";
 
 interface SecurityState {
   isBiometricEnabled: boolean;
@@ -17,7 +17,7 @@ export const useSecurityStore = create<SecurityState>()(
     }),
     {
       name: "Teinc Food Business-security",
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
     },
   ),
 );

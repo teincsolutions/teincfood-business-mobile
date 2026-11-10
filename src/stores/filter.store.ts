@@ -39,7 +39,7 @@ interface FilterState {
   setHydrated: (hydrated: boolean) => void;
 }
 
-const DEFAULTS = {
+export const FILTER_DEFAULTS = {
   ordersActiveChips: [] as string[],
   ordersSearchQuery: "",
   ordersDatePreset: "all",
@@ -61,7 +61,7 @@ const DEFAULTS = {
 export const useFilterStore = create<FilterState>()(
   persist(
     (set) => ({
-      ...DEFAULTS,
+      ...FILTER_DEFAULTS,
       isHydrated: false,
       setOrdersActiveChips: (chips) => set({ ordersActiveChips: chips }),
       setOrdersSearchQuery: (q) => set({ ordersSearchQuery: q }),
@@ -89,7 +89,7 @@ export const useFilterStore = create<FilterState>()(
       // defaults (e.g. ["pending","accepted",...]); the new contract is "no
       // filters by default", so v1 → v2 clears all saved filters.
       migrate: (persisted, version) => {
-        if ((version ?? 0) < 2) return { ...DEFAULTS };
+        if ((version ?? 0) < 2) return { ...FILTER_DEFAULTS };
         return persisted as Partial<FilterState>;
       },
       onRehydrateStorage: () => (state) => {

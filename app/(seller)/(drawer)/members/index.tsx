@@ -39,7 +39,7 @@ import {
 } from "@tamagui/lucide-icons";
 import { Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BackButton, Button } from "@/components/ui";
+import { Button, DrawerToggleButton } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { toast } from "sonner-native";
 import {
@@ -204,18 +204,19 @@ export default function MembersScreen() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top} {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center", width: "100%" } : {})}>
+    <YStack flex={1} backgroundColor="$background">
       {/* Header */}
       <XStack
         padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
         alignItems="center"
         gap="$3"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
-        <BackButton />
+        <DrawerToggleButton />
         <YStack flex={1}>
-          <Text fontSize="$6" fontWeight="bold">
+          <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
             Members
           </Text>
         </YStack>
@@ -230,6 +231,7 @@ export default function MembersScreen() {
         )}
       </XStack>
 
+      <YStack flex={1} width="100%" maxWidth={600} alignSelf="center">
       <FlatList
         data={members}
         keyExtractor={(item) => item.user_id}
@@ -339,6 +341,7 @@ export default function MembersScreen() {
           </Card>
         )}
       />
+      </YStack>
 
       {/* Invite Sheet */}
       <Sheet

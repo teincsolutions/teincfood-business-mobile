@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { zustandStorage } from "@/utils/storage";
+import { rootZustandStorage } from "@/utils/storage";
 import type { UserRole } from "@/types/user.model";
 
 interface RoleState {
@@ -24,7 +24,7 @@ export const useRoleStore = create<RoleState>()(
     }),
     {
       name: "Teinc Food Business-role",
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => rootZustandStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
       },

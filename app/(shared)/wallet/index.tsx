@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList, ScrollView } from "react-native";
 import {
   YStack,
   XStack,
@@ -8,7 +8,6 @@ import {
   Card,
   Spinner,
   Separator,
-  useMedia,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -21,9 +20,10 @@ import {
   ArrowUpRight,
 } from "@tamagui/lucide-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { BackButton, Button } from "@/components/ui";
+import { BackButton, Button, DrawerToggleButton } from "@/components/ui";
 import {
   WALLET_KEYS,
+  formatDate,
   useAllBalancesQuery,
   useBusinessWalletBalanceQuery,
   useWalletHistoryQuery,
@@ -33,17 +33,19 @@ import { useRoleStore } from "@/stores/role.store";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { usePaymentSettingsQuery } from "@/hooks/usePaymentSettings";
 import { WithdrawSheet } from "@/components/wallet/WithdrawSheet";
+import { useResponsive } from "@/utils/responsive";
 
 function formatMinor(amount: number, currency = "GHS") {
   return `${currency} ${(amount / 100).toFixed(2)}`;
 }
 
-export default function WalletScreen() {
+export default function WalletScreen({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const media = useMedia();
   const role = useRoleStore((s) => s.role);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const { isTablet, isLandscape } = useResponsive();
+  const isWide = isTablet && isLandscape;
   const { data: allBalances, isLoading: loadingAll } = useAllBalancesQuery();
   const { data: businessBalance, isLoading: loadingBiz } =
     useBusinessWalletBalanceQuery(Boolean(activeBusiness?.id));
@@ -128,285 +130,354 @@ export default function WalletScreen() {
   const canWithdraw = useHasCapability("finance_withdraw");
   const showBusinessBalance = !isSellerOrFleet || canFinanceRead;
 
-  return (
-    <YStack flex={1} backgroundColor="$background">
-      <YStack
-        padding="$4"
-        paddingTop={Math.max(insets.top + 8, 16)}
-        gap="$4"
-        alignSelf="center"
-        width="100%"
-        flex={1}
-        {...(media.md || media.lg ? { maxWidth: 600 } : {})}
-      >
+  const balanceCard = (
+    <Card
+      padding="$4"
+      bordered
+      backgroundColor="$primaryLight"
+      borderColor="$primary"
+    >
+      <YStack gap="$2">
         <XStack gap="$2" alignItems="center">
-          <BackButton />
-          <YStack gap="$1" flex={1}>
+          {isRider ? (
+            <Bike size={20} color="$primary" />
+          ) : (
+            <Building size={20} color="$primary" />
+          )}
+          <Text
+            fontSize="$4"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$primary"
+          >
+            {isSellerOrFleet && activeBusiness ? activeBusiness.name : "Rider"}
+          </Text>
+        </XStack>
+        {showBusinessBalance ? (
+          <>
             <Text
               fontSize="$8"
               fontWeight="bold"
               fontFamily="$heading"
               color="$color"
             >
-              Wallet
+              {isSellerOrFleet
+                ? bizBalance
+                  ? formatMinor(bizBalance.amount_minor, bizBalance.currency)
+                  : formatMinor(0, walletCurrency)
+                : riderBalance
+                  ? formatMinor(riderBalance.amount_minor, riderBalance.currency)
+                  : formatMinor(0, walletCurrency)}
             </Text>
-            <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
-              {isRider
-                ? "Your delivery balance and transactions"
-                : "Balance and transactions"}
+            <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+              Balance
             </Text>
-          </YStack>
-        </XStack>
-
-        {isLoading ? (
-          <YStack flex={1} alignItems="center" justifyContent="center">
-            <Spinner size="large" color="$primary" />
-          </YStack>
-        ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ gap: "$4", paddingBottom: 40 }}
-          >
-            {/* Balance card */}
-            <Card
-              padding="$4"
-              bordered
-              backgroundColor="$primaryLight"
-              borderColor="$primary"
-            >
-              <YStack gap="$2">
-                <XStack gap="$2" alignItems="center">
-                  {isRider ? (
-                    <Bike size={20} color="$primary" />
-                  ) : (
-                    <Building size={20} color="$primary" />
-                  )}
-                  <Text
-                    fontSize="$4"
-                    fontWeight="600"
-                    fontFamily="$heading"
-                    color="$primary"
-                  >
-                    {isSellerOrFleet && activeBusiness
-                      ? activeBusiness.name
-                      : "Rider"}
-                  </Text>
-                </XStack>
-                {showBusinessBalance ? (
-                  <>
-                    <Text
-                      fontSize="$8"
-                      fontWeight="bold"
-                      fontFamily="$heading"
-                      color="$color"
-                    >
-                      {isSellerOrFleet
-                        ? bizBalance
-                          ? formatMinor(
-                              bizBalance.amount_minor,
-                              bizBalance.currency,
-                            )
-                          : formatMinor(0, walletCurrency)
-                        : riderBalance
-                          ? formatMinor(
-                              riderBalance.amount_minor,
-                              riderBalance.currency,
-                            )
-                          : formatMinor(0, walletCurrency)}
-                    </Text>
-                    <Text
-                      fontSize="$3"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      Balance
-                    </Text>
-                    {isSellerOrFleet && activeBusiness && canWithdraw ? (
-                      <Button
-                        variant="primary"
-                        height={46}
-                        icon={<ArrowUpRight size={18} />}
-                        onPress={() => setWithdrawOpen(true)}
-                      >
-                        Withdraw
-                      </Button>
-                    ) : null}
-                  </>
-                ) : (
-                  <Text
-                    fontSize="$3"
-                    color="$colorSecondary"
-                    fontFamily="$body"
-                  >
-                    Business balances are visible to managers.
-                  </Text>
-                )}
-              </YStack>
-            </Card>
-
-            {/* Payout and tax summary */}
-            {isSellerOrFleet && showBusinessBalance ? (
-              <YStack gap="$3">
-                <Card padding="$4" bordered>
-                  <YStack gap="$1">
-                    <Text
-                      fontSize="$4"
-                      fontWeight="600"
-                      fontFamily="$heading"
-                      color="$colorSecondary"
-                    >
-                      Total paid out
-                    </Text>
-                    <Text
-                      fontSize="$8"
-                      fontWeight="bold"
-                      fontFamily="$heading"
-                      color="$color"
-                    >
-                      {formatMinor(totalPaidOutDisplay, walletCurrency)}
-                    </Text>
-                    <Text
-                      fontSize="$3"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      Net received from completed withdrawals and instant payouts
-                    </Text>
-                    <Separator marginVertical="$2" />
-                    <XStack
-                      alignItems="center"
-                      justifyContent="space-between"
-                    >
-                      <Text
-                        fontSize="$4"
-                        fontWeight="600"
-                        fontFamily="$heading"
-                        color="$colorSecondary"
-                      >
-                        Charges
-                      </Text>
-                      <Text
-                        fontSize="$5"
-                        fontWeight="600"
-                        fontFamily="$heading"
-                        color="$color"
-                      >
-                        {formatMinor(totalChargesDisplay, walletCurrency)}
-                      </Text>
-                    </XStack>
-                    <Text
-                      fontSize="$2"
-                      color="$colorSecondary"
-                      fontFamily="$body"
-                    >
-                      Provider fees deducted from your wallet
-                    </Text>
-                  </YStack>
-                </Card>
-
-                {taxWallet ? (
-                  <Card
-                    padding="$4"
-                    bordered
-                    borderColor="$warning"
-                    backgroundColor="$yellow2"
-                  >
-                    <YStack gap="$2">
-                      <XStack
-                        alignItems="center"
-                        justifyContent="space-between"
-                      >
-                        <XStack gap="$2" alignItems="center">
-                          <Lock size={18} color="$warning" />
-                          <Text
-                            fontSize="$4"
-                            fontWeight="600"
-                            fontFamily="$heading"
-                            color="$color"
-                          >
-                            Tax wallet
-                          </Text>
-                        </XStack>
-                        <Text
-                          fontSize="$2"
-                          fontWeight="700"
-                          color="$warning"
-                          fontFamily="$body"
-                        >
-                          LOCKED
-                        </Text>
-                      </XStack>
-                      <Text
-                        fontSize="$8"
-                        fontWeight="bold"
-                        fontFamily="$heading"
-                        color="$color"
-                      >
-                        {formatMinor(
-                          taxWallet.balance_minor ??
-                            taxWallet.amount_minor ??
-                            0,
-                          taxWallet.currency,
-                        )}
-                      </Text>
-                      <Text
-                        fontSize="$3"
-                        color="$colorSecondary"
-                        fontFamily="$body"
-                      >
-                        {taxStatusLabel[taxWallet.tax_certificate_status] ??
-                          "Not withdrawable. Upload a tax certificate to request a transfer."}
-                      </Text>
-                      <Button
-                        variant="outline"
-                        size="$3"
-                        onPress={() => router.push("/(shared)/kyc")}
-                      >
-                        {taxWallet.tax_certificate_status === "pending"
-                          ? "View tax certificate"
-                          : "Upload tax certificate"}
-                      </Button>
-                    </YStack>
-                  </Card>
-                ) : null}
-              </YStack>
+            {!isWide && isSellerOrFleet && activeBusiness && canWithdraw ? (
+              <Button
+                variant="primary"
+                height={46}
+                icon={<ArrowUpRight size={18} />}
+                onPress={() => setWithdrawOpen(true)}
+              >
+                Withdraw
+              </Button>
             ) : null}
-
-            {/* Quick actions */}
-            {(!isSellerOrFleet || canFinanceRead) && (
-              <Card padding="$4" bordered>
-                <YStack gap="$3">
-                  <Text
-                    fontSize="$5"
-                    fontWeight="600"
-                    fontFamily="$heading"
-                    color="$color"
-                  >
-                    Quick Actions
-                  </Text>
-                  <Separator />
-                  <Button
-                    variant="outline"
-                    icon={<TrendingUp size={18} />}
-                    onPress={() => router.push("/(shared)/wallet/transactions")}
-                  >
-                    Transactions
-                  </Button>
-                  {isRider ? (
-                    <Button
-                      variant="outline"
-                      icon={<Wallet size={18} />}
-                      onPress={() => router.push("/(rider)/earnings")}
-                    >
-                      Earnings
-                    </Button>
-                  ) : null}
-                </YStack>
-              </Card>
-            )}
-          </ScrollView>
+          </>
+        ) : (
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            Business balances are visible to managers.
+          </Text>
         )}
       </YStack>
+    </Card>
+  );
+
+  const payoutCard =
+    isSellerOrFleet && showBusinessBalance ? (
+      <Card padding="$4" bordered>
+        <YStack gap="$1">
+          <Text
+            fontSize="$4"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$colorSecondary"
+          >
+            Total paid out
+          </Text>
+          <Text
+            fontSize="$8"
+            fontWeight="bold"
+            fontFamily="$heading"
+            color="$color"
+          >
+            {formatMinor(totalPaidOutDisplay, walletCurrency)}
+          </Text>
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            Net received from completed withdrawals and instant payouts
+          </Text>
+          <Separator marginVertical="$2" />
+          <XStack alignItems="center" justifyContent="space-between">
+            <Text
+              fontSize="$4"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$colorSecondary"
+            >
+              Charges
+            </Text>
+            <Text
+              fontSize="$5"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
+              {formatMinor(totalChargesDisplay, walletCurrency)}
+            </Text>
+          </XStack>
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+            Provider fees deducted from your wallet
+          </Text>
+        </YStack>
+      </Card>
+    ) : null;
+
+  const taxCard = taxWallet ? (
+    <Card
+      padding="$4"
+      bordered
+      borderColor="$warning"
+      backgroundColor="$yellow2"
+    >
+      <YStack gap="$2">
+        <XStack alignItems="center" justifyContent="space-between">
+          <XStack gap="$2" alignItems="center">
+            <Lock size={18} color="$warning" />
+            <Text
+              fontSize="$4"
+              fontWeight="600"
+              fontFamily="$heading"
+              color="$color"
+            >
+              Tax wallet
+            </Text>
+          </XStack>
+          <Text
+            fontSize="$2"
+            fontWeight="700"
+            color="$warning"
+            fontFamily="$body"
+          >
+            LOCKED
+          </Text>
+        </XStack>
+        <Text fontSize="$8" fontWeight="bold" fontFamily="$heading" color="$color">
+          {formatMinor(
+            taxWallet.balance_minor ?? taxWallet.amount_minor ?? 0,
+            taxWallet.currency,
+          )}
+        </Text>
+        <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+          {taxStatusLabel[taxWallet.tax_certificate_status] ??
+            "Not withdrawable. Upload a tax certificate to request a transfer."}
+        </Text>
+        <Button
+          variant="outline"
+          size="$3"
+          onPress={() => router.push("/(shared)/kyc")}
+        >
+          {taxWallet.tax_certificate_status === "pending"
+            ? "View tax certificate"
+            : "Upload tax certificate"}
+        </Button>
+      </YStack>
+    </Card>
+  ) : null;
+
+  const quickActionsCard =
+    !isSellerOrFleet || canFinanceRead ? (
+      <Card padding="$4" bordered>
+        <YStack gap="$3">
+          <Text
+            fontSize="$5"
+            fontWeight="600"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Quick Actions
+          </Text>
+          <Separator />
+          <Button
+            variant="outline"
+            icon={<TrendingUp size={18} />}
+            onPress={() => router.push("/(shared)/wallet/transactions")}
+          >
+            Transactions
+          </Button>
+          {isRider ? (
+            <Button
+              variant="outline"
+              icon={<Wallet size={18} />}
+              onPress={() => router.push("/(rider)/earnings")}
+            >
+              Earnings
+            </Button>
+          ) : null}
+        </YStack>
+      </Card>
+    ) : null;
+
+  const historyCard = (
+    <YStack gap="$3">
+      <XStack justifyContent="space-between" alignItems="center">
+        <Text
+          fontSize="$5"
+          fontWeight="600"
+          fontFamily="$heading"
+          color="$color"
+        >
+          Transaction history
+        </Text>
+        <Button
+          variant="ghost"
+          size="$3"
+          onPress={() => router.push("/(shared)/wallet/transactions")}
+        >
+          View all
+        </Button>
+      </XStack>
+
+      <Card bordered overflow="hidden">
+        {historyEntries.length === 0 ? (
+          <YStack alignItems="center" justifyContent="center" padding="$8" gap="$2">
+            <TrendingUp size={40} color="$colorMuted" />
+            <Text fontSize="$4" color="$colorMuted" fontFamily="$body">
+              No transactions yet
+            </Text>
+          </YStack>
+        ) : (
+          historyEntries.map((entry: any, index: number) => {
+            const credit = entry.type === "credit";
+            return (
+              <XStack
+                key={entry?.id ?? String(index)}
+                alignItems="center"
+                gap="$3"
+                paddingHorizontal="$4"
+                paddingVertical="$3"
+                borderBottomWidth={1}
+                borderBottomColor="$borderColor"
+              >
+                <YStack flex={1} minWidth={0} gap="$0.5">
+                  <Text
+                    fontSize="$3"
+                    fontWeight="600"
+                    fontFamily="$body"
+                    color="$color"
+                    numberOfLines={1}
+                  >
+                    {entry.description ?? "Transaction"}
+                  </Text>
+                  <Text
+                    fontSize="$2"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                    numberOfLines={1}
+                  >
+                    {`${String(entry.type).replace(/_/g, " ")} · ${formatDate(entry.inserted_at)}`}
+                  </Text>
+                </YStack>
+                <Text
+                  fontSize="$3"
+                  fontWeight="700"
+                  fontFamily="$heading"
+                  color={credit ? "$success" : "$error"}
+                  flexShrink={0}
+                >
+                  {`${credit ? "+" : "−"}${formatMinor(Math.abs(entry.amount_minor ?? 0), entry.currency ?? walletCurrency)}`}
+                </Text>
+              </XStack>
+            );
+          })
+        )}
+      </Card>
+    </YStack>
+  );
+
+  const summaryCards = (
+    <XStack flexWrap="wrap" gap="$3" alignItems="flex-start">
+      <YStack width={isWide ? "32%" : "100%"}>{balanceCard}</YStack>
+      {payoutCard ? (
+        <YStack width={isWide ? "32%" : "100%"}>{payoutCard}</YStack>
+      ) : null}
+      {taxCard ? (
+        <YStack width={isWide ? "32%" : "100%"}>{taxCard}</YStack>
+      ) : null}
+      <YStack width="100%">{quickActionsCard}</YStack>
+    </XStack>
+  );
+
+  return (
+    <YStack flex={1} backgroundColor="$background">
+      <XStack
+        padding="$4"
+        paddingTop={Math.max(insets.top + 12, 24)}
+        alignItems="center"
+        gap="$3"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+      >
+        {embedded ? <DrawerToggleButton /> : <BackButton />}
+        <YStack gap="$1" flex={1} minWidth={0}>
+          <Text
+            fontSize="$6"
+            fontWeight="800"
+            fontFamily="$heading"
+            color="$color"
+          >
+            Wallet
+          </Text>
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+            {isRider
+              ? "Your delivery balance and transactions"
+              : "Balance and transactions"}
+          </Text>
+        </YStack>
+        {isWide && isSellerOrFleet && activeBusiness && canWithdraw ? (
+          <Button
+            variant="primary"
+            height={46}
+            icon={<ArrowUpRight size={18} />}
+            onPress={() => setWithdrawOpen(true)}
+          >
+            Withdraw
+          </Button>
+        ) : null}
+      </XStack>
+
+      {isLoading ? (
+        <YStack flex={1} alignItems="center" justifyContent="center">
+          <Spinner size="large" color="$primary" />
+        </YStack>
+      ) : (
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            padding: isWide ? 20 : 16,
+            paddingBottom: insets.bottom + 32,
+          }}
+        >
+          <YStack
+            width="100%"
+            maxWidth={isWide ? 1100 : 600}
+            alignSelf="center"
+            gap="$4"
+          >
+            {summaryCards}
+            {isWide ? historyCard : null}
+          </YStack>
+        </ScrollView>
+      )}
 
       {isSellerOrFleet && activeBusiness && canWithdraw ? (
         <WithdrawSheet

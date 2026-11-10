@@ -111,8 +111,7 @@ export default function SellerSettings() {
 
   // Two-pane master-detail on tablet landscape (iPad/Android tablet) — the
   // settings list becomes a left rail and the selected section fills the pane.
-  const { isTablet, isLandscape, width } = useResponsive();
-  const isMasterDetail = isTablet && isLandscape && width >= 900;
+  const { isTablet } = useResponsive();
 
   const { data: prefsRes } = useNotificationPreferencesQuery();
   const updatePrefs = useUpdateNotificationPreferencesMutation();
@@ -644,120 +643,12 @@ export default function SellerSettings() {
       : []),
   ];
 
-  if (isMasterDetail) {
-    const active = sections.find((s) => s.key === activeSection) ?? sections[0];
-
-    return (
-      <YStack flex={1} backgroundColor="$background">
-        <XStack flex={1}>
-          <ScrollView
-            width={320}
-            borderRightWidth={1}
-            borderRightColor="$borderColor"
-            showsVerticalScrollIndicator={false}
-          >
-            <Text
-              paddingHorizontal="$4"
-              paddingTop="$4"
-              paddingBottom="$2"
-              fontSize="$3"
-              fontWeight="700"
-              fontFamily="$body"
-              color="$colorSecondary"
-              textTransform="uppercase"
-              letterSpacing={0.5}
-            >
-              Settings
-            </Text>
-            <YStack padding="$2" gap="$1">
-              {sections.map((section) => {
-                const isActive = section.key === active.key;
-                const isLink = Boolean((section as { item?: unknown }).item);
-                return (
-                  <TouchableOpacity
-                    key={section.key}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      if (isLink) {
-                        openLinkItem(
-                          (section as { item: (typeof settingsItems)[number] })
-                            .item,
-                        );
-                      } else {
-                        setActiveSection(section.key);
-                      }
-                    }}
-                  >
-                    <XStack
-                      alignItems="center"
-                      gap="$3"
-                      paddingHorizontal="$3"
-                      paddingVertical="$3"
-                      borderRadius={10}
-                      backgroundColor={
-                        isActive ? "$backgroundSoft" : "transparent"
-                      }
-                    >
-                      <section.icon
-                        size={20}
-                        color={isActive ? "$color" : "$colorSecondary"}
-                      />
-                      <Text
-                        flex={1}
-                        fontSize="$4"
-                        fontWeight={isActive ? "700" : "500"}
-                        fontFamily="$body"
-                        color="$color"
-                      >
-                        {section.label}
-                      </Text>
-                      {isLink ? (
-                        <ChevronRight size={16} color="$colorSecondary" />
-                      ) : null}
-                    </XStack>
-                  </TouchableOpacity>
-                );
-              })}
-            </YStack>
-          </ScrollView>
-
-          <ScrollView flex={1} showsVerticalScrollIndicator={false}>
-            <YStack
-              padding="$4"
-              gap="$4"
-              paddingBottom={insets.bottom + 24}
-              maxWidth={720}
-              alignSelf="center"
-              width="100%"
-            >
-              {active.element}
-            </YStack>
-          </ScrollView>
-        </XStack>
-
-        <AppAlertDialog
-          open={showCloseDialog}
-          onOpenChange={setShowCloseDialog}
-          title={isOpen ? "Pause Online Ordering" : "Resume Online Ordering"}
-          description={
-            isOpen
-              ? "This pauses new online orders only. Buyers will no longer see your restaurant, but walk-in POS orders and operating hours stay unchanged."
-              : "This makes your restaurant visible to buyers again and allows new online orders during your operating hours."
-          }
-          confirmText={isOpen ? "PAUSE" : "RESUME"}
-          isDestructive={isOpen}
-          onConfirm={() => void setOnlineOrdering(!isOpen)}
-        />
-      </YStack>
-    );
-  }
-
   return (
     <YStack
       flex={1}
       backgroundColor="$background"
-      {...(media.md || media.lg
-        ? { maxWidth: 600, alignSelf: "center", width: "100%" }
+      {...(isTablet
+        ? { maxWidth: 720, alignSelf: "center", width: "100%" }
         : {})}
     >
       <ScrollView showsVerticalScrollIndicator={false}>
