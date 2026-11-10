@@ -417,6 +417,8 @@ export default function LoginScreen() {
               <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
               <Button
                 variant="outline"
+                justifyContent="flex-start"
+                textProps={{ flex: 1, textAlign: "center" }}
                 icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               >
@@ -424,6 +426,8 @@ export default function LoginScreen() {
               </Button>
               <Button
                 variant="outline"
+                justifyContent="flex-start"
+                textProps={{ flex: 1, textAlign: "center" }}
                 icon={
                   <Image
                     objectFit="contain"
