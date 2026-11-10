@@ -16,7 +16,6 @@ import {
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  Facebook,
   Chrome,
   ChevronDown,
   Check,
@@ -417,22 +416,24 @@ export default function LoginScreen() {
               <AppleSignInButton onPress={() => handleOIDCLogin("apple")} />
               <Button
                 variant="outline"
-                justifyContent="flex-start"
-                textProps={{ flex: 1, textAlign: "center", color: "$color" }}
-                icon={<Facebook size={20} color="#1877F2" />}
+                height={48}
+                icon={
+                  <Image
+                    source={require("assets/icons/facebook.png")}
+                    style={{ width: 24, height: 24 }}
+                  />
+                }
                 onPress={() => handleOIDCLogin("facebook")}
               >
                 Continue with Facebook
               </Button>
               <Button
                 variant="outline"
-                justifyContent="flex-start"
-                textProps={{ flex: 1, textAlign: "center", color: "$color" }}
+                height={48}
                 icon={
                   <Image
-                    objectFit="contain"
-                    height={20}
-                    src={require("assets/icons/icons8-google-100.png")}
+                    source={require("assets/icons/google.png")}
+                    style={{ width: 24, height: 24 }}
                   />
                 }
                 onPress={() => handleOIDCLogin("google")}
