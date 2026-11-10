@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { ScrollView, type StyleProp, type ViewStyle } from "react-native";
 import { YStack } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,6 +42,8 @@ interface ResponsiveScreenProps {
   /** Add the status-bar inset (only needed when no drawer header is shown). */
   topInset?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  /** Optional ref so forms can scroll the focused field above the keyboard. */
+  scrollViewRef?: RefObject<ScrollView | null>;
 }
 
 /**
@@ -58,6 +60,7 @@ export function ResponsiveScreen({
   padded = true,
   topInset = false,
   contentContainerStyle,
+  scrollViewRef,
 }: ResponsiveScreenProps) {
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsiveLayout(preset);
@@ -87,6 +90,7 @@ export function ResponsiveScreen({
   return (
     <YStack flex={1} backgroundColor="$background">
       <ScrollView
+        ref={scrollViewRef}
         style={{ flex: 1 }}
         contentContainerStyle={[
           {

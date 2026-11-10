@@ -1,6 +1,13 @@
 // @ts-nocheck
-import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import {
+  findNodeHandle,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput,
+  type ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YStack } from "tamagui";
 import { ResponsiveScreen } from "./ResponsiveScreen";
@@ -26,6 +33,36 @@ export function FormScreen({
   centered = false,
 }: FormScreenProps) {
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+
+  // KeyboardAvoidingView shrinks the viewport, but a ScrollView does not
+  // automatically bring the focused field into view. Do that explicitly so
+  // lower fields (phone/email on Add Business) stay above the keyboard.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const showSub = Keyboard.addListener(showEvent, () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const focused = TextInput.State.currentlyFocusedInput?.();
+        const node = focused ? findNodeHandle(focused) : null;
+        if (node == null) return;
+        scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+          node,
+          24,
+          true,
+        );
+      }, 80);
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      if (timer) clearTimeout(timer);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -34,6 +71,7 @@ export function FormScreen({
     >
       <ResponsiveScreen
         preset="form"
+        scrollViewRef={scrollRef}
         contentContainerStyle={[
           {
             paddingTop: Math.max(insets.top + 16, 24),
