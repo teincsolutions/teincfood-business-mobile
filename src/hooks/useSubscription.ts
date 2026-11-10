@@ -227,6 +227,17 @@ export function useCancelSubscriptionMutation() {
   });
 }
 
+export function useCancelSubscriptionInvoiceMutation() {
+  const queryClient = useQueryClient();
+  const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+
+  return useMutation({
+    mutationFn: (invoiceId: string) =>
+      subscriptionService.cancelSubscriptionInvoice(businessId!, invoiceId),
+    onSuccess: () => invalidateBilling(queryClient, businessId),
+  });
+}
+
 export function useResumeSubscriptionMutation() {
   const queryClient = useQueryClient();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);

@@ -206,6 +206,17 @@ export async function cancelSubscription(
   return (res as unknown as { data: PaymentConfiguration }).data;
 }
 
+export async function cancelSubscriptionInvoice(
+  businessId: string,
+  invoiceId: string,
+): Promise<SubscriptionInvoice> {
+  const res = await api.post<{ data: SubscriptionInvoice }>(
+    `/businesses/${businessId}/invoices/${invoiceId}/cancel`,
+    {},
+  );
+  return (res as unknown as { data: SubscriptionInvoice }).data;
+}
+
 export async function resumeSubscription(
   businessId: string,
 ): Promise<PaymentConfiguration> {

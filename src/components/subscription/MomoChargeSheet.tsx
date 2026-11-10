@@ -161,12 +161,29 @@ export function MomoChargeSheet({
   const awaiting =
     charge && (charge.status === "pending" || charge.status === "otp_required");
 
+  // Closing an in-flight prompt means the customer abandoned it. Mark the
+  // intent abandoned before closing so the backend releases the pending bill
+  // and allows another plan to be selected.
+  const closeSheet = () => {
+    if (
+      charge?.reference &&
+      (charge.status === "pending" || charge.status === "otp_required")
+    ) {
+      void paymentService
+        .abandonMomoCharge(charge.reference)
+        .catch(() => undefined)
+        .finally(onClose);
+      return;
+    }
+    onClose();
+  };
+
   return (
     <Sheet
       modal
       open={open}
       onOpenChange={(value) => {
-        if (!value) onClose();
+        if (!value) closeSheet();
       }}
       snapPoints={[78]}
       dismissOnSnapToBottom
@@ -402,7 +419,7 @@ export function MomoChargeSheet({
               height={44}
               width="100%"
               disabled={busy}
-              onPress={onClose}
+              onPress={closeSheet}
             >
               Cancel
             </Button>

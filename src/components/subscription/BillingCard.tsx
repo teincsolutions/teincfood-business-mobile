@@ -22,6 +22,7 @@ import { Button, Input } from "@/components/ui";
 import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import {
   useBillingQuery,
+  useCancelSubscriptionInvoiceMutation,
   useCancelSubscriptionMutation,
   useCheckoutSubscriptionMutation,
   useResumeSubscriptionMutation,
@@ -53,6 +54,7 @@ export function BillingCard() {
   const billing = useBillingQuery();
   const updateProfile = useUpdateBillingProfileMutation();
   const cancel = useCancelSubscriptionMutation();
+  const cancelInvoice = useCancelSubscriptionInvoiceMutation();
   const checkout = useCheckoutSubscriptionMutation();
   const resume = useResumeSubscriptionMutation();
   const queryClient = useQueryClient();
@@ -400,6 +402,32 @@ export function BillingCard() {
                     ? "Retry payment"
                     : "Pay now"}
             </Button>
+            {upcoming.status === "payment_pending" ? (
+              <Button
+                variant="outline"
+                height={46}
+                loading={cancelInvoice.isPending}
+                disabled={cancelInvoice.isPending}
+                onPress={() =>
+                  cancelInvoice.mutate(upcoming.id, {
+                    onSuccess: () => {
+                      toast.success(
+                        "Pending payment cancelled. You can choose another plan.",
+                      );
+                      void billing.refetch();
+                    },
+                    onError: (e) =>
+                      toast.error(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not cancel pending payment",
+                      ),
+                  })
+                }
+              >
+                Cancel pending payment
+              </Button>
+            ) : null}
             {canCancelDuePlan ? (
               <Button
                 variant="outline"
@@ -517,7 +545,12 @@ export function BillingCard() {
           return { charge: response.data };
         }}
         onSuccess={refreshAfterPayment}
-        onClose={() => setPayingInvoice(null)}
+        onClose={() => {
+          setPayingInvoice(null);
+          void billing.refetch();
+          queryClient.invalidateQueries({ queryKey: ["invoices"] });
+          queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
+        }}
       />
     </>
   );

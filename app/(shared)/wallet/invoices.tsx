@@ -10,6 +10,7 @@ import { BackButton, Button } from "@/components/ui";
 import { MomoChargeSheet } from "@/components/subscription/MomoChargeSheet";
 import {
   useBillingQuery,
+  useCancelSubscriptionInvoiceMutation,
   useChargeInvoiceMutation,
   useInvoicesQuery,
   useUpdateBillingProfileMutation,
@@ -101,9 +102,13 @@ function statusBadge(invoice: SubscriptionInvoice): {
 function InvoiceRow({
   invoice,
   onPay,
+  onCancel,
+  cancelling,
 }: {
   invoice: SubscriptionInvoice;
   onPay: () => void;
+  onCancel: () => void;
+  cancelling: boolean;
 }) {
   const badge = statusBadge(invoice);
 
@@ -178,15 +183,27 @@ function InvoiceRow({
               {invoice.status === "failed" ? "Retry payment" : "Pay now"}
             </Button>
           ) : (
-            <Text
-              fontSize="$2"
-              fontWeight="700"
-              color="$warning"
-              fontFamily="$body"
-              paddingVertical="$2"
-            >
-              Awaiting approval
-            </Text>
+            <XStack gap="$2" alignItems="center">
+              <Text
+                fontSize="$2"
+                fontWeight="700"
+                color="$warning"
+                fontFamily="$body"
+                paddingVertical="$2"
+              >
+                Awaiting approval
+              </Text>
+              <Button
+                size="sm"
+                height={44}
+                variant="outline"
+                loading={cancelling}
+                disabled={cancelling}
+                onPress={onCancel}
+              >
+                Cancel
+              </Button>
+            </XStack>
           )}
         </XStack>
       ) : null}
@@ -201,6 +218,7 @@ export default function InvoicesScreen() {
   const billing = useBillingQuery();
   const updateProfile = useUpdateBillingProfileMutation();
   const chargeInvoice = useChargeInvoiceMutation();
+  const cancelInvoice = useCancelSubscriptionInvoiceMutation();
   const queryClient = useQueryClient();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const [filter, setFilter] = useState<InvoiceFilter>("all");
@@ -302,7 +320,28 @@ export default function InvoicesScreen() {
         data={visible}
         keyExtractor={(invoice) => invoice.id}
         renderItem={({ item }) => (
-          <InvoiceRow invoice={item} onPay={() => setPayingInvoice(item)} />
+          <InvoiceRow
+            invoice={item}
+            onPay={() => setPayingInvoice(item)}
+            cancelling={cancelInvoice.isPending}
+            onCancel={() =>
+              cancelInvoice.mutate(item.id, {
+                onSuccess: () => {
+                  toast.success(
+                    "Pending payment cancelled. You can choose another plan.",
+                  );
+                  void invoicesQuery.refetch();
+                  void billing.refetch();
+                },
+                onError: (e) =>
+                  toast.error(
+                    e instanceof Error
+                      ? e.message
+                      : "Could not cancel pending payment",
+                  ),
+              })
+            }
+          />
         )}
         initialNumToRender={10}
         windowSize={5}
@@ -401,7 +440,12 @@ export default function InvoicesScreen() {
           return { charge: response.data };
         }}
         onSuccess={handlePaymentSuccess}
-        onClose={() => setPayingInvoice(null)}
+        onClose={() => {
+          setPayingInvoice(null);
+          void invoicesQuery.refetch();
+          void billing.refetch();
+          queryClient.invalidateQueries({ queryKey: ["my-subscription"] });
+        }}
       />
     </YStack>
   );
