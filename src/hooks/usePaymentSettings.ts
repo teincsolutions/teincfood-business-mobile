@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { POSPaymentMethod } from "@teincfood/core";
 import * as businessService from "@/services/business.service";
 import type { BusinessPaymentSettings } from "@/services/business.service";
+import { sellerSetupQueryKey } from "@/hooks/useSellerSetupGuide";
 
 export function paymentSettingsQueryKey(businessId?: string | null) {
   return ["payment-settings", businessId] as const;
@@ -24,6 +25,9 @@ export function useUpdatePaymentSettingsMutation(businessId?: string | null) {
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: paymentSettingsQueryKey(businessId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: sellerSetupQueryKey(businessId),
       });
     },
   });

@@ -21,6 +21,8 @@ import { toast } from "sonner-native";
 import { extractApiErrorMessage, referenceSyncService, setOperatingHoursLocal, useOperatingHours, useIsEffectivelyOnline } from "@teincfood/core";
 import type { OperatingHoursEntry } from "@teincfood/core";
 import { useQueryClient } from "@tanstack/react-query";
+import { SetupStepHint } from "@/components/seller-setup";
+import { useInvalidateSellerSetup } from "@/hooks/useSellerSetupGuide";
 
 interface DaySchedule {
   isOpen: boolean;
@@ -68,6 +70,7 @@ export default function OperatingHoursSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const invalidateSetup = useInvalidateSellerSetup();
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
   const canEdit = useHasCapability("business_profile_manage");
   const online = useIsEffectivelyOnline();
@@ -161,6 +164,7 @@ export default function OperatingHoursSettings() {
       // reference job pushes the edit to the server once connectivity returns.
       await setOperatingHoursLocal(activeBusinessId, hours);
       await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+      invalidateSetup(activeBusinessId);
 
       if (!online) {
         setSaveStatus("success");
@@ -173,6 +177,7 @@ export default function OperatingHoursSettings() {
         await upsertOperatingHours(activeBusinessId, hours);
         try { await referenceSyncService.sync({ businessId: activeBusinessId, keys: ["operating-hours"] }); } catch {}
         await queryClient.invalidateQueries({ queryKey: ["business-hours"] });
+        invalidateSetup(activeBusinessId);
         setSaveStatus("success");
         toast.success("Operating hours saved successfully!");
         setTimeout(() => router.back(), 1500);
@@ -260,6 +265,7 @@ export default function OperatingHoursSettings() {
           </YStack>
         ) : (
           <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4" paddingBottom={Math.max(insets.bottom + 8, 20)}>
+            <SetupStepHint stepId="hours" businessId={activeBusinessId} />
             <Card padding="$4" bordered backgroundColor="$blue2">
               <XStack gap="$3" alignItems="center">
                 <Clock size={24} color="$blue10" />

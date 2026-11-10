@@ -38,6 +38,12 @@ export async function fetchBusinessById(id: string): Promise<BusinessResponse> {
   return api.get<BusinessResponse>(`/businesses/${id}`);
 }
 
+export async function fetchSetupStatus(id: string): Promise<{
+  data: import("@/types/seller-setup").SellerSetupStatus;
+}> {
+  return api.get(`/businesses/${id}/setup-status`);
+}
+
 export async function createBusiness(data: Record<string, unknown>): Promise<BusinessResponse> {
   return api.post<BusinessResponse>('/businesses', data);
 }

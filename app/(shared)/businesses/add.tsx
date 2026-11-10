@@ -14,6 +14,7 @@ import { useRouter, useNavigation } from "expo-router";
 import { FormInput, Button, BackButton, Input } from "@/components/ui";
 import { FormActions, FormScreen } from "@/components/layout";
 import { useBusinessStore } from "@/stores/business.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
 import { useRoleStore } from "@/stores/role.store";
 import { Building, MapPin, Phone, Mail, Check, Search } from "@tamagui/lucide-icons";
 import { placesService, type PlaceSuggestion, type PlaceDetails } from "@/services/places.service";
@@ -171,6 +172,11 @@ export default function AddBusinessScreen() {
 
       addBusiness(newBusiness as any);
       setActiveBusiness(newBusiness as any);
+      // Only merchant businesses created here start the first-time seller
+      // guide. Existing businesses never get an automatic checklist.
+      if (businessType === "merchant") {
+        useSellerSetupStore.getState().startGuide(biz.id);
+      }
       // Let the owner choose Free or a paid plan before landing in the shell.
       router.replace("/(shared)/wallet/plans?onboarding=1");
     } catch (err: any) {

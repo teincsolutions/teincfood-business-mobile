@@ -1,8 +1,8 @@
 // @ts-nocheck
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ScrollView, RefreshControl, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { formatPrice, formatPriceFromMinor } from "@teincfood/core";
 import { YStack, XStack, Text, Card, Separator, Switch, Avatar } from "tamagui";
 import {
@@ -28,6 +28,12 @@ import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
+import {
+  SellerSetupCard,
+  SellerSetupGuideSheet,
+} from "@/components/seller-setup";
+import { useSellerSetupGuide } from "@/hooks/useSellerSetupGuide";
+import { isBusinessOwner } from "@/utils/seller-setup";
 
 /**
  * Seller Dashboard Screen
@@ -35,13 +41,18 @@ import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
  */
 export default function SellerDashboard() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ setup?: string; online?: string }>();
   const user = useAuthStore((state) => state.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [setupSheetOpen, setSetupSheetOpen] = useState(false);
+  const [openOnlinePrompt, setOpenOnlinePrompt] = useState(false);
   const [togglingStore, setTogglingStore] = useState(false);
   const [dismissNoBusiness, setDismissNoBusiness] = useState(false);
   const { businesses, activeBusiness } = useBusinessStore();
   const hasBusiness = businesses.length > 0;
   const activeBusinessId = activeBusiness?.id;
+  const isOwner = isBusinessOwner(activeBusiness, user);
+  const setupGuide = useSellerSetupGuide(activeBusinessId, isOwner);
   const canManageProfile = useHasCapability("business_profile_manage");
   const canAcceptOnlineOrders = useHasFeature("seller.online_orders");
   const { isLoading: entitlementsLoading } = useEntitlements();
@@ -82,8 +93,36 @@ export default function SellerDashboard() {
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await refetch();
+    await setupGuide.refetch?.();
     setIsRefreshing(false);
-  }, [refetch]);
+  }, [refetch, setupGuide.refetch]);
+
+  useEffect(() => {
+    if (!isOwner || !activeBusinessId) return;
+    if (params.setup === "1" || params.online === "1") {
+      setSetupSheetOpen(true);
+      if (params.online === "1") setOpenOnlinePrompt(true);
+      // Consume the handoff params so closing and returning to the dashboard
+      // never reopens the guide unexpectedly.
+      router.setParams({ setup: undefined, online: undefined });
+      return;
+    }
+    if (
+      setupGuide.isHydrated &&
+      setupGuide.active &&
+      !setupGuide.progress.welcomeSeenAt
+    ) {
+      setSetupSheetOpen(true);
+    }
+  }, [
+    isOwner,
+    activeBusinessId,
+    params.setup,
+    params.online,
+    setupGuide.isHydrated,
+    setupGuide.active,
+    setupGuide.progress.welcomeSeenAt,
+  ]);
 
   const handleToggleStore = useCallback(async () => {
     if (!activeBusiness?.id || !canToggleOnlineOrdering) return;
@@ -135,12 +174,13 @@ export default function SellerDashboard() {
     status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-      }
-    >
+    <>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        }
+      >
       <YStack
         padding="$4"
         paddingBottom="$6"
@@ -152,6 +192,17 @@ export default function SellerDashboard() {
 
         {/* Pending invitations */}
         <PendingInvitesBanner />
+
+        {/* First-time seller checklist */}
+        {isOwner && setupGuide.active ? (
+          <SellerSetupCard
+            guide={setupGuide}
+            onOpen={() => {
+              setOpenOnlinePrompt(false);
+              setSetupSheetOpen(true);
+            }}
+          />
+        ) : null}
 
         {/* No Business Banner */}
         {!hasBusiness && !dismissNoBusiness && (
@@ -408,7 +459,22 @@ export default function SellerDashboard() {
             </YStack>
           </Card>
         )}
-      </YStack>
-    </ScrollView>
+        </YStack>
+      </ScrollView>
+
+      {isOwner && activeBusinessId ? (
+        <SellerSetupGuideSheet
+          open={setupSheetOpen}
+          onOpenChange={(open) => {
+            setSetupSheetOpen(open);
+            if (!open) setOpenOnlinePrompt(false);
+          }}
+          businessId={activeBusinessId}
+          businessName={activeBusiness?.name}
+          guide={setupGuide}
+          startWithOnlinePrompt={openOnlinePrompt}
+        />
+      ) : null}
+    </>
   );
 }

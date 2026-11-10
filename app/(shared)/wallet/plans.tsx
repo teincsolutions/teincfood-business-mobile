@@ -39,6 +39,7 @@ import { BillingCard } from "@/components/subscription/BillingCard";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useBusinessStore } from "@/stores/business.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
 import { useRoleStore } from "@/stores/role.store";
 import type { SubscriptionPlan } from "@/services/subscription.service";
 
@@ -870,6 +871,9 @@ export default function PlansScreen() {
       } catch {
         // The plan is already saved server-side; a later reconnect will sync
         // the entitlement proof. Never trap the user on this screen.
+      }
+      if (isOnboarding) {
+        useSellerSetupStore.getState().markPlanSelected(activeBusiness.id);
       }
     }
     router.replace(

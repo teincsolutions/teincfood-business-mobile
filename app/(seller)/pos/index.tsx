@@ -74,6 +74,7 @@ import {
   useAvailableRidersQuery,
 } from "@/hooks/kiosk.hooks";
 import { usePOSStore } from "@/stores/pos.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
 import { useCustomerDisplayStore } from "@/stores/customer-display.store";
 import { usePrinterStore } from "@/stores/printer.store";
 import { useSecurityStore } from "@/stores/security.store";
@@ -88,6 +89,8 @@ import {
 } from "@/hooks/seller.hooks";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
+import { useInvalidateSellerSetup } from "@/hooks/useSellerSetupGuide";
+import { SetupStepHint } from "@/components/seller-setup";
 import { DeliveryAddressSheet } from "@/components/orders/DeliveryAddressSheet";
 import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
 import { RiderSelectionSheet } from "@/components/kiosk/RiderSelectionSheet";
@@ -818,6 +821,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const clearAll = usePOSStore((s) => s.clearAll);
   const createOrder = useCreatePOSOrderMutation();
   const assignRider = useAssignRiderMutation();
+  const markSetupStepComplete = useSellerSetupStore((s) => s.markStepComplete);
+  const invalidateSetup = useInvalidateSellerSetup();
   const [showCashSheet, setShowCashSheet] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState<string | null>(null);
   const [lastCompletedOrderId, setLastCompletedOrderId] = useState<
@@ -1114,6 +1119,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           const orderId = response.id;
           const calloutNumber = response.callout_number;
           setLastOrderNumber(response.order_number);
+          if (
+            checkoutForm.pos_payment_method === "cash" &&
+            activeBusiness?.id
+          ) {
+            markSetupStepComplete(activeBusiness.id, "cash_sale");
+            invalidateSetup(activeBusiness.id);
+          }
           clearAll();
           setDeliveryPlace(null);
           setShowDeliveryAddress(false);
@@ -1345,6 +1357,15 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
         <YStack padding="$5" gap="$5">
+          <SetupStepHint
+            stepId="cash_sale"
+            businessId={activeBusiness?.id}
+            onSkip={() => {
+              toast("Cash sale step skipped. Let's finish setup.");
+              router.replace("/(seller)/(drawer)/dashboard?setup=1&online=1");
+            }}
+          />
+
           {/* Customer Details */}
           <YStack gap="$3">
             <Text

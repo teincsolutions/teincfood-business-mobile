@@ -32,6 +32,7 @@ import { usePaymentStore } from "@/stores/payment.store";
 import { useRiderNavigationStore } from "@/stores/rider-navigation.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useSearchStore } from "@/stores/search.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
 import type { Business } from "@/types/business.model";
 
 /**
@@ -90,6 +91,8 @@ function resetUserStoresInMemory(): void {
     businessId: null,
   });
   useOfflineSetupStore.setState({ skipped: {} });
+  useSellerSetupStore.getState().clearAll();
+  useSellerSetupStore.setState({ isHydrated: false });
   clearDebugLogs();
   useCustomerDisplayStore.getState().reset();
   useRiderNavigationStore.getState().clearMapTarget();
@@ -115,6 +118,7 @@ function rehydrateUserStores(businessOverride?: Business | null): void {
     useNotificationStore,
     useKioskStore,
     useDisplayStore,
+    useSellerSetupStore,
   ];
   for (const store of stores) {
     try {

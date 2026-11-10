@@ -26,6 +26,8 @@ import {
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { usePlanLimit } from "@/hooks/usePlanLimit";
 import { useBusinessStore } from "@/stores/business.store";
+import { SetupStepHint } from "@/components/seller-setup";
+import { useInvalidateSellerSetup } from "@/hooks/useSellerSetupGuide";
 import {
   bindPendingImageToItem,
   flushPendingImageUploads,
@@ -74,6 +76,7 @@ export default function SellerMenu() {
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
   const canManageMenu = useHasCapability("menu_manage");
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
+  const invalidateSetup = useInvalidateSellerSetup();
 
   // TanStack Query hooks — filters sent to backend, no client-side filtering
   const categoryFilter = activeCategory
@@ -284,6 +287,7 @@ export default function SellerMenu() {
             // Local SQLite commit is done. Close now; image queue + S3 upload
             // are background work and must never keep the sheet open.
             setSheetOpen(false);
+            invalidateSetup(businessId);
             if (pendingImageUrl) {
               void bindPendingImageToItem(
                 pendingImageUrl,
@@ -334,6 +338,7 @@ export default function SellerMenu() {
             // Local SQLite commit is done. Close now; image queue + S3 upload
             // are background work and must never keep the sheet open.
             setSheetOpen(false);
+            invalidateSetup(businessId);
             if (pendingImageUrl) {
               void bindPendingImageToItem(
                 pendingImageUrl,
@@ -551,13 +556,14 @@ export default function SellerMenu() {
           )
         }
         ListHeaderComponent={
-          useMenuTable ? null : (
-            <XStack paddingHorizontal="$4" pb="$2">
+          <YStack paddingHorizontal="$4" gap="$2" pb="$2">
+            <SetupStepHint stepId="menu" businessId={businessId} />
+            {useMenuTable ? null : (
               <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
                 {data?.length || 0} {(data?.length || 0) === 1 ? "item" : "items"}
               </Text>
-            </XStack>
-          )
+            )}
+          </YStack>
         }
         ListEmptyComponent={
           <YStack alignItems="center" paddingVertical="$10" gap="$3">

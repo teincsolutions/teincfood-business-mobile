@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { TouchableOpacity, Dimensions } from "react-native";
@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, BackButton, FormInput, FormTextArea, Input } from "@/components/ui";
 import { useBusinessStore } from "@/stores/business.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
 import * as businessService from "@/services/business.service";
 import { uploadImage } from "@/services/upload.service";
 import { toast } from "sonner-native";
@@ -73,6 +74,17 @@ export default function BusinessDetailScreen() {
   const business = biz || getBusinessById(id);
   const isDefault = getDefaultBusiness()?.id === id;
   const isActive = business?.status === "active";
+
+  // Opening the profile screen counts as reviewing it, but only for a guide
+  // that has already started (never auto-start for existing businesses).
+  useEffect(() => {
+    if (!id) return;
+    const setup = useSellerSetupStore.getState();
+    const progress = setup.byBusiness[id];
+    if (progress?.startedAt && !progress.completedAt && !progress.dismissedAt) {
+      setup.markProfileReviewed(id);
+    }
+  }, [id]);
 
   const { data: membershipRes } = useQuery({
     queryKey: ["membership", id],

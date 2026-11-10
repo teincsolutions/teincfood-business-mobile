@@ -27,6 +27,7 @@ import {
   Bell,
   AlertTriangle,
   ListOrdered,
+  Rocket,
 } from "@tamagui/lucide-icons";
 import { TouchableOpacity } from "react-native";
 import { useState, useEffect } from "react";
@@ -36,6 +37,9 @@ import { DIAGNOSTICS_ENABLED } from "@/utils/app-env";
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useBusinessStore } from "@/stores/business.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useSellerSetupStore } from "@/stores/seller-setup.store";
+import { isBusinessOwner } from "@/utils/seller-setup";
 import { useDisplayStore } from "@/stores/display.store";
 import { useCustomerDisplayCapabilities } from "@/customer-display/CustomerDisplayController";
 import {
@@ -60,6 +64,8 @@ export default function SellerSettings() {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
+  const user = useAuthStore((state) => state.user);
+  const isOwner = isBusinessOwner(activeBusiness, user);
   const canManageProfile = useHasCapability("business_profile_manage");
   const canManageBilling = useHasCapability("finance_billing_manage");
   const canManageTax = useHasCapability("tax_rules_manage");
@@ -192,6 +198,19 @@ export default function SellerSettings() {
   };
 
   const settingsItems = [
+    ...(isOwner && activeBusiness?.id
+      ? [
+          {
+            icon: Rocket,
+            label: "Setup Guide",
+            description: "Review the first-time setup checklist",
+            onPress: () => {
+              useSellerSetupStore.getState().startGuide(activeBusiness.id);
+              router.push("/(seller)/(drawer)/dashboard?setup=1");
+            },
+          },
+        ]
+      : []),
     {
       icon: Building,
       label: "My Businesses",

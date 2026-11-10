@@ -27,6 +27,7 @@ import {
 import { useHasCapability } from '@/hooks/useMyBusinessCapabilities';
 import { useAuthStore } from '@/stores/auth.store';
 import { useProfileQuery } from '@/hooks/useProfile';
+import { SetupStepHint } from '@/components/seller-setup';
 
 export default function PaymentSettings() {
   const router = useRouter();
@@ -282,6 +283,7 @@ export default function PaymentSettings() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <YStack width="100%" maxWidth={600} alignSelf="center" padding="$4" gap="$4">
+          <SetupStepHint stepId="payments" businessId={activeBusinessId} />
           {!hasPassword ? (
             <Card padding="$4" bordered backgroundColor="$yellow2" borderColor="$warning">
               <YStack gap="$2">
