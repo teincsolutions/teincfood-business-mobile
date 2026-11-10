@@ -465,7 +465,7 @@ export default function SignupScreen() {
               <Button
                 variant="outline"
                 justifyContent="flex-start"
-                textProps={{ flex: 1, textAlign: "center" }}
+                textProps={{ flex: 1, textAlign: "center", color: "$color" }}
                 icon={<Facebook size={20} color="#1877F2" />}
                 onPress={() => handleOIDCLogin("facebook")}
               >
@@ -474,7 +474,7 @@ export default function SignupScreen() {
               <Button
                 variant="outline"
                 justifyContent="flex-start"
-                textProps={{ flex: 1, textAlign: "center" }}
+                textProps={{ flex: 1, textAlign: "center", color: "$color" }}
                 icon={
                   <Image
                     objectFit="contain"
