@@ -1,4 +1,5 @@
 import {
+  clearDebugLogs,
   localNodeService,
   phoenixSocket,
   setAccountScope,
@@ -89,6 +90,7 @@ function resetUserStoresInMemory(): void {
     businessId: null,
   });
   useOfflineSetupStore.setState({ skipped: {} });
+  clearDebugLogs();
   useCustomerDisplayStore.getState().reset();
   useRiderNavigationStore.getState().clearMapTarget();
   useRiderNavigationStore.getState().clearNavigationTarget();
