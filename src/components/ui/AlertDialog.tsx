@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { AlertDialog, Button, XStack, YStack, Text } from "tamagui";
+import { AlertDialog, Button, YStack } from "tamagui";
+import { useWindowDimensions } from "react-native";
 import { LucideIcon } from "@tamagui/lucide-icons";
 
 interface AppAlertDialogProps {
@@ -33,6 +34,12 @@ export function AppAlertDialog({
   confirmLoading = false,
   keepOpenOnConfirm = false,
 }: AppAlertDialogProps) {
+  // Two side-by-side buttons get too narrow on phones, which truncates
+  // "Keep Account" / "Delete Account". Stack them on narrow screens so every
+  // label stays readable.
+  const { width } = useWindowDimensions();
+  const stackActions = width < 480;
+
   const handleConfirm = () => {
     onConfirm();
     if (!keepOpenOnConfirm) {
@@ -110,22 +117,29 @@ export function AppAlertDialog({
             </AlertDialog.Description>
           </YStack>
 
-          <XStack gap="$3" marginTop="$4">
+          <YStack
+            gap="$2"
+            marginTop="$4"
+            flexDirection={stackActions ? "column" : "row"}
+          >
             <AlertDialog.Cancel asChild>
               <Button
-                flex={1}
+                flex={stackActions ? undefined : 1}
+                width={stackActions ? "100%" : "auto"}
                 height={50}
                 variant="outline"
                 borderColor="$borderColor"
                 fontFamily="$body"
                 fontWeight="700"
+                paddingHorizontal="$3"
                 onPress={onCancel}
               >
                 {cancelText}
               </Button>
             </AlertDialog.Cancel>
             <Button
-              flex={1}
+              flex={stackActions ? undefined : 1}
+              width={stackActions ? "100%" : "auto"}
               height={50}
               color="$white"
               backgroundColor={isDestructive ? "$red" : "$primary"}
@@ -134,10 +148,11 @@ export function AppAlertDialog({
               disabled={confirmLoading}
               fontFamily="$body"
               fontWeight="700"
+              paddingHorizontal="$3"
             >
               {confirmText}
             </Button>
-          </XStack>
+          </YStack>
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog>
