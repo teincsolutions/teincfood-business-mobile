@@ -30,6 +30,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
+import { detectCountryIso } from "@/utils/country-detection";
 
 type SignupMethod = "phone" | "email";
 
@@ -68,7 +69,7 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedCountryIso, setSelectedCountryIso] = useState(
-    currentLocation?.countryCode?.toUpperCase() || "GH",
+    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
   );
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
 

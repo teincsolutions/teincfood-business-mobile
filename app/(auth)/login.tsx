@@ -38,6 +38,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
+import { detectCountryIso } from "@/utils/country-detection";
 
 type LoginMethod = "phone" | "email";
 
@@ -77,7 +78,7 @@ export default function LoginScreen() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
   const [selectedCountryIso, setSelectedCountryIso] = useState(
-    currentLocation?.countryCode?.toUpperCase() || "GH",
+    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
   );
   const phoneDialCode = getDialCodeFromCountry(selectedCountryIso) || "+233";
   const selectedCountry = getCountryOption(selectedCountryIso);

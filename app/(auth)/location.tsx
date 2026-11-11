@@ -14,6 +14,7 @@ import {
 } from "@teincfood/core";
 import { useLocationStore, AppLocation } from "@/stores/location.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { detectCountryIso } from "@/utils/country-detection";
 
 export default function LocationScreen() {
   const router = useRouter();
@@ -22,9 +23,12 @@ export default function LocationScreen() {
   const setCurrentLocation = useLocationStore(
     (state) => state.setCurrentLocation,
   );
+  const currentLocation = useLocationStore((state) => state.currentLocation);
 
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
-  const [selectedCountryIso, setSelectedCountryIso] = useState("GH");
+  const [selectedCountryIso, setSelectedCountryIso] = useState(
+    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
