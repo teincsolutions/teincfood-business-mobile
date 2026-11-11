@@ -32,7 +32,10 @@ import {
   SellerSetupCard,
   SellerSetupGuideSheet,
 } from "@/components/seller-setup";
-import { useSellerSetupGuide } from "@/hooks/useSellerSetupGuide";
+import {
+  useInvalidateSellerSetup,
+  useSellerSetupGuide,
+} from "@/hooks/useSellerSetupGuide";
 import { isBusinessOwner } from "@/utils/seller-setup";
 
 /**
@@ -53,6 +56,7 @@ export default function SellerDashboard() {
   const activeBusinessId = activeBusiness?.id;
   const isOwner = isBusinessOwner(activeBusiness, user);
   const setupGuide = useSellerSetupGuide(activeBusinessId, isOwner);
+  const invalidateSetup = useInvalidateSellerSetup();
   const canManageProfile = useHasCapability("business_profile_manage");
   const canAcceptOnlineOrders = useHasFeature("seller.online_orders");
   const { isLoading: entitlementsLoading } = useEntitlements();
@@ -150,6 +154,7 @@ export default function SellerDashboard() {
             : {}),
         });
       }
+      invalidateSetup(activeBusiness.id);
     } catch (e) {
       toast.error(extractApiErrorMessage(e));
     } finally {

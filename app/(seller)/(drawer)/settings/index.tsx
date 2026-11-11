@@ -54,6 +54,7 @@ import {
   useMyBusinessCapabilities,
 } from "@/hooks/useMyBusinessCapabilities";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
+import { useInvalidateSellerSetup } from "@/hooks/useSellerSetupGuide";
 import { useResponsive } from "@/utils/responsive";
 
 /**
@@ -66,6 +67,7 @@ export default function SellerSettings() {
   const activeBusiness = useBusinessStore((state) => state.activeBusiness);
   const user = useAuthStore((state) => state.user);
   const isOwner = isBusinessOwner(activeBusiness, user);
+  const invalidateSetup = useInvalidateSellerSetup();
   const canManageProfile = useHasCapability("business_profile_manage");
   const canManageBilling = useHasCapability("finance_billing_manage");
   const canManageTax = useHasCapability("tax_rules_manage");
@@ -181,6 +183,7 @@ export default function SellerSettings() {
       // Persist the server's new state so every screen (and the next mount of
       // this one) sees it instead of the pre-toggle business snapshot.
       applyStoreStatus(result?.data);
+      invalidateSetup(activeBusiness.id);
     } catch (e) {
       setIsOpen(previous);
       toast.error(extractApiErrorMessage(e));
