@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Image } from "react-native";
+import { Image, ScrollView } from "react-native";
 import { YStack, XStack, Text, Card } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, BackButton } from "@/components/ui";
@@ -13,9 +13,10 @@ export default function RoleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { from } = useLocalSearchParams<{ from?: string }>();
+  const storedRole = useRoleStore((s) => s.role);
   const [selectedRole, setSelectedRole] = useState<
     "seller" | "rider" | "fleet_manager" | null
-  >(null);
+  >(storedRole ?? null);
   const storeRole = useRoleStore((s) => s.setRole);
 
   const handleLogin = () => {
@@ -31,22 +32,24 @@ export default function RoleScreen() {
   };
 
   return (
-    <YStack
-      flex={1}
-      bg="$background"
-      items="center"
-      px="$8"
-      paddingTop={Math.max(insets.top + 12, 28)}
-      paddingBottom={Math.max(insets.bottom + 20, 28)}
-      gap="$6"
-    >
-      <YStack width="100%" maxWidth={600} gap="$6">
-        {/* Back button — only shown when navigated from login/signup */}
-        {from && (
-          <YStack>
-            <BackButton />
-          </YStack>
-        )}
+    <YStack flex={1} bg="$background">
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: "center",
+          paddingHorizontal: 32,
+          paddingTop: Math.max(insets.top + 12, 28),
+          paddingBottom: Math.max(insets.bottom + 20, 28),
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <YStack width="100%" maxWidth={600} gap="$6">
+          {/* Back button — only shown when navigated from login/signup */}
+          {from && (
+            <YStack>
+              <BackButton />
+            </YStack>
+          )}
 
         <YStack gap="$2">
           <Text
@@ -214,7 +217,8 @@ export default function RoleScreen() {
             </Button>
           </FormActions>
         </YStack>
-      </YStack>
+        </YStack>
+      </ScrollView>
     </YStack>
   );
 }

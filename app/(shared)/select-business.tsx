@@ -37,20 +37,23 @@ export default function SelectBusinessScreen() {
   );
 
   useEffect(() => {
+    // Only preselect a business here. Do not auto-redirect: after creating a
+    // business we intentionally continue to the onboarding plan picker, and
+    // an auto-redirect from this still-mounted screen would replace it with
+    // the dashboard before the user can choose a plan.
     if (activeBusiness) {
-      router.replace(dashboardRoute);
-      return;
-    }
-    if (businesses.length === 1) {
-      setActiveBusiness(businesses[0] as any);
-      router.replace(dashboardRoute);
+      setSelectedBusinessId(activeBusiness.id);
       return;
     }
     const defaultBusiness = getDefaultBusiness();
     if (defaultBusiness) {
       setSelectedBusinessId(defaultBusiness.id);
+      return;
     }
-  }, [activeBusiness, businesses, dashboardRoute]);
+    if (businesses.length === 1) {
+      setSelectedBusinessId(businesses[0].id);
+    }
+  }, [activeBusiness, businesses, getDefaultBusiness]);
 
   const handleContinue = () => {
     if (selectedBusinessId) {

@@ -24,6 +24,7 @@ import {
   useSubmitUserKycMutation,
   useSubmitRiderKycMutation,
   useSubmitBusinessKycMutation,
+  useKycRequirementsQuery,
 } from "@/hooks/useKyc";
 
 const TAX_CERTIFICATE_DOC: KycDocConfig = {
@@ -119,6 +120,7 @@ type KycDraftDoc = {
   issuedDate?: string;
   expirationDate?: string;
   uploadedAt?: string;
+  notAvailable?: boolean;
 };
 
 function draftKeyFor(owner: string, flow: string) {
@@ -189,8 +191,15 @@ export default function KycScreen() {
     docType === "seller" ||
     docType === "fleet_manager";
   const businessId = isBusiness ? id || activeBusinessId : undefined;
-  const configs = DOCS_BY_TYPE[docType] || DOCS_BY_TYPE.business;
   const isRider = !isBusiness && docType === "rider";
+  const requirementsQuery = useKycRequirementsQuery(docType);
+  // Backend requirements are authoritative. Local defaults are only a
+  // fallback for a failed/offline request, never an override of an empty
+  // admin configuration.
+  const configs =
+    requirementsQuery.data ??
+    DOCS_BY_TYPE[docType] ??
+    DOCS_BY_TYPE.business;
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const uploadContext =
@@ -216,6 +225,20 @@ export default function KycScreen() {
     () => buildInitialDocs(configs),
   );
 
+  // If requirements arrive after the first render, keep any unsaved work and
+  // add/remove cards to match the backend configuration.
+  useEffect(() => {
+    if (!requirementsQuery.data) return;
+    setDocuments((prev) => {
+      const next = buildInitialDocs(configs);
+      for (const [docId, doc] of Object.entries(prev)) {
+        if (next[docId]) next[docId] = doc;
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requirementsQuery.data]);
+
   const ownerKey =
     isBusiness && businessId
       ? `biz:${businessId}`
@@ -240,6 +263,7 @@ export default function KycScreen() {
           issuedDate: d.issuedDate?.toISOString(),
           expirationDate: d.expirationDate?.toISOString(),
           uploadedAt: d.uploadedAt,
+          notAvailable: d.notAvailable,
         };
       }
     }
@@ -296,6 +320,8 @@ export default function KycScreen() {
             ? new Date(d.expiration_date)
             : undefined,
           rejectionReason: parsed.perDoc[docId],
+          notAvailable:
+            d.not_available === true || d.unavailable === true,
         };
       }
     }
@@ -318,10 +344,11 @@ export default function KycScreen() {
           ? new Date(d.expirationDate)
           : current.expirationDate,
         uploadedAt: d.uploadedAt ?? current.uploadedAt,
+        notAvailable: d.notAvailable ?? current.notAvailable,
       };
     }
     setDocuments(merged);
-  }, [kycData]);
+  }, [kycData, configs]);
 
   const submitUserMutation = useSubmitUserKycMutation();
   const submitRiderMutation = useSubmitRiderKycMutation();
@@ -350,6 +377,7 @@ export default function KycScreen() {
             ? new Date(d.expirationDate)
             : next[docId].expirationDate,
           uploadedAt: d.uploadedAt ?? next[docId].uploadedAt,
+          notAvailable: d.notAvailable ?? next[docId].notAvailable,
         };
       }
       return next;

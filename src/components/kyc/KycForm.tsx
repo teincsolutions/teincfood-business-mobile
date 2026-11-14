@@ -20,6 +20,8 @@ export interface KycDocumentState {
   idNumber?: string;
   issuedDate?: Date;
   expirationDate?: Date;
+  /** User explicitly told us they do not have this document. */
+  notAvailable?: boolean;
 }
 
 export interface KycFormProps {
@@ -116,9 +118,9 @@ export function KycForm({
       const config = docConfigs.find((c) => c.id === docId);
       if (!doc) return;
       // National ID (and any fileOptional doc) may be submitted with no
-      // attachment — the ID number is what matters. All other docs require
-      // an uploaded file (S3 key in doc.uri).
-      if (!doc.uri && !config?.fileOptional) return;
+      // attachment — the ID number is what matters. A document marked
+      // "I don't have this" is also submitted, for admin review.
+      if (!doc.uri && !config?.fileOptional && !doc.notAvailable) return;
 
       const fmt = (d: Date | undefined) =>
         d ? d.toISOString().split("T")[0] : "";
@@ -133,6 +135,7 @@ export function KycForm({
       if (doc.idNumber) payload.id_number = doc.idNumber;
       if (doc.idType) payload.id_type = doc.idType;
       if (doc.uri && !doc.idNumber && !doc.idType) payload.document_id = doc.uri;
+      if (doc.notAvailable) payload.not_available = true;
 
       try {
         await onSubmitDoc(docId, payload);
@@ -166,6 +169,7 @@ export function KycForm({
           previewUri: asset.uri,
           uploadedAt: new Date().toISOString().split("T")[0],
           rejectionReason: undefined,
+          notAvailable: false,
         });
         setUploadProgress(100);
 
@@ -274,6 +278,19 @@ export function KycForm({
                   idNumber={doc.idNumber}
                   issuedDate={doc.issuedDate}
                   expirationDate={doc.expirationDate}
+                  notAvailable={doc.notAvailable}
+                  onNotAvailableChange={(val) =>
+                    updateDoc(config.id, {
+                      notAvailable: val,
+                      ...(val
+                        ? {
+                            uri: undefined,
+                            previewUri: undefined,
+                            fileName: undefined,
+                          }
+                        : {}),
+                    })
+                  }
                   onIdTypeChange={(val) =>
                     updateDoc(config.id, { idType: val })
                   }

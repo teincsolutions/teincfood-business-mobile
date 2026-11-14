@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { YStack, Text } from "tamagui";
 import { Button, FormInput } from "@/components/ui";
 import { FormActions, FormScreen } from "@/components/layout";
-import { validateEmail } from "@teincfood/core";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useUpdateProfileMutation } from "@/hooks/useProfile";
@@ -21,7 +20,6 @@ export default function CompleteProfileScreen() {
   })();
 
   const [fullName, setFullName] = useState(user?.fullName || "");
-  const [email, setEmail] = useState(user?.email || "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updateMutation = useUpdateProfileMutation();
 
@@ -32,12 +30,6 @@ export default function CompleteProfileScreen() {
     if (!fullName.trim()) {
       newErrors.fullName = "Full name is required";
     }
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else {
-      const r = validateEmail(email);
-      if (!r.valid) newErrors.email = r.errors[0];
-    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -47,12 +39,10 @@ export default function CompleteProfileScreen() {
     try {
       await updateMutation.mutateAsync({
         full_name: fullName.trim(),
-        email: email.trim().toLowerCase(),
       });
 
       updateUser({
         fullName: fullName.trim(),
-        email: email.trim().toLowerCase(),
       });
 
       router.replace(
@@ -92,7 +82,7 @@ export default function CompleteProfileScreen() {
       <YStack mb="$7" gap="$3">
         <Text fontSize={30} fontWeight="800" fontFamily="$heading" color="$color">Complete Profile</Text>
         <Text fontSize="$4" color="$colorSecondary" fontFamily="$body" lineHeight={22}>
-          Add your name and email to continue.
+          Add your name to continue.
         </Text>
       </YStack>
 
@@ -103,16 +93,6 @@ export default function CompleteProfileScreen() {
           value={fullName}
           onChangeText={(v) => { setFullName(v); setErrors((p) => { const n = { ...p }; delete n.fullName; return n; }); }}
           error={errors.fullName}
-          required
-        />
-        <FormInput
-          label="Email"
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={(v) => { setEmail(v); setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
-          error={errors.email}
           required
         />
       </YStack>

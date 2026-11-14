@@ -3,12 +3,67 @@ import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/auth.store';
 import * as businessService from '@/services/business.service';
 import * as riderService from '@/services/rider.service';
+import type { KycDocConfig } from '@/components/kyc/KycCard';
 
 const KYC_KEYS = {
   user: (userId?: string) => ['kyc', 'user', userId] as const,
   rider: (userId?: string) => ['kyc', 'rider', userId] as const,
   business: (businessId?: string) => ['kyc', 'business', businessId] as const,
+  requirements: (audience: string) => ['kyc', 'requirements', audience] as const,
 };
+
+interface KycRequirementApiDocument {
+  id?: string;
+  document_type?: string;
+  name: string;
+  description?: string;
+  required?: boolean;
+  has_id_number?: boolean;
+  has_id_type?: boolean;
+  has_dates?: boolean;
+  is_profile_photo?: boolean;
+  file_optional?: boolean;
+  id_number_placeholder?: string | null;
+  id_type_options?: { value: string; label: string }[] | null;
+}
+
+function toDocConfig(doc: KycRequirementApiDocument): KycDocConfig {
+  return {
+    id: doc.id || doc.document_type || '',
+    name: doc.name,
+    description: doc.description || '',
+    required: Boolean(doc.required),
+    hasIdNumber: Boolean(doc.has_id_number),
+    hasIdType: Boolean(doc.has_id_type),
+    hasDates: Boolean(doc.has_dates),
+    isProfilePhoto: Boolean(doc.is_profile_photo),
+    fileOptional: Boolean(doc.file_optional),
+    idNumberPlaceholder: doc.id_number_placeholder || undefined,
+    idTypeOptions:
+      Array.isArray(doc.id_type_options) && doc.id_type_options.length > 0
+        ? doc.id_type_options
+        : undefined,
+  };
+}
+
+/** Admin-managed KYC requirements. Falls back to the caller's local defaults
+ * only when this request fails. */
+export function useKycRequirementsQuery(audience: string, enabled = true) {
+  return useQuery({
+    queryKey: KYC_KEYS.requirements(audience),
+    queryFn: async () => {
+      const res = await api.get<{
+        data: { audience: string; documents: KycRequirementApiDocument[] };
+      }>(`/kyc/requirements?audience=${encodeURIComponent(audience)}`);
+      return (res.data?.documents ?? [])
+        .map(toDocConfig)
+        .filter((doc) => Boolean(doc.id));
+    },
+    enabled: enabled && Boolean(audience),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
 
 /** The user endpoint returns `documents` as an array; the UI works with a
  * document map keyed by document type. Normalize both shapes. */

@@ -65,6 +65,8 @@ interface KycCardProps {
   idNumber?: string;
   issuedDate?: Date;
   expirationDate?: Date;
+  notAvailable?: boolean;
+  onNotAvailableChange?: (notAvailable: boolean) => void;
   onIdTypeChange?: (type: string) => void;
   onIdNumberChange?: (val: string) => void;
   onIssuedDateChange?: (val: Date) => void;
@@ -110,6 +112,8 @@ export function KycCard({
   idNumber,
   issuedDate,
   expirationDate,
+  notAvailable,
+  onNotAvailableChange,
   onIdTypeChange,
   onIdNumberChange,
   onIssuedDateChange,
@@ -137,9 +141,11 @@ export function KycCard({
     status !== "pending" &&
     status !== "verified" &&
     !uploading &&
-    (config.fileOptional
-      ? !!(idType && idNumber?.trim())
-      : hasFile);
+    (notAvailable
+      ? true
+      : config.fileOptional
+        ? !!(idType && idNumber?.trim())
+        : hasFile);
 
   return (
     <YStack gap="$2" paddingVertical="$2">
@@ -362,6 +368,47 @@ export function KycCard({
             Reason: {rejectionReason}
           </Text>
         </YStack>
+      )}
+
+      {/* Explicit "don't have it" path for documents the user cannot provide. */}
+      {status !== "pending" && status !== "verified" && (
+        <TouchableOpacity
+          onPress={() => onNotAvailableChange?.(!notAvailable)}
+          style={{
+            marginLeft: 44,
+            marginTop: 4,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <YStack
+            width={20}
+            height={20}
+            borderRadius="$2"
+            borderWidth={1}
+            borderColor={notAvailable ? "$primary" : "$borderColor"}
+            backgroundColor={notAvailable ? "$primary" : "transparent"}
+            alignItems="center"
+            justifyContent="center"
+          >
+            {notAvailable ? <Check size={13} color="white" /> : null}
+          </YStack>
+          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+            I don't have this document
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {notAvailable && (
+        <Text
+          fontSize="$2"
+          color="$primary"
+          paddingLeft="$11"
+          fontFamily="$body"
+        >
+          This will be sent to the reviewer with a note that you don't have it.
+        </Text>
       )}
 
       {/* Upload + Save buttons side by side — always visible until verified */}
