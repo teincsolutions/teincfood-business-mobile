@@ -33,6 +33,16 @@ import {
 const RATE_LIMIT_TOAST_COOLDOWN_MS = 5 * 60_000;
 let lastRateLimitToastAt = 0;
 
+/**
+ * Login, OTP, refresh and password recovery are online-only and must never be
+ * intercepted by the background-sync 429 gate. A shared-IP login throttle must
+ * surface the real server response (or real network error), not a synthesized
+ * "Server is busy" that leaves the sign-in button unusable.
+ */
+function isAuthRequest(url?: string): boolean {
+  return typeof url === "string" && url.includes("/auth/");
+}
+
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -47,7 +57,9 @@ const axiosInstance: AxiosInstance = axios.create({
 // sync auto-resumes once the cooldown clears.
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (isRateLimited()) {
+    const url = config.url ?? "";
+    const isProbe = url.includes("/health");
+    if (!isProbe && !isAuthRequest(url) && isRateLimited()) {
       const waitMs = getRateLimitWaitMs();
       const err = new Error("Server is busy — please try again shortly") as Error & {
         status?: number;
@@ -169,11 +181,16 @@ axiosInstance.interceptors.response.use(
     if (status === 429) {
       const isLocalRateLimit =
         (error as { isLocalRateLimit?: boolean }).isLocalRateLimit === true;
+      const isAuth = isAuthRequest(originalRequest?.url);
 
       // Only a real server 429 opens/extends the cooldown. The local gate
       // rejects requests while that cooldown is active; feeding those
       // rejections back in would keep extending the window and toast forever.
-      if (!isLocalRateLimit) {
+      //
+      // Auth endpoints have their own IP-based buckets. Let their 429 through
+      // to the form so the user sees the real message and can retry as soon as
+      // that bucket resets instead of pausing every other API call for a minute.
+      if (!isLocalRateLimit && !isAuth) {
         noteRateLimited(extractRetryAfterMs(error));
         if (shouldReportRateLimit()) {
           const now = Date.now();
