@@ -217,19 +217,9 @@ module.exports = {
     extra: {
       router: {},
       eas: {
-        build: {
-          experimental: {
-            ios: {
-              appExtensions: [
-                {
-                  targetName: "LiveActivity",
-                  bundleIdentifier: "com.teincfood.business.LiveActivity",
-                  entitlements: {},
-                },
-              ],
-            },
-          },
-        },
+        // The @teincfood/rn-notifications plugin adds the LiveActivity
+        // extension automatically. Declaring it here as well creates a
+        // duplicate iOS target and breaks credential setup.
         projectId: "afa9b762-7069-493e-9a0d-de02c757e3bc",
       },
     },
