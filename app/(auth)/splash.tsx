@@ -27,7 +27,8 @@ import { appVersion } from "@/utils/constants";
 
 export default function SplashScreen() {
   const insets = useSafeAreaInsets();
-  const { isTablet, height: screenHeight } = useResponsive();
+  const { isTablet, isLandscape, height: screenHeight } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
   const [mountedTime, setMountedTime] = useState(Date.now());
   const [statusMessage, setStatusMessage] = useState("Initializing...");
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
@@ -162,7 +163,8 @@ export default function SplashScreen() {
 
           if (persistedRole === "seller") setRedirectTarget("/(seller)/");
           else if (persistedRole === "rider") setRedirectTarget("/(rider)/");
-          else if (persistedRole === "fleet_manager") setRedirectTarget("/(fleet)/");
+          else if (persistedRole === "fleet_manager")
+            setRedirectTarget("/(fleet)/");
           else setRedirectTarget("/(auth)/role");
           return;
         }
@@ -311,11 +313,136 @@ export default function SplashScreen() {
     return <Redirect href={redirectTarget} />;
   }
 
-  const logoSize = isTablet ? 200 : 150;
-  const brandFontSize = isTablet ? 56 : 42;
-  const subtitleFontSize = isTablet ? 20 : 15;
-  const statusFontSize = isTablet ? 20 : 14;
-  const dotSize = isTablet ? 14 : 8;
+  const logoSize = isTabletLandscape ? 150 : isTablet ? 200 : 150;
+  const brandFontSize = isTabletLandscape ? 46 : isTablet ? 56 : 42;
+  const subtitleFontSize = isTabletLandscape ? 16 : isTablet ? 24 : 20;
+  const statusFontSize = isTabletLandscape ? 16 : isTablet ? 20 : 14;
+  const dotSize = isTabletLandscape ? 10 : isTablet ? 14 : 8;
+
+  const brandLockup = (
+    <>
+      <Animated.View
+        style={{ transform: [{ scale: logoScale }], opacity: logoOpacity }}
+      >
+        <YStack
+          width={logoSize}
+          height={logoSize}
+          borderRadius={logoSize / 2}
+          bg="transparent"
+          items="center"
+          jc="center"
+        >
+          <Image
+            source={require("../../assets/icon.png")}
+            style={{
+              width: logoSize,
+              height: logoSize,
+              resizeMode: "contain",
+            }}
+          />
+        </YStack>
+      </Animated.View>
+
+      <Animated.View
+        style={{
+          opacity: textOpacity,
+          transform: [{ translateY: textTranslateY }],
+        }}
+      >
+        <YStack items="center" gap={isTablet ? "$1" : "$0"}>
+          <Text
+            fontSize={brandFontSize}
+            fontWeight="800"
+            color="#2E3248"
+            fontFamily="$heading"
+            letterSpacing={-1}
+          >
+            Teinc{" "}
+            <Text fontWeight="800" fontFamily="$heading" color="$primary">
+              Food
+            </Text>
+          </Text>
+          <Text
+            fontSize={isTablet ? 24 : 20}
+            color="#2E3248"
+            opacity={0.9}
+            fontFamily="$body"
+            letterSpacing={4}
+            textTransform="uppercase"
+            fontWeight="600"
+          >
+            Business
+          </Text>
+        </YStack>
+      </Animated.View>
+    </>
+  );
+
+  const taglineRow = (
+    <Animated.View style={{ opacity: subtitleOpacity }}>
+      <XStack items="center" gap="$0" jc="center">
+        <Text
+          fontSize={subtitleFontSize}
+          color="#2E3248"
+          opacity={0.7}
+          fontFamily="$body"
+          ta="center"
+          letterSpacing={0.5}
+        >
+          Manage
+        </Text>
+        <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
+          .
+        </Text>
+        <Text
+          fontSize={subtitleFontSize}
+          color="#2E3248"
+          opacity={0.7}
+          fontFamily="$body"
+          ta="center"
+          letterSpacing={0.5}
+        >
+          Deliver
+        </Text>
+        <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
+          .
+        </Text>
+        <Text
+          fontSize={subtitleFontSize}
+          color="#2E3248"
+          opacity={0.7}
+          fontFamily="$body"
+          ta="center"
+          letterSpacing={0.5}
+        >
+          Grow
+        </Text>
+      </XStack>
+    </Animated.View>
+  );
+
+  const loaderBlock = (
+    <Animated.View
+      style={{ opacity: loaderOpacity, transform: [{ scale: pulseAnim }] }}
+    >
+      <YStack items="center" gap="$3">
+        <XStack gap={isTablet ? "$4" : "$2"}>
+          {[0, 1, 2].map((idx) => (
+            <LoadingDot key={idx} delay={idx * 200} size={dotSize} />
+          ))}
+        </XStack>
+        <Text
+          fontSize={statusFontSize}
+          color="#2E3248"
+          opacity={0.6}
+          fontFamily="$body"
+          ta="center"
+        >
+          {statusMessage}
+        </Text>
+      </YStack>
+    </Animated.View>
+  );
 
   return (
     <YStack
@@ -344,157 +471,87 @@ export default function SplashScreen() {
         position="absolute"
         top={-60}
         right={-60}
-        width={isTablet ? 300 : 200}
-        height={isTablet ? 300 : 200}
-        borderRadius={isTablet ? 150 : 100}
+        width={isTabletLandscape ? 260 : isTablet ? 300 : 200}
+        height={isTabletLandscape ? 260 : isTablet ? 300 : 200}
+        borderRadius={isTabletLandscape ? 130 : isTablet ? 150 : 100}
         bg="$primary"
         opacity={0.15}
       />
       <YStack
         position="absolute"
-        bottom={insets.bottom + 100}
+        bottom={insets.bottom + (isTabletLandscape ? 30 : 100)}
         left={-100}
-        width={isTablet ? 220 : 160}
-        height={isTablet ? 220 : 160}
-        borderRadius={isTablet ? 110 : 80}
+        width={isTabletLandscape ? 200 : isTablet ? 220 : 160}
+        height={isTabletLandscape ? 200 : isTablet ? 220 : 160}
+        borderRadius={isTabletLandscape ? 100 : isTablet ? 110 : 80}
         bg="$primary"
         opacity={0.1}
       />
 
-      {/* Logo + text block */}
-      <YStack
-        items="center"
-        jc="center"
-        marginTop={screenHeight * (isTablet ? 0.3 : 0.28)}
-        gap={isTablet ? "$8" : "$6"}
-        paddingHorizontal="$6"
-      >
-        <Animated.View
-          style={{ transform: [{ scale: logoScale }], opacity: logoOpacity }}
+      {isTabletLandscape ? (
+        <XStack
+          flex={1}
+          width="100%"
+          items="center"
+          jc="center"
+          gap="$10"
+          paddingHorizontal="$10"
         >
+          <YStack items="center" gap="$5" flexShrink={0}>
+            {brandLockup}
+          </YStack>
+
           <YStack
-            width={logoSize}
-            height={logoSize}
-            borderRadius={logoSize / 2}
-            bg="transparent"
+            width={1}
+            height="55%"
+            backgroundColor="$borderColor"
+            opacity={0.6}
+          />
+
+          <YStack
+            flex={1}
+            maxWidth={430}
+            gap="$6"
+            justifyContent="center"
+            paddingVertical="$6"
+          >
+            {taglineRow}
+            <Text
+              fontSize={subtitleFontSize - 1}
+              color="#2E3248"
+              opacity={0.65}
+              fontFamily="$body"
+              lineHeight={24}
+            >
+              Offline-ready point of sale, built for busy service.
+            </Text>
+            {loaderBlock}
+          </YStack>
+        </XStack>
+      ) : (
+        <>
+          <YStack
             items="center"
             jc="center"
+            marginTop={screenHeight * (isTablet ? 0.3 : 0.28)}
+            gap={isTablet ? "$8" : "$6"}
+            paddingHorizontal="$6"
           >
-            <Image
-              source={require("../../assets/icon.png")}
-              style={{
-                width: logoSize,
-                height: logoSize,
-                resizeMode: "contain",
-              }}
-            />
+            {brandLockup}
+            {taglineRow}
           </YStack>
-        </Animated.View>
 
-        <Animated.View
-          style={{
-            opacity: textOpacity,
-            transform: [{ translateY: textTranslateY }],
-          }}
-        >
-          <YStack items="center" gap={isTablet ? "$1" : "$0"}>
-            <Text
-              fontSize={brandFontSize}
-              fontWeight="800"
-              color="#2E3248"
-              fontFamily="$heading"
-              letterSpacing={-1}
-            >
-              Teinc{" "}
-              <Text fontWeight="800" fontFamily="$heading" color="$primary">
-                Food
-              </Text>
-            </Text>
-            <Text
-              fontSize={isTablet ? 24 : 20}
-              color="#2E3248"
-              opacity={0.9}
-              fontFamily="$body"
-              letterSpacing={4}
-              textTransform="uppercase"
-              fontWeight="600"
-            >
-              Business
-            </Text>
+          <YStack
+            position="absolute"
+            bottom={insets.bottom + 40}
+            left={0}
+            right={0}
+            items="center"
+          >
+            {loaderBlock}
           </YStack>
-        </Animated.View>
-
-        <Animated.View style={{ opacity: subtitleOpacity }}>
-          <XStack items="center" gap="$0" jc="center">
-            <Text
-              fontSize={subtitleFontSize}
-              color="#2E3248"
-              opacity={0.7}
-              fontFamily="$body"
-              ta="center"
-              letterSpacing={0.5}
-            >
-              Manage
-            </Text>
-            <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
-              .
-            </Text>
-            <Text
-              fontSize={subtitleFontSize}
-              color="#2E3248"
-              opacity={0.7}
-              fontFamily="$body"
-              ta="center"
-              letterSpacing={0.5}
-            >
-              Deliver
-            </Text>
-            <Text fontSize={subtitleFontSize} color="$primary" fontWeight="700">
-              .
-            </Text>
-            <Text
-              fontSize={subtitleFontSize}
-              color="#2E3248"
-              opacity={0.7}
-              fontFamily="$body"
-              ta="center"
-              letterSpacing={0.5}
-            >
-              Grow
-            </Text>
-          </XStack>
-        </Animated.View>
-      </YStack>
-
-      {/* Loader at bottom */}
-      <YStack
-        position="absolute"
-        bottom={insets.bottom + 40}
-        left={0}
-        right={0}
-        items="center"
-      >
-        <Animated.View
-          style={{ opacity: loaderOpacity, transform: [{ scale: pulseAnim }] }}
-        >
-          <YStack items="center" gap="$3">
-            <XStack gap={isTablet ? "$4" : "$2"}>
-              {[0, 1, 2].map((idx) => (
-                <LoadingDot key={idx} delay={idx * 200} size={dotSize} />
-              ))}
-            </XStack>
-            <Text
-              fontSize={statusFontSize}
-              color="#2E3248"
-              opacity={0.6}
-              fontFamily="$body"
-              ta="center"
-            >
-              {statusMessage}
-            </Text>
-          </YStack>
-        </Animated.View>
-      </YStack>
+        </>
+      )}
 
       <YStack position="absolute" bottom={insets.bottom + 12} right={20}>
         <Text fontSize={10} color="#2E3248" opacity={0.3} fontFamily="$body">

@@ -1,16 +1,16 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Business, BusinessSummary } from '@/types/business.model';
-import { zustandStorage } from '@/utils/storage';
-import { STORAGE_KEYS } from '@/utils/constants';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { Business, BusinessSummary } from "@/types/business.model";
+import { zustandStorage } from "@/utils/storage";
+import { STORAGE_KEYS } from "@/utils/constants";
 
 interface BusinessState {
   // Business list for this seller
   businesses: BusinessSummary[];
-  
+
   // Currently selected business
   activeBusiness: Business | null;
-  
+
   // Hydration state
   isHydrated: boolean;
 
@@ -23,7 +23,7 @@ interface BusinessState {
   setDefaultBusiness: (id: string) => void;
   clearBusinesses: () => void;
   setHydrated: (hydrated: boolean) => void;
-  
+
   // Computed
   getDefaultBusiness: () => BusinessSummary | undefined;
   getBusinessById: (id: string) => BusinessSummary | undefined;
@@ -42,10 +42,14 @@ export const useBusinessStore = create<BusinessState>()(
           // The persisted active business may belong to the previous account.
           // Only keep it if it is present in the freshly loaded list.
           let active = state.activeBusiness
-            ? businesses.find((b) => b.id === state.activeBusiness?.id) ?? null
+            ? (businesses.find((b) => b.id === state.activeBusiness?.id) ??
+              null)
             : null;
-          if (!active && businesses.length > 0) {
-            active = (businesses.find((b) => b.isDefault) ?? businesses[0]) as any;
+          // A returning user keeps their last active business. On a first
+          // login, only a single-business account can be auto-selected —
+          // multiple businesses must go through the selector explicitly.
+          if (!active && businesses.length === 1) {
+            active = businesses[0] as any;
           }
           return { businesses, activeBusiness: active as any };
         }),
@@ -60,7 +64,7 @@ export const useBusinessStore = create<BusinessState>()(
       updateBusiness: (id, updates) =>
         set((state) => ({
           businesses: state.businesses.map((b) =>
-            b.id === id ? { ...b, ...updates } : b
+            b.id === id ? { ...b, ...updates } : b,
           ),
           // Don't update activeBusiness here since it has a different type (Business vs BusinessSummary)
           // activeBusiness should be refreshed separately via API call when needed
@@ -69,7 +73,8 @@ export const useBusinessStore = create<BusinessState>()(
       removeBusiness: (id) =>
         set((state) => ({
           businesses: state.businesses.filter((b) => b.id !== id),
-          activeBusiness: state.activeBusiness?.id === id ? null : state.activeBusiness,
+          activeBusiness:
+            state.activeBusiness?.id === id ? null : state.activeBusiness,
         })),
 
       setDefaultBusiness: (id) =>
@@ -100,6 +105,6 @@ export const useBusinessStore = create<BusinessState>()(
         businesses: state.businesses,
         activeBusiness: state.activeBusiness,
       }),
-    }
-  )
+    },
+  ),
 );

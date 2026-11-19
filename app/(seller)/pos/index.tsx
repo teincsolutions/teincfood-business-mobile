@@ -89,6 +89,7 @@ import {
 } from "@/hooks/seller.hooks";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { usePOSPaymentFlow } from "@/hooks/usePOSPaymentFlow";
+import { usePosTerminalStatus } from "@/hooks/usePosTerminalStatus";
 import { useInvalidateSellerSetup } from "@/hooks/useSellerSetupGuide";
 import { SetupStepHint } from "@/components/seller-setup";
 import { DeliveryAddressSheet } from "@/components/orders/DeliveryAddressSheet";
@@ -118,6 +119,7 @@ import {
   FoodCard,
   CashPaymentSheet,
   PaymentProcessingModal,
+  PosTerminalBanner,
 } from "@/components/pos";
 import {
   PendingOrderCard,
@@ -336,14 +338,15 @@ function NewOrderTab() {
 function MenuBrowser() {
   const { isTablet, isLandscape, width } = useResponsive();
   const isTabletLandscape = isTablet && isLandscape;
-  const foodColumns = isTablet ? 3 : 2;
+  const foodColumns = isTabletLandscape ? 4 : isTablet ? 3 : 2;
+  const gridGap = isTabletLandscape ? 12 : 16;
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
   const effectiveWidth =
     measuredWidth ?? (isTabletLandscape ? width * 0.6 : width);
   const cardWidth =
-    (effectiveWidth - 40 - (foodColumns - 1) * 16) / foodColumns;
+    (effectiveWidth - 40 - (foodColumns - 1) * gridGap) / foodColumns;
 
   const { data: categories } = useMenuCategoriesQuery();
   const filters = useMemo(() => {
@@ -364,7 +367,11 @@ function MenuBrowser() {
       onLayout={(e: any) => setMeasuredWidth(e.nativeEvent.layout.width)}
     >
       <YStack>
-        <XStack paddingHorizontal="$5" paddingVertical="$3" gap="$2">
+        <XStack
+          paddingHorizontal="$5"
+          paddingVertical={isTabletLandscape ? "$2" : "$3"}
+          gap="$2"
+        >
           <YStack
             flex={1}
             flexDirection="row"
@@ -451,16 +458,16 @@ function MenuBrowser() {
           data={itemsList}
           keyExtractor={(item) => item.id}
           numColumns={foodColumns}
-          columnWrapperStyle={foodColumns > 1 ? { gap: 16 } : undefined}
+          columnWrapperStyle={foodColumns > 1 ? { gap: gridGap } : undefined}
           contentContainerStyle={{
             paddingHorizontal: 20,
-            paddingVertical: 20,
-            paddingBottom: 40,
-            gap: 16,
+            paddingVertical: isTabletLandscape ? 12 : 20,
+            paddingBottom: isTabletLandscape ? 24 : 40,
+            gap: gridGap,
           }}
           renderItem={({ item }) => (
             <YStack width={cardWidth}>
-              <FoodCard item={item} />
+              <FoodCard item={item} compact={isTabletLandscape} />
             </YStack>
           )}
           initialNumToRender={10}
@@ -601,7 +608,7 @@ function CartPanel({
             pressStyle={{ opacity: 0.8 }}
             onPress={clearCart}
           >
-            <Trash2 size={16} /> Clear
+            <Trash2 size={16} pointerEvents="none" /> Clear
           </Button>
         )}
       </XStack>
@@ -685,25 +692,34 @@ function CartPanel({
                     borderRadius="$full"
                     alignItems="center"
                   >
-                    <Button
-                      chromeless
-                      circular
-                      width={32}
-                      height={32}
-                      padding={0}
-                      pressStyle={{ opacity: 0.7 }}
-                      onPress={() =>
+                    <XStack
+                      width={40}
+                      height={40}
+                      borderRadius="$full"
+                      alignItems="center"
+                      justifyContent="center"
+                      pressStyle={{
+                        opacity: 0.6,
+                        backgroundColor: "$background",
+                      }}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={
                         item.quantity <= 1
-                          ? removeItem(item.id)
-                          : updateQuantity(item.id, item.quantity - 1)
+                          ? `Remove ${item.menu_item.name} from cart`
+                          : `Decrease ${item.menu_item.name} quantity`
                       }
+                      onPress={() => {
+                        if (item.quantity <= 1) removeItem(item.id);
+                        else updateQuantity(item.id, item.quantity - 1);
+                      }}
                     >
                       {item.quantity <= 1 ? (
-                        <Trash2 size={14} color="$error" />
+                        <Trash2 size={16} color="$error" pointerEvents="none" />
                       ) : (
-                        <Minus size={14} color="$color" />
+                        <Minus size={16} color="$color" pointerEvents="none" />
                       )}
-                    </Button>
+                    </XStack>
                     <Text
                       fontSize="$4"
                       fontWeight="700"
@@ -713,17 +729,23 @@ function CartPanel({
                     >
                       {item.quantity}
                     </Text>
-                    <Button
-                      chromeless
-                      circular
-                      width={32}
-                      height={32}
-                      padding={0}
-                      pressStyle={{ opacity: 0.7 }}
+                    <XStack
+                      width={40}
+                      height={40}
+                      borderRadius="$full"
+                      alignItems="center"
+                      justifyContent="center"
+                      pressStyle={{
+                        opacity: 0.6,
+                        backgroundColor: "$background",
+                      }}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Increase ${item.menu_item.name} quantity`}
                       onPress={() => updateQuantity(item.id, item.quantity + 1)}
                     >
-                      <Plus size={14} color="$color" />
-                    </Button>
+                      <Plus size={16} color="$color" pointerEvents="none" />
+                    </XStack>
                   </XStack>
                   <Text
                     fontSize="$5"
@@ -814,7 +836,64 @@ function CartPanel({
 
 // ── Checkout Panel (matches buyer cart checkout patterns) ───────────────────
 
+function CompactCustomerInput({
+  icon: Icon,
+  ...inputProps
+}: {
+  icon: any;
+  [key: string]: any;
+}) {
+  return (
+    <XStack
+      flex={1}
+      minWidth={0}
+      height={44}
+      alignItems="center"
+      gap="$2"
+      paddingHorizontal="$3"
+      backgroundColor="$background"
+      borderWidth={1}
+      borderColor="$borderColor"
+      borderRadius="$3"
+    >
+      <Icon size={16} color="$primary" />
+      <Input
+        flex={1}
+        minWidth={0}
+        height={44}
+        paddingHorizontal={0}
+        borderWidth={0}
+        backgroundColor="transparent"
+        fontSize="$3"
+        placeholderTextColor="$colorPlaceholder"
+        {...inputProps}
+      />
+    </XStack>
+  );
+}
+
 function CheckoutPanel({ onBack }: { onBack: () => void }) {
+  const { isTablet, isLandscape } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
+  const posTerminal = usePosTerminalStatus();
+  const [serverBlock, setServerBlock] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const bannerStatus = serverBlock
+    ? {
+        ...posTerminal,
+        blocked: true,
+        reason: "terminal_limit",
+        title: serverBlock.title,
+        message: serverBlock.message,
+        shortLabel: "Checkout Blocked",
+        retry: async () => {
+          setServerBlock(null);
+          return posTerminal.retry();
+        },
+      }
+    : posTerminal;
   const items = usePOSStore((s) => s.items);
   const checkoutForm = usePOSStore((s) => s.checkoutForm);
   const updateCheckoutForm = usePOSStore((s) => s.updateCheckoutForm);
@@ -851,6 +930,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   );
   const { data: taxRules } = useBusinessTaxRulesQuery(true);
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  useEffect(() => {
+    setServerBlock(null);
+  }, [activeBusiness?.id]);
   const paymentSettingsQuery = usePaymentSettingsQuery(activeBusiness?.id);
   const enabledPaymentMethods = useMemo(
     () => enabledPosPaymentMethods(paymentSettingsQuery.data?.data),
@@ -916,10 +998,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       : total;
   const showLocalPricing = !serverPricing && !!localPricing;
 
-  const orderTypes: { key: POSOrderType; label: string }[] = [
-    { key: "takeout", label: "Takeout" },
-    { key: "dine_in", label: "Dine-in" },
-    { key: "delivery" as POSOrderType, label: "Delivery" },
+  const orderTypes: { key: POSOrderType; label: string; icon: any }[] = [
+    { key: "takeout", label: "Takeout", icon: Package },
+    { key: "dine_in", label: "Dine-in", icon: Utensils },
+    { key: "delivery" as POSOrderType, label: "Delivery", icon: Truck },
   ];
   const isDeliveryCheckout = checkoutForm.order_type === "delivery";
   const { data: availableRiders = [] } =
@@ -1046,6 +1128,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const executePlaceOrder = useCallback(() => {
     if (items.length === 0) {
       toast.error("Cart is empty");
+      return;
+    }
+    if (bannerStatus.blocked) {
+      toast.error(bannerStatus.message || bannerStatus.shortLabel);
       return;
     }
     // Re-check after the cash sheet: hours may have flipped while it was open.
@@ -1192,6 +1278,22 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           const code = (error as { code?: string })?.code;
           if (code === "BUSINESS_CLOSED" || code === "HOURS_NOT_SYNCED") {
             setShowClosedDialog(true);
+          } else if (
+            code === "SUBSCRIPTION_REQUIRED" ||
+            code === "TERMINAL_LIMIT_REACHED" ||
+            code === "DEVICE_LIMIT_REACHED"
+          ) {
+            const title =
+              code === "SUBSCRIPTION_REQUIRED"
+                ? "Subscription required"
+                : "Terminal limit reached";
+            const message =
+              code === "SUBSCRIPTION_REQUIRED"
+                ? "This business's subscription does not allow new orders. Ask the owner to renew or upgrade the plan."
+                : "Every terminal slot on this plan is in use. Ask the owner to remove an unused terminal, then retry.";
+            setServerBlock({ title, message });
+            void posTerminal.retry();
+            toast.error(message);
           } else {
             toast.error(
               error instanceof Error ? error.message : "Failed to place order",
@@ -1211,9 +1313,17 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     paymentFlow.startCheckout,
     assignRiderToOrder,
     isDeliveryCheckout,
+    bannerStatus.blocked,
+    bannerStatus.message,
+    bannerStatus.shortLabel,
+    bannerStatus.retry,
   ]);
 
   const handlePlaceOrder = useCallback(() => {
+    if (bannerStatus.blocked) {
+      toast.error(bannerStatus.message || bannerStatus.shortLabel);
+      return;
+    }
     if (isBusinessClosed) {
       setShowClosedDialog(true);
       return;
@@ -1266,6 +1376,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     executePlaceOrder,
     updateCheckoutForm,
     enabledPaymentMethods,
+    bannerStatus.blocked,
+    bannerStatus.message,
+    bannerStatus.shortLabel,
   ]);
 
   useEffect(() => {
@@ -1329,34 +1442,74 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     <YStack flex={1} backgroundColor="$background">
       <XStack
         alignItems="center"
-        padding="$5"
-        gap="$4"
+        padding={isTabletLandscape ? "$3" : "$5"}
+        gap={isTabletLandscape ? "$2" : "$4"}
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
         <Button
           chromeless
           circular
-          width={40}
-          height={40}
+          width={isTabletLandscape ? 36 : 40}
+          height={isTabletLandscape ? 36 : 40}
           padding={0}
           pressStyle={{ opacity: 0.7 }}
           onPress={onBack}
         >
-          <ArrowLeft size={20} color="$color" />
+          <ArrowLeft size={isTabletLandscape ? 18 : 20} color="$color" />
         </Button>
         <Text
-          fontSize="$6"
+          fontSize={isTabletLandscape ? "$5" : "$6"}
           fontWeight="700"
           fontFamily="$heading"
           color="$color"
         >
           Checkout
         </Text>
+        {isTabletLandscape ? (
+          <XStack
+            flex={1}
+            justifyContent="flex-end"
+            alignItems="center"
+            gap="$2"
+          >
+            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+              {items.reduce((sum, item) => sum + item.quantity, 0)} items
+            </Text>
+            <Text
+              fontSize="$4"
+              fontWeight="800"
+              color="$primary"
+              fontFamily="$body"
+            >
+              {formatPriceFromMinor(total)}
+            </Text>
+          </XStack>
+        ) : null}
       </XStack>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
-        <YStack padding="$5" gap="$5">
+      {bannerStatus.blocked ? (
+        <YStack
+          paddingHorizontal={isTabletLandscape ? "$3" : "$5"}
+          paddingTop="$2"
+        >
+          <PosTerminalBanner
+            status={bannerStatus}
+            compact={isTabletLandscape}
+          />
+        </YStack>
+      ) : null}
+
+      <ScrollView
+        flex={1}
+        contentContainerStyle={{
+          paddingBottom: isTabletLandscape ? 16 : 24,
+        }}
+      >
+        <YStack
+          padding={isTabletLandscape ? "$3" : "$5"}
+          gap={isTabletLandscape ? "$3" : "$5"}
+        >
           <SetupStepHint
             stepId="cash_sale"
             businessId={activeBusiness?.id}
@@ -1367,131 +1520,224 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           />
 
           {/* Customer Details */}
-          <YStack gap="$3">
-            <Text
-              fontSize="$5"
-              fontWeight="700"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Customer Details
-            </Text>
-            <YStack
-              gap="$3"
-              backgroundColor="$backgroundStrong"
-              padding="$4"
-              borderRadius="$5"
-            >
-              <XStack alignItems="center" gap="$3">
-                <YStack
-                  backgroundColor="$backgroundSoft"
-                  padding="$2"
-                  borderRadius="$3"
-                >
-                  <User size={20} color="$primary" />
-                </YStack>
-                <Input
-                  flex={1}
-                  placeholder="Customer name"
+          {isTabletLandscape ? (
+            <YStack gap="$2">
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Customer
+              </Text>
+              <XStack gap="$2">
+                <CompactCustomerInput
+                  icon={User}
+                  placeholder="Customer name (optional)"
                   value={checkoutForm.customer_name}
                   onChangeText={(v) => updateCheckoutForm({ customer_name: v })}
-                  backgroundColor="$background"
-                  borderWidth={1}
-                  borderColor="$borderColor"
-                  borderRadius="$3"
-                  height={44}
-                  fontSize="$4"
+                  accessibilityLabel="Customer name"
                 />
-              </XStack>
-              <XStack alignItems="center" gap="$3">
-                <YStack
-                  backgroundColor="$backgroundSoft"
-                  padding="$2"
-                  borderRadius="$3"
-                >
-                  <Phone size={20} color="$primary" />
-                </YStack>
-                <Input
-                  flex={1}
-                  placeholder="Phone number (optional)"
+                <CompactCustomerInput
+                  icon={Phone}
+                  placeholder="Phone (optional)"
                   keyboardType="phone-pad"
                   value={checkoutForm.customer_phone}
                   onChangeText={(v) =>
                     updateCheckoutForm({ customer_phone: v })
                   }
-                  backgroundColor="$background"
-                  borderWidth={1}
-                  borderColor="$borderColor"
-                  borderRadius="$3"
-                  height={44}
-                  fontSize="$4"
+                  accessibilityLabel="Customer phone number"
                 />
               </XStack>
             </YStack>
-          </YStack>
+          ) : (
+            <YStack gap="$3">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Customer Details
+              </Text>
+              <YStack
+                gap="$3"
+                backgroundColor="$backgroundStrong"
+                padding="$4"
+                borderRadius="$5"
+              >
+                <XStack alignItems="center" gap="$3">
+                  <YStack
+                    backgroundColor="$backgroundSoft"
+                    padding="$2"
+                    borderRadius="$3"
+                  >
+                    <User size={20} color="$primary" />
+                  </YStack>
+                  <Input
+                    flex={1}
+                    placeholder="Customer name"
+                    value={checkoutForm.customer_name}
+                    onChangeText={(v) =>
+                      updateCheckoutForm({ customer_name: v })
+                    }
+                    backgroundColor="$background"
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    borderRadius="$3"
+                    height={44}
+                    fontSize="$4"
+                  />
+                </XStack>
+                <XStack alignItems="center" gap="$3">
+                  <YStack
+                    backgroundColor="$backgroundSoft"
+                    padding="$2"
+                    borderRadius="$3"
+                  >
+                    <Phone size={20} color="$primary" />
+                  </YStack>
+                  <Input
+                    flex={1}
+                    placeholder="Phone number (optional)"
+                    keyboardType="phone-pad"
+                    value={checkoutForm.customer_phone}
+                    onChangeText={(v) =>
+                      updateCheckoutForm({ customer_phone: v })
+                    }
+                    backgroundColor="$background"
+                    borderWidth={1}
+                    borderColor="$borderColor"
+                    borderRadius="$3"
+                    height={44}
+                    fontSize="$4"
+                  />
+                </XStack>
+              </YStack>
+            </YStack>
+          )}
 
           {/* Order Type */}
-          <YStack gap="$3">
-            <Text
-              fontSize="$5"
-              fontWeight="700"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Order Type
-            </Text>
-            <XStack gap="$3">
-              {orderTypes.map((t) => {
-                const deliveryDisabled =
-                  t.key === "delivery" && !isCloudReachable;
-                return (
-                  <YStack
-                    key={t.key}
-                    flex={1}
-                    opacity={deliveryDisabled ? 0.45 : 1}
-                    backgroundColor={
-                      checkoutForm.order_type === t.key
-                        ? "$primary"
-                        : "$backgroundStrong"
-                    }
-                    borderRadius="$4"
-                    padding="$4"
-                    gap="$2"
-                    alignItems="center"
-                    pressStyle={deliveryDisabled ? undefined : { opacity: 0.8 }}
-                    onPress={
-                      deliveryDisabled
-                        ? undefined
-                        : () => updateCheckoutForm({ order_type: t.key })
-                    }
-                  >
-                    <Text
-                      fontSize="$4"
-                      fontWeight="700"
-                      fontFamily="$heading"
-                      color={
-                        checkoutForm.order_type === t.key ? "white" : "$color"
+          {isTabletLandscape ? (
+            <YStack gap="$2">
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Order Type
+              </Text>
+              <XStack gap="$2">
+                {orderTypes.map((t) => {
+                  const selected = checkoutForm.order_type === t.key;
+                  const deliveryDisabled =
+                    t.key === "delivery" && !isCloudReachable;
+                  const Icon = t.icon;
+                  return (
+                    <Button
+                      key={t.key}
+                      flex={1}
+                      height={40}
+                      paddingHorizontal="$2"
+                      backgroundColor={
+                        selected ? "$primary" : "$backgroundStrong"
+                      }
+                      borderWidth={selected ? 0 : 1}
+                      borderColor="$borderColor"
+                      color={selected ? "white" : "$color"}
+                      disabled={deliveryDisabled}
+                      icon={
+                        <Icon
+                          size={16}
+                          color={selected ? "white" : "$colorSecondary"}
+                        />
+                      }
+                      onPress={() => updateCheckoutForm({ order_type: t.key })}
+                    >
+                      <Text
+                        fontSize="$3"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                        color={selected ? "white" : "$color"}
+                      >
+                        {t.label}
+                      </Text>
+                    </Button>
+                  );
+                })}
+              </XStack>
+              {!isCloudReachable ? (
+                <Text fontSize="$1" color="$colorSecondary" fontFamily="$body">
+                  Delivery requires internet
+                </Text>
+              ) : null}
+            </YStack>
+          ) : (
+            <YStack gap="$3">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Order Type
+              </Text>
+              <XStack gap="$3">
+                {orderTypes.map((t) => {
+                  const deliveryDisabled =
+                    t.key === "delivery" && !isCloudReachable;
+                  return (
+                    <YStack
+                      key={t.key}
+                      flex={1}
+                      opacity={deliveryDisabled ? 0.45 : 1}
+                      backgroundColor={
+                        checkoutForm.order_type === t.key
+                          ? "$primary"
+                          : "$backgroundStrong"
+                      }
+                      borderRadius="$4"
+                      padding="$4"
+                      gap="$2"
+                      alignItems="center"
+                      pressStyle={
+                        deliveryDisabled ? undefined : { opacity: 0.8 }
+                      }
+                      onPress={
+                        deliveryDisabled
+                          ? undefined
+                          : () => updateCheckoutForm({ order_type: t.key })
                       }
                     >
-                      {t.label}
-                    </Text>
-                    {t.key === "delivery" ? (
                       <Text
-                        fontSize="$1"
+                        fontSize="$4"
+                        fontWeight="700"
+                        fontFamily="$heading"
                         color={
-                          checkoutForm.order_type === t.key
-                            ? "rgba(255,255,255,0.8)"
-                            : "$colorSecondary"
+                          checkoutForm.order_type === t.key ? "white" : "$color"
                         }
                       >
-                        Requires internet
+                        {t.label}
                       </Text>
-                    ) : null}
-                  </YStack>
-                );
-              })}
-            </XStack>
-          </YStack>
+                      {t.key === "delivery" ? (
+                        <Text
+                          fontSize="$1"
+                          color={
+                            checkoutForm.order_type === t.key
+                              ? "rgba(255,255,255,0.8)"
+                              : "$colorSecondary"
+                          }
+                        >
+                          Requires internet
+                        </Text>
+                      ) : null}
+                    </YStack>
+                  );
+                })}
+              </XStack>
+            </YStack>
+          )}
 
           {isDeliveryCheckout ? (
             <YStack gap="$3">
@@ -1589,98 +1835,172 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           ) : null}
 
           {/* Payment Method */}
-          <YStack gap="$3">
-            <Text
-              fontSize="$5"
-              fontWeight="700"
-              fontFamily="$heading"
-              color="$color"
-            >
-              Payment Method
-            </Text>
-            <XStack gap="$3">
-              {paymentMethods.map((pm) => {
-                const selected = checkoutForm.pos_payment_method === pm.key;
-                return (
-                  <YStack
-                    key={pm.key}
-                    flex={1}
-                    backgroundColor={
-                      selected ? "$primary" : "$backgroundStrong"
-                    }
-                    borderRadius="$4"
-                    padding="$4"
-                    gap="$2"
-                    alignItems="center"
-                    pressStyle={pm.disabled ? undefined : { opacity: 0.8 }}
-                    opacity={pm.disabled ? 0.5 : 1}
-                    disabled={pm.disabled}
-                    onPress={
-                      pm.disabled
-                        ? undefined
-                        : () => {
-                            updateCheckoutForm({ pos_payment_method: pm.key });
-                            useCustomerDisplayStore
-                              .getState()
-                              .beginPayment(pm.key as never);
-                          }
-                    }
-                  >
-                    <YStack
-                      backgroundColor={
-                        selected && !pm.disabled
-                          ? "rgba(255,255,255,0.2)"
-                          : "$backgroundSoft"
-                      }
-                      padding="$2"
-                      borderRadius="$3"
-                    >
-                      <pm.icon
-                        size={20}
-                        color={selected ? "white" : "$primary"}
-                      />
-                    </YStack>
-                    <Text
-                      fontSize="$3"
-                      fontWeight="700"
-                      fontFamily="$heading"
-                      color={selected ? "white" : "$color"}
-                      textAlign="center"
-                    >
-                      {pm.label}
-                    </Text>
-                    <Text
-                      fontSize="$2"
-                      fontFamily="$body"
-                      color={
-                        selected ? "rgba(255,255,255,0.8)" : "$colorSecondary"
-                      }
-                      textAlign="center"
-                      numberOfLines={1}
-                    >
-                      {pm.description}
-                    </Text>
-                  </YStack>
-                );
-              })}
-            </XStack>
-            {paymentMethods.length === 0 ? (
-              <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
-                No POS payment methods are enabled. Turn on Cash or Mobile Money
-                in Settings → Payment.
+          {isTabletLandscape ? (
+            <YStack gap="$2">
+              <Text
+                fontSize="$4"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Payment Method
               </Text>
-            ) : null}
-          </YStack>
+              <XStack gap="$2">
+                {paymentMethods.map((pm) => {
+                  const selected = checkoutForm.pos_payment_method === pm.key;
+                  const Icon = pm.icon;
+                  return (
+                    <Button
+                      key={pm.key}
+                      flex={1}
+                      height={48}
+                      paddingHorizontal="$2"
+                      backgroundColor={
+                        selected ? "$primary" : "$backgroundStrong"
+                      }
+                      borderWidth={selected ? 0 : 1}
+                      borderColor="$borderColor"
+                      color={selected ? "white" : "$color"}
+                      disabled={pm.disabled}
+                      icon={
+                        <Icon
+                          size={18}
+                          color={selected ? "white" : "$primary"}
+                        />
+                      }
+                      onPress={() => {
+                        updateCheckoutForm({ pos_payment_method: pm.key });
+                        useCustomerDisplayStore
+                          .getState()
+                          .beginPayment(pm.key as never);
+                      }}
+                    >
+                      <Text
+                        fontSize="$3"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                        color={selected ? "white" : "$color"}
+                      >
+                        {pm.label}
+                      </Text>
+                    </Button>
+                  );
+                })}
+              </XStack>
+              {paymentMethods.find(
+                (pm) => pm.key === checkoutForm.pos_payment_method,
+              ) ? (
+                <Text fontSize="$1" color="$colorSecondary" fontFamily="$body">
+                  {
+                    paymentMethods.find(
+                      (pm) => pm.key === checkoutForm.pos_payment_method,
+                    )?.description
+                  }
+                </Text>
+              ) : null}
+              {paymentMethods.length === 0 ? (
+                <Text fontSize="$2" color="$colorMuted" fontFamily="$body">
+                  No POS payment methods are enabled. Turn on Cash or Mobile
+                  Money in Settings → Payment.
+                </Text>
+              ) : null}
+            </YStack>
+          ) : (
+            <YStack gap="$3">
+              <Text
+                fontSize="$5"
+                fontWeight="700"
+                fontFamily="$heading"
+                color="$color"
+              >
+                Payment Method
+              </Text>
+              <XStack gap="$3">
+                {paymentMethods.map((pm) => {
+                  const selected = checkoutForm.pos_payment_method === pm.key;
+                  return (
+                    <YStack
+                      key={pm.key}
+                      flex={1}
+                      backgroundColor={
+                        selected ? "$primary" : "$backgroundStrong"
+                      }
+                      borderRadius="$4"
+                      padding="$4"
+                      gap="$2"
+                      alignItems="center"
+                      pressStyle={pm.disabled ? undefined : { opacity: 0.8 }}
+                      opacity={pm.disabled ? 0.5 : 1}
+                      disabled={pm.disabled}
+                      onPress={
+                        pm.disabled
+                          ? undefined
+                          : () => {
+                              updateCheckoutForm({
+                                pos_payment_method: pm.key,
+                              });
+                              useCustomerDisplayStore
+                                .getState()
+                                .beginPayment(pm.key as never);
+                            }
+                      }
+                    >
+                      <YStack
+                        backgroundColor={
+                          selected && !pm.disabled
+                            ? "rgba(255,255,255,0.2)"
+                            : "$backgroundSoft"
+                        }
+                        padding="$2"
+                        borderRadius="$3"
+                      >
+                        <pm.icon
+                          size={20}
+                          color={selected ? "white" : "$primary"}
+                        />
+                      </YStack>
+                      <Text
+                        fontSize="$3"
+                        fontWeight="700"
+                        fontFamily="$heading"
+                        color={selected ? "white" : "$color"}
+                        textAlign="center"
+                      >
+                        {pm.label}
+                      </Text>
+                      <Text
+                        fontSize="$2"
+                        fontFamily="$body"
+                        color={
+                          selected ? "rgba(255,255,255,0.8)" : "$colorSecondary"
+                        }
+                        textAlign="center"
+                        numberOfLines={1}
+                      >
+                        {pm.description}
+                      </Text>
+                    </YStack>
+                  );
+                })}
+              </XStack>
+              {paymentMethods.length === 0 ? (
+                <Text fontSize="$3" color="$colorMuted" fontFamily="$body">
+                  No POS payment methods are enabled. Turn on Cash or Mobile
+                  Money in Settings → Payment.
+                </Text>
+              ) : null}
+            </YStack>
+          )}
 
           {checkoutForm.pos_payment_method === "mobile_money" ? (
             <YStack
-              gap="$3"
-              padding="$4"
+              gap={isTabletLandscape ? "$2" : "$3"}
+              padding={isTabletLandscape ? "$3" : "$4"}
               backgroundColor="$backgroundStrong"
               borderRadius="$5"
             >
               <Text
-                fontSize="$4"
+                fontSize={isTabletLandscape ? "$3" : "$4"}
                 fontWeight="700"
                 fontFamily="$heading"
                 color="$color"
@@ -1699,7 +2019,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                       key={provider.key}
                       flex={1}
                       alignItems="center"
-                      paddingVertical="$3"
+                      paddingVertical={isTabletLandscape ? "$2" : "$3"}
                       borderRadius="$3"
                       borderWidth={1}
                       borderColor={selected ? "$primary" : "$borderColor"}
@@ -1727,9 +2047,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 keyboardType="phone-pad"
                 backgroundColor="$backgroundSoft"
                 borderWidth={0}
-                height={48}
+                height={isTabletLandscape ? 44 : 48}
               />
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+              <Text
+                fontSize={isTabletLandscape ? "$1" : "$2"}
+                color="$colorSecondary"
+                fontFamily="$body"
+              >
                 The customer approves the prompt on their phone. No browser is
                 opened.
               </Text>
@@ -1738,13 +2062,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
           {/* Bill Details */}
           <YStack
-            padding="$5"
+            padding={isTabletLandscape ? "$3" : "$5"}
             backgroundColor="$backgroundStrong"
             borderRadius="$5"
-            gap="$3"
+            gap={isTabletLandscape ? "$2" : "$3"}
           >
             <Text
-              fontSize="$5"
+              fontSize={isTabletLandscape ? "$4" : "$5"}
               fontWeight="700"
               fontFamily="$heading"
               color="$color"
@@ -1757,9 +2081,9 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 justifyContent="space-between"
                 alignItems="flex-start"
               >
-                <YStack flex={1} marginRight="$3">
+                <YStack flex={1} marginRight={isTabletLandscape ? "$2" : "$3"}>
                   <Text
-                    fontSize="$4"
+                    fontSize={isTabletLandscape ? "$3" : "$4"}
                     fontFamily="$body"
                     color="$color"
                     numberOfLines={1}
@@ -1768,7 +2092,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   </Text>
                   {i.selected_variant && (
                     <Text
-                      fontSize="$3"
+                      fontSize={isTabletLandscape ? "$2" : "$3"}
                       color="$colorSecondary"
                       fontFamily="$body"
                     >
@@ -1777,7 +2101,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   )}
                   {i.selected_addons.length > 0 && (
                     <Text
-                      fontSize="$3"
+                      fontSize={isTabletLandscape ? "$2" : "$3"}
                       color="$colorSecondary"
                       fontFamily="$body"
                       numberOfLines={1}
@@ -1787,7 +2111,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   )}
                 </YStack>
                 <Text
-                  fontSize="$4"
+                  fontSize={isTabletLandscape ? "$3" : "$4"}
                   fontWeight="600"
                   fontFamily="$body"
                   color="$color"
@@ -1799,12 +2123,19 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             {previewOrder.isFetching && isCloudReachable && (
               <XStack justifyContent="center" alignItems="center" gap="$2">
                 <Spinner size="small" color="$colorSecondary" />
-                <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
+                <Text
+                  fontSize={isTabletLandscape ? "$2" : "$3"}
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                >
                   Calculating...
                 </Text>
               </XStack>
             )}
-            <Separator marginVertical="$2" borderColor="$borderColor" />
+            <Separator
+              marginVertical={isTabletLandscape ? "$1" : "$2"}
+              borderColor="$borderColor"
+            />
             {(serverPricing || showLocalPricing) && (
               <>
                 {taxLines.map((tl) => (
@@ -1815,7 +2146,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     gap="$2"
                   >
                     <Text
-                      fontSize="$4"
+                      fontSize={isTabletLandscape ? "$3" : "$4"}
                       fontFamily="$body"
                       color="$colorSecondary"
                       flexShrink={1}
@@ -1825,7 +2156,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                         : tl.name}
                     </Text>
                     <Text
-                      fontSize="$4"
+                      fontSize={isTabletLandscape ? "$3" : "$4"}
                       fontFamily="$body"
                       color={
                         tl.is_inclusive ? "$colorMuted" : "$colorSecondary"
@@ -1840,14 +2171,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                     0 && (
                     <XStack justifyContent="space-between" alignItems="center">
                       <Text
-                        fontSize="$4"
+                        fontSize={isTabletLandscape ? "$3" : "$4"}
                         fontFamily="$body"
                         color="$colorSecondary"
                       >
                         Taxes
                       </Text>
                       <Text
-                        fontSize="$4"
+                        fontSize={isTabletLandscape ? "$3" : "$4"}
                         fontFamily="$body"
                         color="$colorSecondary"
                       >
@@ -1863,10 +2194,18 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             )}
             {(serverPricing?.delivery_fee_minor ?? 0) > 0 ? (
               <XStack justifyContent="space-between" alignItems="center">
-                <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">
+                <Text
+                  fontSize={isTabletLandscape ? "$3" : "$4"}
+                  fontFamily="$body"
+                  color="$colorSecondary"
+                >
                   Delivery Fee
                 </Text>
-                <Text fontSize="$4" fontFamily="$body" color="$colorSecondary">
+                <Text
+                  fontSize={isTabletLandscape ? "$3" : "$4"}
+                  fontFamily="$body"
+                  color="$colorSecondary"
+                >
                   {formatPriceFromMinor(serverPricing?.delivery_fee_minor ?? 0)}
                 </Text>
               </XStack>
@@ -1875,14 +2214,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
               <>
                 <XStack justifyContent="space-between" alignItems="center">
                   <Text
-                    fontSize="$4"
+                    fontSize={isTabletLandscape ? "$3" : "$4"}
                     fontFamily="$body"
                     color="$colorSecondary"
                   >
                     Mobile Money Charge
                   </Text>
                   <Text
-                    fontSize="$4"
+                    fontSize={isTabletLandscape ? "$3" : "$4"}
                     fontFamily="$body"
                     color="$colorSecondary"
                   >
@@ -1891,14 +2230,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 </XStack>
                 <XStack justifyContent="space-between" alignItems="center">
                   <Text
-                    fontSize="$4"
+                    fontSize={isTabletLandscape ? "$3" : "$4"}
                     fontFamily="$body"
                     color="$colorSecondary"
                   >
                     Order Total
                   </Text>
                   <Text
-                    fontSize="$4"
+                    fontSize={isTabletLandscape ? "$3" : "$4"}
                     fontFamily="$body"
                     color="$colorSecondary"
                   >
@@ -1907,10 +2246,13 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 </XStack>
               </>
             ) : null}
-            <Separator marginVertical="$2" borderColor="$borderColor" />
+            <Separator
+              marginVertical={isTabletLandscape ? "$1" : "$2"}
+              borderColor="$borderColor"
+            />
             <XStack justifyContent="space-between" alignItems="center">
               <Text
-                fontSize="$5"
+                fontSize={isTabletLandscape ? "$4" : "$5"}
                 fontWeight="800"
                 fontFamily="$heading"
                 color="$color"
@@ -1920,7 +2262,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                   : "Total"}
               </Text>
               <Text
-                fontSize="$5"
+                fontSize={isTabletLandscape ? "$4" : "$5"}
                 fontWeight="800"
                 fontFamily="$heading"
                 color="$primary"
@@ -1938,11 +2280,7 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       </ScrollView>
 
       <YStack
-        position="absolute"
-        bottom={0}
-        left={0}
-        right={0}
-        padding="$5"
+        padding={isTabletLandscape ? "$3" : "$5"}
         backgroundColor="$background"
         borderTopWidth={1}
         borderTopColor="$borderColor"
@@ -1952,10 +2290,11 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           color="white"
           fontWeight="700"
           fontFamily="$body"
-          height={52}
+          height={isTabletLandscape ? 48 : 52}
           disabled={
             createOrder.isPending ||
             items.length === 0 ||
+            bannerStatus.blocked ||
             isBusinessClosed ||
             !hasUsablePaymentMethod ||
             (isDeliveryCheckout && !deliveryPlace)
@@ -1967,6 +2306,8 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
             <Spinner size="small" color="white" />
           ) : items.length === 0 ? (
             "Cart is empty"
+          ) : bannerStatus.blocked ? (
+            bannerStatus.shortLabel
           ) : isBusinessClosed ? (
             "Business Closed"
           ) : !hasUsablePaymentMethod ? (
@@ -3213,7 +3554,7 @@ function TodayTab() {
           }}
         />
         {previewSheet}
-      {cashSheet}
+        {cashSheet}
       </>
     );
   }
@@ -3536,7 +3877,9 @@ function TodayTab() {
                         padding={0}
                         aria-label={`Collect mobile money for ${item.order_number}`}
                         icon={<Smartphone size={14} />}
-                        onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+                        onPress={() =>
+                          router.push(`/(seller)/orders/${item.id}`)
+                        }
                       />
                     )}
                     {isCancellable(item.status) && (

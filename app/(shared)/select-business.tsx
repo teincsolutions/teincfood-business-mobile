@@ -20,13 +20,16 @@ import { useRouter } from "expo-router";
 import { Button } from "@/components/ui";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { PendingInvitesBanner } from "@/components/invitations/PendingInvitesBanner";
+import { useResponsive } from "@/utils/responsive";
 
 export default function SelectBusinessScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isTablet, isLandscape } = useResponsive();
+  const isTabletLandscape = isTablet && isLandscape;
   const user = useAuthStore((state) => state.user);
   const role = useRoleStore((s) => s.role);
-  const isFleet = role === 'fleet_manager';
+  const isFleet = role === "fleet_manager";
   const dashboardRoute = isFleet
     ? "/(fleet)/(drawer)/dashboard"
     : "/(seller)/(drawer)/dashboard";
@@ -79,7 +82,7 @@ export default function SelectBusinessScreen() {
     <Card
       padding="$4"
       bordered
-      marginBottom="$3"
+      marginBottom={isTabletLandscape ? 0 : "$3"}
       backgroundColor={
         selectedBusinessId === business.id ? "$primaryLight" : "$background"
       }
@@ -168,9 +171,13 @@ export default function SelectBusinessScreen() {
   );
 
   const ListHeaderComponent = () => (
-    <YStack gap="$2" alignItems="center" paddingBottom="$2">
+    <YStack
+      gap="$2"
+      alignItems={isTabletLandscape ? "flex-start" : "center"}
+      paddingBottom={isTabletLandscape ? "$4" : "$2"}
+    >
       <Text
-        fontSize="$9"
+        fontSize={isTabletLandscape ? "$8" : "$9"}
         fontWeight="bold"
         fontFamily="$heading"
         color="$color"
@@ -180,7 +187,7 @@ export default function SelectBusinessScreen() {
       <Text
         fontSize="$4"
         color="$colorSecondary"
-        textAlign="center"
+        textAlign={isTabletLandscape ? "left" : "center"}
         fontFamily="$body"
       >
         Choose which business you want to manage
@@ -209,7 +216,8 @@ export default function SelectBusinessScreen() {
           textAlign="center"
           fontFamily="$body"
         >
-          You need a business to start selling or managing riders. Add your first business to get started.
+          You need a business to start selling or managing riders. Add your
+          first business to get started.
         </Text>
       </YStack>
     </Card>
@@ -219,10 +227,7 @@ export default function SelectBusinessScreen() {
     if (businesses.length === 0) {
       return (
         <YStack gap="$3" marginTop="$2">
-          <Button
-            size="$5"
-            onPress={handleAddNewBusiness}
-          >
+          <Button size="$5" onPress={handleAddNewBusiness}>
             Create Your First Business
           </Button>
           <Button
@@ -268,38 +273,60 @@ export default function SelectBusinessScreen() {
           </XStack>
         </Card>
 
-        <Button
-          size="$5"
-          onPress={handleContinue}
-          disabled={!selectedBusinessId}
-          opacity={selectedBusinessId ? 1 : 0.5}
-        >
-          Continue to Dashboard
-        </Button>
-        <Button
-          variant="outline"
-          size="$5"
-          onPress={handleManage}
-        >
-          Manage All Businesses
-        </Button>
+        {isTabletLandscape ? (
+          <XStack gap="$3">
+            <Button
+              flex={1}
+              size="$5"
+              onPress={handleContinue}
+              disabled={!selectedBusinessId}
+              opacity={selectedBusinessId ? 1 : 0.5}
+            >
+              Continue to Dashboard
+            </Button>
+            <Button flex={1} variant="outline" size="$5" onPress={handleManage}>
+              Manage All Businesses
+            </Button>
+          </XStack>
+        ) : (
+          <>
+            <Button
+              size="$5"
+              onPress={handleContinue}
+              disabled={!selectedBusinessId}
+              opacity={selectedBusinessId ? 1 : 0.5}
+            >
+              Continue to Dashboard
+            </Button>
+            <Button variant="outline" size="$5" onPress={handleManage}>
+              Manage All Businesses
+            </Button>
+          </>
+        )}
       </YStack>
     );
   };
 
   return (
     <FlatList
+      key={`select-business-${isTabletLandscape ? 2 : 1}`}
       data={businesses}
       keyExtractor={(item) => item.id}
       renderItem={renderBusiness}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={ListEmptyComponent}
       ListFooterComponent={ListFooterComponent}
+      numColumns={isTabletLandscape ? 2 : 1}
+      columnWrapperStyle={isTabletLandscape ? { gap: 16 } : undefined}
       contentContainerStyle={{
-        padding: 16,
+        padding: isTabletLandscape ? 24 : 16,
         paddingTop: Math.max(insets.top + 20, 40),
         paddingBottom: Math.max(insets.bottom + 20, 24),
         flexGrow: 1,
+        width: "100%",
+        maxWidth: isTabletLandscape ? 1100 : undefined,
+        alignSelf: "center",
+        gap: isTabletLandscape ? 16 : 0,
       }}
       initialNumToRender={10}
       windowSize={5}

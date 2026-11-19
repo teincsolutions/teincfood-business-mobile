@@ -10,12 +10,16 @@ import { useCachedImageUrl } from "@teincfood/core";
 
 interface FoodCardProps {
   item: MenuItem;
+  /** Dense card for POS tablet-landscape grids. */
+  compact?: boolean;
 }
 
-export function FoodCard({ item }: FoodCardProps) {
+export function FoodCard({ item, compact = false }: FoodCardProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const media = useMedia();
   const imageUrl = useCachedImageUrl(item.image_url);
+  const imageHeight = compact ? 96 : 120;
+  const addButtonSize = compact ? 32 : undefined;
 
   return (
     <>
@@ -27,7 +31,7 @@ export function FoodCard({ item }: FoodCardProps) {
         pressStyle={item.is_available ? { scale: 0.98 } : undefined}
         onPress={item.is_available ? () => setShowCustomizer(true) : undefined}
         opacity={item.is_available ? 1 : 0.6}
-        $md={{ borderRadius: "$6" }}
+        $md={compact ? undefined : { borderRadius: "$6" }}
       >
         <Card.Header
           padding={0}
@@ -35,34 +39,42 @@ export function FoodCard({ item }: FoodCardProps) {
           borderTopRightRadius="$5"
           backgroundColor="$gray200"
           position="relative"
-          $md={{ borderTopLeftRadius: "$6", borderTopRightRadius: "$6" }}
+          $md={
+            compact
+              ? undefined
+              : { borderTopLeftRadius: "$6", borderTopRightRadius: "$6" }
+          }
         >
           <YStack
             width="100%"
-            height={120}
+            height={imageHeight}
             borderTopLeftRadius="$5"
             borderTopRightRadius="$5"
             overflow="hidden"
             backgroundColor="$gray200"
-            $md={{
-              height: 180,
-              borderTopLeftRadius: "$6",
-              borderTopRightRadius: "$6",
-            }}
+            $md={
+              compact
+                ? undefined
+                : {
+                    height: 180,
+                    borderTopLeftRadius: "$6",
+                    borderTopRightRadius: "$6",
+                  }
+            }
           >
             {imageUrl ? (
               <Image
                 source={{ uri: imageUrl }}
                 width="100%"
-                height={120}
+                height={imageHeight}
                 objectFit="cover"
-                $md={{ height: 180 }}
+                $md={compact ? undefined : { height: 180 }}
               />
             ) : (
               <YStack
                 width="100%"
-                height={120}
-                $md={{ height: 180 }}
+                height={imageHeight}
+                $md={compact ? undefined : { height: 180 }}
                 backgroundColor={
                   item.id
                     ? ["#E8E8E8", "#D4D4D4", "#F0F0F0", "#E5E5E5"][
@@ -74,7 +86,7 @@ export function FoodCard({ item }: FoodCardProps) {
                 alignItems="center"
               >
                 <Text
-                  fontSize="$7"
+                  fontSize={compact ? "$5" : "$7"}
                   color="$colorSecondary"
                   fontWeight="700"
                   fontFamily="$heading"
@@ -101,56 +113,55 @@ export function FoodCard({ item }: FoodCardProps) {
           )}
         </Card.Header>
 
-        <YStack padding="$3" gap="$1" $md={{ padding: "$5", gap: "$2" }}>
+        <YStack
+          padding={compact ? "$2" : "$3"}
+          gap={compact ? "$1" : "$1"}
+          $md={compact ? undefined : { padding: "$5", gap: "$2" }}
+        >
           <Text
-            fontSize="$4"
+            fontSize={compact ? "$2" : "$4"}
             fontWeight="700"
             fontFamily="$heading"
             color="$color"
             numberOfLines={2}
-            lineHeight={18}
-            minHeight={36}
-            $md={{ fontSize: "$6", lineHeight: 22, minHeight: 44 }}
+            lineHeight={compact ? 14 : 18}
+            minHeight={compact ? 28 : 36}
+            $md={
+              compact
+                ? undefined
+                : { fontSize: "$6", lineHeight: 22, minHeight: 44 }
+            }
           >
             {item.name}
-          </Text>
-          <Text
-            fontSize="$2"
-            color="$colorSecondary"
-            fontFamily="$body"
-            numberOfLines={2}
-            lineHeight={14}
-            minHeight={14}
-            $md={{ fontSize: "$4", lineHeight: 16, minHeight: 16 }}
-          >
-            {item.description ?? ""}
           </Text>
 
           <XStack
             justifyContent="space-between"
             alignItems="center"
-            marginTop="$2"
+            marginTop={compact ? "$1" : "$2"}
           >
             <Text
-              fontSize="$4"
+              fontSize={compact ? "$3" : "$4"}
               fontWeight="800"
               fontFamily="$body"
               color="$primary"
-              $md={{ fontSize: "$6" }}
+              $md={compact ? undefined : { fontSize: "$6" }}
             >
               {formatPriceFromMinor(item.basePrice.amountMinor)}
             </Text>
             <Button
               variant="primary"
-              size="$4"
-              height="$8"
-              width="$8"
+              size={compact ? "$2" : "$4"}
+              height={addButtonSize ?? "$8"}
+              width={addButtonSize ?? "$8"}
               rounded="$full"
+              padding={0}
+              hitSlop={compact ? 6 : undefined}
               disabled={!item.is_available}
               onPress={() => setShowCustomizer(true)}
-              $md={{ height: 48, width: 48 }}
+              $md={compact ? undefined : { height: 48, width: 48 }}
               icon={({ color, size }) => (
-                <Plus size={media.md ? 22 : 18} color={color} />
+                <Plus size={compact ? 14 : media.md ? 22 : 18} color={color} />
               )}
             />
           </XStack>

@@ -4,6 +4,8 @@ import { Alert, RefreshControl, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Card, Spinner, Text, XStack, YStack } from "tamagui";
+import { toast } from "sonner-native";
+import { ensureLease } from "@teincfood/core";
 import { BackButton } from "@/components/ui";
 import {
   AlertTriangle,
@@ -129,7 +131,18 @@ export default function OfflineDeviceSettings() {
               setRevokingUuid(device.device_uuid);
               try {
                 await revokeBusinessDevice(businessId, device.device_uuid);
+                let leased: string | null = null;
+                try {
+                  leased = await ensureLease(businessId);
+                } catch {
+                  // Slot is still freed; the POS Retry button can lease later.
+                }
                 await loadDevices();
+                toast.success(
+                  leased
+                    ? `Terminal ${leased} is ready on this device`
+                    : "Terminal removed. Return to POS and tap Retry to activate this device.",
+                );
               } catch (error) {
                 Alert.alert(
                   "Could not remove terminal",
@@ -162,7 +175,12 @@ export default function OfflineDeviceSettings() {
         borderBottomColor="$borderColor"
       >
         <BackButton />
-        <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
+        <Text
+          fontSize="$6"
+          fontWeight="800"
+          fontFamily="$heading"
+          color="$color"
+        >
           Offline device
         </Text>
       </XStack>
@@ -191,213 +209,225 @@ export default function OfflineDeviceSettings() {
             </Text>
           </YStack>
 
-        <Card padding="$4" bordered gap="$3">
-          <XStack gap="$3" items="center">
-            <MonitorSmartphone size={28} color="$primary" />
-            <YStack flex={1}>
-              <Text fontWeight="700" color="$color">
-                {loading
-                  ? "Checking…"
-                  : hasDevice
-                    ? "Offline license active"
-                    : "Not activated"}
-              </Text>
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                {hasDevice
-                  ? members.length > 0
-                    ? `${members.length} member${members.length === 1 ? "" : "s"} can unlock offline`
-                    : "License active · set a PIN for quick offline login"
-                  : "Activate while online to enable offline sign-in"}
-              </Text>
-            </YStack>
-          </XStack>
-
-          {evaluation ? (
-            <YStack gap="$1">
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                License status:{" "}
-                {evaluation.entitled
-                  ? "valid"
-                  : (evaluation.reason ?? "needs renewal")}
-              </Text>
-              {evaluation.payload?.expires_at ? (
-                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  Expires:{" "}
-                  {new Date(evaluation.payload.expires_at).toLocaleString()}
-                </Text>
-              ) : null}
-            </YStack>
-          ) : null}
-        </Card>
-
-        {!loading && !hasDevice ? (
           <Card padding="$4" bordered gap="$3">
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-              Offline access was skipped for this terminal. You can enable it
-              while online.
-            </Text>
-            <Button
-              bg="$primary"
-              color="$background"
-              onPress={() => router.push("/(auth)/offline-setup")}
-            >
-              Activate offline license
-            </Button>
-          </Card>
-        ) : null}
-
-        {!loading && hasDevice ? (
-          <Card padding="$4" bordered gap="$3">
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-              Set or change the optional 6-digit PIN used for quick sign-in while
-              offline.
-            </Text>
-            <Button
-              bg="$primary"
-              color="$background"
-              onPress={() => router.push("/(auth)/offline-setup")}
-            >
-              Set or change offline PIN
-            </Button>
-          </Card>
-        ) : null}
-
-        {canManage ? (
-          <Card padding="$4" bordered gap="$3">
-            <XStack items="center" justify="space-between" gap="$3">
+            <XStack gap="$3" items="center">
+              <MonitorSmartphone size={28} color="$primary" />
               <YStack flex={1}>
                 <Text fontWeight="700" color="$color">
-                  Business terminals
+                  {loading
+                    ? "Checking…"
+                    : hasDevice
+                      ? "Offline license active"
+                      : "Not activated"}
                 </Text>
                 <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                  {activeDevices.length} active license
-                  {activeDevices.length === 1 ? "" : "s"} on this plan
+                  {hasDevice
+                    ? members.length > 0
+                      ? `${members.length} member${members.length === 1 ? "" : "s"} can unlock offline`
+                      : "License active · set a PIN for quick offline login"
+                    : "Activate while online to enable offline sign-in"}
                 </Text>
               </YStack>
-              <Button
-                size="$2"
-                chromeless
-                disabled={devicesLoading}
-                onPress={() => void loadDevices()}
-              >
-                Refresh
-              </Button>
             </XStack>
 
-            {devicesError ? (
-              <Text fontSize="$2" color="$error" fontFamily="$body">
-                {devicesError}
-              </Text>
-            ) : null}
-
-            {devicesLoading && devices.length === 0 ? (
-              <XStack items="center" gap="$2">
-                <Spinner size="small" />
-                <Text fontSize="$2" color="$colorSecondary">
-                  Loading terminals…
+            {evaluation ? (
+              <YStack gap="$1">
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  License status:{" "}
+                  {evaluation.entitled
+                    ? "valid"
+                    : (evaluation.reason ?? "needs renewal")}
                 </Text>
-              </XStack>
-            ) : null}
-
-            {!devicesLoading && !devicesError && devices.length === 0 ? (
-              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-                No terminals have been activated for this business yet.
-              </Text>
-            ) : null}
-
-            {devices.map((device) => {
-              const isCurrent = device.device_uuid === currentDeviceUuid;
-              const revoked =
-                device.license_status === "revoked" ||
-                Boolean(device.revoked_at);
-              return (
-                <YStack
-                  key={device.id}
-                  gap="$1"
-                  pt="$2"
-                  borderTopWidth={1}
-                  borderColor="$borderColor"
-                >
-                  <XStack items="center" justify="space-between" gap="$2">
-                    <Text
-                      fontWeight="700"
-                      color={revoked ? "$colorSecondary" : "$color"}
-                      numberOfLines={1}
-                      flex={1}
-                    >
-                      {deviceLabel(device)}
-                      {isCurrent ? " · This device" : ""}
-                    </Text>
-                    <Text
-                      fontSize="$1"
-                      color={
-                        device.online && !revoked ? "$green" : "$colorSecondary"
-                      }
-                    >
-                      {revoked ? "Removed" : relativeTime(device.last_seen)}
-                    </Text>
-                  </XStack>
+                {evaluation.payload?.expires_at ? (
                   <Text
                     fontSize="$2"
                     color="$colorSecondary"
                     fontFamily="$body"
                   >
-                    DD {device.device_number} · {device.platform ?? "unknown"}
-                    {device.os_version ? ` ${device.os_version}` : ""} ·{" "}
-                    {device.members.length} member
-                    {device.members.length === 1 ? "" : "s"}
+                    Expires:{" "}
+                    {new Date(evaluation.payload.expires_at).toLocaleString()}
                   </Text>
-                  {device.license_expires_at && !revoked ? (
-                    <Text fontSize="$1" color="$colorSecondary">
-                      License expires{" "}
-                      {new Date(device.license_expires_at).toLocaleDateString()}
-                    </Text>
-                  ) : null}
-                  {!revoked && !isCurrent ? (
-                    <Button
-                      size="$2"
-                      chromeless
-                      color="$error"
-                      self="flex-start"
-                      disabled={revokingUuid === device.device_uuid}
-                      onPress={() => handleRevoke(device)}
-                    >
-                      {revokingUuid === device.device_uuid
-                        ? "Removing…"
-                        : "Remove terminal"}
-                    </Button>
-                  ) : null}
-                </YStack>
-              );
-            })}
+                ) : null}
+              </YStack>
+            ) : null}
           </Card>
-        ) : null}
 
-        {hasDevice ? (
-          <Card padding="$4" bordered gap="$3" borderColor="$error">
-            <XStack gap="$2" items="center">
-              <AlertTriangle size={18} color="$error" />
-              <Text fontWeight="700" color="$error">
-                Remove this device
+          {!loading && !hasDevice ? (
+            <Card padding="$4" bordered gap="$3">
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                Offline access was skipped for this terminal. You can enable it
+                while online.
               </Text>
-            </XStack>
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-              This revokes the license on the server and deletes every offline
-              PIN from this terminal. Logout alone keeps the license; this is
-              the separate destructive action.
-            </Text>
-            <Button
-              bg="$error"
-              color="$background"
-              icon={<Trash2 size={18} color="$background" />}
-              disabled={busy}
-              onPress={handleRemove}
-            >
-              {busy ? "Removing…" : "Remove device"}
-            </Button>
-          </Card>
-        ) : null}
-      </YStack>
+              <Button
+                bg="$primary"
+                color="$background"
+                onPress={() => router.push("/(auth)/offline-setup")}
+              >
+                Activate offline license
+              </Button>
+            </Card>
+          ) : null}
+
+          {!loading && hasDevice ? (
+            <Card padding="$4" bordered gap="$3">
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                Set or change the optional 6-digit PIN used for quick sign-in
+                while offline.
+              </Text>
+              <Button
+                bg="$primary"
+                color="$background"
+                onPress={() => router.push("/(auth)/offline-setup")}
+              >
+                Set or change offline PIN
+              </Button>
+            </Card>
+          ) : null}
+
+          {canManage ? (
+            <Card padding="$4" bordered gap="$3">
+              <XStack items="center" justify="space-between" gap="$3">
+                <YStack flex={1}>
+                  <Text fontWeight="700" color="$color">
+                    Business terminals
+                  </Text>
+                  <Text
+                    fontSize="$2"
+                    color="$colorSecondary"
+                    fontFamily="$body"
+                  >
+                    {activeDevices.length} active license
+                    {activeDevices.length === 1 ? "" : "s"} on this plan
+                  </Text>
+                </YStack>
+                <Button
+                  size="$2"
+                  chromeless
+                  disabled={devicesLoading}
+                  onPress={() => void loadDevices()}
+                >
+                  Refresh
+                </Button>
+              </XStack>
+
+              {devicesError ? (
+                <Text fontSize="$2" color="$error" fontFamily="$body">
+                  {devicesError}
+                </Text>
+              ) : null}
+
+              {devicesLoading && devices.length === 0 ? (
+                <XStack items="center" gap="$2">
+                  <Spinner size="small" />
+                  <Text fontSize="$2" color="$colorSecondary">
+                    Loading terminals…
+                  </Text>
+                </XStack>
+              ) : null}
+
+              {!devicesLoading && !devicesError && devices.length === 0 ? (
+                <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                  No terminals have been activated for this business yet.
+                </Text>
+              ) : null}
+
+              {devices.map((device) => {
+                const isCurrent = device.device_uuid === currentDeviceUuid;
+                const revoked =
+                  device.license_status === "revoked" ||
+                  Boolean(device.revoked_at);
+                return (
+                  <YStack
+                    key={device.id}
+                    gap="$1"
+                    pt="$2"
+                    borderTopWidth={1}
+                    borderColor="$borderColor"
+                  >
+                    <XStack items="center" justify="space-between" gap="$2">
+                      <Text
+                        fontWeight="700"
+                        color={revoked ? "$colorSecondary" : "$color"}
+                        numberOfLines={1}
+                        flex={1}
+                      >
+                        {deviceLabel(device)}
+                        {isCurrent ? " · This device" : ""}
+                      </Text>
+                      <Text
+                        fontSize="$1"
+                        color={
+                          device.online && !revoked
+                            ? "$green"
+                            : "$colorSecondary"
+                        }
+                      >
+                        {revoked ? "Removed" : relativeTime(device.last_seen)}
+                      </Text>
+                    </XStack>
+                    <Text
+                      fontSize="$2"
+                      color="$colorSecondary"
+                      fontFamily="$body"
+                    >
+                      DD {device.device_number} · {device.platform ?? "unknown"}
+                      {device.os_version ? ` ${device.os_version}` : ""} ·{" "}
+                      {device.members.length} member
+                      {device.members.length === 1 ? "" : "s"}
+                    </Text>
+                    {device.license_expires_at && !revoked ? (
+                      <Text fontSize="$1" color="$colorSecondary">
+                        License expires{" "}
+                        {new Date(
+                          device.license_expires_at,
+                        ).toLocaleDateString()}
+                      </Text>
+                    ) : null}
+                    {!revoked && !isCurrent ? (
+                      <Button
+                        size="$2"
+                        chromeless
+                        color="$error"
+                        self="flex-start"
+                        disabled={revokingUuid === device.device_uuid}
+                        onPress={() => handleRevoke(device)}
+                      >
+                        {revokingUuid === device.device_uuid
+                          ? "Removing…"
+                          : "Remove terminal"}
+                      </Button>
+                    ) : null}
+                  </YStack>
+                );
+              })}
+            </Card>
+          ) : null}
+
+          {hasDevice ? (
+            <Card padding="$4" bordered gap="$3" borderColor="$error">
+              <XStack gap="$2" items="center">
+                <AlertTriangle size={18} color="$error" />
+                <Text fontWeight="700" color="$error">
+                  Remove this device
+                </Text>
+              </XStack>
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                This revokes the license on the server and deletes every offline
+                PIN from this terminal. Logout alone keeps the license; this is
+                the separate destructive action.
+              </Text>
+              <Button
+                bg="$error"
+                color="$background"
+                icon={<Trash2 size={18} color="$background" />}
+                disabled={busy}
+                onPress={handleRemove}
+              >
+                {busy ? "Removing…" : "Remove device"}
+              </Button>
+            </Card>
+          ) : null}
+        </YStack>
       </ScrollView>
     </YStack>
   );
