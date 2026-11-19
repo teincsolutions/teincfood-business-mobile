@@ -21,7 +21,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { Button, ServiceStatusBanner } from "@/components/ui";
 import { PendingInvitesBanner } from "@/components/invitations/PendingInvitesBanner";
-import { useSellerDashboardQuery } from "@teincfood/core";
+import { useSellerDashboardData } from "@/hooks/useSellerDashboardData";
 import { useBusinessKycQuery } from "@/hooks/useKyc";
 import * as businessService from "@/services/business.service";
 import { toast } from "sonner-native";
@@ -80,7 +80,7 @@ export default function SellerDashboard() {
     : "/(shared)/businesses";
 
   // TanStack Query hooks
-  const { data, isLoading, refetch } = useSellerDashboardQuery(
+  const { data, isLoading, refetch } = useSellerDashboardData(
     activeBusinessId,
     hasBusiness,
   );

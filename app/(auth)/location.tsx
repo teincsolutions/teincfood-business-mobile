@@ -1,39 +1,60 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { YStack, XStack, Text, useTheme, Sheet, Separator } from "tamagui";
+import { YStack, XStack, Text } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MapPin, ChevronDown, Check, Navigation } from "@tamagui/lucide-icons";
+import { MapPin, ChevronDown, Navigation } from "@tamagui/lucide-icons";
 import { Button, BackButton } from "@/components/ui";
 import { FormActions } from "@/components/layout";
+import { getCountryOption, getDialCodeFromCountry } from "@teincfood/core";
 import {
-  PHONE_COUNTRIES,
-  getCountryOption,
-  getDialCodeFromCountry,
-} from "@teincfood/core";
-import { useLocationStore, AppLocation } from "@/stores/location.store";
+  useLocationStore,
+  AppLocation,
+  CountrySource,
+} from "@/stores/location.store";
 import { useAuthStore } from "@/stores/auth.store";
-import { detectCountryIso } from "@/utils/country-detection";
+import {
+  getInitialCountryIso,
+  persistedCountryIso,
+} from "@/utils/country-detection";
+import { CountryPickerSheet } from "@/components/CountryPickerSheet";
 
 export default function LocationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
   const setCurrentLocation = useLocationStore(
     (state) => state.setCurrentLocation,
   );
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const locationHydrated = useLocationStore((state) => state.isHydrated);
 
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
-  const [selectedCountryIso, setSelectedCountryIso] = useState(
-    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
+  const [selectedCountryIso, setSelectedCountryIso] = useState(() =>
+    getInitialCountryIso(currentLocation),
+  );
+  const [countrySource, setCountrySource] = useState<CountrySource>(
+    currentLocation?.countrySource ?? "locale",
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const selectedCountry = getCountryOption(selectedCountryIso);
   const phoneDialCode = getDialCodeFromCountry(selectedCountryIso) || "+233";
+
+  // Keep the screen in sync when a previously saved location finishes
+  // hydrating after the first render.
+  useEffect(() => {
+    if (!locationHydrated) return;
+    const persisted = persistedCountryIso(currentLocation);
+    if (!persisted) return;
+    setSelectedCountryIso(persisted);
+    setCountrySource(currentLocation?.countrySource ?? "manual");
+  }, [
+    locationHydrated,
+    currentLocation?.countryCode,
+    currentLocation?.countrySource,
+  ]);
 
   const handleContinue = async () => {
     if (!selectedCountryIso) {
@@ -45,14 +66,14 @@ export default function LocationScreen() {
     setError("");
 
     try {
-      // Create a basic location with the selected country
       const location: AppLocation = {
-        latitude: 0, // Will be updated with actual coordinates if available
+        latitude: 0,
         longitude: 0,
         city: "Unknown",
         area: "Unknown",
         fullAddress: selectedCountry?.name || "Unknown",
         countryCode: selectedCountryIso.toUpperCase(),
+        countrySource,
       };
 
       // Save to local store (user is unauthenticated during onboarding,
@@ -211,92 +232,17 @@ export default function LocationScreen() {
         </ScrollView>
       </YStack>
 
-      <Sheet
-        modal
+      <CountryPickerSheet
         open={countrySheetOpen}
         onOpenChange={setCountrySheetOpen}
-        snapPoints={[75]}
-        dismissOnSnapToBottom
-        zIndex={100_000}
-      >
-        <Sheet.Overlay
-          animation="lazy"
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-          backgroundColor="rgba(0,0,0,0.6)"
-        />
-        <Sheet.Frame
-          backgroundColor="$background"
-          borderTopLeftRadius="$8"
-          borderTopRightRadius="$8"
-        >
-          <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
-          <YStack px="$5" pt="$3" pb="$4">
-            <Text
-              fontSize="$6"
-              fontWeight="800"
-              color="$color"
-              fontFamily="$heading"
-            >
-              Select Your Country
-            </Text>
-            <Text
-              fontSize="$3"
-              color="$colorSecondary"
-              fontFamily="$body"
-              mt="$1"
-            >
-              Choose your country for location-based services.
-            </Text>
-          </YStack>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <YStack px="$5" pb="$6">
-              {PHONE_COUNTRIES.map((country, index) => (
-                <YStack key={country.iso}>
-                  <XStack
-                    items="center"
-                    jc="space-between"
-                    py="$4"
-                    onPress={() => {
-                      setSelectedCountryIso(country.iso);
-                      setCountrySheetOpen(false);
-                    }}
-                  >
-                    <YStack>
-                      <Text
-                        fontSize="$4"
-                        fontWeight="700"
-                        color="$color"
-                        fontFamily="$body"
-                      >
-                        {country.name}
-                      </Text>
-                      <Text
-                        fontSize="$3"
-                        color="$colorSecondary"
-                        fontFamily="$body"
-                      >
-                        {country.iso}
-                      </Text>
-                    </YStack>
-                    <XStack items="center" gap="$2">
-                      <Text fontSize="$4" color="$color" fontFamily="$body">
-                        {country.dialCode}
-                      </Text>
-                      {selectedCountryIso === country.iso ? (
-                        <Check size={16} color="$primary" />
-                      ) : null}
-                    </XStack>
-                  </XStack>
-                  {index < PHONE_COUNTRIES.length - 1 ? (
-                    <Separator borderColor="$borderColor" />
-                  ) : null}
-                </YStack>
-              ))}
-            </YStack>
-          </ScrollView>
-        </Sheet.Frame>
-      </Sheet>
+        value={selectedCountryIso}
+        title="Select Your Country"
+        description="Choose your country for location-based services."
+        onSelect={(iso) => {
+          setSelectedCountryIso(iso);
+          setCountrySource("manual");
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }

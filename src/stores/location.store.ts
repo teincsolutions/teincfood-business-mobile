@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { rootZustandStorage } from "@/utils/storage";
 
+export type CountrySource = "manual" | "device" | "locale" | "fallback";
+
 export interface AppLocation {
   latitude: number;
   longitude: number;
@@ -9,6 +11,12 @@ export interface AppLocation {
   area: string;
   fullAddress: string;
   countryCode?: string;
+  /**
+   * How `countryCode` was chosen. Older app versions did not write this, so a
+   * missing source means the value is legacy and should not win over fresh
+   * device detection.
+   */
+  countrySource?: CountrySource;
 }
 
 interface LocationState {

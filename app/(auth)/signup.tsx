@@ -9,18 +9,16 @@ import {
   Input as TamaguiInput,
   Image,
   useTheme,
-  Sheet,
-  Separator,
   ScrollView,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronDown, Check } from "@tamagui/lucide-icons";
+import { ChevronDown } from "@tamagui/lucide-icons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { BackButton, Button, FormInput, AppleSignInButton } from "@/components/ui";
 import { FormActions } from "@/components/layout";
+import { CountryPickerSheet } from "@/components/CountryPickerSheet";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
-  PHONE_COUNTRIES,
   getDialCodeFromCountry,
   getCountryOption,
   normalizePhoneForCountry,
@@ -30,7 +28,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRoleStore } from "@/stores/role.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
-import { detectCountryIso } from "@/utils/country-detection";
+import {
+  getInitialCountryIso,
+  persistedCountryIso,
+} from "@/utils/country-detection";
 
 type SignupMethod = "phone" | "email";
 
@@ -68,8 +69,8 @@ export default function SignupScreen() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const [selectedCountryIso, setSelectedCountryIso] = useState(
-    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
+  const [selectedCountryIso, setSelectedCountryIso] = useState(() =>
+    getInitialCountryIso(currentLocation),
   );
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
 
@@ -77,9 +78,9 @@ export default function SignupScreen() {
   const selectedCountry = getCountryOption(selectedCountryIso);
 
   useEffect(() => {
-    if (!currentLocation?.countryCode) return;
-    setSelectedCountryIso(currentLocation.countryCode.toUpperCase());
-  }, [currentLocation?.countryCode]);
+    const persisted = persistedCountryIso(currentLocation);
+    if (persisted) setSelectedCountryIso(persisted);
+  }, [currentLocation?.countryCode, currentLocation?.countrySource]);
 
   const clearError = (field: string) => {
     setFormErrors((prev) => {
@@ -530,92 +531,14 @@ export default function SignupScreen() {
           </YStack>
         </ScrollView>
 
-        <Sheet
-          modal
+        <CountryPickerSheet
           open={countrySheetOpen}
           onOpenChange={setCountrySheetOpen}
-          snapPoints={[75]}
-          dismissOnSnapToBottom
-          zIndex={100_000}
-        >
-          <Sheet.Overlay
-            animation="lazy"
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
-            backgroundColor="rgba(0,0,0,0.6)"
-          />
-          <Sheet.Frame
-            backgroundColor="$background"
-            borderTopLeftRadius="$8"
-            borderTopRightRadius="$8"
-          >
-            <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
-            <YStack px="$5" pt="$3" pb="$4">
-              <Text
-                fontSize="$6"
-                fontWeight="800"
-                color="$color"
-                fontFamily="$heading"
-              >
-                Select Country Code
-              </Text>
-              <Text
-                fontSize="$3"
-                color="$colorSecondary"
-                fontFamily="$body"
-                mt="$1"
-              >
-                Choose a country for your phone number.
-              </Text>
-            </YStack>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <YStack px="$5" pb="$6">
-                {PHONE_COUNTRIES.map((country, index) => (
-                  <YStack key={country.iso}>
-                    <XStack
-                      items="center"
-                      jc="space-between"
-                      py="$4"
-                      onPress={() => {
-                        setSelectedCountryIso(country.iso);
-                        setCountrySheetOpen(false);
-                      }}
-                    >
-                      <YStack>
-                        <Text
-                          fontSize="$4"
-                          fontWeight="700"
-                          color="$color"
-                          fontFamily="$body"
-                        >
-                          {country.name}
-                        </Text>
-                        <Text
-                          fontSize="$3"
-                          color="$colorSecondary"
-                          fontFamily="$body"
-                        >
-                          {country.iso}
-                        </Text>
-                      </YStack>
-                      <XStack items="center" gap="$2">
-                        <Text fontSize="$4" color="$color" fontFamily="$body">
-                          {country.dialCode}
-                        </Text>
-                        {selectedCountryIso === country.iso ? (
-                          <Check size={16} color="$primary" />
-                        ) : null}
-                      </XStack>
-                    </XStack>
-                    {index < PHONE_COUNTRIES.length - 1 ? (
-                      <Separator borderColor="$borderColor" />
-                    ) : null}
-                  </YStack>
-                ))}
-              </YStack>
-            </ScrollView>
-          </Sheet.Frame>
-        </Sheet>
+          value={selectedCountryIso}
+          title="Select Country Code"
+          description="Choose a country for your phone number."
+          onSelect={setSelectedCountryIso}
+        />
       </YStack>
     </KeyboardAvoidingView>
   );

@@ -57,6 +57,7 @@ import { useSecurityStore } from "../src/stores/security.store";
 import { BiometricLockOverlay } from "../src/components/security/BiometricLockOverlay";
 import { LocationGuard } from "../src/components/LocationGuard";
 import { useBusinessesQuery } from "../src/hooks/useBusinessesQuery";
+import { useOrderAnalyticsInvalidation } from "../src/hooks/useOrderAnalyticsInvalidation";
 import { useEventsConnection } from "../src/hooks/useEventsConnection";
 import {
   connectChatClient,
@@ -91,6 +92,9 @@ function SellerOfflineMounts() {
   // Seller role only — fleet managers and riders are fully online and
   // must not run any offline/sync machinery.
   useSyncReconciliation();
+  // Keep analytics/dashboard summaries fresh after offline order writes and
+  // order events from other terminals.
+  useOrderAnalyticsInvalidation();
   return null;
 }
 

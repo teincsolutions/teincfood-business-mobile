@@ -9,22 +9,16 @@ import {
   Text,
   Input as TamaguiInput,
   useTheme,
-  Sheet,
-  Separator,
   ScrollView,
   Image,
 } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Chrome,
-  ChevronDown,
-  Check,
-} from "@tamagui/lucide-icons";
+import { Chrome, ChevronDown } from "@tamagui/lucide-icons";
 import { Button, FormInput, AppleSignInButton } from "@/components/ui";
 import { FormActions } from "@/components/layout";
+import { CountryPickerSheet } from "@/components/CountryPickerSheet";
 import { validateEmail, validatePassword, extractApiErrorCode } from "@teincfood/core";
 import {
-  PHONE_COUNTRIES,
   getCountryOption,
   getDialCodeFromCountry,
   isLikelyE164,
@@ -38,7 +32,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useOnboardingStore } from "@/stores/onboarding.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useRoleStore } from "@/stores/role.store";
-import { detectCountryIso } from "@/utils/country-detection";
+import {
+  getInitialCountryIso,
+  persistedCountryIso,
+} from "@/utils/country-detection";
 
 type LoginMethod = "phone" | "email";
 
@@ -77,16 +74,16 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
-  const [selectedCountryIso, setSelectedCountryIso] = useState(
-    currentLocation?.countryCode?.toUpperCase() || detectCountryIso(),
+  const [selectedCountryIso, setSelectedCountryIso] = useState(() =>
+    getInitialCountryIso(currentLocation),
   );
   const phoneDialCode = getDialCodeFromCountry(selectedCountryIso) || "+233";
   const selectedCountry = getCountryOption(selectedCountryIso);
 
   useEffect(() => {
-    if (!currentLocation?.countryCode) return;
-    setSelectedCountryIso(currentLocation.countryCode.toUpperCase());
-  }, [currentLocation?.countryCode]);
+    const persisted = persistedCountryIso(currentLocation);
+    if (persisted) setSelectedCountryIso(persisted);
+  }, [currentLocation?.countryCode, currentLocation?.countrySource]);
 
   const goPostAuth = () => {
     // Go through splash so stores fully propagate and Stack.Protected
@@ -493,92 +490,14 @@ export default function LoginScreen() {
         </ScrollView>
       </YStack>
 
-      <Sheet
-        modal
+      <CountryPickerSheet
         open={countrySheetOpen}
         onOpenChange={setCountrySheetOpen}
-        snapPoints={[75]}
-        dismissOnSnapToBottom
-        zIndex={100_000}
-      >
-        <Sheet.Overlay
-          animation="lazy"
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-          backgroundColor="rgba(0,0,0,0.6)"
-        />
-        <Sheet.Frame
-          backgroundColor="$background"
-          borderTopLeftRadius="$8"
-          borderTopRightRadius="$8"
-        >
-          <Sheet.Handle backgroundColor="$gray200" marginTop="$2" />
-          <YStack px="$5" pt="$3" pb="$4">
-            <Text
-              fontSize="$6"
-              fontWeight="800"
-              color="$color"
-              fontFamily="$heading"
-            >
-              Select Country Code
-            </Text>
-            <Text
-              fontSize="$3"
-              color="$colorSecondary"
-              fontFamily="$body"
-              mt="$1"
-            >
-              Choose a country for OTP routing.
-            </Text>
-          </YStack>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <YStack px="$5" pb="$6">
-              {PHONE_COUNTRIES.map((country, index) => (
-                <YStack key={country.iso}>
-                  <XStack
-                    items="center"
-                    jc="space-between"
-                    py="$4"
-                    onPress={() => {
-                      setSelectedCountryIso(country.iso);
-                      setCountrySheetOpen(false);
-                    }}
-                  >
-                    <YStack>
-                      <Text
-                        fontSize="$4"
-                        fontWeight="700"
-                        color="$color"
-                        fontFamily="$body"
-                      >
-                        {country.name}
-                      </Text>
-                      <Text
-                        fontSize="$3"
-                        color="$colorSecondary"
-                        fontFamily="$body"
-                      >
-                        {country.iso}
-                      </Text>
-                    </YStack>
-                    <XStack items="center" gap="$2">
-                      <Text fontSize="$4" color="$color" fontFamily="$body">
-                        {country.dialCode}
-                      </Text>
-                      {selectedCountryIso === country.iso ? (
-                        <Check size={16} color="$primary" />
-                      ) : null}
-                    </XStack>
-                  </XStack>
-                  {index < PHONE_COUNTRIES.length - 1 ? (
-                    <Separator borderColor="$borderColor" />
-                  ) : null}
-                </YStack>
-              ))}
-            </YStack>
-          </ScrollView>
-        </Sheet.Frame>
-      </Sheet>
+        value={selectedCountryIso}
+        title="Select Country Code"
+        description="Choose a country for OTP routing."
+        onSelect={setSelectedCountryIso}
+      />
     </KeyboardAvoidingView>
   );
 }
