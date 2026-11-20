@@ -43,7 +43,13 @@ export function CountryPickerSheet({
   const selectedIso = value?.trim().toUpperCase();
 
   useEffect(() => {
-    if (!open) setQuery("");
+    if (open) {
+      // The login phone field usually has the keyboard open when the selector
+      // is tapped. Dismiss it first so the sheet is not hidden behind it.
+      Keyboard.dismiss();
+    } else {
+      setQuery("");
+    }
   }, [open]);
 
   const countries = useMemo(() => {

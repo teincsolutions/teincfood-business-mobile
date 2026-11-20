@@ -31,14 +31,19 @@ export function useBusinessesQuery() {
   // fresh API data so fields like business_number and is_open are present.
   // An empty result must clear the old active business; otherwise a brand-new
   // account can keep operating on the previous user's business.
+  //
+  // Multiple businesses are intentionally left unselected on a fresh login so
+  // the selector screen can ask the user which one to manage. Only a single
+  // business is auto-selected (handled by the store's setBusinesses).
   useEffect(() => {
     if (!Array.isArray(query.data)) return;
     setBusinesses(query.data);
+
     const store = useBusinessStore.getState();
     const currentId = store.activeBusiness?.id;
-    const fresh = currentId
-      ? query.data.find((b) => b.id === currentId)
-      : query.data.find((b) => b.isDefault) ?? query.data[0];
+    if (!currentId) return;
+
+    const fresh = query.data.find((b) => b.id === currentId);
     store.setActiveBusiness((fresh ?? null) as any);
   }, [query.data, setBusinesses, userId]);
 

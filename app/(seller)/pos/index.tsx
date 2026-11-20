@@ -3057,16 +3057,19 @@ function TodayTab() {
   const showActive = activeOrders.length > 0;
   const showCompleted = completedOrders.length > 0;
 
-  // Tablet landscape table layout (row, not card) — mirrors desktop TodayTable
-  const COL_ORDER_TODAY = 130;
-  const COL_CUSTOMER_TODAY = 140;
-  const COL_TYPE_TODAY = 90;
-  const COL_PAYMENT_TODAY = 110;
-  const COL_STATUS_TODAY = 120;
-  const COL_DELIVERY_TODAY = 110;
-  const COL_TIME_TODAY = 100;
-  const COL_TOTAL_TODAY = 100;
-  const COL_ACTIONS_TODAY = 264;
+  // Tablet landscape table layout (row, not card) — compact scale shared with
+  // the seller Orders screen. Fits the full-width POS surface without clipping
+  // any column.
+  const COL_ORDER_TODAY = 100;
+  const COL_CUSTOMER_TODAY = 190;
+  const COL_TYPE_TODAY = 70;
+  const COL_PAYMENT_TODAY = 80;
+  const COL_STATUS_TODAY = 85;
+  const COL_DELIVERY_TODAY = 75;
+  const COL_TIME_TODAY = 85;
+  const COL_TOTAL_TODAY = 85;
+  const COL_ACTIONS_TODAY = 260;
+  const COL_GAP_TODAY = 4;
   const tableTotalToday =
     COL_ORDER_TODAY +
     COL_CUSTOMER_TODAY +
@@ -3077,7 +3080,8 @@ function TodayTab() {
     COL_TIME_TODAY +
     COL_TOTAL_TODAY +
     COL_ACTIONS_TODAY +
-    48;
+    COL_GAP_TODAY * 8 +
+    24;
 
   const cashCollectable = (order: SellerOrder) =>
     isUnpaid(order) &&
@@ -3139,13 +3143,14 @@ function TodayTab() {
     <XStack
       borderBottomWidth={2}
       borderBottomColor="$borderColor"
-      paddingVertical="$3"
-      paddingHorizontal="$4"
+      paddingVertical="$2"
+      paddingHorizontal="$3"
       backgroundColor="$backgroundSoft"
+      gap={COL_GAP_TODAY}
     >
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_ORDER_TODAY}
       >
@@ -3153,7 +3158,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_CUSTOMER_TODAY}
       >
@@ -3161,7 +3166,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_TYPE_TODAY}
       >
@@ -3169,7 +3174,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_PAYMENT_TODAY}
       >
@@ -3177,7 +3182,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_STATUS_TODAY}
       >
@@ -3185,7 +3190,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_DELIVERY_TODAY}
       >
@@ -3193,7 +3198,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_TIME_TODAY}
       >
@@ -3201,7 +3206,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_TOTAL_TODAY}
         textAlign="right"
@@ -3210,7 +3215,7 @@ function TodayTab() {
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$3"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_ACTIONS_TODAY}
         textAlign="right"
@@ -3251,28 +3256,39 @@ function TodayTab() {
       <XStack
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
-        paddingVertical="$3"
-        paddingHorizontal="$4"
+        paddingVertical="$2"
+        paddingHorizontal="$3"
         alignItems="center"
+        gap={COL_GAP_TODAY}
       >
-        <YStack width={COL_ORDER_TODAY}>
-          <Text fontWeight="bold" fontSize="$3" numberOfLines={1}>
+        <YStack
+          width={COL_ORDER_TODAY}
+          minWidth={COL_ORDER_TODAY}
+          flexShrink={0}
+        >
+          <Text fontWeight="400" fontSize={10} numberOfLines={1}>
             {item.order_number}
           </Text>
           {item.callout_number != null && (
-            <Text fontSize="$2" color="$colorMuted">
+            <Text fontSize={8} color="$colorMuted">
               #{item.callout_number}
             </Text>
           )}
         </YStack>
-        <XStack width={COL_CUSTOMER_TODAY} gap="$2" alignItems="center">
+        <XStack
+          width={COL_CUSTOMER_TODAY}
+          minWidth={COL_CUSTOMER_TODAY}
+          flexShrink={0}
+          gap="$2"
+          alignItems="center"
+        >
           {avatarUrl ? (
-            <CachedAvatarImage src={avatarUrl} size={24} borderRadius={12} />
+            <CachedAvatarImage src={avatarUrl} size={28} borderRadius={14} />
           ) : (
             <YStack
-              width={24}
-              height={24}
-              borderRadius={12}
+              width={28}
+              height={28}
+              borderRadius={14}
               backgroundColor={isWalkIn ? "$orange5" : "$backgroundStrong"}
               alignItems="center"
               justifyContent="center"
@@ -3281,21 +3297,26 @@ function TodayTab() {
             </YStack>
           )}
           <YStack flex={1} gap={0}>
-            <Text fontSize="$3" numberOfLines={1} fontWeight="500">
+            <Text
+              fontSize={12}
+              numberOfLines={1}
+              fontWeight="500"
+              minWidth={100}
+            >
               {customerName || "—"}
             </Text>
             {isWalkIn && tellerName && (
-              <Text fontSize="$1" color="$colorMuted" numberOfLines={1}>
+              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
                 Teller: {tellerName}
               </Text>
             )}
           </YStack>
         </XStack>
-        <Text fontSize="$3" width={COL_TYPE_TODAY} numberOfLines={1}>
+        <Text fontSize={12} width={COL_TYPE_TODAY} numberOfLines={1}>
           {fmt((item.order_type ?? "pos") as string)}
         </Text>
         <YStack width={COL_PAYMENT_TODAY}>
-          <Text fontSize="$3" numberOfLines={1}>
+          <Text fontSize={10} numberOfLines={1}>
             {fmt(
               (item.pos_payment_method ??
                 item.payment_mode ??
@@ -3303,7 +3324,7 @@ function TodayTab() {
             )}
           </Text>
           {isUnpaid(item) && (
-            <Text fontSize="$2" fontWeight="700" color="$warning">
+            <Text fontSize={9} fontWeight="700" color="$warning">
               UNPAID
             </Text>
           )}
@@ -3311,37 +3332,41 @@ function TodayTab() {
         <YStack width={COL_STATUS_TODAY} alignItems="center">
           <YStack
             backgroundColor={statusBg(item.status)}
-            paddingHorizontal="$2"
-            paddingVertical="$1"
-            borderRadius="$full"
+            paddingHorizontal={4}
+            paddingVertical={1}
+            borderRadius={3}
           >
             <Text
-              fontSize="$2"
+              fontSize={8}
               color="white"
               fontWeight="700"
+              textTransform="uppercase"
               numberOfLines={1}
             >
               {fmt(item.status)}
             </Text>
           </YStack>
         </YStack>
-        <Text fontSize="$3" width={COL_DELIVERY_TODAY} numberOfLines={1}>
+        <Text fontSize={10} width={COL_DELIVERY_TODAY} numberOfLines={1}>
           {item.delivery_id ? (item.rider?.name ?? "Awaiting rider") : "—"}
         </Text>
         <Text
-          fontSize="$3"
+          fontSize={9}
           color="$colorMuted"
           width={COL_TIME_TODAY}
+          minWidth={COL_TIME_TODAY}
+          flexShrink={0}
           numberOfLines={1}
         >
           {formatDate(item.inserted_at)}
         </Text>
         <Text
-          fontSize="$3"
+          fontSize={12}
           fontWeight="700"
           color="$primary"
           width={COL_TOTAL_TODAY}
           textAlign="right"
+          numberOfLines={1}
         >
           {formatPriceFromMinor(item.total_minor)}
         </Text>
@@ -3354,8 +3379,8 @@ function TodayTab() {
           <Button
             size="$2"
             variant="outline"
-            height={36}
-            width={36}
+            height={32}
+            width={32}
             padding={0}
             icon={<Eye size={14} />}
             onPress={() => router.push(`/(seller)/orders/${item.id}`)}
@@ -3363,8 +3388,8 @@ function TodayTab() {
           <Button
             size="$2"
             variant="outline"
-            height={36}
-            width={36}
+            height={32}
+            width={32}
             padding={0}
             icon={<FileText size={14} />}
             onPress={() => setPreviewOrder(item)}
@@ -3372,8 +3397,8 @@ function TodayTab() {
           <Button
             size="$2"
             variant="outline"
-            height={36}
-            width={36}
+            height={32}
+            width={32}
             padding={0}
             icon={<Printer size={14} />}
             onPress={() => printService.printOrderReceipt(item.id)}
@@ -3391,25 +3416,24 @@ function TodayTab() {
               <Button
                 size="$2"
                 variant="outline"
-                height={36}
-                paddingHorizontal="$2"
+                height={32}
+                width={32}
+                padding={0}
+                aria-label={`Make delivery for ${item.order_number}`}
+                icon={<Truck size={14} />}
                 onPress={() => setMakeDeliveryOrder(item)}
-              >
-                <Text fontSize="$2" fontWeight="700">
-                  Make Delivery
-                </Text>
-              </Button>
+              />
             )}
           {action && (
             <Button
               size="$2"
               backgroundColor="$primary"
               borderRadius="$2"
-              height={36}
-              paddingHorizontal="$3"
+              height={32}
+              paddingHorizontal="$1.5"
               onPress={handleAction}
             >
-              <Text color="white" fontSize="$2" fontWeight="700">
+              <Text color="white" fontSize={10} fontWeight="700">
                 {action.label}
               </Text>
             </Button>
@@ -3418,8 +3442,8 @@ function TodayTab() {
             <Button
               size="$2"
               variant="outline"
-              height={36}
-              width={36}
+              height={32}
+              width={32}
               padding={0}
               aria-label={`Collect cash for ${item.order_number}`}
               icon={<Banknote size={14} />}
@@ -3430,8 +3454,8 @@ function TodayTab() {
             <Button
               size="$2"
               variant="outline"
-              height={36}
-              width={36}
+              height={32}
+              width={32}
               padding={0}
               aria-label={`Collect mobile money for ${item.order_number}`}
               icon={<Smartphone size={14} />}
@@ -3442,8 +3466,8 @@ function TodayTab() {
             <Button
               size="$2"
               variant="outline"
-              height={36}
-              width={36}
+              height={32}
+              width={32}
               padding={0}
               icon={<XCircle size={14} />}
               chromeless

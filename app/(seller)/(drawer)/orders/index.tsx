@@ -9,21 +9,26 @@ import {
   XStack,
   Separator,
   ScrollView,
-  Tooltip,
-  Avatar,
+  Spinner,
 } from "tamagui";
 import {
+  Eye,
   FileText,
   Printer,
   Search,
   ExternalLink,
-  Clock,
   Package,
   CalendarDays,
   Truck,
   User,
+  XCircle,
 } from "@tamagui/lucide-icons";
-import { FlatList, RefreshControl, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
+import {
+  FlatList,
+  RefreshControl,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -32,7 +37,6 @@ import {
 } from "@/hooks/seller.hooks";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
-import { useTheme } from "tamagui";
 import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FilterSheet } from "@/components/filters/FilterSheet";
@@ -42,11 +46,17 @@ import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import type { SellerOrder } from "@teincfood/core";
 import {
   formatPriceFromMinor,
+  formatDate,
   formatDateTime,
   resolveDateRange,
   isDeliveryOrder,
+  isUnpaid,
 } from "@teincfood/core";
-import { getCustomerDisplay, isCancellable, cancelLabelFor, CANCELLABLE_STATUSES } from "@teincfood/core";
+import {
+  getCustomerDisplay,
+  isCancellable,
+  cancelLabelFor,
+} from "@teincfood/core";
 
 const ORDER_TYPE_FILTERS = [
   { key: "", label: "All types" },
@@ -116,30 +126,54 @@ function formatStatus(status: string) {
   return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
-function timeSince(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m`;
+// The orders table has a narrower status column than the POS table, so keep
+// long backend statuses readable inside the pill.
+function compactStatus(status: string) {
+  if (status === "awaiting_payment") return "Awaiting Pay";
+  if (status === "waiting_pickup") return "Waiting";
+  if (status === "on_the_way") return "In Transit";
+  return formatStatus(status);
+}
+
+// Match the POS "Today's Orders" table badge palette exactly.
+function statusBg(status: string) {
+  if (["pending", "awaiting_payment"].includes(status)) return "#f59e0b";
+  if (status === "accepted") return "#3b82f6";
+  if (status === "preparing") return "#8b5cf6";
+  if (status === "ready") return "#10b981";
+  if (status === "delivered") return "#22c55e";
+  if (status === "cancelled") return "#ef4444";
+  return "#9ca3af";
 }
 
 export default function SellerOrders() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width, isTablet, isLandscape } = useResponsive();
-  const theme = useTheme();
+  const { isTablet, isLandscape } = useResponsive();
   const useOrdersTable = isTablet && isLandscape;
 
-  const COL_ITEMS = 44;
-  const COL_TIME = 64;
-  // Compact icon actions keep the table inside the drawer content width on a
-  // landscape iPad (the drawer leaves roughly 720pt). Text buttons forced a
-  // horizontal scroll and large empty gaps between columns.
-  const COL_ACTIONS = 188;
-  const FIXED_TOTAL = COL_ITEMS + COL_TIME + COL_ACTIONS;
-
-  const [containerWidth, setContainerWidth] = useState(0);
+  // Use the POS "Today's Orders" table language (compact rows, muted header,
+  // status pills, right-aligned total) but fit it to the narrower drawer
+  // content area. Type + payment share one cell and delivery/rider details sit
+  // under the customer so the important columns never get clipped.
+  const COL_ORDER = 96;
+  const COL_CUSTOMER = 171;
+  const COL_TYPE_PAYMENT = 82;
+  const COL_STATUS = 76;
+  const COL_TIME = 80;
+  const COL_TOTAL = 87;
+  const COL_ACTIONS = 135;
+  const COL_GAP = 4;
+  const tableTotal =
+    COL_ORDER +
+    COL_CUSTOMER +
+    COL_TYPE_PAYMENT +
+    COL_STATUS +
+    COL_TIME +
+    COL_TOTAL +
+    COL_ACTIONS +
+    COL_GAP * 6 +
+    48;
 
   const searchQuery = useFilterStore((s) => s.ordersSearchQuery);
   const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
@@ -160,8 +194,12 @@ export default function SellerOrders() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitFilter = useRef(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [cancelTarget, setCancelTarget] = useState<{ id: string; status: string } | null>(null);
-  const [makeDeliveryTarget, setMakeDeliveryTarget] = useState<SellerOrder | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
+  const [makeDeliveryTarget, setMakeDeliveryTarget] =
+    useState<SellerOrder | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
 
@@ -174,7 +212,15 @@ export default function SellerOrders() {
     setDateTo("");
     setOrderType("");
     setPaymentStatus("");
-  }, [setSearchQuery, setActiveChips, setDatePreset, setDateFrom, setDateTo, setOrderType, setPaymentStatus]);
+  }, [
+    setSearchQuery,
+    setActiveChips,
+    setDatePreset,
+    setDateFrom,
+    setDateTo,
+    setOrderType,
+    setPaymentStatus,
+  ]);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -216,7 +262,15 @@ export default function SellerOrders() {
     if (range.date_from) params.date_from = range.date_from;
     if (range.date_to) params.date_to = range.date_to;
     return params;
-  }, [activeChips, debouncedSearch, orderType, paymentStatus, datePreset, dateFrom, dateTo]);
+  }, [
+    activeChips,
+    debouncedSearch,
+    orderType,
+    paymentStatus,
+    datePreset,
+    dateFrom,
+    dateTo,
+  ]);
 
   const filtersActive =
     activeChips.length > 0 ||
@@ -225,14 +279,12 @@ export default function SellerOrders() {
     !!debouncedSearch ||
     datePreset !== "all";
 
-  const {
-    data,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-  } = useSellerOrdersQuery(true, filterParams);
+  const { data, refetch, fetchNextPage, hasNextPage } = useSellerOrdersQuery(
+    true,
+    filterParams,
+  );
   const cancelOrder = useCancelOrderMutation();
-  const canReject = useHasCapability('orders_reject');
+  const canReject = useHasCapability("orders_reject");
 
   // These callbacks must live after the query hook: referencing refetch /
   // hasNextPage in a dependency array before their `const` declarations throws
@@ -265,19 +317,6 @@ export default function SellerOrders() {
 
   const allOrders = data || [];
 
-  const availWidth = containerWidth || width;
-  const remaining = Math.max(280, availWidth - FIXED_TOTAL - 32);
-  const colWidths = {
-    order: Math.max(86, Math.round(remaining * 0.24)),
-    customer: Math.max(112, Math.round(remaining * 0.3)),
-    status: Math.max(74, Math.round(remaining * 0.19)),
-    total: Math.max(90, Math.round(remaining * 0.27)),
-    items: COL_ITEMS,
-    time: COL_TIME,
-    actions: COL_ACTIONS,
-  };
-  const tableTotal = Object.values(colWidths).reduce((a, b) => a + b, 0) + 32;
-
   const toggleChip = (key: string) => {
     useFilterStore.setState((state) => ({
       ordersActiveChips: state.ordersActiveChips.includes(key)
@@ -294,259 +333,303 @@ export default function SellerOrders() {
 
   // ── Phone: compact card ──
   const renderPhoneCard = ({ item }: { item: SellerOrder }) => {
-    const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
+    const badge = STATUS_BADGE[item.status] ?? {
+      bg: "$colorMuted",
+      color: "white",
+    };
     return (
-    <Card
-      padding="$4"
-      bordered
-      marginBottom="$3"
-      pressStyle={{ scale: 0.98, opacity: 0.9 }}
-    >
-      <YStack gap="$2">
-        <XStack justifyContent="space-between" alignItems="center" gap="$2">
-          <Text fontSize="$5" fontWeight="bold" flex={1} numberOfLines={1}>
-            {item.order_number}
-          </Text>
-          <YStack
-            px="$2.5"
-            py="$1"
-            borderRadius="$full"
-            backgroundColor={badge.bg}
-            flexShrink={0}
-            maxWidth="55%"
-          >
-            <Text fontSize="$2" color={badge.color} fontWeight="700" numberOfLines={1} textTransform="uppercase" letterSpacing={0.3}>
-              {formatStatus(item.status)}
-            </Text>
-          </YStack>
-        </XStack>
-        <XStack justifyContent="space-between">
-          <Text fontSize="$4">{getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]).name}</Text>
-          <Text fontSize="$5" fontWeight="bold" color="$primary">
-            {formatPriceFromMinor(item.total_minor, item.currency)}
-          </Text>
-        </XStack>
-        <XStack gap="$2" alignItems="center">
-          <CalendarDays size={14} color="$colorMuted" />
-          <Text fontSize="$3" color="$colorMuted">
-            {formatDateTime(item.inserted_at)}
-          </Text>
-        </XStack>
-        <Separator />
-        <XStack gap="$3">
-          <Button
-            flex={1}
-            variant="outline"
-            height={40}
-            icon={<ExternalLink size={14} />}
-            onPress={() => router.push(`/(seller)/orders/${item.id}`)}
-          >
-            View
-          </Button>
-          <Button
-            variant="outline"
-            width={40}
-            height={40}
-            padding={0}
-            aria-label={`Print receipt for ${item.order_number}`}
-            icon={<Printer size={14} />}
-            onPress={() => handlePrint(item)}
-          />
-          {!isDeliveryOrder(
-            item as unknown as Parameters<typeof isDeliveryOrder>[0],
-          ) &&
-            ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
-              item.status,
-            ) && (
-              <Button
-                flex={1}
-                variant="outline"
-                height={40}
-                onPress={() => setMakeDeliveryTarget(item)}
-              >
-                Make Delivery
-              </Button>
-            )}
-          {canReject && isCancellable(item.status) && (
-            <Button
-              variant="dangerOutline"
-              height={40}
-              icon={<FileText size={14} />}
-              onPress={() => setCancelTarget({ id: item.id, status: item.status })}
-            >
-              {actionLabel(item.status)}
-            </Button>
-          )}
-        </XStack>
-      </YStack>
-    </Card>
-     );
-  };
-
-  // ── Tablet: table row ──
-  const renderTabletRow = ({ item }: { item: SellerOrder }) => {
-    const badge = STATUS_BADGE[item.status] ?? { bg: "$colorMuted", color: "white" };
-    return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={() => router.push(`/(seller)/orders/${item.id}`)}
-    >
-    <XStack
-      backgroundColor="$background"
-      borderBottomWidth={1}
-      borderBottomColor="$borderColor"
-      paddingVertical="$4"
-      paddingHorizontal="$4"
-      alignItems="center"
-    >
-      <Text
-        fontWeight="bold"
-        fontSize="$5"
-        width={colWidths.order}
-        numberOfLines={1}
+      <Card
+        padding="$4"
+        bordered
+        marginBottom="$3"
+        pressStyle={{ scale: 0.98, opacity: 0.9 }}
       >
-        {item.order_number}
-      </Text>
-      {(() => {
-        const c = getCustomerDisplay(item as unknown as Parameters<typeof getCustomerDisplay>[0]);
-        return (
-          <XStack width={colWidths.customer} gap="$2" alignItems="center">
-            <Avatar
-              circular
-              size="$3"
-              backgroundColor={c.isWalkIn ? "$yellow2" : "$backgroundSoft"}
+        <YStack gap="$2">
+          <XStack justifyContent="space-between" alignItems="center" gap="$2">
+            <Text fontSize="$5" fontWeight="bold" flex={1} numberOfLines={1}>
+              {item.order_number}
+            </Text>
+            <YStack
+              px="$2.5"
+              py="$1"
+              borderRadius="$full"
+              backgroundColor={badge.bg}
               flexShrink={0}
+              maxWidth="55%"
             >
-              {c.avatarUrl ? <CachedAvatarImage src={c.avatarUrl} /> : null}
-              <Avatar.Fallback
-                alignItems="center"
-                justifyContent="center"
-                backgroundColor={c.isWalkIn ? "$yellow2" : "$backgroundSoft"}
+              <Text
+                fontSize="$2"
+                color={badge.color}
+                fontWeight="700"
+                numberOfLines={1}
+                textTransform="uppercase"
+                letterSpacing={0.3}
               >
-                <User
-                  size={14}
-                  color={c.isWalkIn ? "$yellow10" : "$colorMuted"}
-                />
-              </Avatar.Fallback>
-            </Avatar>
-            <YStack flex={1} minWidth={0}>
-              <Tooltip label={c.name}>
-                <Tooltip.Trigger>
-                  <Text fontSize="$4" numberOfLines={1} ellipsis>
-                    {c.name}
-                  </Text>
-                </Tooltip.Trigger>
-              </Tooltip>
-              <Text fontSize="$3" color="$colorMuted" numberOfLines={1}>
-                {c.phone || ""}
+                {formatStatus(item.status)}
               </Text>
-              {c.isWalkIn && c.tellerName ? (
-                <Text fontSize="$2" color="$colorMuted" numberOfLines={1}>
-                  Teller: {c.tellerName}
-                </Text>
-              ) : null}
             </YStack>
           </XStack>
-        );
-      })()}
-      <YStack
-        px="$2"
-        py="$1"
-        borderRadius="$full"
-        backgroundColor={badge.bg}
-        width={colWidths.status}
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Text
-          fontSize="$2"
-          color={badge.color}
-          fontWeight="700"
-          textAlign="center"
-          numberOfLines={1}
-          letterSpacing={0.2}
-        >
-          {formatStatus(item.status)}
-        </Text>
-      </YStack>
-      <XStack
-        width={COL_ITEMS}
-        gap="$2"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Package size={18} color="$colorMuted" />
-        <Text fontSize="$4">{item.items?.length || 0}</Text>
-      </XStack>
-      <Text
-        fontSize="$5"
-        fontWeight="bold"
-        color="$primary"
-        width={colWidths.total}
-        textAlign="center"
-      >
-        {formatPriceFromMinor(item.total_minor, item.currency)}
-      </Text>
-      <XStack
-        width={COL_TIME}
-        gap="$2"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Clock size={16} color="$colorMuted" />
-        <Text fontSize="$4" color="$colorMuted">
-          {timeSince(item.inserted_at)}
-        </Text>
-      </XStack>
-      <XStack gap="$2" width={COL_ACTIONS} justifyContent="flex-end">
-        <Button
-          variant="outline"
-          width={40}
-          height={40}
-          padding={0}
-          aria-label={`View order ${item.order_number}`}
-          icon={<ExternalLink size={16} />}
-          onPress={() => router.push(`/(seller)/orders/${item.id}`)}
-        />
-        <Button
-          variant="outline"
-          width={40}
-          height={40}
-          padding={0}
-          aria-label={`Print receipt for ${item.order_number}`}
-          icon={<Printer size={16} />}
-          onPress={() => handlePrint(item)}
-        />
-        {!isDeliveryOrder(
-          item as unknown as Parameters<typeof isDeliveryOrder>[0],
-        ) &&
-          ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
-            item.status,
-          ) && (
+          <XStack justifyContent="space-between">
+            <Text fontSize="$4">
+              {
+                getCustomerDisplay(
+                  item as unknown as Parameters<typeof getCustomerDisplay>[0],
+                ).name
+              }
+            </Text>
+            <Text fontSize="$5" fontWeight="bold" color="$primary">
+              {formatPriceFromMinor(item.total_minor, item.currency)}
+            </Text>
+          </XStack>
+          <XStack gap="$2" alignItems="center">
+            <CalendarDays size={14} color="$colorMuted" />
+            <Text fontSize="$3" color="$colorMuted">
+              {formatDateTime(item.inserted_at)}
+            </Text>
+          </XStack>
+          <Separator />
+          <XStack gap="$3">
+            <Button
+              flex={1}
+              variant="outline"
+              height={40}
+              icon={<ExternalLink size={14} />}
+              onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+            >
+              View
+            </Button>
             <Button
               variant="outline"
               width={40}
               height={40}
               padding={0}
+              aria-label={`Print receipt for ${item.order_number}`}
+              icon={<Printer size={14} />}
+              onPress={() => handlePrint(item)}
+            />
+            {!isDeliveryOrder(
+              item as unknown as Parameters<typeof isDeliveryOrder>[0],
+            ) &&
+              [
+                "pending",
+                "accepted",
+                "preparing",
+                "ready",
+                "waiting_pickup",
+              ].includes(item.status) && (
+                <Button
+                  flex={1}
+                  variant="outline"
+                  height={40}
+                  onPress={() => setMakeDeliveryTarget(item)}
+                >
+                  Make Delivery
+                </Button>
+              )}
+            {canReject && isCancellable(item.status) && (
+              <Button
+                variant="dangerOutline"
+                height={40}
+                icon={<FileText size={14} />}
+                onPress={() =>
+                  setCancelTarget({ id: item.id, status: item.status })
+                }
+              >
+                {actionLabel(item.status)}
+              </Button>
+            )}
+          </XStack>
+        </YStack>
+      </Card>
+    );
+  };
+
+  // ── Tablet: table row ──
+  const renderTabletRow = ({ item }: { item: SellerOrder }) => {
+    const c = getCustomerDisplay(
+      item as unknown as Parameters<typeof getCustomerDisplay>[0],
+    );
+    const canMakeDelivery =
+      !isDeliveryOrder(
+        item as unknown as Parameters<typeof isDeliveryOrder>[0],
+      ) &&
+      ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
+        item.status,
+      );
+
+    return (
+      <XStack
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
+        paddingVertical="$2"
+        paddingHorizontal="$3"
+        alignItems="center"
+        gap={COL_GAP}
+      >
+        <YStack width={COL_ORDER} minWidth={COL_ORDER} flexShrink={0}>
+          <Text fontWeight="400" fontSize={10} numberOfLines={1}>
+            {item.order_number}
+          </Text>
+          {item.callout_number != null ? (
+            <Text fontSize={8} color="$colorMuted">
+              #{item.callout_number}
+            </Text>
+          ) : null}
+        </YStack>
+
+        <XStack width={COL_CUSTOMER} gap="$2" alignItems="center">
+          {c.avatarUrl ? (
+            <CachedAvatarImage src={c.avatarUrl} size={28} borderRadius={14} />
+          ) : (
+            <YStack
+              width={28}
+              height={28}
+              borderRadius={14}
+              backgroundColor={c.isWalkIn ? "$orange5" : "$backgroundStrong"}
+              alignItems="center"
+              justifyContent="center"
+            >
+              <User
+                size={12}
+                color={c.isWalkIn ? "$orange10" : "$colorMuted"}
+              />
+            </YStack>
+          )}
+          <YStack flex={1} gap={0}>
+            <Text
+              fontSize={12}
+              fontWeight="500"
+              numberOfLines={1}
+              minWidth={110}
+            >
+              {c.name || "—"}
+            </Text>
+            {c.isWalkIn && c.tellerName ? (
+              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+                Teller: {c.tellerName}
+              </Text>
+            ) : item.delivery_id ? (
+              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+                {item.rider?.name
+                  ? `Rider: ${item.rider.name}`
+                  : "Awaiting rider"}
+              </Text>
+            ) : null}
+          </YStack>
+        </XStack>
+
+        <YStack width={COL_TYPE_PAYMENT} gap={0}>
+          <Text fontSize={12} numberOfLines={1}>
+            {formatStatus(item.order_type ?? "pos")}
+          </Text>
+          <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+            {formatStatus(
+              item.pos_payment_method ?? item.payment_mode ?? "cash",
+            )}
+          </Text>
+          {isUnpaid(item) ? (
+            <Text fontSize={9} fontWeight="700" color="$warning">
+              UNPAID
+            </Text>
+          ) : null}
+        </YStack>
+
+        <YStack width={COL_STATUS} alignItems="center">
+          <YStack
+            backgroundColor={statusBg(item.status)}
+            paddingHorizontal={4}
+            paddingVertical={1}
+            borderRadius={3}
+          >
+            <Text
+              fontSize={8}
+              color="white"
+              fontWeight="700"
+              textTransform="uppercase"
+              numberOfLines={1}
+            >
+              {compactStatus(item.status)}
+            </Text>
+          </YStack>
+        </YStack>
+
+        <Text
+          fontSize={9}
+          color="$colorMuted"
+          width={COL_TIME}
+          minWidth={COL_TIME}
+          flexShrink={0}
+          numberOfLines={1}
+        >
+          {formatDate(item.inserted_at)}
+        </Text>
+
+        <Text
+          fontSize={12}
+          fontWeight="700"
+          color="$primary"
+          width={COL_TOTAL}
+          textAlign="right"
+          numberOfLines={1}
+        >
+          {formatPriceFromMinor(item.total_minor, item.currency)}
+        </Text>
+
+        <XStack
+          width={COL_ACTIONS}
+          justifyContent="flex-end"
+          gap="$1"
+          alignItems="center"
+        >
+          <Button
+            size="$2"
+            variant="outline"
+            height={32}
+            width={32}
+            padding={0}
+            aria-label={`View order ${item.order_number}`}
+            icon={<Eye size={14} />}
+            onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+          />
+          <Button
+            size="$2"
+            variant="outline"
+            height={32}
+            width={32}
+            padding={0}
+            aria-label={`Print receipt for ${item.order_number}`}
+            icon={<Printer size={14} />}
+            onPress={() => handlePrint(item)}
+          />
+          {canMakeDelivery ? (
+            <Button
+              size="$2"
+              variant="outline"
+              height={32}
+              width={32}
+              padding={0}
               aria-label={`Make delivery for ${item.order_number}`}
-              icon={<Truck size={16} />}
+              icon={<Truck size={14} />}
               onPress={() => setMakeDeliveryTarget(item)}
             />
-          )}
-        {canReject && isCancellable(item.status) && (
-          <Button
-            variant="dangerOutline"
-            width={40}
-            height={40}
-            padding={0}
-            aria-label={`${actionLabel(item.status)} order ${item.order_number}`}
-            icon={<FileText size={16} />}
-            onPress={() => setCancelTarget({ id: item.id, status: item.status })}
-          />
-        )}
+          ) : null}
+          {canReject && isCancellable(item.status) ? (
+            <Button
+              size="$2"
+              variant="outline"
+              height={32}
+              width={32}
+              padding={0}
+              aria-label={`${actionLabel(item.status)} order ${item.order_number}`}
+              icon={<XCircle size={14} />}
+              chromeless
+              onPress={() =>
+                setCancelTarget({ id: item.id, status: item.status })
+              }
+            />
+          ) : null}
+        </XStack>
       </XStack>
-    </XStack>
-    </TouchableOpacity>
     );
   };
 
@@ -554,65 +637,63 @@ export default function SellerOrders() {
     <XStack
       borderBottomWidth={2}
       borderBottomColor="$borderColor"
-      paddingVertical="$3"
-      paddingHorizontal="$4"
+      paddingVertical="$2"
+      paddingHorizontal="$3"
       backgroundColor="$backgroundSoft"
+      gap={COL_GAP}
     >
       <Text
         fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
-        width={colWidths.order}
+        width={COL_ORDER}
       >
-        Order #
+        Order
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
-        width={colWidths.customer}
+        width={COL_CUSTOMER}
       >
         Customer
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
-        width={colWidths.status}
-        textAlign="center"
+        width={COL_TYPE_PAYMENT}
+      >
+        Type / Pay
+      </Text>
+      <Text
+        fontWeight="bold"
+        fontSize="$2"
+        color="$colorMuted"
+        width={COL_STATUS}
       >
         Status
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
-        width={COL_ITEMS}
-        textAlign="center"
+        width={COL_TIME}
       >
-        Items
+        Placed
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
-        width={colWidths.total}
-        textAlign="center"
+        width={COL_TOTAL}
+        textAlign="right"
       >
         Total
       </Text>
       <Text
         fontWeight="bold"
-        fontSize="$4"
-        color="$colorMuted"
-        width={COL_TIME}
-        textAlign="center"
-      >
-        Time
-      </Text>
-      <Text
-        fontWeight="bold"
-        fontSize="$4"
+        fontSize="$2"
         color="$colorMuted"
         width={COL_ACTIONS}
         textAlign="right"
@@ -623,156 +704,162 @@ export default function SellerOrders() {
   );
 
   const searchAndFilters = (
-      <YStack padding="$4" gap="$3" paddingBottom="$2">
-        <XStack gap="$2" alignItems="center">
-          <XStack
-            flex={1}
-            alignItems="center"
-            backgroundColor="$backgroundSoft"
-            borderRadius="$3"
-            paddingHorizontal="$3"
-            borderWidth={1}
-            borderColor="$borderColor"
-            height={40}
-          >
-            <Search size={16} color="$colorMuted" />
-            <TextInput
-              style={{ flex: 1, paddingLeft: 8, fontSize: 14, color: "#000" }}
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              placeholder="Search order or customer..."
-              placeholderTextColor="#999"
-            />
-          </XStack>
-          <Button
-            height={40}
-            paddingHorizontal="$3"
-            borderWidth={1}
-            borderColor={filtersActive ? "$primary" : "$borderColor"}
-            borderRadius="$3"
-            backgroundColor={filtersActive ? "$primary" : "$background"}
-            onPress={() => setFilterSheetOpen(true)}
-          >
-            <Text
-              fontFamily="$body"
-              fontWeight="600"
-              fontSize="$3"
-              color={filtersActive ? "white" : "$color"}
-            >
-              Filters{filtersActive ? " •" : ""}
-            </Text>
-          </Button>
+    <YStack padding="$3" gap="$2" paddingBottom="$2">
+      <XStack gap="$2" alignItems="center">
+        <XStack
+          flex={1}
+          alignItems="center"
+          backgroundColor="$backgroundSoft"
+          borderRadius="$3"
+          paddingHorizontal="$3"
+          borderWidth={1}
+          borderColor="$borderColor"
+          height={36}
+        >
+          <Search size={14} color="$colorMuted" />
+          <TextInput
+            style={{ flex: 1, paddingLeft: 8, fontSize: 13, color: "#000" }}
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            placeholder="Search order or customer..."
+            placeholderTextColor="#999"
+          />
         </XStack>
+        <Button
+          height={36}
+          paddingHorizontal="$3"
+          borderWidth={1}
+          borderColor={filtersActive ? "$primary" : "$borderColor"}
+          borderRadius="$3"
+          backgroundColor={filtersActive ? "$primary" : "$background"}
+          onPress={() => setFilterSheetOpen(true)}
+        >
+          <Text
+            fontFamily="$body"
+            fontWeight="600"
+            fontSize="$2"
+            color={filtersActive ? "white" : "$color"}
+          >
+            Filters{filtersActive ? " •" : ""}
+          </Text>
+        </Button>
+      </XStack>
     </YStack>
   );
 
   const listBody = useOrdersTable ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
-          nestedScrollEnabled
-          keyboardShouldPersistTaps="handled"
-        >
-          <YStack width={tableTotal}>
-            {tableHeader}
-            {allOrders.length === 0 ? (
-              <YStack padding="$8" alignItems="center">
-                <Text color="$colorMuted" fontSize="$4" textAlign="center">
-                  {debouncedSearch
-                    ? "No orders match your search"
-                    : "No orders for the selected filters"}
-                </Text>
-              </YStack>
-            ) : (
-              <FlatList
-                data={allOrders}
-                keyExtractor={(item) => item.id}
-                renderItem={renderTabletRow}
-                onEndReached={onEndReached}
-                onEndReachedThreshold={0.5}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                  />
-                }
-                contentContainerStyle={{
-                  paddingBottom: Math.max(insets.bottom + 20, 24),
-                }}
-                ListFooterComponent={
-                  hasNextPage ? (
-                    <YStack padding="$4" alignItems="center">
-                      <ActivityIndicator />
-                    </YStack>
-                  ) : null
-                }
-                initialNumToRender={20}
-                windowSize={10}
-                maxToRenderPerBatch={15}
-                removeClippedSubviews={false}
-                nestedScrollEnabled
-                keyboardShouldPersistTaps="handled"
-              />
-            )}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={true}
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1 }}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
+    >
+      <YStack width={tableTotal} flex={1}>
+        {tableHeader}
+        {allOrders.length === 0 ? (
+          <YStack padding="$8" alignItems="center" gap="$3">
+            <Package size={80} color="$gray200" />
+            <Text
+              fontSize="$5"
+              fontWeight="600"
+              color="$colorSecondary"
+              textAlign="center"
+            >
+              {debouncedSearch
+                ? "No orders match your search"
+                : "No orders for the selected filters"}
+            </Text>
+            <Button
+              variant="outline"
+              height={44}
+              onPress={filtersActive ? resetFilters : refetch}
+            >
+              {filtersActive ? "Reset Filters" : "Refresh"}
+            </Button>
           </YStack>
-        </ScrollView>
-      ) : (
-        <FlatList
-          data={allOrders}
-          keyExtractor={(item) => item.id}
-          renderItem={renderPhoneCard}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          contentContainerStyle={{
-            padding: 16,
-            paddingTop: 0,
-            paddingBottom: Math.max(insets.bottom + 20, 24),
-          }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListFooterComponent={
-            hasNextPage ? (
-              <YStack padding="$4" alignItems="center">
-                <ActivityIndicator />
-              </YStack>
-            ) : null
-          }
-          ListEmptyComponent={
-            <YStack padding="$8" alignItems="center" gap="$3">
-              <Text color="$colorMuted" fontSize="$5" textAlign="center">
-                {debouncedSearch
-                  ? "No orders match your search"
-                  : "No orders for the selected filters"}
-              </Text>
-              {(debouncedSearch || activeChips.length > 0) && (
-                <Button
-                  variant="outline"
-                  marginTop="$3"
-                  onPress={() => {
-                    resetFilters();
-                  }}
-                >
-                  Reset Filters
-                </Button>
-              )}
-            </YStack>
-          }
-          initialNumToRender={10}
-          windowSize={5}
-          maxToRenderPerBatch={10}
-          removeClippedSubviews
-        />
-      );
+        ) : (
+          <FlatList
+            data={allOrders}
+            keyExtractor={(item) => item.id}
+            renderItem={renderTabletRow}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            contentContainerStyle={{
+              paddingBottom: Math.max(insets.bottom + 20, 24),
+            }}
+            ListFooterComponent={
+              hasNextPage ? (
+                <YStack padding="$4" alignItems="center">
+                  <Spinner size="small" color="$primary" />
+                </YStack>
+              ) : null
+            }
+            initialNumToRender={20}
+            windowSize={10}
+            maxToRenderPerBatch={15}
+            removeClippedSubviews={false}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          />
+        )}
+      </YStack>
+    </ScrollView>
+  ) : (
+    <FlatList
+      data={allOrders}
+      keyExtractor={(item) => item.id}
+      renderItem={renderPhoneCard}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
+      contentContainerStyle={{
+        padding: 16,
+        paddingTop: 0,
+        paddingBottom: Math.max(insets.bottom + 20, 24),
+      }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      ListFooterComponent={
+        hasNextPage ? (
+          <YStack padding="$4" alignItems="center">
+            <ActivityIndicator />
+          </YStack>
+        ) : null
+      }
+      ListEmptyComponent={
+        <YStack padding="$8" alignItems="center" gap="$3">
+          <Text color="$colorMuted" fontSize="$5" textAlign="center">
+            {debouncedSearch
+              ? "No orders match your search"
+              : "No orders for the selected filters"}
+          </Text>
+          {(debouncedSearch || activeChips.length > 0) && (
+            <Button
+              variant="outline"
+              marginTop="$3"
+              onPress={() => {
+                resetFilters();
+              }}
+            >
+              Reset Filters
+            </Button>
+          )}
+        </YStack>
+      }
+      initialNumToRender={10}
+      windowSize={5}
+      maxToRenderPerBatch={10}
+      removeClippedSubviews
+    />
+  );
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="$background"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
+    <YStack flex={1} backgroundColor="$background">
       {searchAndFilters}
       {listBody}
 
@@ -804,7 +891,7 @@ export default function SellerOrders() {
         open={cancelTarget !== null}
         onOpenChange={() => setCancelTarget(null)}
         title={`${actionLabel(cancelTarget?.status ?? "pending")} Order`}
-        description={`Are you sure you want to ${(actionLabel(cancelTarget?.status ?? "pending")).toLowerCase()} this order? This cannot be undone.`}
+        description={`Are you sure you want to ${actionLabel(cancelTarget?.status ?? "pending").toLowerCase()} this order? This cannot be undone.`}
         confirmText={`${actionLabel(cancelTarget?.status ?? "pending")} Order`}
         isDestructive
         onConfirm={() => {

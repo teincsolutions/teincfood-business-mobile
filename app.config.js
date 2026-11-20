@@ -8,7 +8,7 @@ module.exports = {
     name: "TF Business",
     slug: "teinc-food-business",
     owner: "teincsolutions",
-    version: "1.0.2",
+    version: "1.0.3",
     runtimeVersion: {
       policy: "appVersion",
     },

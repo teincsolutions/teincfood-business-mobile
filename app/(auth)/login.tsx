@@ -229,14 +229,18 @@ export default function LoginScreen() {
     >
       <YStack flex={1} bg="$background" items="center">
         <ScrollView
+          flex={1}
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           width="100%"
           maxWidth={600}
-          paddingHorizontal={"$8"}
-          paddingTop={Math.max(insets.top, 24)}
-          paddingBottom={Math.max(insets.bottom + 20, 24)}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 32,
+            paddingTop: Math.max(insets.top, 24),
+            paddingBottom: Math.max(insets.bottom + 24, 32),
+          }}
         >
           <YStack mb="$6" gap="$3">
             <Text

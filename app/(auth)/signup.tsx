@@ -246,12 +246,16 @@ export default function SignupScreen() {
         </YStack>
 
         <ScrollView
+          flex={1}
           bounces={false}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           width="100%"
           maxWidth={600}
-          paddingHorizontal={"$8"}
+          contentContainerStyle={{
+            paddingHorizontal: 32,
+            paddingBottom: 16,
+          }}
         >
           <YStack mb="$7" gap="$3">
             <Text
