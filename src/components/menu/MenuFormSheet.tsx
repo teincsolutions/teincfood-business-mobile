@@ -203,9 +203,10 @@ export function MenuFormSheet({
         snapPoints={[92]}
         dismissOnSnapToBottom
         zIndex={100_000}
+        animation="quick"
       >
         <Sheet.Overlay
-          animation="lazy"
+          animation="quick"
           style={{ zIndex: 999 }}
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
@@ -214,22 +215,45 @@ export function MenuFormSheet({
         <Sheet.Frame backgroundColor="$background" borderTopLeftRadius="$6" borderTopRightRadius="$6" {...(media.md || media.lg ? { maxWidth: 600, alignSelf: "center" } : {})}>
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
 
+          {/* Fixed sheet header: stays put while the form scrolls. */}
+          <XStack
+            paddingHorizontal="$5"
+            paddingTop="$2"
+            paddingBottom="$3"
+            justifyContent="space-between"
+            alignItems="center"
+            borderBottomWidth={1}
+            borderBottomColor="$borderColor"
+            backgroundColor="$background"
+          >
+            <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
+              {editingItem ? 'Edit Item' : 'Add Item'}
+            </Text>
+            <TouchableOpacity
+              onPress={() => onOpenChange(false)}
+              hitSlop={12}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: -8,
+              }}
+            >
+              <X size={22} color={theme.color?.val} />
+            </TouchableOpacity>
+          </XStack>
+
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <Sheet.ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <YStack paddingHorizontal="$5" paddingTop="$2" paddingBottom="$8" gap="$5">
-                {/* Sheet header */}
-                <XStack justifyContent="space-between" alignItems="center">
-                  <Text fontSize="$6" fontWeight="800" fontFamily="$heading" color="$color">
-                    {editingItem ? 'Edit Item' : 'Add Item'}
-                  </Text>
-                  <TouchableOpacity onPress={() => onOpenChange(false)}>
-                    <X size={22} color={theme.color?.val} />
-                  </TouchableOpacity>
-                </XStack>
-
+              <YStack paddingHorizontal="$5" paddingTop="$3" paddingBottom="$8" gap="$5">
                 {/* Basic info */}
                 <YStack gap="$4">
                   <FormInput

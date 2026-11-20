@@ -15,6 +15,7 @@ import {
 } from '@tamagui/lucide-icons';
 import { useResponsive } from '@/utils/responsive';
 import { CachedImage } from '@/components/ui/CachedImage';
+import { useMenuEditStore } from '@/stores/menu-edit.store';
 
 export default function MenuItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -244,7 +245,14 @@ export default function MenuItemDetailScreen() {
         <Button
           variant="outline"
           icon={<Edit3 size={18} />}
-          onPress={() => router.replace(`/(seller)/(drawer)/menu?edit=${item.id}`)}
+          onPress={() => {
+            // Pop back to the already-mounted menu screen and let it open the
+            // edit sheet after the detail route is gone. Replacing directly
+            // with the menu route can leave the sheet behind this screen on
+            // landscape tablets.
+            useMenuEditStore.getState().requestEdit(item.id);
+            router.back();
+          }}
         >
           Edit Item
         </Button>

@@ -5,7 +5,7 @@ import { YStack, XStack, Text, useTheme } from "tamagui";
 import { UtensilsCrossed, Plus } from "@tamagui/lucide-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResponsive } from "@/utils/responsive";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { toast } from "sonner-native";
 import { extractApiErrorMessage } from "@teincfood/core";
 import {
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { useFilterStore } from "@/stores/filter.store";
+import { useMenuEditStore } from "@/stores/menu-edit.store";
 import { CategoryPill } from "@/components/menu/CategoryPill";
 import {
   MenuItemCard,
@@ -133,21 +134,6 @@ export default function SellerMenu() {
   const allCategories = categoriesRes?.data ?? [];
   const filterCategories = [{ id: "", name: "All" } as any, ...allCategories];
 
-  // Auto-open edit sheet when navigating back from detail screen.
-  // The param is consumed (cleared) on open so background refetches cannot
-  // reopen the sheet after save/close, and a stale id cannot linger.
-  const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
-  useEffect(() => {
-    if (editParam && data) {
-      const item = data.find((i: any) => i.id === editParam);
-      if (item) {
-        openEdit(item);
-      }
-      router.setParams({ edit: undefined });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editParam, data]);
-
   // ─── Open add sheet ────────────────────────────────────────────
   const openAdd = () => {
     // Plan gate: block obviously over-limit creates before the request.
@@ -198,6 +184,19 @@ export default function SellerMenu() {
     setExtraPrice("");
     setSheetOpen(true);
   };
+
+  // Detail screen -> edit hand-off. This screen is already mounted underneath
+  // the shared detail route, so consume the pending id once it regains focus
+  // and open the sheet on the visible menu screen.
+  useFocusEffect(
+    useCallback(() => {
+      const pendingId = useMenuEditStore.getState().pendingItemId;
+      if (!pendingId || !data) return;
+      const item = data.find((i: any) => i.id === pendingId);
+      useMenuEditStore.getState().consumeEdit();
+      if (item) openEdit(item);
+    }, [data])
+  );
 
   // ─── Save (add or edit) ────────────────────────────────────────
   const handleSave = () => {
