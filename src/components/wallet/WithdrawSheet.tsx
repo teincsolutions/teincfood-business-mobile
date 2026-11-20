@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform } from "react-native";
 import { Sheet, YStack, XStack, Text, Separator, useMedia } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,9 +58,18 @@ export function WithdrawSheet({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [verificationBusy, setVerificationBusy] = useState(false);
   const [setupPasswordOpen, setSetupPasswordOpen] = useState(false);
+  const wasOpenRef = useRef(false);
 
+  // Initialise once per open. `settings` can refetch/change identity while the
+  // sheet is open; resetting on every settings change was clearing the password
+  // field mid-typing and making it flicker.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+    if (wasOpenRef.current) return;
+    wasOpenRef.current = true;
     setAmount("");
     setMethod(settings?.payout_method === "bank" ? "bank" : "mobile_money");
     setMomoNumber(settings?.payout_momo_number ?? "");

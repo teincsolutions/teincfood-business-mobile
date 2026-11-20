@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import { FlatList, ScrollView } from "react-native";
+import { FlatList, ScrollView, TouchableOpacity } from "react-native";
 import {
   YStack,
   XStack,
@@ -18,6 +18,8 @@ import {
   Wallet,
   Lock,
   ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
 } from "@tamagui/lucide-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { BackButton, Button, DrawerToggleButton } from "@/components/ui";
@@ -57,6 +59,7 @@ export default function WalletScreen({ embedded = false }: { embedded?: boolean 
   );
   const queryClient = useQueryClient();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [chargesOpen, setChargesOpen] = useState(false);
 
   const isLoading = loadingAll || (Boolean(activeBusiness?.id) && loadingBiz);
   const balances = allBalances?.data.balances ?? [];
@@ -216,27 +219,55 @@ export default function WalletScreen({ embedded = false }: { embedded?: boolean 
             Net received from completed withdrawals and instant payouts
           </Text>
           <Separator marginVertical="$2" />
-          <XStack alignItems="center" justifyContent="space-between">
-            <Text
-              fontSize="$4"
-              fontWeight="600"
-              fontFamily="$heading"
-              color="$colorSecondary"
-            >
-              Charges
-            </Text>
-            <Text
-              fontSize="$5"
-              fontWeight="600"
-              fontFamily="$heading"
-              color="$color"
-            >
-              {formatMinor(totalChargesDisplay, walletCurrency)}
-            </Text>
-          </XStack>
-          <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-            Provider fees deducted from your wallet
-          </Text>
+          <TouchableOpacity
+            onPress={() => setChargesOpen((value) => !value)}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={
+              chargesOpen ? "Hide charges" : "View charges"
+            }
+          >
+            <XStack alignItems="center" justifyContent="space-between">
+              <Text
+                fontSize="$3"
+                fontWeight="600"
+                fontFamily="$heading"
+                color="$primary"
+              >
+                {chargesOpen ? "Hide charges" : "View charges"}
+              </Text>
+              {chargesOpen ? (
+                <ChevronUp size={16} color="$primary" />
+              ) : (
+                <ChevronDown size={16} color="$primary" />
+              )}
+            </XStack>
+          </TouchableOpacity>
+          {chargesOpen ? (
+            <YStack gap="$1">
+              <XStack alignItems="center" justifyContent="space-between">
+                <Text
+                  fontSize="$4"
+                  fontWeight="600"
+                  fontFamily="$heading"
+                  color="$colorSecondary"
+                >
+                  Charges
+                </Text>
+                <Text
+                  fontSize="$5"
+                  fontWeight="600"
+                  fontFamily="$heading"
+                  color="$color"
+                >
+                  {formatMinor(totalChargesDisplay, walletCurrency)}
+                </Text>
+              </XStack>
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                Provider fees deducted from your wallet
+              </Text>
+            </YStack>
+          ) : null}
         </YStack>
       </Card>
     ) : null;
