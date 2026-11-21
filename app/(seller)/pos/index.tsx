@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { RefreshControl, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useKeepAwake, deactivateKeepAwake } from "expo-keep-awake";
 import * as LocalAuthentication from "expo-local-authentication";
 import {
@@ -55,6 +56,8 @@ import {
   isDeliveryOrder,
   getCustomerDisplay,
   formatDate,
+  POS_KEYS,
+  SELLER_KEYS,
 } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
 import { useMenuItemsQuery, useMenuCategoriesQuery } from "@/hooks/menu.hooks";
@@ -919,7 +922,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
   const [momoProvider, setMomoProvider] = useState<MomoProvider>("mtn");
   const [momoQuote, setMomoQuote] = useState<MomoQuote | null>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const paymentFlow = usePOSPaymentFlow();
+  const [paymentModalDismissed, setPaymentModalDismissed] = useState(false);
+  const [paymentAmountMinor, setPaymentAmountMinor] = useState(0);
   const isCloudReachable = useConnectivityStore(
     (s) => s.isCloudReachable === "reachable",
   );
@@ -1249,15 +1255,18 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
                 )?.currency ?? "GHS",
             });
           } else {
+            const paidAmountMinor = response.total_minor ?? total;
             pendingRiderRef.current = isDeliveryCheckout
               ? selectedRiderRef.current
               : null;
             pendingPaidOrderIdRef.current = orderId;
+            setPaymentAmountMinor(paidAmountMinor);
+            setPaymentModalDismissed(false);
             if (autoPrint) {
               setLastCompletedOrderId(orderId);
             }
             useCustomerDisplayStore.getState().setPaymentStatus("processing");
-            paymentFlow.startCheckout(orderId, total, {
+            paymentFlow.startCheckout(orderId, paidAmountMinor, {
               phone: momoPhone,
               provider: momoProvider,
             });
@@ -1383,6 +1392,14 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     if (paymentFlow.state === "success") {
+      if (paymentModalDismissed) {
+        toast.success("Mobile-money payment confirmed");
+      }
+      // Payment completion promotes the order out of awaiting_payment on the
+      // server. Refresh both boards immediately so they never keep showing the
+      // stale pre-payment status.
+      void queryClient.invalidateQueries({ queryKey: POS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
       const paidOrderId = pendingPaidOrderIdRef.current;
       const rider = pendingRiderRef.current;
       pendingPaidOrderIdRef.current = null;
@@ -1394,7 +1411,10 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
         printService.printOrderReceipt(lastCompletedOrderId);
         setLastCompletedOrderId(null);
       }
-      const timer = setTimeout(() => paymentFlow.reset(), 2000);
+      const timer = setTimeout(() => {
+        paymentFlow.reset();
+        setPaymentModalDismissed(false);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [
@@ -1402,15 +1422,20 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     paymentFlow.reset,
     lastCompletedOrderId,
     assignRiderToOrder,
+    paymentModalDismissed,
+    queryClient,
   ]);
 
   useEffect(() => {
     if (paymentFlow.state === "failed") {
+      if (paymentModalDismissed) {
+        toast.error(paymentFlow.errorMsg || "Mobile-money payment failed");
+      }
       pendingPaidOrderIdRef.current = null;
       pendingRiderRef.current = null;
       setLastCompletedOrderId(null);
     }
-  }, [paymentFlow.state]);
+  }, [paymentFlow.state, paymentModalDismissed, paymentFlow.errorMsg]);
 
   // ── Customer display (secondary screen) ──
   useEffect(() => {
@@ -1432,11 +1457,16 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
     } else if (s === "success" && lastOrderNumber) {
       useCustomerDisplayStore.getState().showConfirmation({
         orderNumber: lastOrderNumber,
-        totalMinor: total,
+        totalMinor: paymentAmountMinor,
         currency,
       });
     }
-  }, [paymentFlow.state, lastOrderNumber, total, activeBusiness]);
+  }, [
+    paymentFlow.state,
+    lastOrderNumber,
+    paymentAmountMinor,
+    activeBusiness,
+  ]);
 
   return (
     <YStack flex={1} backgroundColor="$background">
@@ -1487,6 +1517,41 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
           </XStack>
         ) : null}
       </XStack>
+
+      {paymentModalDismissed &&
+      (paymentFlow.state === "initiating" ||
+        paymentFlow.state === "awaiting_confirmation") ? (
+        <XStack
+          marginHorizontal={isTabletLandscape ? "$3" : "$5"}
+          marginTop="$2"
+          paddingHorizontal="$3"
+          paddingVertical="$2"
+          gap="$2"
+          alignItems="center"
+          backgroundColor="$warningMuted"
+          borderWidth={1}
+          borderColor="$warning"
+          borderRadius="$3"
+          pressStyle={{ opacity: 0.8 }}
+          onPress={() => setPaymentModalDismissed(false)}
+          accessibilityRole="button"
+          accessibilityLabel="View pending mobile-money payment"
+        >
+          <Smartphone size={18} color="$warning" />
+          <YStack flex={1} minWidth={0}>
+            <Text fontSize="$3" fontWeight="700" color="$color">
+              Mobile-money payment pending
+            </Text>
+            <Text fontSize="$2" color="$colorSecondary" numberOfLines={1}>
+              {lastOrderNumber ? `Order #${lastOrderNumber} · ` : ""}
+              {formatPriceFromMinor(paymentAmountMinor)}
+            </Text>
+          </YStack>
+          <Text fontSize="$3" fontWeight="700" color="$primary">
+            View
+          </Text>
+        </XStack>
+      ) : null}
 
       {bannerStatus.blocked ? (
         <YStack
@@ -2332,16 +2397,24 @@ function CheckoutPanel({ onBack }: { onBack: () => void }) {
       />
 
       <PaymentProcessingModal
-        open={paymentFlow.state !== "idle"}
+        open={paymentFlow.state !== "idle" && !paymentModalDismissed}
         state={paymentFlow.state}
         errorMsg={paymentFlow.errorMsg}
         orderNumber={lastOrderNumber}
-        amountMinor={momoQuote?.total_minor ?? total}
+        amountMinor={paymentFlow.charge?.amount_minor ?? paymentAmountMinor}
         nextAction={paymentFlow.nextAction}
         displayText={paymentFlow.displayText}
         isSubmittingOtp={paymentFlow.isSubmittingOtp}
         onSubmitOtp={paymentFlow.submitOtp}
-        onClose={paymentFlow.reset}
+        onDismiss={() => setPaymentModalDismissed(true)}
+        onCancel={() => {
+          setPaymentModalDismissed(false);
+          paymentFlow.reset();
+        }}
+        onClose={() => {
+          setPaymentModalDismissed(false);
+          paymentFlow.reset();
+        }}
       />
 
       <AppAlertDialog
@@ -3058,30 +3131,43 @@ function TodayTab() {
   const showCompleted = completedOrders.length > 0;
 
   // Tablet landscape table layout (row, not card) — compact scale shared with
-  // the seller Orders screen. Fits the full-width POS surface without clipping
-  // any column.
-  const COL_ORDER_TODAY = 100;
-  const COL_CUSTOMER_TODAY = 190;
-  const COL_TYPE_TODAY = 70;
-  const COL_PAYMENT_TODAY = 80;
-  const COL_STATUS_TODAY = 85;
-  const COL_DELIVERY_TODAY = 75;
-  const COL_TIME_TODAY = 85;
-  const COL_TOTAL_TODAY = 85;
+  // the seller Orders screen. The table fills the POS surface and any extra
+  // width goes to Customer, Type and Payment so names, tellers and payment
+  // labels stay readable without clipping.
+  const COL_ORDER_TODAY = 96;
+  const COL_CUSTOMER_TODAY_MIN = 210;
+  const COL_TYPE_TODAY_MIN = 80;
+  const COL_PAYMENT_TODAY_MIN = 100;
+  const COL_STATUS_TODAY = 80;
+  const COL_DELIVERY_TODAY = 80;
+  const COL_TIME_TODAY = 80;
+  const COL_TOTAL_TODAY = 92;
   const COL_ACTIONS_TODAY = 260;
   const COL_GAP_TODAY = 4;
-  const tableTotalToday =
+  const COL_PADDING_TODAY = 24;
+  const tableMinTotalToday =
     COL_ORDER_TODAY +
-    COL_CUSTOMER_TODAY +
-    COL_TYPE_TODAY +
-    COL_PAYMENT_TODAY +
+    COL_CUSTOMER_TODAY_MIN +
+    COL_TYPE_TODAY_MIN +
+    COL_PAYMENT_TODAY_MIN +
     COL_STATUS_TODAY +
     COL_DELIVERY_TODAY +
     COL_TIME_TODAY +
     COL_TOTAL_TODAY +
     COL_ACTIONS_TODAY +
     COL_GAP_TODAY * 8 +
-    24;
+    COL_PADDING_TODAY;
+  const tableWidthToday = Math.max(tableMinTotalToday, width);
+  const extraTableWidthToday = tableWidthToday - tableMinTotalToday;
+  const customerExtraToday = Math.floor(extraTableWidthToday * 0.55);
+  const typeExtraToday = Math.floor(extraTableWidthToday * 0.15);
+  const COL_CUSTOMER_TODAY = COL_CUSTOMER_TODAY_MIN + customerExtraToday;
+  const COL_TYPE_TODAY = COL_TYPE_TODAY_MIN + typeExtraToday;
+  const COL_PAYMENT_TODAY =
+    COL_PAYMENT_TODAY_MIN +
+    extraTableWidthToday -
+    customerExtraToday -
+    typeExtraToday;
 
   const cashCollectable = (order: SellerOrder) =>
     isUnpaid(order) &&
@@ -3227,6 +3313,8 @@ function TodayTab() {
 
   const renderTabletTodayRow = ({ item }: { item: SellerOrder }) => {
     const action = nextActionFor(item);
+    const paidButAwaiting =
+      item.status === "awaiting_payment" && !isUnpaid(item);
     const {
       name: customerName,
       avatarUrl,
@@ -3283,40 +3371,50 @@ function TodayTab() {
           alignItems="center"
         >
           {avatarUrl ? (
-            <CachedAvatarImage src={avatarUrl} size={28} borderRadius={14} />
+            <CachedAvatarImage src={avatarUrl} size={36} borderRadius={18} />
           ) : (
             <YStack
-              width={28}
-              height={28}
-              borderRadius={14}
+              width={36}
+              height={36}
+              borderRadius={18}
               backgroundColor={isWalkIn ? "$orange5" : "$backgroundStrong"}
               alignItems="center"
               justifyContent="center"
             >
-              <User size={12} color={isWalkIn ? "$orange10" : "$colorMuted"} />
+              <User size={16} color={isWalkIn ? "$orange10" : "$colorMuted"} />
             </YStack>
           )}
-          <YStack flex={1} gap={0}>
+          <YStack flex={1} minWidth={0} gap={0}>
             <Text
-              fontSize={12}
+              fontSize={11}
               numberOfLines={1}
               fontWeight="500"
-              minWidth={100}
+              minWidth={120}
             >
               {customerName || "—"}
             </Text>
             {isWalkIn && tellerName && (
-              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+              <Text fontSize={9} color="$colorMuted" numberOfLines={1}>
                 Teller: {tellerName}
               </Text>
             )}
           </YStack>
         </XStack>
-        <Text fontSize={12} width={COL_TYPE_TODAY} numberOfLines={1}>
+        <Text
+          fontSize={11}
+          width={COL_TYPE_TODAY}
+          minWidth={COL_TYPE_TODAY}
+          flexShrink={0}
+          numberOfLines={1}
+        >
           {fmt((item.order_type ?? "pos") as string)}
         </Text>
-        <YStack width={COL_PAYMENT_TODAY}>
-          <Text fontSize={10} numberOfLines={1}>
+        <YStack
+          width={COL_PAYMENT_TODAY}
+          minWidth={COL_PAYMENT_TODAY}
+          flexShrink={0}
+        >
+          <Text fontSize={9} numberOfLines={1}>
             {fmt(
               (item.pos_payment_method ??
                 item.payment_mode ??
@@ -3324,14 +3422,16 @@ function TodayTab() {
             )}
           </Text>
           {isUnpaid(item) && (
-            <Text fontSize={9} fontWeight="700" color="$warning">
+            <Text fontSize={8} fontWeight="700" color="$warning">
               UNPAID
             </Text>
           )}
         </YStack>
         <YStack width={COL_STATUS_TODAY} alignItems="center">
           <YStack
-            backgroundColor={statusBg(item.status)}
+            backgroundColor={
+              paidButAwaiting ? "#10b981" : statusBg(item.status)
+            }
             paddingHorizontal={4}
             paddingVertical={1}
             borderRadius={3}
@@ -3343,7 +3443,7 @@ function TodayTab() {
               textTransform="uppercase"
               numberOfLines={1}
             >
-              {fmt(item.status)}
+              {paidButAwaiting ? "PAID" : fmt(item.status)}
             </Text>
           </YStack>
         </YStack>
@@ -3361,10 +3461,12 @@ function TodayTab() {
           {formatDate(item.inserted_at)}
         </Text>
         <Text
-          fontSize={12}
+          fontSize={11}
           fontWeight="700"
           color="$primary"
           width={COL_TOTAL_TODAY}
+          minWidth={COL_TOTAL_TODAY}
+          flexShrink={0}
           textAlign="right"
           numberOfLines={1}
         >
@@ -3419,7 +3521,7 @@ function TodayTab() {
                 height={32}
                 width={32}
                 padding={0}
-                aria-label={`Make delivery for ${item.order_number}`}
+                accessibilityLabel={`Make delivery for ${item.order_number}`}
                 icon={<Truck size={14} />}
                 onPress={() => setMakeDeliveryOrder(item)}
               />
@@ -3445,7 +3547,7 @@ function TodayTab() {
               height={32}
               width={32}
               padding={0}
-              aria-label={`Collect cash for ${item.order_number}`}
+              accessibilityLabel={`Collect cash for ${item.order_number}`}
               icon={<Banknote size={14} />}
               onPress={() => setCashTarget(item)}
             />
@@ -3457,9 +3559,14 @@ function TodayTab() {
               height={32}
               width={32}
               padding={0}
-              aria-label={`Collect mobile money for ${item.order_number}`}
+              accessibilityLabel={`Collect mobile money for ${item.order_number}`}
               icon={<Smartphone size={14} />}
-              onPress={() => router.push(`/(seller)/orders/${item.id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(seller)/orders/[id]",
+                  params: { id: item.id, pay: "momo" },
+                })
+              }
             />
           )}
           {isCancellable(item.status) && (
@@ -3511,7 +3618,7 @@ function TodayTab() {
             nestedScrollEnabled
             keyboardShouldPersistTaps="handled"
           >
-            <YStack width={tableTotalToday} flex={1}>
+            <YStack width={tableWidthToday} minWidth={tableWidthToday} flex={1}>
               {todayTableHeader}
               {allTodayOrders.length === 0 ? (
                 <YStack padding="$8" alignItems="center" gap="$3">
@@ -3824,7 +3931,7 @@ function TodayTab() {
                       width={36}
                       height={36}
                       padding={0}
-                      aria-label={`View order ${item.order_number}`}
+                      accessibilityLabel={`View order ${item.order_number}`}
                       icon={<Eye size={14} />}
                       onPress={() => router.push(`/(seller)/orders/${item.id}`)}
                     />
@@ -3834,7 +3941,7 @@ function TodayTab() {
                       width={36}
                       height={36}
                       padding={0}
-                      aria-label={`Preview receipt for ${item.order_number}`}
+                      accessibilityLabel={`Preview receipt for ${item.order_number}`}
                       icon={<FileText size={14} />}
                       onPress={() => setPreviewOrder(item)}
                     />
@@ -3844,7 +3951,7 @@ function TodayTab() {
                       width={36}
                       height={36}
                       padding={0}
-                      aria-label={`Print receipt for ${item.order_number}`}
+                      accessibilityLabel={`Print receipt for ${item.order_number}`}
                       icon={<Printer size={14} />}
                       onPress={() => printService.printOrderReceipt(item.id)}
                     />
@@ -3887,7 +3994,7 @@ function TodayTab() {
                         width={36}
                         height={36}
                         padding={0}
-                        aria-label={`Collect cash for ${item.order_number}`}
+                        accessibilityLabel={`Collect cash for ${item.order_number}`}
                         icon={<Banknote size={14} />}
                         onPress={() => setCashTarget(item)}
                       />
@@ -3899,10 +4006,13 @@ function TodayTab() {
                         width={36}
                         height={36}
                         padding={0}
-                        aria-label={`Collect mobile money for ${item.order_number}`}
+                        accessibilityLabel={`Collect mobile money for ${item.order_number}`}
                         icon={<Smartphone size={14} />}
                         onPress={() =>
-                          router.push(`/(seller)/orders/${item.id}`)
+                          router.push({
+                            pathname: "/(seller)/orders/[id]",
+                            params: { id: item.id, pay: "momo" },
+                          })
                         }
                       />
                     )}
@@ -3913,7 +4023,7 @@ function TodayTab() {
                         width={36}
                         height={36}
                         padding={0}
-                        aria-label={`Cancel order ${item.order_number}`}
+                        accessibilityLabel={`Cancel order ${item.order_number}`}
                         icon={<XCircle size={14} />}
                         chromeless
                         onPress={() => cancelOrder.mutate(item.id)}

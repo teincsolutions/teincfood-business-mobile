@@ -335,7 +335,7 @@ export default function InboxScreen({ embedded = false }: { embedded?: boolean }
             width="100%"
             br="$4"
           >
-            <Tabs.List aria-label="Message tabs" gap="$2">
+            <Tabs.List accessibilityLabel="Message tabs" gap="$2">
               {canShowBusinessTab && (
                 <Tabs.Tab
                   flex={1}

@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  POS_KEYS,
   REVENUE_KEYS,
   SELLER_ANALYTICS_KEYS,
   SELLER_DASHBOARD_KEYS,
+  SELLER_KEYS,
   subscribeDbChanges,
   syncEngine,
 } from "@teincfood/core";
@@ -40,6 +42,10 @@ export function useOrderAnalyticsInvalidation(): void {
       timer = undefined;
       if (!pending) return;
       pending = false;
+      // Payment completion promotes awaiting_payment orders on the server;
+      // refresh the Today/Orders boards so the status does not stay stale.
+      void queryClient.invalidateQueries({ queryKey: POS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: SELLER_KEYS.all });
       void queryClient.invalidateQueries({ queryKey: SELLER_ANALYTICS_KEYS.all });
       void queryClient.invalidateQueries({ queryKey: REVENUE_KEYS.all });
       void queryClient.invalidateQueries({ queryKey: SELLER_DASHBOARD_KEYS.all });

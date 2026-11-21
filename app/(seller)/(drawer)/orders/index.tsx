@@ -12,6 +12,7 @@ import {
   Spinner,
 } from "tamagui";
 import {
+  Banknote,
   Eye,
   FileText,
   Printer,
@@ -19,6 +20,7 @@ import {
   ExternalLink,
   Package,
   CalendarDays,
+  Smartphone,
   Truck,
   User,
   XCircle,
@@ -34,6 +36,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import {
   useSellerOrdersQuery,
   useCancelOrderMutation,
+  useConfirmCashPaymentMutation,
 } from "@/hooks/seller.hooks";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useResponsive } from "@/utils/responsive";
@@ -41,7 +44,9 @@ import { useFilterStore } from "@/stores/filter.store";
 import { AppAlertDialog } from "@/components/ui/AlertDialog";
 import { FilterSheet } from "@/components/filters/FilterSheet";
 import { MakeDeliverySheet } from "@/components/orders/MakeDeliverySheet";
+import { CashPaymentSheet } from "@/components/pos";
 import { printService } from "@/services/print.service";
+import { toast } from "sonner-native";
 import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import type { SellerOrder } from "@teincfood/core";
 import {
@@ -149,31 +154,40 @@ function statusBg(status: string) {
 export default function SellerOrders() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isTablet, isLandscape } = useResponsive();
+  const { isTablet, isLandscape, width } = useResponsive();
   const useOrdersTable = isTablet && isLandscape;
 
   // Use the POS "Today's Orders" table language (compact rows, muted header,
-  // status pills, right-aligned total) but fit it to the narrower drawer
-  // content area. Type + payment share one cell and delivery/rider details sit
-  // under the customer so the important columns never get clipped.
-  const COL_ORDER = 96;
-  const COL_CUSTOMER = 171;
-  const COL_TYPE_PAYMENT = 82;
-  const COL_STATUS = 76;
-  const COL_TIME = 80;
-  const COL_TOTAL = 87;
-  const COL_ACTIONS = 135;
+  // status pills, right-aligned total) across the full drawer content area.
+  // The table is never narrower than the landscape tablet width minus the
+  // 300dp drawer, and any extra width goes to Customer and Type/Pay so long
+  // names, tellers and payment labels stay readable without clipping.
+  const COL_ORDER = 86;
+  const COL_CUSTOMER_MIN = 180;
+  const COL_TYPE_PAYMENT_MIN = 100;
+  const COL_STATUS = 72;
+  const COL_TIME = 72;
+  const COL_TOTAL = 92;
+  const COL_ACTIONS = 176;
   const COL_GAP = 4;
-  const tableTotal =
+  const COL_PADDING = 24;
+  const tableMinTotal =
     COL_ORDER +
-    COL_CUSTOMER +
-    COL_TYPE_PAYMENT +
+    COL_CUSTOMER_MIN +
+    COL_TYPE_PAYMENT_MIN +
     COL_STATUS +
     COL_TIME +
     COL_TOTAL +
     COL_ACTIONS +
     COL_GAP * 6 +
-    48;
+    COL_PADDING;
+  const availableTableWidth = Math.max(0, width - (isTablet ? 300 : 0));
+  const tableWidth = Math.max(tableMinTotal, availableTableWidth);
+  const extraTableWidth = tableWidth - tableMinTotal;
+  const COL_CUSTOMER =
+    COL_CUSTOMER_MIN + Math.floor(extraTableWidth * 0.55);
+  const COL_TYPE_PAYMENT =
+    COL_TYPE_PAYMENT_MIN + extraTableWidth - Math.floor(extraTableWidth * 0.55);
 
   const searchQuery = useFilterStore((s) => s.ordersSearchQuery);
   const setSearchQuery = useFilterStore((s) => s.setOrdersSearchQuery);
@@ -200,6 +214,7 @@ export default function SellerOrders() {
   } | null>(null);
   const [makeDeliveryTarget, setMakeDeliveryTarget] =
     useState<SellerOrder | null>(null);
+  const [cashTarget, setCashTarget] = useState<SellerOrder | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const loadingMore = useRef(false);
 
@@ -284,6 +299,7 @@ export default function SellerOrders() {
     filterParams,
   );
   const cancelOrder = useCancelOrderMutation();
+  const confirmCashPayment = useConfirmCashPaymentMutation();
   const canReject = useHasCapability("orders_reject");
 
   // These callbacks must live after the query hook: referencing refetch /
@@ -403,7 +419,7 @@ export default function SellerOrders() {
               width={40}
               height={40}
               padding={0}
-              aria-label={`Print receipt for ${item.order_number}`}
+              accessibilityLabel={`Print receipt for ${item.order_number}`}
               icon={<Printer size={14} />}
               onPress={() => handlePrint(item)}
             />
@@ -456,6 +472,10 @@ export default function SellerOrders() {
       ["pending", "accepted", "preparing", "ready", "waiting_pickup"].includes(
         item.status,
       );
+    const paidButAwaiting =
+      item.status === "awaiting_payment" && !isUnpaid(item);
+    const showPaymentActions =
+      item.status === "awaiting_payment" && isUnpaid(item);
 
     return (
       <XStack
@@ -477,39 +497,45 @@ export default function SellerOrders() {
           ) : null}
         </YStack>
 
-        <XStack width={COL_CUSTOMER} gap="$2" alignItems="center">
+        <XStack
+          width={COL_CUSTOMER}
+          minWidth={COL_CUSTOMER}
+          flexShrink={0}
+          gap="$2"
+          alignItems="center"
+        >
           {c.avatarUrl ? (
-            <CachedAvatarImage src={c.avatarUrl} size={28} borderRadius={14} />
+            <CachedAvatarImage src={c.avatarUrl} size={36} borderRadius={18} />
           ) : (
             <YStack
-              width={28}
-              height={28}
-              borderRadius={14}
+              width={36}
+              height={36}
+              borderRadius={18}
               backgroundColor={c.isWalkIn ? "$orange5" : "$backgroundStrong"}
               alignItems="center"
               justifyContent="center"
             >
               <User
-                size={12}
+                size={16}
                 color={c.isWalkIn ? "$orange10" : "$colorMuted"}
               />
             </YStack>
           )}
-          <YStack flex={1} gap={0}>
+          <YStack flex={1} minWidth={0} gap={0}>
             <Text
-              fontSize={12}
+              fontSize={11}
               fontWeight="500"
               numberOfLines={1}
-              minWidth={110}
+              minWidth={120}
             >
               {c.name || "—"}
             </Text>
             {c.isWalkIn && c.tellerName ? (
-              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+              <Text fontSize={9} color="$colorMuted" numberOfLines={1}>
                 Teller: {c.tellerName}
               </Text>
             ) : item.delivery_id ? (
-              <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+              <Text fontSize={9} color="$colorMuted" numberOfLines={1}>
                 {item.rider?.name
                   ? `Rider: ${item.rider.name}`
                   : "Awaiting rider"}
@@ -518,17 +544,22 @@ export default function SellerOrders() {
           </YStack>
         </XStack>
 
-        <YStack width={COL_TYPE_PAYMENT} gap={0}>
-          <Text fontSize={12} numberOfLines={1}>
+        <YStack
+          width={COL_TYPE_PAYMENT}
+          minWidth={COL_TYPE_PAYMENT}
+          flexShrink={0}
+          gap={0}
+        >
+          <Text fontSize={11} numberOfLines={1}>
             {formatStatus(item.order_type ?? "pos")}
           </Text>
-          <Text fontSize={10} color="$colorMuted" numberOfLines={1}>
+          <Text fontSize={9} color="$colorMuted" numberOfLines={1}>
             {formatStatus(
               item.pos_payment_method ?? item.payment_mode ?? "cash",
             )}
           </Text>
           {isUnpaid(item) ? (
-            <Text fontSize={9} fontWeight="700" color="$warning">
+            <Text fontSize={8} fontWeight="700" color="$warning">
               UNPAID
             </Text>
           ) : null}
@@ -536,7 +567,9 @@ export default function SellerOrders() {
 
         <YStack width={COL_STATUS} alignItems="center">
           <YStack
-            backgroundColor={statusBg(item.status)}
+            backgroundColor={
+              paidButAwaiting ? "#10b981" : statusBg(item.status)
+            }
             paddingHorizontal={4}
             paddingVertical={1}
             borderRadius={3}
@@ -548,7 +581,7 @@ export default function SellerOrders() {
               textTransform="uppercase"
               numberOfLines={1}
             >
-              {compactStatus(item.status)}
+              {paidButAwaiting ? "PAID" : compactStatus(item.status)}
             </Text>
           </YStack>
         </YStack>
@@ -565,10 +598,12 @@ export default function SellerOrders() {
         </Text>
 
         <Text
-          fontSize={12}
+          fontSize={11}
           fontWeight="700"
           color="$primary"
           width={COL_TOTAL}
+          minWidth={COL_TOTAL}
+          flexShrink={0}
           textAlign="right"
           numberOfLines={1}
         >
@@ -587,7 +622,7 @@ export default function SellerOrders() {
             height={32}
             width={32}
             padding={0}
-            aria-label={`View order ${item.order_number}`}
+            accessibilityLabel={`View order ${item.order_number}`}
             icon={<Eye size={14} />}
             onPress={() => router.push(`/(seller)/orders/${item.id}`)}
           />
@@ -597,7 +632,7 @@ export default function SellerOrders() {
             height={32}
             width={32}
             padding={0}
-            aria-label={`Print receipt for ${item.order_number}`}
+            accessibilityLabel={`Print receipt for ${item.order_number}`}
             icon={<Printer size={14} />}
             onPress={() => handlePrint(item)}
           />
@@ -608,10 +643,39 @@ export default function SellerOrders() {
               height={32}
               width={32}
               padding={0}
-              aria-label={`Make delivery for ${item.order_number}`}
+              accessibilityLabel={`Make delivery for ${item.order_number}`}
               icon={<Truck size={14} />}
               onPress={() => setMakeDeliveryTarget(item)}
             />
+          ) : null}
+          {showPaymentActions ? (
+            <>
+              <Button
+                size="$2"
+                variant="outline"
+                height={32}
+                width={32}
+                padding={0}
+                accessibilityLabel={`Pay ${item.order_number} with mobile money`}
+                icon={<Smartphone size={14} />}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(seller)/orders/[id]",
+                    params: { id: item.id, pay: "momo" },
+                  })
+                }
+              />
+              <Button
+                size="$2"
+                variant="outline"
+                height={32}
+                width={32}
+                padding={0}
+                accessibilityLabel={`Mark ${item.order_number} paid with cash`}
+                icon={<Banknote size={14} />}
+                onPress={() => setCashTarget(item)}
+              />
+            </>
           ) : null}
           {canReject && isCancellable(item.status) ? (
             <Button
@@ -620,7 +684,7 @@ export default function SellerOrders() {
               height={32}
               width={32}
               padding={0}
-              aria-label={`${actionLabel(item.status)} order ${item.order_number}`}
+              accessibilityLabel={`${actionLabel(item.status)} order ${item.order_number}`}
               icon={<XCircle size={14} />}
               chromeless
               onPress={() =>
@@ -714,7 +778,6 @@ export default function SellerOrders() {
           paddingHorizontal="$3"
           borderWidth={1}
           borderColor="$borderColor"
-          height={36}
         >
           <Search size={14} color="$colorMuted" />
           <TextInput
@@ -756,7 +819,7 @@ export default function SellerOrders() {
       nestedScrollEnabled
       keyboardShouldPersistTaps="handled"
     >
-      <YStack width={tableTotal} flex={1}>
+      <YStack width={tableWidth} minWidth={tableWidth} flex={1}>
         {tableHeader}
         {allOrders.length === 0 ? (
           <YStack padding="$8" alignItems="center" gap="$3">
@@ -899,6 +962,38 @@ export default function SellerOrders() {
             cancelOrder.mutate(cancelTarget.id);
             setCancelTarget(null);
           }
+        }}
+      />
+
+      <CashPaymentSheet
+        open={cashTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setCashTarget(null);
+        }}
+        totalMinor={cashTarget?.total_minor ?? 0}
+        currency={
+          (cashTarget as any)?.currency ??
+          (cashTarget as any)?.currency_code ??
+          "GHS"
+        }
+        isProcessing={confirmCashPayment.isPending}
+        onConfirm={() => {
+          if (!cashTarget) return;
+          const order = cashTarget;
+          confirmCashPayment.mutate(order.id, {
+            onSuccess: () => {
+              toast.success(`Cash recorded for ${order.order_number}`);
+              setCashTarget(null);
+              void refetch();
+            },
+            onError: (error: unknown) => {
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Could not record cash",
+              );
+            },
+          });
         }}
       />
 

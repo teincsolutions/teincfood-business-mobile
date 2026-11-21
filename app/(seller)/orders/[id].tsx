@@ -171,6 +171,15 @@ export default function OrderDetails({
       (order.is_pos === true && (order.pos_payment_method ?? "") === "cash")),
   );
 
+  // Coming from the Today/Orders table "Pay" action: open the mobile-money
+  // collection sheet on the same order id (the backend charge is idempotent).
+  useEffect(() => {
+    if (params.pay === "momo" && canCollectMomo) {
+      setShowMomoSheet(true);
+      router.setParams({ pay: "" });
+    }
+  }, [params.pay, canCollectMomo, router]);
+
   useEffect(() => {
     if (!showMomoSheet || !order?.id) return;
     let cancelled = false;

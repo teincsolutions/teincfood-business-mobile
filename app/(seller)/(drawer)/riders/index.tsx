@@ -316,7 +316,7 @@ export default function SellerRidersScreen() {
           width={40}
           height={40}
           padding={0}
-          aria-label={`View ${rider.user?.full_name || rider.rider_number || "rider"}`}
+          accessibilityLabel={`View ${rider.user?.full_name || rider.rider_number || "rider"}`}
           icon={<ExternalLink size={16} />}
           onPress={() => openRider(rider.id)}
         />

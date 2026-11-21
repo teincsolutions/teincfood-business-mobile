@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Modal } from "react-native";
 import { ActivityIndicator } from "react-native";
 import { YStack, XStack, Text, Button } from "tamagui";
-import { CheckCircle, XCircle } from "@tamagui/lucide-icons";
+import { CheckCircle, X, XCircle } from "@tamagui/lucide-icons";
 import { formatPriceFromMinor } from "@teincfood/core";
 import { OTPInput } from "@/components/ui/OTPInput";
 import type { POSPaymentState } from "@/hooks/usePOSPaymentFlow";
@@ -19,6 +19,11 @@ interface PaymentProcessingModalProps {
   displayText?: string | null;
   isSubmittingOtp?: boolean;
   onSubmitOtp?: (otp: string) => void;
+  /** Hide the modal but keep the charge polling in the background. */
+  onDismiss: () => void;
+  /** Abandon/reset the charge. */
+  onCancel: () => void;
+  /** Dismiss after a terminal (success/failed) state. */
   onClose: () => void;
 }
 
@@ -33,16 +38,20 @@ export function PaymentProcessingModal({
   displayText,
   isSubmittingOtp,
   onSubmitOtp,
+  onDismiss,
+  onCancel,
   onClose,
 }: PaymentProcessingModalProps) {
   const [otp, setOtp] = useState("");
+  const isPending =
+    state === "initiating" || state === "awaiting_confirmation";
 
   return (
     <Modal
       visible={open}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={isPending ? onDismiss : onClose}
     >
       <YStack
         flex={1}
@@ -57,9 +66,25 @@ export function PaymentProcessingModal({
           backgroundColor="$background"
           borderRadius="$6"
           padding="$5"
+          paddingTop="$6"
           gap="$4"
           alignItems="center"
+          position="relative"
         >
+          {isPending ? (
+            <XStack position="absolute" top="$2" right="$2" zIndex={10}>
+              <Button
+                chromeless
+                circular
+                size="$4"
+                padding={0}
+                accessibilityLabel="Hide payment status"
+                icon={<X size={20} color="$color" />}
+                onPress={onDismiss}
+              />
+            </XStack>
+          ) : null}
+
           {state === "initiating" && (
             <>
               <ActivityIndicator size="large" color="$primary" />
@@ -73,6 +98,15 @@ export function PaymentProcessingModal({
                 Initiating Payment
               </Text>
               <Text
+                fontSize="$5"
+                fontWeight="800"
+                fontFamily="$heading"
+                color="$primary"
+                textAlign="center"
+              >
+                {formatPriceFromMinor(amountMinor, currency)}
+              </Text>
+              <Text
                 fontSize="$3"
                 color="$colorSecondary"
                 fontFamily="$body"
@@ -80,6 +114,14 @@ export function PaymentProcessingModal({
               >
                 Please wait...
               </Text>
+              <Button
+                variant="outline"
+                height={44}
+                width="100%"
+                onPress={onDismiss}
+              >
+                Continue in background
+              </Button>
             </>
           )}
 
@@ -139,6 +181,15 @@ export function PaymentProcessingModal({
                     ? "Ask the customer for the OTP sent to their phone."
                     : "Ask the customer to approve the mobile-money prompt on their phone. This screen updates automatically.")}
               </Text>
+              <Text
+                fontSize="$2"
+                color="$colorMuted"
+                fontFamily="$body"
+                textAlign="center"
+              >
+                You can hide this and keep taking orders while the customer
+                approves.
+              </Text>
               {nextAction === "submit_otp" ? (
                 <>
                   <OTPInput
@@ -167,12 +218,21 @@ export function PaymentProcessingModal({
                 </>
               ) : null}
               <Button
+                variant="outline"
+                height={44}
+                width="100%"
+                disabled={isSubmittingOtp}
+                onPress={onDismiss}
+              >
+                Continue in background
+              </Button>
+              <Button
                 backgroundColor="$red"
                 height={44}
                 width="100%"
                 disabled={isSubmittingOtp}
                 pressStyle={{ backgroundColor: "$red10" }}
-                onPress={onClose}
+                onPress={onCancel}
               >
                 <Text
                   color="white"
@@ -180,7 +240,7 @@ export function PaymentProcessingModal({
                   fontWeight="700"
                   fontFamily="$body"
                 >
-                  Cancel
+                  Cancel payment
                 </Text>
               </Button>
             </>
@@ -228,6 +288,15 @@ export function PaymentProcessingModal({
                 textAlign="center"
               >
                 Payment Failed
+              </Text>
+              <Text
+                fontSize="$5"
+                fontWeight="800"
+                fontFamily="$heading"
+                color="$primary"
+                textAlign="center"
+              >
+                {formatPriceFromMinor(amountMinor, currency)}
               </Text>
               <Text
                 fontSize="$3"
