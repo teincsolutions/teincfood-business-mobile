@@ -43,7 +43,7 @@
     "@tanstack/react-query": "^5.75.0",
     "@tanstack/react-query-persist-client": "^5.101.2",
     "@teincfood/chat-client": "^0.1.39",
-    "@teincfood/core": "file:../teincfood-core/teincfood-core-0.10.36.tgz",
+    "@teincfood/core": "0.10.36",
     "@teincfood/observability": "^0.1.1",
     "@teincfood/rn-notifications": "^0.2.2",
     "axios": "^1.14.0",
@@ -110,6 +110,9 @@
     "@types/react": "~19.2.2",
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
+  },
+  "resolutions": {
+    "@tanstack/query-persist-client-core": "5.108.2"
   },
   "private": true
 }

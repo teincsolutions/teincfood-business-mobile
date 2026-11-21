@@ -3772,21 +3772,7 @@
   resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.108.2.tgz#31939445cfe8b6d7c4df18f4a52e348ff4a473d8"
   integrity sha512-0l+0xDKqn71hfJBKaAvFP/X7WYM0TbscEk6nK1pHaWQUWUEA+WJD0VlT8wF+HIJANMV9B/DouPWwDnX3w/l9BA==
 
-"@tanstack/query-persist-client-core@5.101.2":
-  version "5.101.2"
-  resolved "https://registry.npmjs.org/@tanstack/query-persist-client-core/-/query-persist-client-core-5.101.2.tgz"
-  integrity sha512-rgMsbvBVpSPDUsprC9FYxojdG0Q1LH6yq1i3DXz2aps4VEqv2l4Msj3YDqIifU3xkl/DrYe9YWntZAJLrM6xTg==
-  dependencies:
-    "@tanstack/query-core" "5.101.2"
-
-"@tanstack/query-persist-client-core@5.102.8":
-  version "5.102.8"
-  resolved "https://registry.npmjs.org/@tanstack/query-persist-client-core/-/query-persist-client-core-5.102.8.tgz"
-  integrity sha512-t3v4/D6ejo/BrPzM5gm/AT3c4CWPCxFa+0cIjAeHAeanGPG6rCjFS1hZnPZH/rf55qe3qYYgx5U6iBZMY1PQjA==
-  dependencies:
-    "@tanstack/query-core" "5.102.8"
-
-"@tanstack/query-persist-client-core@5.108.2":
+"@tanstack/query-persist-client-core@5.101.2", "@tanstack/query-persist-client-core@5.102.8", "@tanstack/query-persist-client-core@5.108.2":
   version "5.108.2"
   resolved "https://registry.yarnpkg.com/@tanstack/query-persist-client-core/-/query-persist-client-core-5.108.2.tgz#96ca6647254b8276e1d78405380c2e3898314b58"
   integrity sha512-IMl2Cmu6aau4mTuHXROVYuDmSAXEdwAjVG3Hsb6KkcW/praiTCSRdBOzoVvBridhrIHkFX3VUSYSVu5xEKap8A==
@@ -3820,9 +3806,10 @@
   resolved "https://registry.npmjs.org/@teincfood/chat-client/-/chat-client-0.1.39.tgz"
   integrity sha512-oqjWeB61M499C61GEeiesR0WAtL8TyT35gJcqYVXFGHZITGnZkExAdKTn18GIEc+hqtUU0vlNPHySjvKVb2kOQ==
 
-"@teincfood/core@file:../teincfood-core/teincfood-core-0.10.36.tgz":
+"@teincfood/core@0.10.36":
   version "0.10.36"
-  resolved "file:../teincfood-core/teincfood-core-0.10.36.tgz#4b69e40b0ab36cec991356c9b5a137aaf5b3a8c3"
+  resolved "https://registry.yarnpkg.com/@teincfood/core/-/core-0.10.36.tgz#c53b76e638368afb496f371e3ae57a7962daebf2"
+  integrity sha512-hc3q5Rp381EdfrkbfSVTJDBCvHT5K2/FIfKj/H4QVOCcubSdCrCdjFgHHLOP7gOZIGpfvJgQ5mGoV32xQbOcuA==
   dependencies:
     "@noble/ed25519" "^2.3.0"
     "@noble/hashes" "^1.8.0"
