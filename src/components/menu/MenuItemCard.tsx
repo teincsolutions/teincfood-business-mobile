@@ -51,12 +51,12 @@ export function MenuItemCard({
       };
 
   return (
-    <TouchableOpacity onPress={() => onPress?.(item)} activeOpacity={0.7}>
-      <Card
-        padding={isTablet ? "$5" : "$4"}
-        bordered
-        opacity={item.is_available ? 1 : 0.55}
-      >
+    <Card
+      padding={isTablet ? "$5" : "$4"}
+      bordered
+      opacity={item.is_available ? 1 : 0.55}
+    >
+      <TouchableOpacity onPress={() => onPress?.(item)} activeOpacity={0.7}>
         <XStack gap="$3" alignItems="flex-start">
           {/* Thumbnail */}
           <YStack
@@ -191,19 +191,17 @@ export function MenuItemCard({
             </XStack>
           </YStack>
         </XStack>
+      </TouchableOpacity>
 
-        <Separator marginVertical="$3" />
+      <Separator marginVertical="$3" />
 
-        {/* Actions row */}
-        {(onToggleAvailability || onEdit || onDelete) && (
-          <XStack justifyContent="space-between" alignItems="center">
+      {/* Actions row */}
+      {(onToggleAvailability || onEdit || onDelete) && (
+        <XStack justifyContent="space-between" alignItems="center">
           {/* Availability toggle */}
           {onToggleAvailability ? (
             <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation?.();
-                onToggleAvailability(item.id);
-              }}
+              onPress={() => onToggleAvailability(item.id)}
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
               {item.is_available ? (
@@ -231,10 +229,7 @@ export function MenuItemCard({
             {/* Edit */}
             {onEdit && (
               <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onEdit(item);
-                }}
+                onPress={() => onEdit(item)}
                 style={{
                   width: s.btnSize,
                   height: s.btnSize,
@@ -252,10 +247,7 @@ export function MenuItemCard({
             {/* Delete */}
             {onDelete && (
               <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onDelete(item);
-                }}
+                onPress={() => onDelete(item)}
                 style={{
                   width: s.btnSize,
                   height: s.btnSize,
@@ -270,9 +262,8 @@ export function MenuItemCard({
               </TouchableOpacity>
             )}
           </XStack>
-          </XStack>
-        )}
-      </Card>
-    </TouchableOpacity>
+        </XStack>
+      )}
+    </Card>
   );
 }

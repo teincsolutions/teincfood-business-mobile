@@ -162,13 +162,13 @@ export default function SellerOrders() {
   // The table is never narrower than the landscape tablet width minus the
   // 300dp drawer, and any extra width goes to Customer and Type/Pay so long
   // names, tellers and payment labels stay readable without clipping.
-  const COL_ORDER = 86;
-  const COL_CUSTOMER_MIN = 180;
-  const COL_TYPE_PAYMENT_MIN = 100;
-  const COL_STATUS = 72;
-  const COL_TIME = 72;
-  const COL_TOTAL = 92;
-  const COL_ACTIONS = 176;
+  const COL_ORDER = 98;
+  const COL_CUSTOMER_MIN = 156;
+  const COL_TYPE_PAYMENT_MIN = 86;
+  const COL_STATUS = 64;
+  const COL_TIME = 66;
+  const COL_TOTAL = 84;
+  const COL_ACTIONS = 184;
   const COL_GAP = 4;
   const COL_PADDING = 24;
   const tableMinTotal =
@@ -526,7 +526,7 @@ export default function SellerOrders() {
               fontSize={11}
               fontWeight="500"
               numberOfLines={1}
-              minWidth={120}
+              minWidth={110}
             >
               {c.name || "—"}
             </Text>

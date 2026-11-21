@@ -78,10 +78,7 @@ export function MenuItemTableRow({
   const actionButton = (onAction: () => void, destructive: boolean, label: string, icon: React.ReactNode) => (
     <TouchableOpacity
       accessibilityLabel={label}
-      onPress={(e) => {
-        e.stopPropagation?.();
-        onAction();
-      }}
+      onPress={onAction}
       style={{
         width: 38,
         height: 38,
@@ -99,183 +96,192 @@ export function MenuItemTableRow({
   );
 
   return (
-    <TouchableOpacity onPress={() => onPress?.(item)} activeOpacity={0.72}>
-      <XStack
-        minHeight={76}
-        alignItems="center"
-        gap="$3"
-        paddingHorizontal="$4"
-        paddingVertical="$2"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
-        opacity={item.is_available ? 1 : 0.55}
+    <XStack
+      minHeight={76}
+      alignItems="center"
+      gap="$3"
+      paddingHorizontal="$4"
+      paddingVertical="$2"
+      borderBottomWidth={1}
+      borderBottomColor="$borderColor"
+      opacity={item.is_available ? 1 : 0.55}
+    >
+      {/* Only the item details open the detail screen. Availability and the
+          action buttons live outside this pressable so their taps cannot
+          bubble into row navigation. */}
+      <TouchableOpacity
+        onPress={() => onPress?.(item)}
+        activeOpacity={0.72}
+        style={{ flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' }}
       >
-        {/* Item */}
         <XStack flex={1} minWidth={0} alignItems="center" gap="$3">
-          <YStack
-            width={52}
-            height={52}
-            borderRadius="$2"
-            overflow="hidden"
-            backgroundColor="$backgroundSoft"
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-          >
-            <CachedImage
-              source={item.image_url ? { uri: item.image_url } : null}
-              style={{ width: 52, height: 52 }}
-              placeholder={<UtensilsCrossed size={20} color="$colorSecondary" />}
-            />
+          {/* Item */}
+          <XStack flex={1} minWidth={0} alignItems="center" gap="$3">
+            <YStack
+              width={52}
+              height={52}
+              borderRadius="$2"
+              overflow="hidden"
+              backgroundColor="$backgroundSoft"
+              alignItems="center"
+              justifyContent="center"
+              flexShrink={0}
+            >
+              <CachedImage
+                source={item.image_url ? { uri: item.image_url } : null}
+                style={{ width: 52, height: 52 }}
+                placeholder={<UtensilsCrossed size={20} color="$colorSecondary" />}
+              />
+            </YStack>
+
+            <YStack flex={1} minWidth={0} gap="$0.5">
+              <Text
+                fontSize="$4"
+                fontWeight="800"
+                fontFamily="$heading"
+                color="$color"
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+              {item.description ? (
+                <Text
+                  fontSize="$2"
+                  color="$colorSecondary"
+                  fontFamily="$body"
+                  numberOfLines={1}
+                >
+                  {item.description}
+                </Text>
+              ) : null}
+
+              {(item.variants?.length > 0 ||
+                item.extras?.length > 0 ||
+                item.dietary_tags?.length > 0) && (
+                <XStack gap="$1" flexWrap="wrap" marginTop={2}>
+                  {item.variants?.length > 0 ? (
+                    <YStack
+                      paddingHorizontal="$1.5"
+                      borderRadius="$10"
+                      backgroundColor="$backgroundSoft"
+                    >
+                      <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
+                        {`${item.variants.length} ${item.variants.length === 1 ? 'size' : 'sizes'}`}
+                      </Text>
+                    </YStack>
+                  ) : null}
+                  {item.extras?.length > 0 ? (
+                    <YStack
+                      paddingHorizontal="$1.5"
+                      borderRadius="$10"
+                      backgroundColor="$backgroundSoft"
+                    >
+                      <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
+                        {`${item.extras.length} ${item.extras.length === 1 ? 'add-on' : 'add-ons'}`}
+                      </Text>
+                    </YStack>
+                  ) : null}
+                  {item.dietary_tags?.slice(0, 2).map((tag) => (
+                    <YStack
+                      key={tag}
+                      paddingHorizontal="$1.5"
+                      borderRadius="$10"
+                      backgroundColor="$backgroundSoft"
+                    >
+                      <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
+                        {tag}
+                      </Text>
+                    </YStack>
+                  ))}
+                </XStack>
+              )}
+            </YStack>
+          </XStack>
+
+          {/* Category */}
+          <YStack width={COLUMN.category} flexShrink={0}>
+            <Text
+              fontSize="$3"
+              color="$colorSecondary"
+              fontFamily="$body"
+              numberOfLines={1}
+            >
+              {item.category?.name || '—'}
+            </Text>
           </YStack>
 
-          <YStack flex={1} minWidth={0} gap="$0.5">
+          {/* Price */}
+          <YStack width={COLUMN.price} flexShrink={0} alignItems="flex-end">
             <Text
               fontSize="$4"
               fontWeight="800"
               fontFamily="$heading"
-              color="$color"
-              numberOfLines={1}
+              color="$primary"
             >
-              {item.name}
+              {formatPriceFromMinor(item.basePrice?.amountMinor || 0)}
             </Text>
-            {item.description ? (
-              <Text
-                fontSize="$2"
-                color="$colorSecondary"
-                fontFamily="$body"
-                numberOfLines={1}
-              >
-                {item.description}
-              </Text>
-            ) : null}
-
-            {(item.variants?.length > 0 ||
-              item.extras?.length > 0 ||
-              item.dietary_tags?.length > 0) && (
-              <XStack gap="$1" flexWrap="wrap" marginTop={2}>
-                {item.variants?.length > 0 ? (
-                  <YStack
-                    paddingHorizontal="$1.5"
-                    borderRadius="$10"
-                    backgroundColor="$backgroundSoft"
-                  >
-                    <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
-                      {`${item.variants.length} ${item.variants.length === 1 ? 'size' : 'sizes'}`}
-                    </Text>
-                  </YStack>
-                ) : null}
-                {item.extras?.length > 0 ? (
-                  <YStack
-                    paddingHorizontal="$1.5"
-                    borderRadius="$10"
-                    backgroundColor="$backgroundSoft"
-                  >
-                    <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
-                      {`${item.extras.length} ${item.extras.length === 1 ? 'add-on' : 'add-ons'}`}
-                    </Text>
-                  </YStack>
-                ) : null}
-                {item.dietary_tags?.slice(0, 2).map((tag) => (
-                  <YStack
-                    key={tag}
-                    paddingHorizontal="$1.5"
-                    borderRadius="$10"
-                    backgroundColor="$backgroundSoft"
-                  >
-                    <Text fontSize={10} fontFamily="$body" color="$colorSecondary">
-                      {tag}
-                    </Text>
-                  </YStack>
-                ))}
-              </XStack>
-            )}
           </YStack>
         </XStack>
+      </TouchableOpacity>
 
-        {/* Category */}
-        <YStack width={COLUMN.category} flexShrink={0}>
-          <Text
-            fontSize="$3"
-            color="$colorSecondary"
-            fontFamily="$body"
-            numberOfLines={1}
-          >
-            {item.category?.name || '—'}
-          </Text>
-        </YStack>
-
-        {/* Price */}
-        <YStack width={COLUMN.price} flexShrink={0} alignItems="flex-end">
-          <Text
-            fontSize="$4"
-            fontWeight="800"
-            fontFamily="$heading"
-            color="$primary"
-          >
-            {formatPriceFromMinor(item.basePrice?.amountMinor || 0)}
-          </Text>
-        </YStack>
-
-        {/* Availability */}
-        <XStack
-          width={COLUMN.available}
-          flexShrink={0}
-          alignItems="center"
-          justifyContent="center"
-          gap="$1.5"
-        >
-          {onToggleAvailability ? (
-            <>
-              <Switch
-                size="$3"
-                checked={item.is_available}
-                onCheckedChange={() => onToggleAvailability(item.id)}
-                backgroundColor={item.is_available ? '$primary' : '$gray5'}
-              >
-                <Switch.Thumb animation="quick" backgroundColor="white" />
-              </Switch>
-              <Text
-                fontSize="$2"
-                fontFamily="$body"
-                fontWeight="600"
-                color={item.is_available ? '$primary' : '$colorSecondary'}
-              >
-                {item.is_available ? 'On' : 'Off'}
-              </Text>
-            </>
-          ) : (
+      {/* Availability */}
+      <XStack
+        width={COLUMN.available}
+        flexShrink={0}
+        alignItems="center"
+        justifyContent="center"
+        gap="$1.5"
+      >
+        {onToggleAvailability ? (
+          <>
+            <Switch
+              size="$3"
+              checked={item.is_available}
+              onCheckedChange={() => onToggleAvailability(item.id)}
+              backgroundColor={item.is_available ? '$primary' : '$gray5'}
+            >
+              <Switch.Thumb animation="quick" backgroundColor="white" />
+            </Switch>
             <Text
               fontSize="$2"
               fontFamily="$body"
               fontWeight="600"
               color={item.is_available ? '$primary' : '$colorSecondary'}
             >
-              {item.is_available ? 'Available' : 'Unavailable'}
+              {item.is_available ? 'On' : 'Off'}
             </Text>
-          )}
-        </XStack>
-
-        {/* Actions */}
-        <XStack width={COLUMN.actions} flexShrink={0} justifyContent="flex-end" gap="$2">
-          {onEdit
-            ? actionButton(
-                () => onEdit(item),
-                false,
-                `Edit ${item.name}`,
-                <Edit3 size={17} color={theme.color?.val} />,
-              )
-            : null}
-          {onDelete
-            ? actionButton(
-                () => onDelete(item),
-                true,
-                `Delete ${item.name}`,
-                <Trash2 size={17} color="#ef4444" />,
-              )
-            : null}
-        </XStack>
+          </>
+        ) : (
+          <Text
+            fontSize="$2"
+            fontFamily="$body"
+            fontWeight="600"
+            color={item.is_available ? '$primary' : '$colorSecondary'}
+          >
+            {item.is_available ? 'Available' : 'Unavailable'}
+          </Text>
+        )}
       </XStack>
-    </TouchableOpacity>
+
+      {/* Actions */}
+      <XStack width={COLUMN.actions} flexShrink={0} justifyContent="flex-end" gap="$2">
+        {onEdit
+          ? actionButton(
+              () => onEdit(item),
+              false,
+              `Edit ${item.name}`,
+              <Edit3 size={17} color={theme.color?.val} />,
+            )
+          : null}
+        {onDelete
+          ? actionButton(
+              () => onDelete(item),
+              true,
+              `Delete ${item.name}`,
+              <Trash2 size={17} color="#ef4444" />,
+            )
+          : null}
+      </XStack>
+    </XStack>
   );
 }

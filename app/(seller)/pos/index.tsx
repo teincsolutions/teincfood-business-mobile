@@ -3134,14 +3134,14 @@ function TodayTab() {
   // the seller Orders screen. The table fills the POS surface and any extra
   // width goes to Customer, Type and Payment so names, tellers and payment
   // labels stay readable without clipping.
-  const COL_ORDER_TODAY = 96;
-  const COL_CUSTOMER_TODAY_MIN = 210;
-  const COL_TYPE_TODAY_MIN = 80;
-  const COL_PAYMENT_TODAY_MIN = 100;
-  const COL_STATUS_TODAY = 80;
-  const COL_DELIVERY_TODAY = 80;
-  const COL_TIME_TODAY = 80;
-  const COL_TOTAL_TODAY = 92;
+  const COL_ORDER_TODAY = 94;
+  const COL_CUSTOMER_TODAY_MIN = 200;
+  const COL_TYPE_TODAY_MIN = 74;
+  const COL_PAYMENT_TODAY_MIN = 92;
+  const COL_STATUS_TODAY = 74;
+  const COL_DELIVERY_TODAY = 72;
+  const COL_TIME_TODAY = 74;
+  const COL_TOTAL_TODAY = 88;
   const COL_ACTIONS_TODAY = 260;
   const COL_GAP_TODAY = 4;
   const COL_PADDING_TODAY = 24;

@@ -75,6 +75,7 @@ export default function SellerMenu() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
   const canManageMenu = useHasCapability("menu_manage");
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
   const invalidateSetup = useInvalidateSellerSetup();
@@ -139,7 +140,7 @@ export default function SellerMenu() {
     // Plan gate: block obviously over-limit creates before the request.
     // Unknown limit => allow (backend 402 is authoritative).
     if (atMenuCap) {
-      toast.error(`Menu limit reached (${menuLimit} items on your plan). Upgrade to add more.`);
+      setLimitDialogOpen(true);
       return;
     }
     setEditingItem(null);
@@ -659,6 +660,18 @@ export default function SellerMenu() {
         confirmText="DELETE"
         isDestructive
         onConfirm={handleDelete}
+      />
+
+      {/* ── Plan limit ───────────────────────────────────────────── */}
+      <AppAlertDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        title="Menu limit reached"
+        description={`Your plan includes ${menuLimit ?? 0} menu items. Upgrade to add more items to your menu.`}
+        icon={UtensilsCrossed}
+        confirmText="View plans"
+        cancelText="Not now"
+        onConfirm={() => router.push("/(shared)/wallet/plans")}
       />
     </YStack>
   );
