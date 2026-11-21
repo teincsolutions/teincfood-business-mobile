@@ -250,7 +250,7 @@ export function MenuFormSheet({
 
           <KeyboardAvoidingView
             style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <Sheet.ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <YStack paddingHorizontal="$5" paddingTop="$3" paddingBottom="$8" gap="$5">

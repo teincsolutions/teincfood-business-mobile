@@ -263,7 +263,7 @@ export default function ManageCategories() {
           <Sheet.Handle backgroundColor="$gray5" marginTop="$2" />
           <KeyboardAvoidingView
             style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
             <Sheet.ScrollView
               showsVerticalScrollIndicator={false}

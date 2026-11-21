@@ -184,12 +184,13 @@ export default function BusinessesScreen() {
           justifyContent="space-between"
         >
           <YStack flex={1} gap="$1" paddingRight="$3">
-            <XStack gap="$2" alignItems="center">
+            <XStack gap="$2" alignItems="center" flexWrap="wrap">
               <Text
                 fontSize="$5"
                 fontWeight="700"
                 fontFamily="$heading"
                 color="$color"
+                flexShrink={1}
               >
                 {entry.name}
               </Text>
@@ -338,10 +339,9 @@ export default function BusinessesScreen() {
             <Button
               variant="outline"
               icon={Plus}
+              accessibilityLabel="Add business"
               onPress={() => router.push("/(shared)/businesses/add")}
-            >
-              Add Business
-            </Button>
+            />
           </XStack>
 
           <XStack gap="$2">

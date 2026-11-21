@@ -1,9 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import {
   activateOfflineLicense,
   copyOfflineDeviceDataForAccount,
   getOfflinePinLockState,
+  isMembershipRevokedError,
   sendOfflineDeviceHeartbeat,
   setAccountScope,
   setOfflineMemberPin,
@@ -44,7 +45,11 @@ function memberAsUser(member: {
   };
 }
 
-export function useOfflineAuth() {
+export function useOfflineAuth(
+  onMembershipRevoked?: (businessId: string) => void,
+) {
+  const onMembershipRevokedRef = useRef(onMembershipRevoked);
+  onMembershipRevokedRef.current = onMembershipRevoked;
   const activeBusiness = useBusinessStore((s) => s.activeBusiness);
   const authUser = useAuthStore((s) => s.user);
   // Only pre-auth offline login may use the device pointer. A signed-in
@@ -68,10 +73,15 @@ export function useOfflineAuth() {
 
   useEffect(() => {
     if (!authUser || !businessId || !hasDevice) return;
-    void sendOfflineDeviceHeartbeat(businessId);
-    const timer = setInterval(() => {
-      void sendOfflineDeviceHeartbeat(businessId);
-    }, 60_000);
+    const heartbeat = () => {
+      void sendOfflineDeviceHeartbeat(businessId).catch((error) => {
+        if (isMembershipRevokedError(error)) {
+          onMembershipRevokedRef.current?.(businessId);
+        }
+      });
+    };
+    heartbeat();
+    const timer = setInterval(heartbeat, 60_000);
     return () => clearInterval(timer);
   }, [authUser, businessId, hasDevice]);
 

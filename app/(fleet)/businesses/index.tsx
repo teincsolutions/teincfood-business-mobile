@@ -11,6 +11,7 @@ import {
   Map,
   Plus,
   Store,
+  User,
 } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 import { BackButton, Button } from "@/components/ui";
@@ -18,6 +19,46 @@ import { CachedAvatarImage } from "@/components/ui/CachedAvatarImage";
 import { useQuery } from "@tanstack/react-query";
 import * as businessService from "@/services/business.service";
 import type { Business } from "@teincfood/core";
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: "OWNER",
+  manager: "MANAGER",
+  chief: "CHEF",
+  cashier: "CASHIER",
+  sales: "SALES",
+  member: "MEMBER",
+};
+
+function BusinessRoleBadge({ role }: { role?: string | null }) {
+  const normalized = (role || "member").toLowerCase();
+  const isOwner = normalized === "owner";
+  return (
+    <XStack
+      paddingHorizontal="$2"
+      paddingVertical="$1"
+      borderRadius="$10"
+      backgroundColor={isOwner ? "$orangeMuted" : "$blueMuted"}
+      borderWidth={1}
+      borderColor={isOwner ? "$orange" : "$blue8"}
+      alignItems="center"
+    >
+      {isOwner ? (
+        <Crown size={10} color="$orange" />
+      ) : (
+        <User size={10} color="$colorSecondary" />
+      )}
+      <Text
+        fontSize="$1"
+        color={isOwner ? "$orange" : "$colorSecondary"}
+        fontFamily="$body"
+        fontWeight="600"
+        marginLeft={2}
+      >
+        {ROLE_LABELS[normalized] || normalized.toUpperCase()}
+      </Text>
+    </XStack>
+  );
+}
 
 export default function FleetBusinessesScreen() {
   const router = useRouter();
@@ -103,10 +144,7 @@ export default function FleetBusinessesScreen() {
               <Text fontSize="$5" fontWeight="700" fontFamily="$heading" color="$color" flexShrink={1}>
                 {business.name}
               </Text>
-              <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$orangeMuted" borderWidth={1} borderColor="$orange">
-                <Crown size={10} color="$orange" />
-                <Text fontSize="$1" color="$orange" fontFamily="$body" fontWeight="600" marginLeft={2}>OWNER</Text>
-              </XStack>
+              <BusinessRoleBadge role={business.role ?? "member"} />
               <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor={business.status === "active" ? "$successMuted" : "$backgroundSoft"} borderWidth={1} borderColor={business.status === "active" ? "$success" : "$borderColor"}>
                 <Text fontSize="$1" color={business.status === "active" ? "$success" : "$colorMuted"} fontFamily="$body" fontWeight="600">
                   {business.status === "active" ? "ACTIVE" : "INACTIVE"}
@@ -168,10 +206,9 @@ export default function FleetBusinessesScreen() {
             size="$3"
             variant="primary"
             icon={<Plus size={16} />}
+            accessibilityLabel="Add business"
             onPress={() => router.push("/(shared)/businesses/add" as any)}
-          >
-            Add
-          </Button>
+          />
         </XStack>
       </YStack>
       <FlatList
@@ -237,10 +274,7 @@ export default function FleetBusinessesScreen() {
                     <Text fontSize="$6" fontWeight="800" fontFamily="$heading">
                       {selectedBusiness.name}
                     </Text>
-                    <XStack paddingHorizontal="$2" paddingVertical="$1" borderRadius="$10" backgroundColor="$orangeMuted" borderWidth={1} borderColor="$orange">
-                      <Crown size={10} color="$orange" />
-                      <Text fontSize="$1" color="$orange" fontFamily="$body" fontWeight="600" marginLeft={2}>OWNER</Text>
-                    </XStack>
+                    <BusinessRoleBadge role={selectedBusiness.role ?? "member"} />
                   </XStack>
                   <Text fontSize="$4" color="$colorSecondary" fontFamily="$body">
                     {selectedBusiness.business_number}

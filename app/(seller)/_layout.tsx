@@ -10,6 +10,7 @@ import { toast } from 'sonner-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useBusinessStore } from '@/stores/business.store';
 import { useOfflineAuth } from '@/hooks/useOfflineAuth';
+import { handleMembershipRevoked } from '@/hooks/useMembershipRevocation';
 import { usePendingImageUploads } from '@/hooks/usePendingImageUploads';
 
 /** Route groups like `(drawer)` are URL-transparent — drop them for matching. */
@@ -38,7 +39,7 @@ export default function SellerLayout() {
     hasDevice,
     evaluation: offlineEvaluation,
     activateLicense,
-  } = useOfflineAuth();
+  } = useOfflineAuth(handleMembershipRevoked);
   const licenseActivationAttempted = useRef<string | null>(null);
 
   // Keep the offline reference cache (menus, roles, members, taxes, business

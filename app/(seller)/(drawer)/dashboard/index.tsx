@@ -192,8 +192,11 @@ export default function SellerDashboard() {
         gap="$4"
         backgroundColor="$background"
       >
-        {/* Service Status */}
-        <ServiceStatusBanner kyc_status={bizKycStatus} kycRoute={bannerRoute} />
+        {/* Service Status — business KYC is owner-only, and members get a 403
+            from the API. Showing an undefined status as "pending" misled them. */}
+        {isOwner ? (
+          <ServiceStatusBanner kyc_status={bizKycStatus} kycRoute={bannerRoute} />
+        ) : null}
 
         {/* Pending invitations */}
         <PendingInvitesBanner />

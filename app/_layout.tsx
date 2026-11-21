@@ -59,6 +59,7 @@ import { LocationGuard } from "../src/components/LocationGuard";
 import { useBusinessesQuery } from "../src/hooks/useBusinessesQuery";
 import { useOrderAnalyticsInvalidation } from "../src/hooks/useOrderAnalyticsInvalidation";
 import { useEventsConnection } from "../src/hooks/useEventsConnection";
+import { useMembershipRevocation } from "../src/hooks/useMembershipRevocation";
 import {
   connectChatClient,
   disconnectChatClient,
@@ -125,6 +126,10 @@ function AppShell() {
 
   // Connect global events channel for real-time updates (all authenticated roles)
   useEventsConnection();
+
+  // Enforce online membership on every route (including shared screens such as
+  // Invitations), not just inside the seller layout.
+  useMembershipRevocation();
 
   // Seller offline machinery (SQLite, LAN node, pending-queue drains) runs
   // for the seller role only. Fleet managers and riders are fully online.

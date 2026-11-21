@@ -13,7 +13,10 @@ import { Pressable } from "react-native";
 
 const BaseInput = styled(TamaguiInput, {
   backgroundColor: "$backgroundSoft",
-  borderWidth: 0,
+  // Keep the border box constant. Changing 0 -> 1 on focus shifts layout on
+  // Android keyboards and causes duplicated/garbled input on some devices.
+  borderWidth: 1,
+  borderColor: "$borderColor",
   borderRadius: "$3",
   fontFamily: "$body",
   fontSize: "$4",
@@ -23,7 +26,6 @@ const BaseInput = styled(TamaguiInput, {
   placeholderTextColor: "$colorPlaceholder",
 
   focusStyle: {
-    borderWidth: 1,
     borderColor: "$primary",
     backgroundColor: "$background", // slightly separate from soft background when active
   },

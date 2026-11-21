@@ -30,8 +30,8 @@ function buildActions(actionType: string | undefined): AndroidAction[] {
 }
 
 async function displayPushNotification(
-  title: string,
-  body: string,
+  title: unknown,
+  body: unknown,
   data: Record<string, string>,
 ): Promise<void> {
   const route = data.route || '';
@@ -44,8 +44,11 @@ async function displayPushNotification(
   const notifType = data.type || data.notification_category || '';
 
   // WhatsApp/Facebook-style: use sender/business name as title, clean message as body, avatar as icon
-  const displayTitle = businessName || title;
-  const displayBody = body;
+  // FCM can deliver non-string notification fields; Notifee's BIGTEXT style
+  // rejects anything but a real string, so normalise before rendering.
+  const displayTitle =
+    businessName || (typeof title === "string" ? title : "") || "";
+  const displayBody = typeof body === "string" ? body : "";
 
   try {
     await ensureNotificationChannels();
@@ -105,8 +108,8 @@ function parseFcmPayload(data: Record<string, string>): Record<string, unknown> 
 }
 
 async function handleRemoteMessage(
-  title: string,
-  body: string,
+  title: unknown,
+  body: unknown,
   data: Record<string, string> | undefined,
 ): Promise<void> {
   if (!data) return;

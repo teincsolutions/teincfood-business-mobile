@@ -14,7 +14,9 @@ import { Pressable } from "react-native";
 
 const BaseInput = styled(TamaguiInput, {
   backgroundColor: "$backgroundSoft",
-  borderWidth: 0,
+  // Constant border box avoids Android focus-time layout jumps.
+  borderWidth: 1,
+  borderColor: "$borderColor",
   borderRadius: "$3",
   fontFamily: "$body",
   fontSize: "$4",
@@ -24,7 +26,6 @@ const BaseInput = styled(TamaguiInput, {
   placeholderTextColor: "$colorPlaceholder",
 
   focusStyle: {
-    borderWidth: 1,
     borderColor: "$primary",
     backgroundColor: "$background",
   },
@@ -130,7 +131,7 @@ export const FormInput = forwardRef<TamaguiInput, FormInputProps>(
             borderColor={
               localError ? "$error" : isFocused ? "$primary" : "$borderColor"
             }
-            borderWidth={localError ? 1 : isFocused ? 1 : 0}
+            borderWidth={1}
             backgroundColor={isFocused ? "$background" : "$backgroundSoft"}
             {...props}
           />

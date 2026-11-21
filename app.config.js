@@ -75,6 +75,9 @@ module.exports = {
         monochromeImage: "./assets/android-icon-monochrome.png",
       },
       package: "com.teincfood.business",
+      // Match the native manifest's adjustResize so the keyboard cannot
+      // trigger layout jumps that duplicate characters on Android.
+      softwareKeyboardLayoutMode: "resize",
       predictiveBackGestureEnabled: false,
       // App Links: https://teincfood.com/invite?code= opens the app when
       // installed (assetlinks served by the site). Business-only paths never

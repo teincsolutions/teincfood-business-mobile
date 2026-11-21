@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { ensureDeviceLease } from '@teincfood/core';
 import { useBusinessStore } from '@/stores/business.store';
 
 export function useActiveBusiness() {
@@ -18,6 +19,9 @@ export function useActiveBusiness() {
       const business = businesses.find((b) => b.id === businessId) ?? null;
       if (business) {
         setActiveBusiness(business as any);
+        void ensureDeviceLease(businessId).catch((error) => {
+          console.debug('[useActiveBusiness] device lease failed', businessId, error);
+        });
         queryClient.invalidateQueries({ queryKey: ['seller'] });
         queryClient.invalidateQueries({ queryKey: ['fleet'] });
         queryClient.invalidateQueries({ queryKey: ['orders'] });

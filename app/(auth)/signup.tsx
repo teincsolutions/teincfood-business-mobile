@@ -232,7 +232,7 @@ export default function SignupScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <YStack
         paddingTop={Math.max(insets.top, 24)}

@@ -55,6 +55,7 @@ import {
 import { useBusinessRolesQuery } from "@teincfood/core";
 import { useHasCapability, useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
 import { usePlanLimit } from "@/hooks/usePlanLimit";
+import { useRouter } from "expo-router";
 
 const ROLE_LABELS: Record<string, string> = {
   chief: "Chef",
@@ -71,6 +72,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function MembersScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const media = useMedia();
   const {
@@ -286,7 +288,15 @@ export default function MembersScreen() {
           </YStack>
         }
         renderItem={({ item }) => (
-          <Card padding="$4" bordered>
+          <Card
+            padding="$4"
+            bordered
+            onPress={() => {
+              if (item.user?.id) {
+                router.push(`/(seller)/members/${item.user.id}` as any);
+              }
+            }}
+          >
             <XStack alignItems="center" gap="$3">
               <Avatar circular size="$5">
                 <Avatar.Fallback
@@ -306,7 +316,8 @@ export default function MembersScreen() {
                 paddingVertical="$1"
                 borderRadius="$2"
                 backgroundColor={ROLE_COLORS[item.role] || "$gray9"}
-                onPress={() => {
+                onPress={(event) => {
+                  event.stopPropagation();
                   if (!canManageMembers || !item.user?.id || item.role === "chief") return;
                   Alert.alert(
                     "Change role",
@@ -331,7 +342,8 @@ export default function MembersScreen() {
                   size="$3"
                   icon={({ color, size }) => <X size={size} color={color} />}
                   variant="danger"
-                  onPress={() => {
+                  onPress={(event) => {
+                    event.stopPropagation();
                     setRemovingMember(item);
                     setRemoveDialogOpen(true);
                   }}

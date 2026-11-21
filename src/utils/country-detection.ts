@@ -3,6 +3,22 @@ import { getCountryOption } from "@teincfood/core";
 
 export const DEFAULT_COUNTRY_ISO = "GH";
 
+type CountryDetectionSource = "device" | "fallback";
+type CountrySelectionSource = CountryDetectionSource | "manual";
+
+export interface CountrySelection {
+  iso: string;
+  source: CountrySelectionSource;
+}
+
+/**
+ * Locale is a weak "where is this device?" signal because tablets are often
+ * shipped with `en-US` regardless of their actual market. Only trust it for
+ * the business app's primary African markets; timezone remains authoritative
+ * for every region it maps (including US/CA/EU).
+ */
+const LOCALE_TRUSTED_COUNTRY_ISOS = new Set(["GH", "NG", "KE", "ZA", "CI", "RW"]);
+
 /**
  * Region inferred from the device timezone. Timezone is a much better signal
  * than locale for "where is this device?" — a phone in Ghana is frequently set
@@ -130,29 +146,40 @@ function deviceLocaleTags(): string[] {
 }
 
 /**
- * Best synchronous guess at the device's country: timezone first, then locale.
- * Unsupported regions fall back to Ghana, matching the product's primary
- * market.
+ * Best synchronous guess at the device's country: timezone first, then a
+ * deliberately narrow locale list. Unsupported regions fall back to Ghana,
+ * matching the product's primary market.
  */
-export function detectCountryIso(
+export function detectCountrySelection(
   fallback: string = DEFAULT_COUNTRY_ISO,
-): string {
+): CountrySelection {
   const timezoneCountry = countryFromTimezone();
-  if (timezoneCountry) return timezoneCountry;
+  if (timezoneCountry) return { iso: timezoneCountry, source: "device" };
 
   for (const tag of deviceLocaleTags()) {
     for (const region of regionsFromLocaleTag(tag)) {
-      if (getCountryOption(region)) return region;
+      if (
+        LOCALE_TRUSTED_COUNTRY_ISOS.has(region) &&
+        getCountryOption(region)
+      ) {
+        return { iso: region, source: "device" };
+      }
     }
   }
-  return fallback;
+  return { iso: fallback, source: "fallback" };
+}
+
+export function detectCountryIso(
+  fallback: string = DEFAULT_COUNTRY_ISO,
+): string {
+  return detectCountrySelection(fallback).iso;
 }
 
 /**
- * Returns the persisted country only when the location was written by a
- * version that recorded where the country came from. Locations written by
- * older builds have no `countrySource`, so they must not override fresh
- * device detection forever.
+ * Returns the persisted country only when it was explicitly chosen or
+ * device-detected by a recent build. Legacy `locale` values (older builds
+ * trusted `en-US` blindly) and missing sources must not override the Ghana
+ * default forever.
  */
 export function persistedCountryIso(
   location:
@@ -160,10 +187,28 @@ export function persistedCountryIso(
     | null
     | undefined,
 ): string | null {
-  if (!location?.countrySource) return null;
+  if (!location?.countrySource || location.countrySource === "locale") {
+    return null;
+  }
   const iso = location.countryCode?.trim().toUpperCase();
   if (!iso || !getCountryOption(iso)) return null;
   return iso;
+}
+
+export function getInitialCountrySelection(
+  location:
+    | { countryCode?: string; countrySource?: string }
+    | null
+    | undefined,
+): CountrySelection {
+  const persisted = persistedCountryIso(location);
+  if (persisted) {
+    return {
+      iso: persisted,
+      source: location?.countrySource === "manual" ? "manual" : "device",
+    };
+  }
+  return detectCountrySelection();
 }
 
 export function getInitialCountryIso(
@@ -172,5 +217,5 @@ export function getInitialCountryIso(
     | null
     | undefined,
 ): string {
-  return persistedCountryIso(location) ?? detectCountryIso();
+  return getInitialCountrySelection(location).iso;
 }

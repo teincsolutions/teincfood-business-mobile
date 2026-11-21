@@ -6,6 +6,7 @@ import type {
   BusinessMembership,
   BusinessMembershipListResponse,
   BusinessMember,
+  BusinessMemberDetail,
   BusinessMemberListResponse,
   OperatingHoursEntry,
   OperatingHoursResponse,
@@ -133,6 +134,13 @@ export async function addBusinessMember(businessId: string, data: Record<string,
 
 export async function inviteBusinessMember(businessId: string, data: Record<string, unknown>): Promise<{ data: Record<string, unknown> }> {
   return api.post(`/businesses/${businessId}/members/invite`, data);
+}
+
+export async function fetchBusinessMember(
+  businessId: string,
+  userId: string,
+): Promise<{ data: BusinessMemberDetail }> {
+  return api.get(`/businesses/${businessId}/members/${userId}`);
 }
 
 export async function updateBusinessMember(businessId: string, userId: string, data: Record<string, unknown>): Promise<{ data: BusinessMember }> {

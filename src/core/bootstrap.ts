@@ -90,6 +90,15 @@ let bootstrapped = false;
 function buildSqliteDriver(): SqliteDriver {
   let dbPromise: Promise<SQLiteDatabase> | null = null;
   let dbScope: string | null | undefined;
+  // Serialises account-scope switches so concurrent callers cannot open two
+  // handles to the same SQLite file (that produced "database is locked").
+  let switchPromise: Promise<void> | null = null;
+  // Serialises transactions across the many core services sharing this driver.
+  let transactionQueue: Promise<void> = Promise.resolve();
+  // While a transaction owns the connection, never switch account scope or
+  // close the handle out from under it (that produced "database is locked" and
+  // "cannot rollback - no transaction is active").
+  let transactionDepth = 0;
 
   function databaseName(scope: string | null): string {
     if (!scope) return "teincfood_sync_guest.db";
@@ -98,19 +107,38 @@ function buildSqliteDriver(): SqliteDriver {
   }
 
   async function getDb(): Promise<SQLiteDatabase> {
-    const scope = getAccountScope();
-    if (dbPromise && dbScope === scope) return dbPromise;
+    let scope = getAccountScope();
+    if (dbPromise && (dbScope === scope || transactionDepth > 0)) return dbPromise;
 
-    // Never reuse a handle to another account's file. Close it before opening
-    // the scoped database so an in-flight query cannot cross the boundary.
-    if (dbPromise) {
-      try {
-        const previous = await dbPromise;
-        await previous.closeAsync();
-      } catch {}
-      dbPromise = null;
+    if (switchPromise) {
+      await switchPromise;
+      scope = getAccountScope();
+      if (dbPromise && dbScope === scope) return dbPromise;
     }
 
+    // Claim the switch synchronously before awaiting anything. Clearing
+    // dbPromise first prevents a second caller from reopening while the old
+    // connection is still closing.
+    const previous = dbPromise;
+    dbPromise = null;
+    dbScope = undefined;
+
+    const switching = (async () => {
+      if (!previous) return;
+      try {
+        const db = await previous;
+        await db.closeAsync();
+      } catch {}
+    })();
+    switchPromise = switching;
+    try {
+      await switching;
+    } finally {
+      switchPromise = null;
+    }
+
+    // The account may have changed again while we were closing.
+    scope = getAccountScope();
     dbScope = scope;
     dbPromise = openDatabaseAsync(databaseName(scope)).catch((error) => {
       dbPromise = null;
@@ -138,19 +166,32 @@ function buildSqliteDriver(): SqliteDriver {
       const db = await getDb();
       return db.getAllAsync(sql, ...(args as never[])) as Promise<T[]>;
     },
-    withTransactionAsync: async (fn: () => Promise<void>) => {
-      const db = await getDb();
-      return db.withTransactionAsync(fn);
+    withTransactionAsync: (fn: () => Promise<void>) => {
+      const run = transactionQueue.then(async () => {
+        const db = await getDb();
+        transactionDepth += 1;
+        try {
+          await db.withTransactionAsync(fn);
+        } finally {
+          transactionDepth -= 1;
+        }
+      });
+      transactionQueue = run.catch(() => undefined);
+      return run;
     },
-    closeAsync: async () => {
-      if (!dbPromise) return;
-      const current = dbPromise;
-      dbPromise = null;
-      dbScope = undefined;
-      try {
-        const db = await current;
-        await db.closeAsync();
-      } catch {}
+    closeAsync: () => {
+      const run = transactionQueue.then(async () => {
+        if (!dbPromise) return;
+        const current = dbPromise;
+        dbPromise = null;
+        dbScope = undefined;
+        try {
+          const db = await current;
+          await db.closeAsync();
+        } catch {}
+      });
+      transactionQueue = run.catch(() => undefined);
+      return run;
     },
   };
 }
@@ -298,6 +339,7 @@ function wireServiceAdapters(): void {
     });
     Object.assign(coreBusinessService as Record<string, unknown>, {
       fetchBusinessMembers: businessSrv.fetchBusinessMembers,
+      fetchBusinessMember: businessSrv.fetchBusinessMember,
       inviteBusinessMember: (businessSrv as unknown as { inviteBusinessMember?: unknown }).inviteBusinessMember,
       updateBusinessMember: (businessSrv as unknown as { updateBusinessMember?: unknown }).updateBusinessMember,
       removeBusinessMember: (businessSrv as unknown as { removeBusinessMember?: unknown }).removeBusinessMember,

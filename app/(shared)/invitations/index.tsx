@@ -130,7 +130,7 @@ export default function InvitationsScreen({ embedded = false }: { embedded?: boo
   };
 
   const handleConfirmLeave = () => {
-    if (!confirmLeaveId) return;
+    if (!confirmLeaveId || leaveBusiness.isPending) return;
     leaveBusiness.mutate(confirmLeaveId, {
       onSettled: () => {
         setConfirmLeaveId(null);
@@ -346,6 +346,7 @@ export default function InvitationsScreen({ embedded = false }: { embedded?: boo
         description="Are you sure you want to leave this business? You may need a new invitation to rejoin."
         confirmText="Leave"
         isDestructive
+        confirmLoading={leaveBusiness.isPending}
         onConfirm={handleConfirmLeave}
       />
 

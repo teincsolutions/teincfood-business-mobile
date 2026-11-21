@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, RefreshControl, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,15 +13,11 @@ import {
   Trash2,
 } from "@tamagui/lucide-icons";
 import { useOfflineAuth } from "@/hooks/useOfflineAuth";
-import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
+import { useMyBusinessCapabilities } from "@/hooks/useMyBusinessCapabilities";
+import { useBusinessDevices, type BusinessDevice } from "@/hooks/useBusinessDevices";
 import { useAuthStore } from "@/stores/auth.store";
 import { useBusinessStore } from "@/stores/business.store";
 import { getAppInstanceId } from "@/services/devices.service";
-import {
-  listBusinessDevices,
-  revokeBusinessDevice,
-  type BusinessDevice,
-} from "@/services/offline-devices.service";
 
 function relativeTime(value: string | null): string {
   if (!value) return "Never seen";
@@ -45,43 +41,28 @@ export default function OfflineDeviceSettings() {
   const { loading, hasDevice, members, evaluation, removeDevice } =
     useOfflineAuth();
   const businessId = useBusinessStore((s) => s.activeBusiness?.id);
-  const canManage = useHasCapability("business_members_manage");
+  const { data: membership } = useMyBusinessCapabilities();
+  // The backend grants business_members_manage to owners/super-admins and
+  // managers. Keep role/source fallbacks so a stale capability cache never
+  // hides terminal management for an owner or an admin-equivalent manager.
+  const canManage = Boolean(
+    membership?.capabilities.includes("business_members_manage") ||
+      membership?.source === "owner" ||
+      membership?.source === "super_admin" ||
+      membership?.role === "owner" ||
+      membership?.role === "admin" ||
+      membership?.role === "manager",
+  );
   const currentDeviceUuid = getAppInstanceId();
+  const {
+    devices,
+    loading: devicesLoading,
+    error: devicesError,
+    reload: loadDevices,
+    revoke: revokeDevice,
+  } = useBusinessDevices(businessId, canManage);
   const [busy, setBusy] = useState(false);
-  const [devices, setDevices] = useState<BusinessDevice[]>([]);
-  const [devicesLoading, setDevicesLoading] = useState(false);
-  const [devicesError, setDevicesError] = useState<string | null>(null);
   const [revokingUuid, setRevokingUuid] = useState<string | null>(null);
-
-  const loadDevices = useCallback(async () => {
-    if (!businessId || !canManage) return;
-    setDevicesLoading(true);
-    setDevicesError(null);
-    try {
-      const rows = await listBusinessDevices(businessId);
-      setDevices(
-        rows.sort((a, b) => {
-          if (a.online !== b.online) return a.online ? -1 : 1;
-          return (
-            Date.parse(b.last_seen ?? "1970-01-01") -
-            Date.parse(a.last_seen ?? "1970-01-01")
-          );
-        }),
-      );
-    } catch (error) {
-      setDevicesError(
-        error instanceof Error
-          ? error.message
-          : "Connect to the internet to manage terminals.",
-      );
-    } finally {
-      setDevicesLoading(false);
-    }
-  }, [businessId, canManage]);
-
-  useEffect(() => {
-    void loadDevices();
-  }, [loadDevices]);
 
   const handleRemove = () => {
     Alert.alert(
@@ -118,9 +99,12 @@ export default function OfflineDeviceSettings() {
 
   const handleRevoke = (device: BusinessDevice) => {
     if (!businessId) return;
+    const isCurrent = device.device_uuid === currentDeviceUuid;
     Alert.alert(
       `Remove ${deviceLabel(device)}?`,
-      "This frees its license slot immediately. If the terminal is offline, it keeps working only until its current signed license expires or it reconnects.",
+      isCurrent
+        ? "This removes this terminal from the business and clears its local offline license. The plan slot is freed for another device."
+        : "This frees its license slot immediately. If the terminal is offline, it keeps working only until its current signed license expires or it reconnects.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -130,20 +114,36 @@ export default function OfflineDeviceSettings() {
             void (async () => {
               setRevokingUuid(device.device_uuid);
               try {
-                await revokeBusinessDevice(businessId, device.device_uuid);
+                await revokeDevice(device.device_uuid);
+
+                if (isCurrent) {
+                  // Clear this phone's cached DD/PINs after the server revoke;
+                  // otherwise it would keep presenting a removed license.
+                  try {
+                    await removeDevice();
+                  } catch (error) {
+                    console.debug("[OfflineDevices] local cleanup failed", error);
+                  }
+                  toast.success(
+                    "Terminal removed from this business. The slot is free for another device.",
+                  );
+                  return;
+                }
+
                 let leased: string | null = null;
                 try {
                   leased = await ensureLease(businessId);
-                } catch {
-                  // Slot is still freed; the POS Retry button can lease later.
+                } catch (error) {
+                  console.debug("[OfflineDevices] lease refresh failed", error);
+                  // The slot is still freed; the POS Retry button can lease later.
                 }
-                await loadDevices();
                 toast.success(
                   leased
                     ? `Terminal ${leased} is ready on this device`
                     : "Terminal removed. Return to POS and tap Retry to activate this device.",
                 );
               } catch (error) {
+                console.debug("[OfflineDevices] revoke failed", error);
                 Alert.alert(
                   "Could not remove terminal",
                   error instanceof Error
@@ -364,6 +364,23 @@ export default function OfflineDeviceSettings() {
                       >
                         {revoked ? "Removed" : relativeTime(device.last_seen)}
                       </Text>
+                      {!revoked ? (
+                        <Button
+                          size="$2"
+                          chromeless
+                          color="$error"
+                          icon={
+                            revokingUuid === device.device_uuid ? (
+                              <Spinner size="small" />
+                            ) : (
+                              <Trash2 size={16} color="$error" />
+                            )
+                          }
+                          accessibilityLabel={`Remove ${deviceLabel(device)}`}
+                          disabled={revokingUuid === device.device_uuid}
+                          onPress={() => handleRevoke(device)}
+                        />
+                      ) : null}
                     </XStack>
                     <Text
                       fontSize="$2"
@@ -382,20 +399,6 @@ export default function OfflineDeviceSettings() {
                           device.license_expires_at,
                         ).toLocaleDateString()}
                       </Text>
-                    ) : null}
-                    {!revoked && !isCurrent ? (
-                      <Button
-                        size="$2"
-                        chromeless
-                        color="$error"
-                        self="flex-start"
-                        disabled={revokingUuid === device.device_uuid}
-                        onPress={() => handleRevoke(device)}
-                      >
-                        {revokingUuid === device.device_uuid
-                          ? "Removing…"
-                          : "Remove terminal"}
-                      </Button>
                     ) : null}
                   </YStack>
                 );

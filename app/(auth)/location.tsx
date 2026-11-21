@@ -15,7 +15,7 @@ import {
 } from "@/stores/location.store";
 import { useAuthStore } from "@/stores/auth.store";
 import {
-  getInitialCountryIso,
+  getInitialCountrySelection,
   persistedCountryIso,
 } from "@/utils/country-detection";
 import { CountryPickerSheet } from "@/components/CountryPickerSheet";
@@ -30,11 +30,14 @@ export default function LocationScreen() {
   const locationHydrated = useLocationStore((state) => state.isHydrated);
 
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
-  const [selectedCountryIso, setSelectedCountryIso] = useState(() =>
-    getInitialCountryIso(currentLocation),
+  const [initialCountrySelection] = useState(() =>
+    getInitialCountrySelection(currentLocation),
+  );
+  const [selectedCountryIso, setSelectedCountryIso] = useState(
+    initialCountrySelection.iso,
   );
   const [countrySource, setCountrySource] = useState<CountrySource>(
-    currentLocation?.countrySource ?? "locale",
+    initialCountrySelection.source,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -101,7 +104,7 @@ export default function LocationScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <YStack flex={1} bg="$background">
         <ScrollView
