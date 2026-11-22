@@ -23,6 +23,7 @@ import type { MenuItem } from "@teincfood/core";
 import { Button } from "../ui";
 import { useCachedImageUrl } from "@teincfood/core";
 import { useResponsive } from "@/utils/responsive";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ItemCustomizerSheetProps {
   item: MenuItem;
@@ -39,8 +40,14 @@ export function ItemCustomizerSheet({
   const imageUrl = useCachedImageUrl(item.image_url);
   const media = useMedia();
   const { height, isLandscape } = useResponsive();
+  const insets = useSafeAreaInsets();
   const isSheet = media.sm;
-  const dialogMaxHeight = Math.round(height * (isLandscape ? 0.88 : 0.9));
+  const dialogMaxHeight = Math.max(
+    240,
+    Math.round(height * (isLandscape ? 0.88 : 0.9)) -
+      insets.top -
+      insets.bottom,
+  );
   const dialogHeight = isSheet ? "100%" : undefined;
   const heroHeight = isLandscape ? 180 : 220;
 
@@ -93,7 +100,11 @@ export function ItemCustomizerSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <Adapt when="sm" platform="touch">
         <Sheet snapPoints={[70]} modal dismissOnSnapToBottom>
-          <Sheet.Frame padding={0} backgroundColor="$background">
+          <Sheet.Frame
+            padding={0}
+            paddingBottom={insets.bottom}
+            backgroundColor="$background"
+          >
             <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay backgroundColor="rgba(0,0,0,0.4)" />
@@ -148,7 +159,12 @@ export function ItemCustomizerSheet({
                   </Text>
                 </YStack>
               )}
-              <XStack position="absolute" top="$2" right="$2" zIndex={10}>
+              <XStack
+                position="absolute"
+                top={Math.max(insets.top, 8)}
+                right="$2"
+                zIndex={10}
+              >
                 <XStack
                   width={36}
                   height={36}
@@ -330,7 +346,8 @@ export function ItemCustomizerSheet({
               alignItems="center"
               gap="$3"
               paddingHorizontal="$4"
-              paddingVertical="$3"
+              paddingTop="$3"
+              paddingBottom={Math.max(insets.bottom, 12)}
               borderTopWidth={1}
               borderColor="$borderColor"
               backgroundColor="$background"

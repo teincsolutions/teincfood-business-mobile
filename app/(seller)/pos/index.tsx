@@ -170,7 +170,12 @@ export default function POSTerminal() {
   }, [isBiometricEnabled, router]);
 
   return (
-    <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
+    <YStack
+      flex={1}
+      backgroundColor="$background"
+      paddingTop={insets.top}
+      paddingBottom={insets.bottom}
+    >
       <TabBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -517,12 +522,11 @@ function CartBar({ onCheckout }: { onCheckout: () => void }) {
     0,
   );
 
-  const insets = useSafeAreaInsets();
   return (
     <XStack
       width="100%"
       padding="$4"
-      paddingBottom={insets.bottom ? insets.bottom + 12 : 16}
+      paddingBottom={16}
       backgroundColor="$primary"
       justifyContent="space-between"
       alignItems="center"
