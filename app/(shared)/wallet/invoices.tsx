@@ -1,6 +1,6 @@
 // @ts-nocheck — Tamagui stack props don't typecheck under this repo's tsconfig.
 import { useMemo, useState } from "react";
-import { FlatList, RefreshControl } from "react-native";
+import { FlatList, Platform, RefreshControl } from "react-native";
 import { YStack, XStack, Text, Card, Spinner } from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,8 @@ function isPending(invoice: SubscriptionInvoice) {
 }
 
 function canPay(invoice: SubscriptionInvoice) {
+  // StoreKit subscriptions must not offer mobile-money payment in the iOS app.
+  if (Platform.OS === "ios") return false;
   return invoice.status === "open" || invoice.status === "failed";
 }
 

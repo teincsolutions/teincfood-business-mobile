@@ -14,6 +14,11 @@ export interface SubscriptionPlan {
   trial_days: number;
   features: Record<string, unknown>;
   is_active: boolean;
+  /** Store product ids; null when the plan cannot be bought in a store. */
+  apple_product_id_monthly?: string | null;
+  apple_product_id_yearly?: string | null;
+  google_product_id_monthly?: string | null;
+  google_product_id_yearly?: string | null;
 }
 
 export interface PaymentConfiguration {
@@ -194,6 +199,26 @@ export async function checkoutSubscription(
     payload,
   );
   return (res as unknown as { data: SubscriptionCheckoutResponse }).data;
+}
+
+export interface AppleVerifyResponse {
+  status: string;
+  configuration: PaymentConfiguration;
+}
+
+/**
+ * Sends the StoreKit signed transaction to the backend, which verifies the
+ * Apple certificate chain before activating the plan.
+ */
+export async function verifyAppleSubscription(
+  businessId: string,
+  payload: { signed_transaction: string; plan_id: string },
+): Promise<AppleVerifyResponse> {
+  const res = await api.post<{ data: AppleVerifyResponse }>(
+    `/businesses/${businessId}/subscription/apple/verify`,
+    payload,
+  );
+  return (res as unknown as { data: AppleVerifyResponse }).data;
 }
 
 export async function cancelSubscription(

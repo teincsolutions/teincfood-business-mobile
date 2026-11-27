@@ -139,7 +139,7 @@ module.exports = {
       "expo-font",
       "expo-updates",
       "expo-sharing",
-      ["@teincfood/rn-notifications", {}],
+      ["@teincfood/rn-notifications", { liveActivities: false }],
       [
         "expo-location",
         {
@@ -213,6 +213,7 @@ module.exports = {
         },
       ],
       "expo-web-browser",
+      "expo-iap",
     ],
     experiments: {
       typedRoutes: true,
@@ -220,9 +221,9 @@ module.exports = {
     extra: {
       router: {},
       eas: {
-        // The @teincfood/rn-notifications plugin adds the LiveActivity
-        // extension automatically. Declaring it here as well creates a
-        // duplicate iOS target and breaks credential setup.
+        // The @teincfood/rn-notifications plugin only adds the LiveActivity
+        // extension when `liveActivities: true`. We do not start any Live
+        // Activities, so the extension (and its WidgetKit target) is disabled.
         projectId: "afa9b762-7069-493e-9a0d-de02c757e3bc",
       },
     },

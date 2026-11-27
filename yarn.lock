@@ -5226,6 +5226,11 @@ expo-haptics@~55.0.9:
   resolved "https://registry.npmjs.org/expo-haptics/-/expo-haptics-55.0.15.tgz"
   integrity sha512-RREAflKxOIPAJ5l5M22eHUDU4PGetH2xvQN4ihN4rNEKrzbxrxI2e8yf3MopujCOz5aV5JO1gaGezdJbWEeS9w==
 
+expo-iap@^6.6.0:
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/expo-iap/-/expo-iap-6.6.0.tgz#1352eb12e07d231405332b66f9ba9f80961be833"
+  integrity sha512-KdWzwu+N8uJkxNX+uXfnp534Jj7XFQ6SQnfJC+uRt1GtDyCp+8nkPAXGAscFe7E0x1fwG1fpLaHGJoIPf/pORQ==
+
 expo-image-loader@~55.0.1:
   version "55.0.1"
   resolved "https://registry.npmjs.org/expo-image-loader/-/expo-image-loader-55.0.1.tgz"
@@ -5262,11 +5267,6 @@ expo-linking@^55.0.0, expo-linking@~55.0.16:
   dependencies:
     expo-constants "~55.0.16"
     invariant "^2.2.4"
-
-expo-live-activity@^0.4.2:
-  version "0.4.2"
-  resolved "https://registry.npmjs.org/expo-live-activity/-/expo-live-activity-0.4.2.tgz"
-  integrity sha512-b3QdsXAg8dPr6p8w4U4eBYdndArSprCPOJC9U8wovAsOOrCA3eSv4vwfn41XNDmaPTc6gweCABaIIxPaTg2oZQ==
 
 expo-local-authentication@~55.0.9:
   version "55.0.15"

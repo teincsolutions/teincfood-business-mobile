@@ -1,5 +1,6 @@
 // @ts-nocheck — Tamagui stack props don't typecheck under this repo's tsconfig.
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/hooks/useSubscription";
 import { useBusinessStore } from "@/stores/business.store";
 import { paymentService } from "@/services/payment.service";
+import { openManageSubscriptions } from "@/services/iap.service";
 import { useIsEffectivelyOnline } from "@teincfood/core";
 import type { MomoProvider } from "@/types/payment";
 import type { SubscriptionInvoice } from "@/services/subscription.service";
@@ -58,6 +60,11 @@ export function BillingCard() {
   const checkout = useCheckoutSubscriptionMutation();
   const resume = useResumeSubscriptionMutation();
   const queryClient = useQueryClient();
+
+  // Apple subscriptions are billed and cancelled in the App Store; the app
+  // must not offer another payment rail (or an auto-renew switch) for them.
+  const storeManaged =
+    Platform.OS === "ios" && billing.data?.configuration?.provider === "apple";
 
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState("");
@@ -216,31 +223,33 @@ export function BillingCard() {
           </Button>
         </XStack>
 
-        <XStack justifyContent="space-between" gap="$2">
-          <YStack gap="$0.5">
-            <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-              Auto-renew
-            </Text>
-            <Text
-              fontSize="$3"
-              fontWeight="600"
-              fontFamily="$body"
-              color="$color"
+        {storeManaged ? null : (
+          <XStack justifyContent="space-between" gap="$2">
+            <YStack gap="$0.5">
+              <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+                Auto-renew
+              </Text>
+              <Text
+                fontSize="$3"
+                fontWeight="600"
+                fontFamily="$body"
+                color="$color"
+              >
+                {profile?.auto_renew
+                  ? "On — we send a prompt before the due date"
+                  : "Off — pay manually"}
+              </Text>
+            </YStack>
+            <Switch
+              size="$5"
+              checked={autoRenew}
+              onCheckedChange={setAutoRenew}
+              backgroundColor={autoRenew ? "$primary" : "$gray5"}
             >
-              {profile?.auto_renew
-                ? "On — we send a prompt before the due date"
-                : "Off — pay manually"}
-            </Text>
-          </YStack>
-          <Switch
-            size="$5"
-            checked={autoRenew}
-            onCheckedChange={setAutoRenew}
-            backgroundColor={autoRenew ? "$primary" : "$gray5"}
-          >
-            <Switch.Thumb animation="quick" backgroundColor="white" />
-          </Switch>
-        </XStack>
+              <Switch.Thumb animation="quick" backgroundColor="white" />
+            </Switch>
+          </XStack>
+        )}
 
         {editing ? (
           <YStack gap="$3">
@@ -386,22 +395,32 @@ export function BillingCard() {
                 {formatMoney(upcoming.amount_minor, upcoming.currency)}
               </Text>
             </XStack>
-            <Button
-              variant="primary"
-              height={46}
-              disabled={
-                upcoming.status !== "open" && upcoming.status !== "failed"
-              }
-              onPress={() => setPayingInvoice(upcoming)}
-            >
-              {upcoming.status === "payment_pending"
-                ? "Waiting for approval"
-                : upcoming.status === "scheduled"
-                  ? "Available when the bill arrives"
-                  : upcoming.status === "failed"
-                    ? "Retry payment"
-                    : "Pay now"}
-            </Button>
+            {storeManaged ? (
+              <Button
+                variant="outline"
+                height={46}
+                onPress={() => void openManageSubscriptions()}
+              >
+                {`Manage in the App Store`}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                height={46}
+                disabled={
+                  upcoming.status !== "open" && upcoming.status !== "failed"
+                }
+                onPress={() => setPayingInvoice(upcoming)}
+              >
+                {upcoming.status === "payment_pending"
+                  ? "Waiting for approval"
+                  : upcoming.status === "scheduled"
+                    ? "Available when the bill arrives"
+                    : upcoming.status === "failed"
+                      ? "Retry payment"
+                      : "Pay now"}
+              </Button>
+            )}
             {upcoming.status === "payment_pending" ? (
               <Button
                 variant="outline"
@@ -475,50 +494,52 @@ export function BillingCard() {
           View all invoices
         </Button>
 
-        <XStack gap="$2">
-          <Button
-            variant="outline"
-            size="sm"
-            flex={1}
-            loading={cancel.isPending}
-            disabled={cancel.isPending || config?.cancel_at_period_end}
-            onPress={() => {
-              cancel.mutate(undefined, {
-                onSuccess: () =>
-                  toast.success("Subscription will cancel at period end"),
-                onError: (e) =>
-                  toast.error(
-                    e instanceof Error ? e.message : "Could not cancel",
-                  ),
-              });
-            }}
-          >
-            Cancel at period end
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            flex={1}
-            loading={resume.isPending}
-            disabled={resume.isPending || !config?.cancel_at_period_end}
-            icon={<RefreshCw size={14} />}
-            onPress={() => {
-              resume.mutate(undefined, {
-                onSuccess: () => toast.success("Subscription resumed"),
-                onError: (e) =>
-                  toast.error(
-                    e instanceof Error ? e.message : "Could not resume",
-                  ),
-              });
-            }}
-          >
-            Resume
-          </Button>
-        </XStack>
+        {storeManaged ? null : (
+          <XStack gap="$2">
+            <Button
+              variant="outline"
+              size="sm"
+              flex={1}
+              loading={cancel.isPending}
+              disabled={cancel.isPending || config?.cancel_at_period_end}
+              onPress={() => {
+                cancel.mutate(undefined, {
+                  onSuccess: () =>
+                    toast.success("Subscription will cancel at period end"),
+                  onError: (e) =>
+                    toast.error(
+                      e instanceof Error ? e.message : "Could not cancel",
+                    ),
+                });
+              }}
+            >
+              Cancel at period end
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              flex={1}
+              loading={resume.isPending}
+              disabled={resume.isPending || !config?.cancel_at_period_end}
+              icon={<RefreshCw size={14} />}
+              onPress={() => {
+                resume.mutate(undefined, {
+                  onSuccess: () => toast.success("Subscription resumed"),
+                  onError: (e) =>
+                    toast.error(
+                      e instanceof Error ? e.message : "Could not resume",
+                    ),
+                });
+              }}
+            >
+              Resume
+            </Button>
+          </XStack>
+        )}
       </Card>
 
       <MomoChargeSheet
-        open={!!payingInvoice}
+        open={!storeManaged && !!payingInvoice}
         title="Pay subscription"
         subtitle={
           payingInvoice ? `Due ${formatDate(payingInvoice.due_at)}` : undefined

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
+  Platform,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
@@ -36,6 +37,12 @@ import {
   useDeletePromoMutation,
 } from "@/hooks/useSubscription";
 import { BillingCard } from "@/components/subscription/BillingCard";
+import {
+  isPaidPlan,
+  storeProductId,
+  useAppleSubscriptionPurchase,
+  useStorePrices,
+} from "@/hooks/useAppleIap";
 import { useEntitlements, useHasFeature } from "@/hooks/useEntitlements";
 import { useHasCapability } from "@/hooks/useMyBusinessCapabilities";
 import { useBusinessStore } from "@/stores/business.store";
@@ -337,6 +344,7 @@ function PlanCard({
   isPopular,
   yearly,
   updating,
+  storePrice,
   onSelect,
 }: {
   plan: SubscriptionPlan;
@@ -344,6 +352,7 @@ function PlanCard({
   isPopular: boolean;
   yearly: boolean;
   updating: boolean;
+  storePrice?: string;
   onSelect: () => void;
 }) {
   const monthlyMinor = plan.monthly_fee_minor || 0;
@@ -352,9 +361,10 @@ function PlanCard({
   const isFree = monthlyMinor === 0 && yearlyMinor === 0;
   const price = isFree
     ? "Free"
-    : yearly && hasYearly
-      ? `${formatMoney(yearlyMinor, plan.currency)}/yr`
-      : `${formatMoney(monthlyMinor, plan.currency)}/mo`;
+    : (storePrice ??
+      (yearly && hasYearly
+        ? `${formatMoney(yearlyMinor, plan.currency)}/yr`
+        : `${formatMoney(monthlyMinor, plan.currency)}/mo`));
   const secondaryPrice = isFree
     ? "No monthly or yearly charge"
     : yearly && hasYearly
@@ -402,9 +412,17 @@ function PlanCard({
       <Text fontSize="$8" fontWeight="800" fontFamily="$heading" color="$color">
         {price}
       </Text>
-      <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
-        {secondaryPrice}
-      </Text>
+      {storePrice ? (
+        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+          {yearly
+            ? `Billed yearly · Cancel anytime in the App Store`
+            : `Billed monthly · Cancel anytime in the App Store`}
+        </Text>
+      ) : (
+        <Text fontSize="$2" color="$colorSecondary" fontFamily="$body">
+          {secondaryPrice}
+        </Text>
+      )}
       <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
         {`${plan.commission_rate_percent}% commission per order${plan.trial_days > 0 ? ` • ${plan.trial_days}d free trial` : ""}`}
       </Text>
@@ -451,6 +469,26 @@ function PlanTab({
     ).id;
   }, [plans]);
 
+  const activeBusiness = useBusinessStore((s) => s.activeBusiness);
+  const storePrices = useStorePrices(plans);
+  const iap = useAppleSubscriptionPurchase({
+    businessId: activeBusiness?.id,
+    plans,
+    onActivated: () => {
+      void subQuery.refetch();
+      void plansQuery.refetch();
+      if (activeBusiness?.id) {
+        void referenceSyncService
+          .sync({
+            businessId: activeBusiness.id,
+            keys: ["subscription:entitlements"],
+            force: true,
+          })
+          .catch(() => undefined);
+      }
+    },
+  });
+
   const isLoading = plansQuery.isLoading || subQuery.isLoading;
   const isError = plansQuery.isError || subQuery.isError;
 
@@ -492,6 +530,13 @@ function PlanTab({
   }
 
   const confirmSelect = (plan: SubscriptionPlan) => {
+    // On iOS, paid plans must be bought through StoreKit. Free plans still
+    // activate directly on the backend.
+    if (Platform.OS === "ios" && isPaidPlan(plan)) {
+      iap.purchase(plan, yearly ? "year" : "month");
+      return;
+    }
+
     setSelecting(plan.id);
     checkout.mutate(
       {
@@ -526,7 +571,7 @@ function PlanTab({
     <>
       <FlatList
         data={plans}
-        extraData={`${yearly}-${selecting}-${checkout.isPending}`}
+        extraData={`${yearly}-${selecting}-${checkout.isPending}-${iap.busy}-${iap.pendingPlanId}`}
         keyExtractor={(p) => p.id}
         numColumns={1}
         initialNumToRender={10}
@@ -548,6 +593,25 @@ function PlanTab({
           <YStack gap="$3">
             {onboarding ? null : <BillingCard />}
             <BillingPeriodToggle yearly={yearly} onChange={setYearly} />
+            {Platform.OS === "ios" ? (
+              <XStack gap="$2" justifyContent="center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={iap.busy}
+                  onPress={() => void iap.restore()}
+                >
+                  {`Restore purchases`}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onPress={() => void iap.manage()}
+                >
+                  {`Manage subscription`}
+                </Button>
+              </XStack>
+            ) : null}
           </YStack>
         }
         ListEmptyComponent={
@@ -611,7 +675,13 @@ function PlanTab({
             isCurrent={currentPlanId === item.id}
             isPopular={popularId === item.id && currentPlanId !== item.id}
             yearly={yearly}
-            updating={checkout.isPending && selecting === item.id}
+            storePrice={
+              storePrices[storeProductId(item, yearly ? "year" : "month") ?? ""]
+            }
+            updating={
+              (checkout.isPending && selecting === item.id) ||
+              (iap.busy && iap.pendingPlanId === item.id)
+            }
             onSelect={() => confirmSelect(item)}
           />
         )}
@@ -966,11 +1036,7 @@ export default function PlansScreen() {
               {`Choose a plan`}
             </Text>
           </XStack>
-          <Text
-            fontSize="$3"
-            color="$colorSecondary"
-            fontFamily="$body"
-          >
+          <Text fontSize="$3" color="$colorSecondary" fontFamily="$body">
             {`Finish setting up ${activeBusiness?.name ?? "your business"}. Start on Free and upgrade whenever you're ready.`}
           </Text>
         </YStack>
@@ -989,9 +1055,7 @@ export default function PlansScreen() {
       )}
       <YStack paddingHorizontal="$4" gap="$3" flex={1}>
         {isOnboarding ? null : <StatusBanner />}
-        {isOnboarding ? null : (
-          <SectionTabs tab={tab} onChange={setTab} />
-        )}
+        {isOnboarding ? null : <SectionTabs tab={tab} onChange={setTab} />}
         {isOnboarding ? null : <Separator />}
         {tab === `plan` ? (
           <PlanTab onboarding={isOnboarding} onDone={finishOnboarding} />

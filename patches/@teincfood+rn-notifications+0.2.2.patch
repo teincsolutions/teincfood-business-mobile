@@ -1,0 +1,35 @@
+diff --git a/node_modules/@teincfood/rn-notifications/app.plugin.js b/node_modules/@teincfood/rn-notifications/app.plugin.js
+index 3ab8f94..bb3ab18 100644
+--- a/node_modules/@teincfood/rn-notifications/app.plugin.js
++++ b/node_modules/@teincfood/rn-notifications/app.plugin.js
+@@ -60,16 +60,26 @@ function withFirebaseManifestReplacements(config) {
+   });
+ }
+ 
+-module.exports = function withTeincfoodNotifications(config, _props) {
+-  config = withPlugins(config, [
++module.exports = function withTeincfoodNotifications(config, props) {
++  const { liveActivities = false } = props || {};
++
++  const plugins = [
+     [
+       'expo-notifications',
+       { sounds: SOUND_FILES.map((f) => path.join(SOUNDS_DIR, f)) },
+     ],
+     ['@react-native-firebase/app', { ios: { useFrameworks: 'static' } }],
+     ['@react-native-firebase/messaging', { ios: { useFrameworks: 'static' } }],
+-    ['expo-live-activity', { enablePushNotifications: true }],
+-  ]);
++  ];
++
++  // Live Activities ship a WidgetKit app extension. Apps that never start an
++  // activity should not embed one (App Review asks why it is there), so the
++  // extension is opt-in.
++  if (liveActivities) {
++    plugins.push(['expo-live-activity', { enablePushNotifications: true }]);
++  }
++
++  config = withPlugins(config, plugins);
+ 
+   config = withNotifeeMavenRepo(config);
+   config = withFirebaseManifestReplacements(config);
