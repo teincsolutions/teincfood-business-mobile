@@ -34,3 +34,6 @@ expo-env.d.ts
 
 GoogleService-Info.plist
 google-services.json
+# Local-node private key material (never commit)
+assets/tls/server-key.pem
+assets/tls/*.p12
